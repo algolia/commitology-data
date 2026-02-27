@@ -1,4 +1,8 @@
 {
   "hash": "5f8ba5ddc",
-  "subject": "feat(ts): allow custom ui state and route state in routing (#4816)"
+  "author": "Haroen Viaene",
+  "subject": "feat(ts): allow custom ui state and route state in routing (#4816)",
+  "body": "* feat(ts): allow custom ui state and route state in routing\r\n\r\nWhile I couldn't find a way to make InstantSearch itself generic (this gets passed to many places, which then loses generic), using the routing middleware directly is possible like this now\r\n\r\n```ts\r\nimport instantsearch from 'instantsearch.js/es'\r\nimport { history } from 'instantsearch.js/es/lib/routers';\r\nimport { createRouterMiddleware } from 'instantsearch.js/es/middlewares';\r\nimport { StateMapping, UiState } from 'instantsearch.js/es/types';\r\n\r\ntype SwagIndexUiState = { swag: boolean };\r\ntype SwagUiState = { [indexName: string]: SwagIndexUiState };\r\n\r\nconst stateMapping: StateMapping<UiState & SwagUiState, SwagUiState> = {\r\n  stateToRoute(uiState) {\r\n    return Object.keys(uiState).reduce(\r\n      (state, indexId) => ({\r\n        ...state,\r\n        [indexId]: { swag: uiState[indexId].swag },\r\n      }),\r\n      {}\r\n    );\r\n  },\r\n\r\n  routeToState(routeState = {}) {\r\n    return Object.keys(routeState).reduce(\r\n      (state, indexId) => ({\r\n        ...state,\r\n        [indexId]: routeState[indexId],\r\n      }),\r\n      {}\r\n    );\r\n  },\r\n};\r\n\r\nconst search = instantsearch();\r\n\r\nsearch.use(\r\n  createRouterMiddleware<UiState & SwagUiState, SwagUiState>({\r\n    router: history(),\r\n    stateMapping,\r\n  })\r\n);\r\nsearch.addWidgets([instantsearch.widgets.hits({ container })]);\r\n```\r\n\r\n* actually genericificate InstantSearch\r\n\r\n* already inferred so no need\r\n\r\n* Apply suggestions from code review\r\n\r\n* address feedback\r\n\r\n* better comment",
+  "date": 1628083250,
+  "longHash": "5f8ba5ddcf5e32fd3cecf39ea667d8266dab35f8"
 }
