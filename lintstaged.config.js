@@ -1,5 +1,8 @@
 import config from 'aberlaas/configs/lintstaged';
 
-export default {
-  ...config,
-};
+// Skip all linting of JSON files in ./data
+const newConfig = { ...config };
+newConfig['**/*.json,!./data/**/*.json'] = newConfig['**/*.json'];
+delete newConfig['**/*.json'];
+
+export default newConfig;

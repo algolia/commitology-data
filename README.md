@@ -6,6 +6,14 @@ commitology project that we created for the 2026 Algolia April Fools'.
 The project suggests a way to interact with a Git repository's history through
 classic search and discussion with an agent.
 
+## Data Structure
+
+The `./data` folder contains all data that will ultimately be pushed to Algolia.
+- `./data/input` contains raw information extracted from git
+- `./data/computed` contains extended information derived from `./data/input`
+- `./data/output` contains data in its final form, ready to be pushed to Algolia
+- `./data/tmp` is a temporary folder used by some transformations
+
 
 
 
