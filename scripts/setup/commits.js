@@ -1,7 +1,7 @@
 import { _, pMap } from 'golgoth';
 import { absolute, spinner, writeJson } from 'firost';
-import { commitFieldOrder, dataInputCommitsPath } from '../lib/config.js';
-import { getCommitData, getCommitList } from '../lib/git.js';
+import { commitFieldOrder, dataInputCommitsPath } from '../../lib/config.js';
+import { getCommitData, getCommitList } from '../../lib/git.js';
 
 // We define the path to instantsearch
 // We find all commits in instantsearch
