@@ -3,13 +3,13 @@ import { absolute, sleep, spinner, writeJson } from 'firost';
 import { dataInputPath, issueFieldOrder } from '../../lib/config.js';
 import {
   __,
-  getIssuesAndPullRequests,
-  getIssuesAndPullRequestsCount,
+  getIssuesAndPulls,
+  getIssuesAndPullsCount,
 } from '../../lib/github.js';
 
 const ISSUES_PER_PAGE = 100;
 
-const itemCount = await getIssuesAndPullRequestsCount();
+const itemCount = await getIssuesAndPullsCount();
 const pageCount = _.ceil(itemCount / ISSUES_PER_PAGE);
 
 const progress = spinner();
@@ -20,7 +20,7 @@ await pMap(
     const tickMessage = `Fetching page ${page}/${pageCount}`;
     progress.tick(tickMessage);
 
-    const items = await getIssuesAndPullRequests({
+    const items = await getIssuesAndPulls({
       page: page + 1,
       perPage: ISSUES_PER_PAGE,
     });
