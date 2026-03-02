@@ -6,7 +6,7 @@ import {
 } from '../../lib/config.js';
 import { getComments } from '../../lib/github.js';
 
-const CONCURRENCY = 10;
+const CONCURRENCY = 1;
 
 const allIssues = await glob('./**/*.json', { cwd: dataInputIssuesPath });
 const maxIssueCount = allIssues.length;
@@ -26,6 +26,7 @@ await pMap(
     const issueDatePath = dayjs(created_at).format('YYYY/MM');
     const commentsPath = absolute(
       dataInputCommentsPath,
+      'issues',
       issueDatePath,
       `${number}.json`,
     );
