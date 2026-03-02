@@ -1,0 +1,48 @@
+[
+  {
+    "author_association": "MEMBER",
+    "body": "Hey @lluzak !\r\n\r\nA userland solution would be to create a custom cache that bails the first `read`/`write` : \r\n\r\n```ts\r\nconst cache = createInfiniteHitsSessionStorageCache();\r\n\r\nconst ssrSafeCache: typeof cache & {\r\n  firstReadDone: boolean;\r\n  firstWriteDone: boolean;\r\n} = {\r\n  firstReadDone: false,\r\n  firstWriteDone: false,\r\n  read({ state }) {\r\n    if (!this.firstReadDone) {\r\n      this.firstReadDone = true;\r\n      return null;\r\n    }\r\n    return cache.read({ state });\r\n  },\r\n  write({ state, hits }) {\r\n    if (!this.firstWriteDone) {\r\n      this.firstWriteDone = true;\r\n      return;\r\n    }\r\n    cache.write({ state, hits });\r\n  },\r\n};\r\n```\r\n\r\nYou can see it in action there : https://codesandbox.io/p/sandbox/confident-moon-vhm9rq?file=%2Fpages%2Findex.tsx%3A24%2C1-46%2C3\r\n\r\nUnfortunately this will lead to a small layout shift, but let me know if it works for you !\r\n\r\nI'll look if it's possible to handle it directly in the lib, if not we can document or package this SSR-safe cache.",
+    "created_at": "2023-07-27T08:55:48Z",
+    "html_url": "https://github.com/algolia/instantsearch/issues/5772#issuecomment-1653188889",
+    "id": 1653188889,
+    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/5772",
+    "node_id": "IC_kwDOAlnbOs5iiakZ",
+    "performed_via_github_app": null,
+    "pin": null,
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 4,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 4,
+      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/1653188889/reactions"
+    },
+    "updated_at": "2023-07-27T08:55:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/1653188889",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  }
+]

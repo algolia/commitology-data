@@ -1,0 +1,48 @@
+[
+  {
+    "author_association": "NONE",
+    "body": "@enmanuelramirez-ad  We have the same problem, it seems on the first render with data from a server component disjunctiveFacets & disjunctiveFacetsRefinements are missing in the state.\r\n\r\nSo the compare fails and the cache is resetten on back, the same is happening on dirst render.\r\n\r\nSo we have 2 workarounds, in the cache read function.\r\n\r\nThis is not the best piece of code but it works for us for now :)\r\n\r\n```\r\n import { isEqual } from 'instantsearch.js/es/lib/utils/isEqual';\r\n  \r\n  const getStateWithoutPage = (state) => {\r\n      const { page, ...rest } = state || {};\r\n      return rest;\r\n  }\r\n  \r\n  const isServer = typeof window === 'undefined';\r\n  \r\n  // Work around for Nextjs, disjunctiveFacets & disjunctiveFacetsRefinements are missing from state, this triggers a emty hits array\r\n  const infiniteHitsCache = (() => {\r\n\r\n      let cache = null;\r\n  \r\n      return {\r\n  \r\n          read: ({ state }) => {\r\n  \r\n              if (cache === null || isServer) {\r\n                  return null;\r\n              }\r\n  \r\n              // Fix first render reset hits\r\n              if (cache.first) {\r\n                  cache = {\r\n                      ...cache,\r\n                      first: false,\r\n                      state: {\r\n                          ...cache.state,\r\n                          disjunctiveFacets: state.disjunctiveFacets,\r\n                          disjunctiveFacetsRefinements: state.disjunctiveFacetsRefinements\r\n                      }\r\n                  }\r\n              }\r\n  \r\n              // Fix on back reset hits\r\n              if (state.disjunctiveFacets.length === 0) {\r\n                  state = {\r\n                      ...state,\r\n                      disjunctiveFacets: cache.state.disjunctiveFacets,\r\n                      disjunctiveFacetsRefinements: cache.state.disjunctiveFacetsRefinements\r\n                  }\r\n              } \r\n  \r\n              return cache && isEqual(getStateWithoutPage(cache.state), getStateWithoutPage(state)) ? cache.hits : null;\r\n  \r\n          },\r\n  \r\n          write: ({ state, hits }) => {\r\n  \r\n              cache = {\r\n                  first: (state.disjunctiveFacets.length === 0),\r\n                  state: state,\r\n                  hits: hits\r\n              } \r\n  \r\n          },\r\n      };\r\n  })();\r\n  \r\n  export default infiniteHitsCache;\r\n```\r\n\r\n",
+    "created_at": "2024-10-14T12:24:29Z",
+    "html_url": "https://github.com/algolia/instantsearch/issues/6353#issuecomment-2411082473",
+    "id": 2411082473,
+    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/6353",
+    "node_id": "IC_kwDOAlnbOs6PtjLp",
+    "performed_via_github_app": null,
+    "pin": null,
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/2411082473/reactions"
+    },
+    "updated_at": "2024-10-14T12:25:51Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/2411082473",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/1888761?v=4",
+      "events_url": "https://api.github.com/users/timhonders/events{/privacy}",
+      "followers_url": "https://api.github.com/users/timhonders/followers",
+      "following_url": "https://api.github.com/users/timhonders/following{/other_user}",
+      "gists_url": "https://api.github.com/users/timhonders/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/timhonders",
+      "id": 1888761,
+      "login": "timhonders",
+      "node_id": "MDQ6VXNlcjE4ODg3NjE=",
+      "organizations_url": "https://api.github.com/users/timhonders/orgs",
+      "received_events_url": "https://api.github.com/users/timhonders/received_events",
+      "repos_url": "https://api.github.com/users/timhonders/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/timhonders/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/timhonders/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/timhonders",
+      "user_view_type": "public"
+    }
+  }
+]
