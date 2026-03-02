@@ -6,7 +6,7 @@ import {
 } from '../../lib/config.js';
 import { getComments } from '../../lib/github.js';
 
-const CONCURRENCY = 1;
+const CONCURRENCY = 10;
 
 const allIssues = await glob('./**/*.json', { cwd: dataInputIssuesPath });
 const maxIssueCount = allIssues.length;
