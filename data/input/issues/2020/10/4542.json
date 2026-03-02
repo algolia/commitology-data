@@ -1,0 +1,103 @@
+{
+  "number": 4542,
+  "html_url": "https://github.com/algolia/instantsearch/issues/4542",
+  "title": "Insights middleware sometimes fails to initialize insightsClient before the first event.",
+  "body": "## 🐛 Bug description\r\n\r\nInsights middleware sometimes fails to initialize insightsClient before the first event.\r\n\r\n[Here](https://github.com/algolia/instantsearch.js/blob/master/src/middlewares/createInsightsMiddleware.ts#L41:L41) insights middleware checks if `insightsClient` is initialized (asynchronously). If not, it initializes it. However this asynchronous task may not end before the first event. Then the insights middleware tries to send the first event with `insightsClient`, `insightsClient` will throw an error:\r\n\r\n![image](https://user-images.githubusercontent.com/499898/96729283-46a29300-13b5-11eb-955f-efc52b6ad4c5.png)\r\n\r\n## How to solve\r\n\r\nThe most straightforward solution to this problem is to initialize the client without checking if it's already initialized. Then everything will be synchronous. It leaves us a concern which I had in the first place.\r\n> What if `insightsClient` is already initialized?\r\n\r\nNaively thinking, it should be fine. According to our documentation, users are not supposed to initialize it on their own (We don't even mention `init`.)\r\nHowever what if they somehow initialize it? It's actually okay. It will re-assign some variables. No problem.\r\n\r\nWe could update `search-insights` to accept an option like `ignoreIfAlreadyInitialized`, but it doesn't seem necessary.\r\n\r\nSo, my suggestion would be to replace \r\n\r\n```js\r\n    insightsClient('_get', '_hasCredentials', (hasCredentials: boolean) => {\r\n      if (!hasCredentials) {\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n      }\r\n    });\r\n```\r\n\r\nwith\r\n\r\n```js\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n```\r\n\r\nWhat do you think?",
+  "created_at": "2020-10-21T13:59:05Z",
+  "state": "open",
+  "comments": 4,
+  "reactions": {
+    "-1": 0,
+    "+1": 0,
+    "confused": 0,
+    "eyes": 0,
+    "heart": 0,
+    "hooray": 0,
+    "laugh": 0,
+    "rocket": 0,
+    "total_count": 0,
+    "url": "https://api.github.com/repos/algolia/instantsearch/issues/4542/reactions"
+  },
+  "labels": [
+    {
+      "color": "d93f0b",
+      "default": false,
+      "description": "",
+      "id": 238751632,
+      "name": "Type: Bug",
+      "node_id": "MDU6TGFiZWwyMzg3NTE2MzI=",
+      "url": "https://api.github.com/repos/algolia/instantsearch/labels/Type:%20Bug"
+    },
+    {
+      "color": "EED646",
+      "default": false,
+      "description": "Issues in instantsearch.js",
+      "id": 4913578451,
+      "name": "Library: InstantSearch.js",
+      "node_id": "LA_kwDOAlnbOs8AAAABJN9B0w",
+      "url": "https://api.github.com/repos/algolia/instantsearch/labels/Library:%20InstantSearch.js"
+    },
+    {
+      "color": "D4C5F9",
+      "default": false,
+      "description": "Analytics, events, and the Insights API",
+      "id": 4917162301,
+      "name": "Feature: Insights",
+      "node_id": "LA_kwDOAlnbOs8AAAABJRXxPQ",
+      "url": "https://api.github.com/repos/algolia/instantsearch/labels/Feature:%20Insights"
+    }
+  ],
+  "user": {
+    "html_url": "https://github.com/eunjae-lee",
+    "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+    "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+    "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+    "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+    "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+    "gravatar_id": "",
+    "id": 499898,
+    "login": "eunjae-lee",
+    "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+    "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+    "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+    "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+    "site_admin": false,
+    "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+    "type": "User",
+    "url": "https://api.github.com/users/eunjae-lee",
+    "user_view_type": "public"
+  },
+  "active_lock_reason": null,
+  "assignee": null,
+  "assignees": [],
+  "author_association": "CONTRIBUTOR",
+  "closed_at": null,
+  "closed_by": null,
+  "comments_url": "https://api.github.com/repos/algolia/instantsearch/issues/4542/comments",
+  "events_url": "https://api.github.com/repos/algolia/instantsearch/issues/4542/events",
+  "id": 726520848,
+  "issue_dependencies_summary": {
+    "blocked_by": 0,
+    "blocking": 0,
+    "total_blocked_by": 0,
+    "total_blocking": 0
+  },
+  "labels_url": "https://api.github.com/repos/algolia/instantsearch/issues/4542/labels{/name}",
+  "locked": false,
+  "milestone": null,
+  "node_id": "MDU6SXNzdWU3MjY1MjA4NDg=",
+  "performed_via_github_app": null,
+  "pinned_comment": null,
+  "repository_url": "https://api.github.com/repos/algolia/instantsearch",
+  "state_reason": null,
+  "sub_issues_summary": {
+    "completed": 0,
+    "percent_completed": 0,
+    "total": 0
+  },
+  "timeline_url": "https://api.github.com/repos/algolia/instantsearch/issues/4542/timeline",
+  "type": null,
+  "updated_at": "2023-10-18T09:53:20Z",
+  "url": "https://api.github.com/repos/algolia/instantsearch/issues/4542"
+}
