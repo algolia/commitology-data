@@ -1,0 +1,141 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5014#discussion_r808921154"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5014"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808921154"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you think we need a test for ordering like this? @Haroenv ",
+    "commit_id": "1c4a02c713ef2eea6c2d7fd952f3723be0c7f2e9",
+    "created_at": "2022-02-17T10:54:22Z",
+    "diff_hunk": "@@ -781,6 +781,55 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/hits/js/#co\n           });\n         });\n \n+        it('sends view event after hits are rendered', () => {\n+          const renderFn = jest.fn();\n+          const makeWidget = connectHits(renderFn);\n+          const widget = makeWidget({});\n+\n+          const helper = algoliasearchHelper(createSearchClient(), '', {});\n+          helper.search = jest.fn();\n+\n+          const initOptions = createInitOptions({\n+            helper,\n+            state: helper.state,\n+          });\n+          const instantSearchInstance = initOptions.instantSearchInstance;\n+          instantSearchInstance.sendEventToInsights = jest.fn();\n+          widget.init!(initOptions);\n+\n+          const hits = [\n+            {\n+              __position: 0,\n+              __queryID: 'test-query-id',\n+              fake: 'data',\n+              objectID: '1',\n+            },\n+          ];\n+\n+          const results = new SearchResults(helper.state, [\n+            createSingleSearchResponse({ hits }),\n+          ]);\n+\n+          widget.render!(\n+            createRenderOptions({\n+              results,\n+              state: helper.state,\n+              helper,\n+            })\n+          );\n+\n+          const lastInvocationCallOrder = (mockFn: jest.Mock): number =>\n+            mockFn.mock.invocationCallOrder[\n+              mockFn.mock.invocationCallOrder.length - 1\n+            ];\n+\n+          expect(lastInvocationCallOrder(renderFn)).toBeLessThan(\n+            lastInvocationCallOrder(\n+              instantSearchInstance.sendEventToInsights as jest.Mock\n+            )\n+          );",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5014#discussion_r808921154",
+    "id": 808921154,
+    "line": 830,
+    "node_id": "PRRC_kwDOAlnbOs4wNyhC",
+    "original_commit_id": "3c3f2706282d25c14ecaf0b53fe853f0b27e8847",
+    "original_line": 830,
+    "original_position": 50,
+    "original_start_line": 826,
+    "path": "src/connectors/hits/__tests__/connectHits-test.ts",
+    "position": 50,
+    "pull_request_review_id": 885780367,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5014",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808921154/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 826,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2022-02-17T10:54:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808921154",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5014#discussion_r808981855"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5014"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808981855"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I wonder if there's a way to write this kind of test generically to make sure view event is *always* after render. What do you think? ",
+    "commit_id": "1c4a02c713ef2eea6c2d7fd952f3723be0c7f2e9",
+    "created_at": "2022-02-17T12:10:38Z",
+    "diff_hunk": "@@ -781,6 +781,55 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/hits/js/#co\n           });\n         });\n \n+        it('sends view event after hits are rendered', () => {\n+          const renderFn = jest.fn();\n+          const makeWidget = connectHits(renderFn);\n+          const widget = makeWidget({});\n+\n+          const helper = algoliasearchHelper(createSearchClient(), '', {});\n+          helper.search = jest.fn();\n+\n+          const initOptions = createInitOptions({\n+            helper,\n+            state: helper.state,\n+          });\n+          const instantSearchInstance = initOptions.instantSearchInstance;\n+          instantSearchInstance.sendEventToInsights = jest.fn();\n+          widget.init!(initOptions);\n+\n+          const hits = [\n+            {\n+              __position: 0,\n+              __queryID: 'test-query-id',\n+              fake: 'data',\n+              objectID: '1',\n+            },\n+          ];\n+\n+          const results = new SearchResults(helper.state, [\n+            createSingleSearchResponse({ hits }),\n+          ]);\n+\n+          widget.render!(\n+            createRenderOptions({\n+              results,\n+              state: helper.state,\n+              helper,\n+            })\n+          );\n+\n+          const lastInvocationCallOrder = (mockFn: jest.Mock): number =>\n+            mockFn.mock.invocationCallOrder[\n+              mockFn.mock.invocationCallOrder.length - 1\n+            ];\n+\n+          expect(lastInvocationCallOrder(renderFn)).toBeLessThan(\n+            lastInvocationCallOrder(\n+              instantSearchInstance.sendEventToInsights as jest.Mock\n+            )\n+          );",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5014#discussion_r808981855",
+    "id": 808981855,
+    "in_reply_to_id": 808921154,
+    "line": 830,
+    "node_id": "PRRC_kwDOAlnbOs4wOBVf",
+    "original_commit_id": "3c3f2706282d25c14ecaf0b53fe853f0b27e8847",
+    "original_line": 830,
+    "original_position": 50,
+    "original_start_line": 826,
+    "path": "src/connectors/hits/__tests__/connectHits-test.ts",
+    "position": 50,
+    "pull_request_review_id": 885866005,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5014",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808981855/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 826,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2022-02-17T12:12:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/808981855",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

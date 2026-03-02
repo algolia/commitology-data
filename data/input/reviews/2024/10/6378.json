@@ -1,0 +1,419 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789967917"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789967917"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "does this imply that string templates aren't supported anymore? could we check if it's a string and just render as a string instead of requiring a function?",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T10:38:12Z",
+    "diff_hunk": "@@ -418,7 +418,7 @@ const testSetups: TestSetupsMap<TestSuites> = {\n           container: document.body.appendChild(document.createElement('div')),\n           ...widgetParams,\n           templates: {\n-            labelText: label,\n+            labelText: label ? () => label : undefined,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789967917",
+    "id": 1789967917,
+    "line": 421,
+    "node_id": "PRRC_kwDOAlnbOs5qsL4t",
+    "original_commit_id": "a04fa24ca55d5307eb11073f42302ceee086b6a6",
+    "original_line": 421,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/__tests__/common-widgets.test.tsx",
+    "position": 5,
+    "pull_request_review_id": 2351560542,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789967917/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-07T10:38:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789967917",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789976917"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789976917"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "here we could just return template if it's a string (instead of calling it), what do you think? ",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T10:44:48Z",
+    "diff_hunk": "@@ -8,98 +7,31 @@ import {\n   Snippet,\n } from '../../helpers/components';\n \n-import type { Templates, HoganHelpers, TemplateParams } from '../../types';\n-import type {\n-  BindEventForHits,\n-  SendEventForHits,\n-} from '../utils/createSendEventForHits';\n-import type { HoganOptions, Template } from 'hogan.js';\n-\n-type TransformedHoganHelpers = {\n-  [helper: string]: () => (text: string) => string;\n-};\n-\n-// We add all our template helper methods to the template as lambdas. Note\n-// that lambdas in Mustache are supposed to accept a second argument of\n-// `render` to get the rendered value, not the literal `{{value}}`. But\n-// this is currently broken (see https://github.com/twitter/hogan.js/issues/222).\n-function transformHelpersToHogan(\n-  helpers: HoganHelpers = {},\n-  compileOptions?: HoganOptions,\n-  data?: Record<string, any>\n-) {\n-  return Object.keys(helpers).reduce<TransformedHoganHelpers>(\n-    (acc, helperKey) => ({\n-      ...acc,\n-      [helperKey]() {\n-        return (text) => {\n-          const render = (value: string) =>\n-            (hogan.compile(value, compileOptions) as Template).render(this);\n-\n-          return helpers[helperKey].call(data, text, render);\n-        };\n-      },\n-    }),\n-    {}\n-  );\n-}\n+import type { Templates } from '../../types';\n+import type { SendEventForHits } from '../utils/createSendEventForHits';\n \n export function renderTemplate({\n   templates,\n   templateKey,\n-  compileOptions,\n-  helpers,\n   data,\n-  bindEvent,\n   sendEvent,\n }: {\n   templates: Templates;\n   templateKey: string;\n-  compileOptions?: HoganOptions;\n-  helpers?: HoganHelpers;\n   data?: Record<string, any>;\n-  bindEvent?: BindEventForHits;\n   sendEvent?: SendEventForHits;\n }) {\n   const template = templates[templateKey];\n \n-  if (typeof template !== 'string' && typeof template !== 'function') {\n+  if (typeof template !== 'function') {\n     throw new Error(\n-      `Template must be 'string' or 'function', was '${typeof template}' (key: ${templateKey})`\n+      `Template must be 'function', was '${typeof template}' (key: ${templateKey})`\n     );\n   }\n \n-  if (typeof template === 'function') {\n-    // @MAJOR no longer pass bindEvent when string templates are removed\n-    const params = (bindEvent || {}) as TemplateParams;\n-\n-    params.html = html;\n-    (params as any).sendEvent = sendEvent;\n-    params.components = {\n-      Highlight,\n-      ReverseHighlight,\n-      Snippet,\n-      ReverseSnippet,\n-    };\n-\n-    // @MAJOR remove the `as any` when string templates are removed\n-    // needed because not every template receives sendEvent\n-    return template(data, params as any);\n-  }\n-\n-  const transformedHelpers = transformHelpersToHogan(\n-    helpers,\n-    compileOptions,\n-    data\n-  );\n-\n-  return (hogan.compile(template, compileOptions) as Template)\n-    .render({\n-      ...data,\n-      helpers: transformedHelpers,\n-    })\n-    .replace(/[ \\n\\r\\t\\f\\xA0]+/g, (spaces) =>\n-      spaces.replace(/(^|\\xA0+)[^\\xA0]+/g, '$1 ')\n-    )\n-    .trim();\n+  return template(data, {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789976917",
+    "id": 1789976917,
+    "line": 41,
+    "node_id": "PRRC_kwDOAlnbOs5qsOFV",
+    "original_commit_id": "a04fa24ca55d5307eb11073f42302ceee086b6a6",
+    "original_line": 32,
+    "original_position": 107,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/templating/renderTemplate.ts",
+    "position": 116,
+    "pull_request_review_id": 2351573619,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789976917/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-07T10:44:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789976917",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789997145"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789997145"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "That's what I thought of doing at first until I saw we print a warning when string templates are used, saying these will be deprecated : https://github.com/algolia/instantsearch/blob/b24c858b66de50d8dde6c85ce7ffc90ab0f712e8/packages/instantsearch.js/src/components/Template/Template.tsx#L77C1-L91C6\r\n\r\nAnother upside of keeping function templates only is they would easily see it break if they keep hogan or a HTML string when upgrading, whereas if we still support strings it could easily be missed (`<p>Something</p>` rendered as escaped HTML for example)",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T10:59:13Z",
+    "diff_hunk": "@@ -418,7 +418,7 @@ const testSetups: TestSetupsMap<TestSuites> = {\n           container: document.body.appendChild(document.createElement('div')),\n           ...widgetParams,\n           templates: {\n-            labelText: label,\n+            labelText: label ? () => label : undefined,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1789997145",
+    "id": 1789997145,
+    "in_reply_to_id": 1789967917,
+    "line": 421,
+    "node_id": "PRRC_kwDOAlnbOs5qsTBZ",
+    "original_commit_id": "a04fa24ca55d5307eb11073f42302ceee086b6a6",
+    "original_line": 421,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/__tests__/common-widgets.test.tsx",
+    "position": 5,
+    "pull_request_review_id": 2351603274,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789997145/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-07T10:59:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1789997145",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790051837"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790051837"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The warning was mainly to deprecate hogan strings as we couldn't tell them apart from simple strings. I see how it's simpler for us, but the migration for simple strings (most of the files changed in this pr) shows that it might be annoying for customers to do. What do you think? ",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T11:34:05Z",
+    "diff_hunk": "@@ -418,7 +418,7 @@ const testSetups: TestSetupsMap<TestSuites> = {\n           container: document.body.appendChild(document.createElement('div')),\n           ...widgetParams,\n           templates: {\n-            labelText: label,\n+            labelText: label ? () => label : undefined,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790051837",
+    "id": 1790051837,
+    "in_reply_to_id": 1789967917,
+    "line": 421,
+    "node_id": "PRRC_kwDOAlnbOs5qsgX9",
+    "original_commit_id": "a04fa24ca55d5307eb11073f42302ceee086b6a6",
+    "original_line": 421,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/__tests__/common-widgets.test.tsx",
+    "position": 5,
+    "pull_request_review_id": 2351688866,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790051837/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-07T11:34:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790051837",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790386848"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790386848"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "so glad this is gone haha",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T14:55:23Z",
+    "diff_hunk": "@@ -7,99 +6,41 @@ import {\n   ReverseSnippet,\n   Snippet,\n } from '../../helpers/components';\n+import { warning } from '../utils';\n \n-import type { Templates, HoganHelpers, TemplateParams } from '../../types';\n-import type {\n-  BindEventForHits,\n-  SendEventForHits,\n-} from '../utils/createSendEventForHits';\n-import type { HoganOptions, Template } from 'hogan.js';\n-\n-type TransformedHoganHelpers = {\n-  [helper: string]: () => (text: string) => string;\n-};\n-\n-// We add all our template helper methods to the template as lambdas. Note\n-// that lambdas in Mustache are supposed to accept a second argument of\n-// `render` to get the rendered value, not the literal `{{value}}`. But\n-// this is currently broken (see https://github.com/twitter/hogan.js/issues/222).\n-function transformHelpersToHogan(\n-  helpers: HoganHelpers = {},\n-  compileOptions?: HoganOptions,\n-  data?: Record<string, any>\n-) {\n-  return Object.keys(helpers).reduce<TransformedHoganHelpers>(\n-    (acc, helperKey) => ({\n-      ...acc,\n-      [helperKey]() {\n-        return (text) => {\n-          const render = (value: string) =>\n-            (hogan.compile(value, compileOptions) as Template).render(this);\n-\n-          return helpers[helperKey].call(data, text, render);\n-        };\n-      },\n-    }),\n-    {}\n-  );\n-}\n+import type { Templates } from '../../types';\n+import type { SendEventForHits } from '../utils/createSendEventForHits';\n \n export function renderTemplate({\n   templates,\n   templateKey,\n-  compileOptions,\n-  helpers,\n   data,\n-  bindEvent,\n   sendEvent,\n }: {\n   templates: Templates;\n   templateKey: string;\n-  compileOptions?: HoganOptions;\n-  helpers?: HoganHelpers;\n   data?: Record<string, any>;\n-  bindEvent?: BindEventForHits;\n   sendEvent?: SendEventForHits;\n }) {\n   const template = templates[templateKey];\n \n-  if (typeof template !== 'string' && typeof template !== 'function') {\n-    throw new Error(\n-      `Template must be 'string' or 'function', was '${typeof template}' (key: ${templateKey})`\n+  if (typeof template === 'string') {\n+    warning(\n+      template.indexOf('<') === -1,\n+      `Template '${templateKey}' is a string, it will be rendered as text, not as html`\n     );\n+    return template;\n   }\n \n-  if (typeof template === 'function') {\n-    // @MAJOR no longer pass bindEvent when string templates are removed\n-    const params = (bindEvent || {}) as TemplateParams;\n-\n-    params.html = html;\n-    (params as any).sendEvent = sendEvent;\n-    params.components = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790386848",
+    "id": 1790386848,
+    "line": 78,
+    "node_id": "PRRC_kwDOAlnbOs5qtyKg",
+    "original_commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "original_line": 78,
+    "original_position": 85,
+    "original_start_line": 73,
+    "path": "packages/instantsearch.js/src/lib/templating/renderTemplate.ts",
+    "position": 85,
+    "pull_request_review_id": 2352202893,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790386848/reactions"
+    },
+    "side": "LEFT",
+    "start_line": 73,
+    "start_side": "LEFT",
+    "subject_type": "line",
+    "updated_at": "2024-10-07T14:55:23Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790386848",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790850357"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6378"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790850357"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "me too !!!",
+    "commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "created_at": "2024-10-07T20:42:14Z",
+    "diff_hunk": "@@ -7,99 +6,41 @@ import {\n   ReverseSnippet,\n   Snippet,\n } from '../../helpers/components';\n+import { warning } from '../utils';\n \n-import type { Templates, HoganHelpers, TemplateParams } from '../../types';\n-import type {\n-  BindEventForHits,\n-  SendEventForHits,\n-} from '../utils/createSendEventForHits';\n-import type { HoganOptions, Template } from 'hogan.js';\n-\n-type TransformedHoganHelpers = {\n-  [helper: string]: () => (text: string) => string;\n-};\n-\n-// We add all our template helper methods to the template as lambdas. Note\n-// that lambdas in Mustache are supposed to accept a second argument of\n-// `render` to get the rendered value, not the literal `{{value}}`. But\n-// this is currently broken (see https://github.com/twitter/hogan.js/issues/222).\n-function transformHelpersToHogan(\n-  helpers: HoganHelpers = {},\n-  compileOptions?: HoganOptions,\n-  data?: Record<string, any>\n-) {\n-  return Object.keys(helpers).reduce<TransformedHoganHelpers>(\n-    (acc, helperKey) => ({\n-      ...acc,\n-      [helperKey]() {\n-        return (text) => {\n-          const render = (value: string) =>\n-            (hogan.compile(value, compileOptions) as Template).render(this);\n-\n-          return helpers[helperKey].call(data, text, render);\n-        };\n-      },\n-    }),\n-    {}\n-  );\n-}\n+import type { Templates } from '../../types';\n+import type { SendEventForHits } from '../utils/createSendEventForHits';\n \n export function renderTemplate({\n   templates,\n   templateKey,\n-  compileOptions,\n-  helpers,\n   data,\n-  bindEvent,\n   sendEvent,\n }: {\n   templates: Templates;\n   templateKey: string;\n-  compileOptions?: HoganOptions;\n-  helpers?: HoganHelpers;\n   data?: Record<string, any>;\n-  bindEvent?: BindEventForHits;\n   sendEvent?: SendEventForHits;\n }) {\n   const template = templates[templateKey];\n \n-  if (typeof template !== 'string' && typeof template !== 'function') {\n-    throw new Error(\n-      `Template must be 'string' or 'function', was '${typeof template}' (key: ${templateKey})`\n+  if (typeof template === 'string') {\n+    warning(\n+      template.indexOf('<') === -1,\n+      `Template '${templateKey}' is a string, it will be rendered as text, not as html`\n     );\n+    return template;\n   }\n \n-  if (typeof template === 'function') {\n-    // @MAJOR no longer pass bindEvent when string templates are removed\n-    const params = (bindEvent || {}) as TemplateParams;\n-\n-    params.html = html;\n-    (params as any).sendEvent = sendEvent;\n-    params.components = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6378#discussion_r1790850357",
+    "id": 1790850357,
+    "in_reply_to_id": 1790386848,
+    "line": 78,
+    "node_id": "PRRC_kwDOAlnbOs5qvjU1",
+    "original_commit_id": "9ffef06258ece146c10cff20531122bef9b5b6f8",
+    "original_line": 78,
+    "original_position": 85,
+    "original_start_line": 73,
+    "path": "packages/instantsearch.js/src/lib/templating/renderTemplate.ts",
+    "position": 85,
+    "pull_request_review_id": 2352897559,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6378",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 2,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790850357/reactions"
+    },
+    "side": "LEFT",
+    "start_line": 73,
+    "start_side": "LEFT",
+    "subject_type": "line",
+    "updated_at": "2024-10-07T20:42:15Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1790850357",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29529?v=4",
+      "events_url": "https://api.github.com/users/redox/events{/privacy}",
+      "followers_url": "https://api.github.com/users/redox/followers",
+      "following_url": "https://api.github.com/users/redox/following{/other_user}",
+      "gists_url": "https://api.github.com/users/redox/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/redox",
+      "id": 29529,
+      "login": "redox",
+      "node_id": "MDQ6VXNlcjI5NTI5",
+      "organizations_url": "https://api.github.com/users/redox/orgs",
+      "received_events_url": "https://api.github.com/users/redox/received_events",
+      "repos_url": "https://api.github.com/users/redox/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/redox/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/redox/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/redox",
+      "user_view_type": "public"
+    }
+  }
+]

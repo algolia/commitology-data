@@ -1,0 +1,1186 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93047976"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93047976"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "To use the Highlight widget when displaying the search for values results, I need to cheat a little to mimic the regular hits structure. Do you think it's fine to do that here, or should we:\r\n- have the same structure between hits and facetValues in the helper regarding the highlighting\r\n- have several implementations of the higlight in react-instantsearch",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-19T15:04:44Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93047976",
+    "id": 93047976,
+    "line": 103,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMDQ3OTc2",
+    "original_commit_id": "9f6fe9f8696ddaf2df371bc40994d4d8ff0631cd",
+    "original_line": null,
+    "original_position": 20,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 62,
+    "pull_request_review_id": 13568983,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93047976/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93047976",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93450588"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93450588"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Should this be a translation?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T14:50:03Z",
+    "diff_hunk": "@@ -1,49 +1,94 @@\n import React, {PropTypes, Component} from 'react';\n-import {pick} from 'lodash';\n+import {pick, orderBy} from 'lodash';\n import translatable from '../core/translatable';\n import List from './List';\n import classNames from './classNames.js';\n-\n+import Highlight from '../widgets/Highlight';\n+import SearchBox from '../components/SearchBox';\n const cx = classNames('RefinementList');\n \n class RefinementList extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {query: ''};\n+  }\n+\n   static propTypes = {\n     translate: PropTypes.func.isRequired,\n     refine: PropTypes.func.isRequired,\n+    searchForFacetValues: PropTypes.func.isRequired,\n     createURL: PropTypes.func.isRequired,\n     items: PropTypes.arrayOf(PropTypes.shape({\n       label: PropTypes.string.isRequired,\n       value: PropTypes.arrayOf(PropTypes.string).isRequired,\n       count: PropTypes.number.isRequired,\n       isRefined: PropTypes.bool.isRequired,\n     })),\n+    facetValues: PropTypes.arrayOf(PropTypes.shape({\n+      label: PropTypes.string.isRequired,\n+      value: PropTypes.arrayOf(PropTypes.string).isRequired,\n+      count: PropTypes.number.isRequired,\n+      isRefined: PropTypes.bool.isRequired,\n+    })),\n     showMore: PropTypes.bool,\n+    isSearcheable: PropTypes.bool,\n     limitMin: PropTypes.number,\n     limitMax: PropTypes.number,\n   };\n \n-  renderItem = item =>\n+  selectItem = item => {\n+    this.props.refine(item.value);\n+    if (this.state.query !== '') {\n+      this.setState({query: ''});\n+    }\n+  };\n+\n+  renderItem = item => {\n+    const label = this.state.query\n+      ? <Highlight attributeName=\"label\" hit={item}/>\n+      : item.label;\n+\n+    return (\n       <label>\n         <input\n           {...cx('itemCheckbox', item.isRefined && 'itemCheckboxSelected')}\n           type=\"checkbox\"\n           checked={item.isRefined}\n-          onChange={() => this.props.refine(item.value)}\n+          onChange={this.selectItem.bind(this, item)}\n         />\n         <span {...cx('itemBox', 'itemBox', item.isRefined && 'itemBoxSelected')}></span>\n         <span {...cx('itemLabel', 'itemLabel', item.isRefined && 'itemLabelSelected')}>\n-          {item.label}\n+          {label}\n         </span>\n         {' '}\n         <span {...cx('itemCount', item.isRefined && 'itemCountSelected')}>\n           {item.count}\n         </span>\n-      </label>\n-    ;\n+      </label>);\n+  };\n \n   render() {\n-    return (\n-      <List\n+    let facets;\n+    const sortedFacets = orderBy(this.props.facetValues, ['isRefined', 'count', 'name'], ['desc', 'desc', 'asc']);\n+    if (this.state.query !== '') {\n+      if (!this.props.facetValues) {\n+        facets = null;\n+      } else {\n+        facets = sortedFacets.length > 0\n+          ? <List\n+            renderItem={this.renderItem}\n+            items={sortedFacets}\n+            cx={cx}\n+            {...pick(this.props, [\n+              'translate',\n+              'limitMin',\n+              'limitMax',\n+            ])}\n+          />\n+          : <div>No Results</div>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93450588",
+    "id": 93450588,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDUwNTg4",
+    "original_commit_id": "9f6fe9f8696ddaf2df371bc40994d4d8ff0631cd",
+    "original_line": null,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/RefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13978347,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93450588/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93450588",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93455616"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455616"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is the name where we need to iterate maybe, items are already facet values. We need to emphasis on the fact that those are search results of facet values right?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:14:37Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93455616",
+    "id": 93455616,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDU1NjE2",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13978347,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455616/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455616",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93455694"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455694"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Should we also forward the facet search query?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:14:54Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93455694",
+    "id": 93455694,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDU1Njk0",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13978347,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455694/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93455694",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93458989"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93458989"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ideally, it could be nice to be able to get search results for facet values from the searchResults object of the helper. Is that feasible? cc @bobylito ",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:30:17Z",
+    "diff_hunk": "@@ -143,9 +144,10 @@ export default function createConnector(connectorDesc) {\n         error,\n         widgets,\n         metadata,\n+        resultsFacetValues,\n       } = store.getState();\n       const searchState = {results, searching, error};\n-      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata);\n+      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata, resultsFacetValues);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93458989",
+    "id": 93458989,
+    "line": 150,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDU4OTg5",
+    "original_commit_id": "3200bbddeff44ed24a9c62f19d91cd780948c467",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 16,
+    "pull_request_review_id": 13986971,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93458989/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93458989",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461288"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461288"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes definitely. ",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:41:25Z",
+    "diff_hunk": "@@ -1,49 +1,94 @@\n import React, {PropTypes, Component} from 'react';\n-import {pick} from 'lodash';\n+import {pick, orderBy} from 'lodash';\n import translatable from '../core/translatable';\n import List from './List';\n import classNames from './classNames.js';\n-\n+import Highlight from '../widgets/Highlight';\n+import SearchBox from '../components/SearchBox';\n const cx = classNames('RefinementList');\n \n class RefinementList extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {query: ''};\n+  }\n+\n   static propTypes = {\n     translate: PropTypes.func.isRequired,\n     refine: PropTypes.func.isRequired,\n+    searchForFacetValues: PropTypes.func.isRequired,\n     createURL: PropTypes.func.isRequired,\n     items: PropTypes.arrayOf(PropTypes.shape({\n       label: PropTypes.string.isRequired,\n       value: PropTypes.arrayOf(PropTypes.string).isRequired,\n       count: PropTypes.number.isRequired,\n       isRefined: PropTypes.bool.isRequired,\n     })),\n+    facetValues: PropTypes.arrayOf(PropTypes.shape({\n+      label: PropTypes.string.isRequired,\n+      value: PropTypes.arrayOf(PropTypes.string).isRequired,\n+      count: PropTypes.number.isRequired,\n+      isRefined: PropTypes.bool.isRequired,\n+    })),\n     showMore: PropTypes.bool,\n+    isSearcheable: PropTypes.bool,\n     limitMin: PropTypes.number,\n     limitMax: PropTypes.number,\n   };\n \n-  renderItem = item =>\n+  selectItem = item => {\n+    this.props.refine(item.value);\n+    if (this.state.query !== '') {\n+      this.setState({query: ''});\n+    }\n+  };\n+\n+  renderItem = item => {\n+    const label = this.state.query\n+      ? <Highlight attributeName=\"label\" hit={item}/>\n+      : item.label;\n+\n+    return (\n       <label>\n         <input\n           {...cx('itemCheckbox', item.isRefined && 'itemCheckboxSelected')}\n           type=\"checkbox\"\n           checked={item.isRefined}\n-          onChange={() => this.props.refine(item.value)}\n+          onChange={this.selectItem.bind(this, item)}\n         />\n         <span {...cx('itemBox', 'itemBox', item.isRefined && 'itemBoxSelected')}></span>\n         <span {...cx('itemLabel', 'itemLabel', item.isRefined && 'itemLabelSelected')}>\n-          {item.label}\n+          {label}\n         </span>\n         {' '}\n         <span {...cx('itemCount', item.isRefined && 'itemCountSelected')}>\n           {item.count}\n         </span>\n-      </label>\n-    ;\n+      </label>);\n+  };\n \n   render() {\n-    return (\n-      <List\n+    let facets;\n+    const sortedFacets = orderBy(this.props.facetValues, ['isRefined', 'count', 'name'], ['desc', 'desc', 'asc']);\n+    if (this.state.query !== '') {\n+      if (!this.props.facetValues) {\n+        facets = null;\n+      } else {\n+        facets = sortedFacets.length > 0\n+          ? <List\n+            renderItem={this.renderItem}\n+            items={sortedFacets}\n+            cx={cx}\n+            {...pick(this.props, [\n+              'translate',\n+              'limitMin',\n+              'limitMax',\n+            ])}\n+          />\n+          : <div>No Results</div>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461288",
+    "id": 93461288,
+    "in_reply_to_id": 93450588,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDYxMjg4",
+    "original_commit_id": "9f6fe9f8696ddaf2df371bc40994d4d8ff0631cd",
+    "original_line": null,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/RefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13989358,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461288/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461288",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461450"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461450"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "maybe by just adding everytime the prefix `search`, WDYT? ",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:42:06Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461450",
+    "id": 93461450,
+    "in_reply_to_id": 93455616,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDYxNDUw",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13989518,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461450/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461450",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461675"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461675"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yep should work!",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:42:53Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461675",
+    "id": 93461675,
+    "in_reply_to_id": 93455616,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDYxNjc1",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13989729,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461675/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461675",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461891"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461891"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "foundFacetValues\r\nsearchedFacetValues\r\nfacetValuesFromSeach\r\nsearchFacetValues (can be tricky, could be a function!)\r\nitemsFromSearch",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:43:45Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93461891",
+    "id": 93461891,
+    "in_reply_to_id": 93455616,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDYxODkx",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13989949,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461891/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93461891",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93464996"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93464996"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I like searchedFacetValues but maybe itemsFromSearch is closer than what we already have. ",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T15:58:19Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93464996",
+    "id": 93464996,
+    "in_reply_to_id": 93455616,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDY0OTk2",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 13993188,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93464996/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93464996",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93473514"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93473514"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "To do that we need to add the SFFV query inside the search state. \r\nCurrently the SFFV query is handled directly inside the RefinementList widget by using state. It means that you can't share an url that will bring you to an InstantSearch page with a SFFV displayed. Do we want that?\r\n\r\nAlso adding it to the search state brings new questions. Basically I assumed we would want a structure like:\r\n```\r\n{\r\n   refinementList: {category: {items: ['Table'], query: 'Ch'}}\r\n}\r\n```\r\n\r\nBut then when forwarding the `searchState` to the user, how could he easily know that it's not necessary to update the whole `<InstantSearch/>` (that would trigger a new search for nothing)?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T16:39:17Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},\n+            count: v.count,\n+            isRefined: v.isRefined,\n+          }));\n+    }\n+\n     return {\n       items,\n       currentRefinement: getCurrentRefinement(props, searchState),\n+      facetValues,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93473514",
+    "id": 93473514,
+    "in_reply_to_id": 93455694,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDczNTE0",
+    "original_commit_id": "4d2d3da82e25d0bc0eca6e2fcb9111dc07313dd9",
+    "original_line": null,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 14001950,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93473514/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93473514",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93486230"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93486230"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Tricky one! I feel it would be better to have one that is distinct. But as you did it works and it is compatible with the current hits so it make more intuitive to use when building a custom version of this widget. Keep it like that it's great!",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-21T17:50:58Z",
+    "diff_hunk": "@@ -100,9 +100,23 @@ export default createConnector({\n         isRefined: v.isRefined,\n       }));\n \n+    let facetValues;\n+    if (facetValuesResults) {\n+      facetValues = facetValuesResults[attributeName]\n+        .slice(0, limit).map(\n+          v => ({\n+            label: v.value,\n+            value: getValue(v.value, props, searchState),\n+            _highlightResult: {label: {value: v.highlighted}},",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93486230",
+    "id": 93486230,
+    "in_reply_to_id": 93047976,
+    "line": 103,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDg2MjMw",
+    "original_commit_id": "9f6fe9f8696ddaf2df371bc40994d4d8ff0631cd",
+    "original_line": null,
+    "original_position": 20,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectRefinementList.js",
+    "position": 62,
+    "pull_request_review_id": 14015344,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93486230/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93486230",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93587212"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93587212"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "One thing we could do for that is merging the `searchResults` object with the searchForFacetValuesResults` as soon as we get one or the other. \r\n\r\nOne thing that bothers me though is that the `searchResults` object comes directly from the helper and in our documentation we are actually pointing to the helper documentation to explain its structure. Merging `searchResults` and `searchForFacetValuesResults` wouldn't be a little bit confusing? Can you see another ways?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-22T09:07:28Z",
+    "diff_hunk": "@@ -143,9 +144,10 @@ export default function createConnector(connectorDesc) {\n         error,\n         widgets,\n         metadata,\n+        resultsFacetValues,\n       } = store.getState();\n       const searchState = {results, searching, error};\n-      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata);\n+      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata, resultsFacetValues);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93587212",
+    "id": 93587212,
+    "in_reply_to_id": 93458989,
+    "line": 150,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNTg3MjEy",
+    "original_commit_id": "3200bbddeff44ed24a9c62f19d91cd780948c467",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 16,
+    "pull_request_review_id": 14117142,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93587212/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93587212",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93588838"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93588838"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@vvo I'm not sure to get the question :D you propose to merge the results of the search for facet values (`resultsFacetValues`) into the results object (`results`)?",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-22T09:20:35Z",
+    "diff_hunk": "@@ -143,9 +144,10 @@ export default function createConnector(connectorDesc) {\n         error,\n         widgets,\n         metadata,\n+        resultsFacetValues,\n       } = store.getState();\n       const searchState = {results, searching, error};\n-      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata);\n+      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata, resultsFacetValues);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93588838",
+    "id": 93588838,
+    "in_reply_to_id": 93458989,
+    "line": 150,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNTg4ODM4",
+    "original_commit_id": "3200bbddeff44ed24a9c62f19d91cd780948c467",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 16,
+    "pull_request_review_id": 14118859,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93588838/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93588838",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93614555"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614555"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The results of search for facet values is a \"search\" which means that the order defined is computed by the engine, as it would for a normal search. Therefore I wouldn't sort them again.",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-22T12:27:58Z",
+    "diff_hunk": "@@ -18,32 +25,44 @@ class RefinementList extends Component {\n       isRefined: PropTypes.bool.isRequired,\n     })),\n     showMore: PropTypes.bool,\n+    isSearchable: PropTypes.bool,\n+    isFromSearch: PropTypes.bool.isRequired,\n     limitMin: PropTypes.number,\n     limitMax: PropTypes.number,\n   };\n \n-  renderItem = item =>\n+  selectItem = item => {\n+    this.props.refine(item.value);\n+  };\n+\n+  renderItem = item => {\n+    const label = item._highlightResult\n+      ? <Highlight attributeName=\"label\" hit={item}/>\n+      : item.label;\n+\n+    return (\n       <label>\n         <input\n           {...cx('itemCheckbox', item.isRefined && 'itemCheckboxSelected')}\n           type=\"checkbox\"\n           checked={item.isRefined}\n-          onChange={() => this.props.refine(item.value)}\n+          onChange={() => this.selectItem(item)}\n         />\n         <span {...cx('itemBox', 'itemBox', item.isRefined && 'itemBoxSelected')}></span>\n         <span {...cx('itemLabel', 'itemLabel', item.isRefined && 'itemLabelSelected')}>\n-          {item.label}\n+          {label}\n         </span>\n         {' '}\n         <span {...cx('itemCount', item.isRefined && 'itemCountSelected')}>\n           {item.count}\n         </span>\n-      </label>\n-    ;\n+      </label>);\n+  };\n \n   render() {\n-    return (\n-      <List\n+    const sortedFacets = orderBy(this.props.items, ['isRefined', 'count', 'name'], ['desc', 'desc', 'asc']);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93614555",
+    "id": 93614555,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNjE0NTU1",
+    "original_commit_id": "e54349da4045f140821ffafbe0a1c9416a1d2ebd",
+    "original_line": null,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/RefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 14145721,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614555/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614555",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93614767"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614767"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Sorting here doesn't feel right. As discussed, there's no need to place the 'isRefined' items first in case of a SFFV. I'll remove that :)",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-22T12:29:46Z",
+    "diff_hunk": "@@ -18,32 +25,44 @@ class RefinementList extends Component {\n       isRefined: PropTypes.bool.isRequired,\n     })),\n     showMore: PropTypes.bool,\n+    isSearchable: PropTypes.bool,\n+    isFromSearch: PropTypes.bool.isRequired,\n     limitMin: PropTypes.number,\n     limitMax: PropTypes.number,\n   };\n \n-  renderItem = item =>\n+  selectItem = item => {\n+    this.props.refine(item.value);\n+  };\n+\n+  renderItem = item => {\n+    const label = item._highlightResult\n+      ? <Highlight attributeName=\"label\" hit={item}/>\n+      : item.label;\n+\n+    return (\n       <label>\n         <input\n           {...cx('itemCheckbox', item.isRefined && 'itemCheckboxSelected')}\n           type=\"checkbox\"\n           checked={item.isRefined}\n-          onChange={() => this.props.refine(item.value)}\n+          onChange={() => this.selectItem(item)}\n         />\n         <span {...cx('itemBox', 'itemBox', item.isRefined && 'itemBoxSelected')}></span>\n         <span {...cx('itemLabel', 'itemLabel', item.isRefined && 'itemLabelSelected')}>\n-          {item.label}\n+          {label}\n         </span>\n         {' '}\n         <span {...cx('itemCount', item.isRefined && 'itemCountSelected')}>\n           {item.count}\n         </span>\n-      </label>\n-    ;\n+      </label>);\n+  };\n \n   render() {\n-    return (\n-      <List\n+    const sortedFacets = orderBy(this.props.items, ['isRefined', 'count', 'name'], ['desc', 'desc', 'asc']);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93614767",
+    "id": 93614767,
+    "in_reply_to_id": 93614555,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNjE0NzY3",
+    "original_commit_id": "e54349da4045f140821ffafbe0a1c9416a1d2ebd",
+    "original_line": null,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/RefinementList.js",
+    "position": 1,
+    "pull_request_review_id": 14145929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614767/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93614767",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93634265"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1767"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93634265"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yep! The goal being to have a single object as for reading the search results, be it hits, facet values or facet values search results",
+    "commit_id": "ff3f6b560e99d702aadc6977ec7b1a9d27701710",
+    "created_at": "2016-12-22T14:42:54Z",
+    "diff_hunk": "@@ -143,9 +144,10 @@ export default function createConnector(connectorDesc) {\n         error,\n         widgets,\n         metadata,\n+        resultsFacetValues,\n       } = store.getState();\n       const searchState = {results, searching, error};\n-      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata);\n+      return connectorDesc.getProvidedProps.call(this, props, widgets, searchState, metadata, resultsFacetValues);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1767#discussion_r93634265",
+    "id": 93634265,
+    "in_reply_to_id": 93458989,
+    "line": 150,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNjM0MjY1",
+    "original_commit_id": "3200bbddeff44ed24a9c62f19d91cd780948c467",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 16,
+    "pull_request_review_id": 14165912,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1767",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93634265/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-01-04T10:36:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93634265",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  }
+]

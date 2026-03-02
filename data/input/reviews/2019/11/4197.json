@@ -1,0 +1,768 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r345856925"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/345856925"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "A better naming for this variable is welcome 😄 ",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-13T16:19:02Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r345856925",
+    "id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM0NTg1NjkyNQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 316372136,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/345856925/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/345856925",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167085"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167085"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    const innerChild = container.querySelector<HTMLElement>('h1');\r\n```",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-21T15:53:44Z",
+    "diff_hunk": "@@ -61,6 +61,62 @@ describe('withInsightsListener', () => {\n     });\n   });\n \n+  it('should capture clicks performed on inner elements whose parents have data-insights-method defined', () => {\n+    const payload = btoa(\n+      JSON.stringify({ objectIDs: ['1'], eventName: 'Product Clicked' })\n+    );\n+\n+    const Hits = () => (\n+      <div>\n+        <a\n+          data-insights-method=\"clickedObjectIDsAfterSearch\"\n+          data-insights-payload={payload}\n+        >\n+          <h1> Product 1 </h1>\n+        </a>\n+      </div>\n+    );\n+\n+    const insights = jest.fn();\n+\n+    const hits = [\n+      { objectID: '1' },\n+      { objectID: '2' },\n+      { objectID: '3' },\n+      { objectID: '4' },\n+      { objectID: '5' },\n+    ];\n+\n+    const results = {\n+      index: 'theIndex',\n+      queryID: 'theQueryID',\n+      hitsPerPage: 2,\n+      page: 1,\n+    };\n+\n+    const instantSearchInstance = {\n+      insightsClient: jest.fn(),\n+    };\n+    const HitsWithInsightsListener: any = withInsightsListener(Hits);\n+    const { container } = render(\n+      <HitsWithInsightsListener\n+        hits={hits}\n+        results={results}\n+        instantSearchInstance={instantSearchInstance}\n+        insights={insights}\n+      />\n+    );\n+    const innerChild = container.querySelector('h1') as HTMLElement;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167085",
+    "id": 349167085,
+    "line": 109,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM0OTE2NzA4NQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 109,
+    "original_position": 49,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/insights-listener-test.tsx",
+    "position": 49,
+    "pull_request_review_id": 320990723,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167085/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167085",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167757"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167757"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`insightsRoot` seems fine.",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-21T15:54:56Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167757",
+    "id": 349167757,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM0OTE2Nzc1Nw==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 320990723,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167757/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167757",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167924"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167924"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We could name this `findInsightsRoot`.",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-21T15:55:13Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349167924",
+    "id": 349167924,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM0OTE2NzkyNA==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 12,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 320990723,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167924/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349167924",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349169621"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349169621"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  let element = startElement;\r\n```",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-21T15:57:55Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r349169621",
+    "id": 349169621,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM0OTE2OTYyMQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 16,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 8,
+    "pull_request_review_id": 320990723,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349169621/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/349169621",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351236338"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351236338"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "what would `root` mean here? (in the context of a DOM element or an event)",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-27T11:31:49Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351236338",
+    "id": 351236338,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTIzNjMzOA==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 323606544,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351236338/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351236338",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351244040"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351244040"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What `findRealTarget` (current naming) is doing here is resolving the root HTML element where data attributes are defined. The root is where the data needs to be read from.\r\n\r\n`insightsRootTarget` if you want to keep the \"target\" name.",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-27T11:50:53Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351244040",
+    "id": 351244040,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTI0NDA0MA==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 323616548,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351244040/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351244040",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351390639"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351390639"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok I understand, but actually the code we're adding here is trying to find a DOM elements (not necessarily a root element) that carries the data-insights attribute, so I'm not sure how `root` adds meaning here.\r\nIs `insightsTarget` fine or would it be something missing? \r\n",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-27T16:36:04Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351390639",
+    "id": 351390639,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTM5MDYzOQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 323808552,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351390639/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351390639",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351394715"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351394715"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "They're both fine. Root just means it's the highest parent in this context.",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-11-27T16:44:01Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r351394715",
+    "id": 351394715,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTM5NDcxNQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 323813971,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351394715/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351394715",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r353312078"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312078"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "ok, renamed to `insightsTarget` in 115c932f",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-12-03T17:14:49Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (\n+  startElement: HTMLElement | null,\n+  endElement: HTMLElement | null\n+): HTMLElement | null => {\n+  let element: HTMLElement | null = startElement;\n+  while (element && !hasDataAttributes(element)) {\n+    if (element === endElement) {\n+      return null;\n+    }\n+    element = element.parentElement;\n+  }\n+  return element;\n+};\n+\n const insightsListener = (BaseComponent: any) => {\n   function WithInsightsListener(props: WithInsightsListenerProps) {\n     const handleClick = (event: MouseEvent): void => {\n-      if (!hasDataAttributes(event.target as HTMLElement)) {\n-        return;\n-      }\n-\n       if (!props.insights) {\n         throw new Error(\n           'The `insightsClient` option has not been provided to `instantsearch`.'\n         );\n       }\n-\n-      const { method, payload } = readDataAttributes(\n-        event.target as HTMLElement\n+      const realTarget = findRealTarget(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r353312078",
+    "id": 353312078,
+    "in_reply_to_id": 345856925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MzMxMjA3OA==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 34,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 326310641,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312078/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312078",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4197#discussion_r353312499"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4197"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312499"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "renamed to `findInsightsTarget` in 115c932f as agreed at https://github.com/algolia/instantsearch.js/pull/4197#discussion_r351394715",
+    "commit_id": "4039c3ef6082c84049b39e638661aa6017221db9",
+    "created_at": "2019-12-03T17:15:32Z",
+    "diff_hunk": "@@ -9,23 +9,37 @@ type WithInsightsListenerProps = {\n   insights: InsightsClientWrapper;\n };\n \n+const findRealTarget = (",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4197#discussion_r353312499",
+    "id": 353312499,
+    "in_reply_to_id": 349167924,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MzMxMjQ5OQ==",
+    "original_commit_id": "22ab3515cd9f89bdf11390799fc05a1b1495c363",
+    "original_line": 12,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 326311152,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4197",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312499/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-04T19:46:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353312499",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  }
+]

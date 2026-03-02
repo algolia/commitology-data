@@ -1,0 +1,976 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503941691"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503941691"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "these references are no longer stable now I think",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-10-13T13:16:36Z",
+    "diff_hunk": "@@ -178,107 +176,116 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        showPrevious = getShowPrevious(helper);\n-        showMore = getShowMore(helper);\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(\n-              cache.read({ state: helper.state }) || {}\n-            ),\n-            results: undefined,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              getFirstReceivedPage() === 0 || helper.state.page === undefined,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        // Reset cache and received pages if anything changes in the\n-        // search state, except for the page.\n-        //\n-        // We're doing this to \"reset\" the widget if a refinement or the\n-        // query changes between renders, but we want to keep it as is\n-        // if we only change pages.\n-        const {\n-          page = 0,\n-          facets,\n-          hierarchicalFacets,\n-          disjunctiveFacets,\n-          maxValuesPerFacet,\n-          ...currentState\n-        } = state;\n-\n-        currentState.facetsRefinements = filterEmptyRefinements(\n-          currentState.facetsRefinements\n-        );\n-        currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n-          currentState.hierarchicalFacetsRefinements\n-        );\n-        currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n-          currentState.disjunctiveFacetsRefinements\n-        );\n-        currentState.numericRefinements = filterEmptyRefinements(\n-          currentState.numericRefinements\n+      render(renderOptions) {\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n         );\n+      },\n \n-        if (!isEqual(currentState, prevState)) {\n-          cachedHits = cache.read({ state }) || {};\n-          prevState = currentState;\n-        }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          hits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n+      getWidgetRenderState({ results, helper, state }) {\n+        let hits;\n \n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n+        if (!results) {\n+          hits = extractHitsFromCachedHits(\n+            cache.read({ state: helper.state }) || {}\n+          );\n+        } else {\n+          // Reset cache and received pages if anything changes in the\n+          // search state, except for the page.\n+          //\n+          // We're doing this to \"reset\" the widget if a refinement or the\n+          // query changes between renders, but we want to keep it as is\n+          // if we only change pages.\n+          const {\n+            page = 0,\n+            facets,\n+            hierarchicalFacets,\n+            disjunctiveFacets,\n+            maxValuesPerFacet,\n+            ...currentState\n+          } = state;\n+\n+          currentState.facetsRefinements = filterEmptyRefinements(\n+            currentState.facetsRefinements\n+          );\n+          currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n+            currentState.hierarchicalFacetsRefinements\n+          );\n+          currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n+            currentState.disjunctiveFacetsRefinements\n+          );\n+          currentState.numericRefinements = filterEmptyRefinements(\n+            currentState.numericRefinements\n+          );\n \n-        results.hits = addQueryID(results.hits, results.queryID);\n+          if (!isEqual(currentState, prevState)) {\n+            cachedHits = cache.read({ state }) || {};\n+            prevState = currentState;\n+          }\n \n-        results.hits = transformItems(results.hits);\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n \n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n \n-        if (cachedHits === undefined) {\n-          cachedHits = cache.read({ state }) || {};\n-        }\n+          results.hits = addQueryID(results.hits, results.queryID);\n \n-        if (cachedHits![page] === undefined) {\n-          cachedHits![page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n+          results.hits = transformItems(results.hits);\n \n-        const isFirstPage = getFirstReceivedPage() === 0;\n-        const isLastPage = results.nbPages <= results.page + 1;\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n \n-        renderFn(\n-          {\n-            hits: extractHitsFromCachedHits(cachedHits!),\n-            results,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          false\n-        );\n+          if (cachedHits === undefined) {\n+            cachedHits = cache.read({ state }) || {};\n+          }\n+\n+          if (cachedHits![page] === undefined) {\n+            cachedHits![page] = results.hits;\n+            cache.write({ state, hits: cachedHits });\n+          }\n+\n+          hits = extractHitsFromCachedHits(cachedHits!);\n+        }\n+\n+        return {\n+          hits,\n+          results,\n+          showPrevious: getShowPrevious(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503941691",
+    "id": 503941691,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUwMzk0MTY5MQ==",
+    "original_commit_id": "69161fece972535a64840d0ab99d9637dc93e4d6",
+    "original_line": 282,
+    "original_position": 199,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 507422533,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503941691/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503941691",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503949842"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503949842"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "what do you mean by no longer stable? could you explain more?",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-10-13T13:26:37Z",
+    "diff_hunk": "@@ -178,107 +176,116 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        showPrevious = getShowPrevious(helper);\n-        showMore = getShowMore(helper);\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(\n-              cache.read({ state: helper.state }) || {}\n-            ),\n-            results: undefined,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              getFirstReceivedPage() === 0 || helper.state.page === undefined,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        // Reset cache and received pages if anything changes in the\n-        // search state, except for the page.\n-        //\n-        // We're doing this to \"reset\" the widget if a refinement or the\n-        // query changes between renders, but we want to keep it as is\n-        // if we only change pages.\n-        const {\n-          page = 0,\n-          facets,\n-          hierarchicalFacets,\n-          disjunctiveFacets,\n-          maxValuesPerFacet,\n-          ...currentState\n-        } = state;\n-\n-        currentState.facetsRefinements = filterEmptyRefinements(\n-          currentState.facetsRefinements\n-        );\n-        currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n-          currentState.hierarchicalFacetsRefinements\n-        );\n-        currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n-          currentState.disjunctiveFacetsRefinements\n-        );\n-        currentState.numericRefinements = filterEmptyRefinements(\n-          currentState.numericRefinements\n+      render(renderOptions) {\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n         );\n+      },\n \n-        if (!isEqual(currentState, prevState)) {\n-          cachedHits = cache.read({ state }) || {};\n-          prevState = currentState;\n-        }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          hits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n+      getWidgetRenderState({ results, helper, state }) {\n+        let hits;\n \n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n+        if (!results) {\n+          hits = extractHitsFromCachedHits(\n+            cache.read({ state: helper.state }) || {}\n+          );\n+        } else {\n+          // Reset cache and received pages if anything changes in the\n+          // search state, except for the page.\n+          //\n+          // We're doing this to \"reset\" the widget if a refinement or the\n+          // query changes between renders, but we want to keep it as is\n+          // if we only change pages.\n+          const {\n+            page = 0,\n+            facets,\n+            hierarchicalFacets,\n+            disjunctiveFacets,\n+            maxValuesPerFacet,\n+            ...currentState\n+          } = state;\n+\n+          currentState.facetsRefinements = filterEmptyRefinements(\n+            currentState.facetsRefinements\n+          );\n+          currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n+            currentState.hierarchicalFacetsRefinements\n+          );\n+          currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n+            currentState.disjunctiveFacetsRefinements\n+          );\n+          currentState.numericRefinements = filterEmptyRefinements(\n+            currentState.numericRefinements\n+          );\n \n-        results.hits = addQueryID(results.hits, results.queryID);\n+          if (!isEqual(currentState, prevState)) {\n+            cachedHits = cache.read({ state }) || {};\n+            prevState = currentState;\n+          }\n \n-        results.hits = transformItems(results.hits);\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n \n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n \n-        if (cachedHits === undefined) {\n-          cachedHits = cache.read({ state }) || {};\n-        }\n+          results.hits = addQueryID(results.hits, results.queryID);\n \n-        if (cachedHits![page] === undefined) {\n-          cachedHits![page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n+          results.hits = transformItems(results.hits);\n \n-        const isFirstPage = getFirstReceivedPage() === 0;\n-        const isLastPage = results.nbPages <= results.page + 1;\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n \n-        renderFn(\n-          {\n-            hits: extractHitsFromCachedHits(cachedHits!),\n-            results,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          false\n-        );\n+          if (cachedHits === undefined) {\n+            cachedHits = cache.read({ state }) || {};\n+          }\n+\n+          if (cachedHits![page] === undefined) {\n+            cachedHits![page] = results.hits;\n+            cache.write({ state, hits: cachedHits });\n+          }\n+\n+          hits = extractHitsFromCachedHits(cachedHits!);\n+        }\n+\n+        return {\n+          hits,\n+          results,\n+          showPrevious: getShowPrevious(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503949842",
+    "id": 503949842,
+    "in_reply_to_id": 503941691,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUwMzk0OTg0Mg==",
+    "original_commit_id": "69161fece972535a64840d0ab99d9637dc93e4d6",
+    "original_line": 282,
+    "original_position": 199,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 507432354,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503949842/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503949842",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503960033"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503960033"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if you do addEventListener on an early render, the function reference isn't the same as another one, meaning that removeEventListener wouldn't work I think (although I always get confused about this)",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-10-13T13:39:51Z",
+    "diff_hunk": "@@ -178,107 +176,116 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        showPrevious = getShowPrevious(helper);\n-        showMore = getShowMore(helper);\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(\n-              cache.read({ state: helper.state }) || {}\n-            ),\n-            results: undefined,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              getFirstReceivedPage() === 0 || helper.state.page === undefined,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        // Reset cache and received pages if anything changes in the\n-        // search state, except for the page.\n-        //\n-        // We're doing this to \"reset\" the widget if a refinement or the\n-        // query changes between renders, but we want to keep it as is\n-        // if we only change pages.\n-        const {\n-          page = 0,\n-          facets,\n-          hierarchicalFacets,\n-          disjunctiveFacets,\n-          maxValuesPerFacet,\n-          ...currentState\n-        } = state;\n-\n-        currentState.facetsRefinements = filterEmptyRefinements(\n-          currentState.facetsRefinements\n-        );\n-        currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n-          currentState.hierarchicalFacetsRefinements\n-        );\n-        currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n-          currentState.disjunctiveFacetsRefinements\n-        );\n-        currentState.numericRefinements = filterEmptyRefinements(\n-          currentState.numericRefinements\n+      render(renderOptions) {\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n         );\n+      },\n \n-        if (!isEqual(currentState, prevState)) {\n-          cachedHits = cache.read({ state }) || {};\n-          prevState = currentState;\n-        }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          hits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n+      getWidgetRenderState({ results, helper, state }) {\n+        let hits;\n \n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n+        if (!results) {\n+          hits = extractHitsFromCachedHits(\n+            cache.read({ state: helper.state }) || {}\n+          );\n+        } else {\n+          // Reset cache and received pages if anything changes in the\n+          // search state, except for the page.\n+          //\n+          // We're doing this to \"reset\" the widget if a refinement or the\n+          // query changes between renders, but we want to keep it as is\n+          // if we only change pages.\n+          const {\n+            page = 0,\n+            facets,\n+            hierarchicalFacets,\n+            disjunctiveFacets,\n+            maxValuesPerFacet,\n+            ...currentState\n+          } = state;\n+\n+          currentState.facetsRefinements = filterEmptyRefinements(\n+            currentState.facetsRefinements\n+          );\n+          currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n+            currentState.hierarchicalFacetsRefinements\n+          );\n+          currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n+            currentState.disjunctiveFacetsRefinements\n+          );\n+          currentState.numericRefinements = filterEmptyRefinements(\n+            currentState.numericRefinements\n+          );\n \n-        results.hits = addQueryID(results.hits, results.queryID);\n+          if (!isEqual(currentState, prevState)) {\n+            cachedHits = cache.read({ state }) || {};\n+            prevState = currentState;\n+          }\n \n-        results.hits = transformItems(results.hits);\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n \n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n \n-        if (cachedHits === undefined) {\n-          cachedHits = cache.read({ state }) || {};\n-        }\n+          results.hits = addQueryID(results.hits, results.queryID);\n \n-        if (cachedHits![page] === undefined) {\n-          cachedHits![page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n+          results.hits = transformItems(results.hits);\n \n-        const isFirstPage = getFirstReceivedPage() === 0;\n-        const isLastPage = results.nbPages <= results.page + 1;\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n \n-        renderFn(\n-          {\n-            hits: extractHitsFromCachedHits(cachedHits!),\n-            results,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          false\n-        );\n+          if (cachedHits === undefined) {\n+            cachedHits = cache.read({ state }) || {};\n+          }\n+\n+          if (cachedHits![page] === undefined) {\n+            cachedHits![page] = results.hits;\n+            cache.write({ state, hits: cachedHits });\n+          }\n+\n+          hits = extractHitsFromCachedHits(cachedHits!);\n+        }\n+\n+        return {\n+          hits,\n+          results,\n+          showPrevious: getShowPrevious(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r503960033",
+    "id": 503960033,
+    "in_reply_to_id": 503941691,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUwMzk2MDAzMw==",
+    "original_commit_id": "69161fece972535a64840d0ab99d9637dc93e4d6",
+    "original_line": 282,
+    "original_position": 199,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 507446398,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503960033/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/503960033",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r504048021"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/504048021"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Understood, that's very error prone. I updated the tests to check that we get the same function at the first and second renders.",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-10-13T15:29:13Z",
+    "diff_hunk": "@@ -178,107 +176,116 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        showPrevious = getShowPrevious(helper);\n-        showMore = getShowMore(helper);\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(\n-              cache.read({ state: helper.state }) || {}\n-            ),\n-            results: undefined,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              getFirstReceivedPage() === 0 || helper.state.page === undefined,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        // Reset cache and received pages if anything changes in the\n-        // search state, except for the page.\n-        //\n-        // We're doing this to \"reset\" the widget if a refinement or the\n-        // query changes between renders, but we want to keep it as is\n-        // if we only change pages.\n-        const {\n-          page = 0,\n-          facets,\n-          hierarchicalFacets,\n-          disjunctiveFacets,\n-          maxValuesPerFacet,\n-          ...currentState\n-        } = state;\n-\n-        currentState.facetsRefinements = filterEmptyRefinements(\n-          currentState.facetsRefinements\n-        );\n-        currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n-          currentState.hierarchicalFacetsRefinements\n-        );\n-        currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n-          currentState.disjunctiveFacetsRefinements\n-        );\n-        currentState.numericRefinements = filterEmptyRefinements(\n-          currentState.numericRefinements\n+      render(renderOptions) {\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n         );\n+      },\n \n-        if (!isEqual(currentState, prevState)) {\n-          cachedHits = cache.read({ state }) || {};\n-          prevState = currentState;\n-        }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          hits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n+      getWidgetRenderState({ results, helper, state }) {\n+        let hits;\n \n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n+        if (!results) {\n+          hits = extractHitsFromCachedHits(\n+            cache.read({ state: helper.state }) || {}\n+          );\n+        } else {\n+          // Reset cache and received pages if anything changes in the\n+          // search state, except for the page.\n+          //\n+          // We're doing this to \"reset\" the widget if a refinement or the\n+          // query changes between renders, but we want to keep it as is\n+          // if we only change pages.\n+          const {\n+            page = 0,\n+            facets,\n+            hierarchicalFacets,\n+            disjunctiveFacets,\n+            maxValuesPerFacet,\n+            ...currentState\n+          } = state;\n+\n+          currentState.facetsRefinements = filterEmptyRefinements(\n+            currentState.facetsRefinements\n+          );\n+          currentState.hierarchicalFacetsRefinements = filterEmptyRefinements(\n+            currentState.hierarchicalFacetsRefinements\n+          );\n+          currentState.disjunctiveFacetsRefinements = filterEmptyRefinements(\n+            currentState.disjunctiveFacetsRefinements\n+          );\n+          currentState.numericRefinements = filterEmptyRefinements(\n+            currentState.numericRefinements\n+          );\n \n-        results.hits = addQueryID(results.hits, results.queryID);\n+          if (!isEqual(currentState, prevState)) {\n+            cachedHits = cache.read({ state }) || {};\n+            prevState = currentState;\n+          }\n \n-        results.hits = transformItems(results.hits);\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n \n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n \n-        if (cachedHits === undefined) {\n-          cachedHits = cache.read({ state }) || {};\n-        }\n+          results.hits = addQueryID(results.hits, results.queryID);\n \n-        if (cachedHits![page] === undefined) {\n-          cachedHits![page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n+          results.hits = transformItems(results.hits);\n \n-        const isFirstPage = getFirstReceivedPage() === 0;\n-        const isLastPage = results.nbPages <= results.page + 1;\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n \n-        renderFn(\n-          {\n-            hits: extractHitsFromCachedHits(cachedHits!),\n-            results,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          false\n-        );\n+          if (cachedHits === undefined) {\n+            cachedHits = cache.read({ state }) || {};\n+          }\n+\n+          if (cachedHits![page] === undefined) {\n+            cachedHits![page] = results.hits;\n+            cache.write({ state, hits: cachedHits });\n+          }\n+\n+          hits = extractHitsFromCachedHits(cachedHits!);\n+        }\n+\n+        return {\n+          hits,\n+          results,\n+          showPrevious: getShowPrevious(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r504048021",
+    "id": 504048021,
+    "in_reply_to_id": 503941691,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUwNDA0ODAyMQ==",
+    "original_commit_id": "69161fece972535a64840d0ab99d9637dc93e4d6",
+    "original_line": 282,
+    "original_position": 199,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 507565220,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/504048021/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/504048021",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519936061"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936061"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this can be two separate tests if the second uses `getInitializedWidget`",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T16:17:24Z",
+    "diff_hunk": "@@ -968,6 +968,134 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/infinite-hi\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const renderFn = jest.fn();\n+      const unmountFn = jest.fn();\n+      const createInfiniteHits = connectInfiniteHits(renderFn, unmountFn);\n+      const infiniteHitsWidget = createInfiniteHits({});\n+      const helper = algoliasearchHelper(createSearchClient(), 'indexName', {\n+        index: 'indexName',\n+      });\n+\n+      const renderState1 = infiniteHitsWidget.getRenderState!(\n+        {},\n+        createInitOptions({ state: helper.state, helper })\n+      );\n+\n+      expect(renderState1.infiniteHits).toEqual({\n+        hits: [],\n+        sendEvent: expect.any(Function),\n+        bindEvent: expect.any(Function),\n+        isFirstPage: true,\n+        isLastPage: true,\n+        results: undefined,\n+        showMore: expect.any(Function),\n+        showPrevious: expect.any(Function),\n+        widgetParams: {},\n+      });\n+\n+      const hits = [\n+        { objectID: '1', name: 'name 1' },\n+        { objectID: '2', name: 'name 2' },\n+      ];\n+\n+      const results = new SearchResults(helper.state, [\n+        createSingleSearchResponse({ hits, queryID: 'theQueryID' }),\n+      ]);\n+\n+      const renderState2 = infiniteHitsWidget.getRenderState!(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519936061",
+    "id": 519936061,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTkzNjA2MQ==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 1007,
+    "original_position": 40,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/__tests__/connectInfiniteHits-test.ts",
+    "position": 1,
+    "pull_request_review_id": 526419809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936061/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936061",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519936377"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936377"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "same here, one test for init, one for render will be clearer if we ever break anything on it",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T16:17:50Z",
+    "diff_hunk": "@@ -968,6 +968,134 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/infinite-hi\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const renderFn = jest.fn();\n+      const unmountFn = jest.fn();\n+      const createInfiniteHits = connectInfiniteHits(renderFn, unmountFn);\n+      const infiniteHitsWidget = createInfiniteHits({});\n+      const helper = algoliasearchHelper(createSearchClient(), 'indexName', {\n+        index: 'indexName',\n+      });\n+\n+      const renderState1 = infiniteHitsWidget.getRenderState!(\n+        {},\n+        createInitOptions({ state: helper.state, helper })\n+      );\n+\n+      expect(renderState1.infiniteHits).toEqual({\n+        hits: [],\n+        sendEvent: expect.any(Function),\n+        bindEvent: expect.any(Function),\n+        isFirstPage: true,\n+        isLastPage: true,\n+        results: undefined,\n+        showMore: expect.any(Function),\n+        showPrevious: expect.any(Function),\n+        widgetParams: {},\n+      });\n+\n+      const hits = [\n+        { objectID: '1', name: 'name 1' },\n+        { objectID: '2', name: 'name 2' },\n+      ];\n+\n+      const results = new SearchResults(helper.state, [\n+        createSingleSearchResponse({ hits, queryID: 'theQueryID' }),\n+      ]);\n+\n+      const renderState2 = infiniteHitsWidget.getRenderState!(\n+        {},\n+        createRenderOptions({\n+          helper,\n+          state: helper.state,\n+          results,\n+        })\n+      );\n+\n+      const expectedHits = [\n+        { objectID: '1', name: 'name 1', __queryID: 'theQueryID' },\n+        { objectID: '2', name: 'name 2', __queryID: 'theQueryID' },\n+      ];\n+\n+      expect(renderState2.infiniteHits).toEqual({\n+        hits: expectedHits,\n+        sendEvent: renderState1.infiniteHits!.sendEvent,\n+        bindEvent: renderState1.infiniteHits!.bindEvent,\n+        isFirstPage: true,\n+        isLastPage: true,\n+        results,\n+        showMore: renderState1.infiniteHits!.showMore,\n+        showPrevious: renderState1.infiniteHits!.showPrevious,\n+        widgetParams: {},\n+      });\n+    });\n+  });\n+\n+  describe('getWidgetRenderState', () => {\n+    it('returns the widget render state', () => {\n+      const renderFn = jest.fn();\n+      const unmountFn = jest.fn();\n+      const createInfiniteHits = connectInfiniteHits(renderFn, unmountFn);\n+      const infiniteHitsWidget = createInfiniteHits({});\n+      const helper = algoliasearchHelper(createSearchClient(), 'indexName', {\n+        index: 'indexName',\n+      });\n+\n+      const renderState1 = infiniteHitsWidget.getWidgetRenderState!(\n+        createInitOptions({ state: helper.state, helper })\n+      );\n+\n+      expect(renderState1).toEqual({\n+        hits: [],\n+        sendEvent: expect.any(Function),\n+        bindEvent: expect.any(Function),\n+        isFirstPage: true,\n+        isLastPage: true,\n+        results: undefined,\n+        showMore: expect.any(Function),\n+        showPrevious: expect.any(Function),\n+        widgetParams: {},\n+      });\n+\n+      const hits = [\n+        { objectID: '1', name: 'name 1' },\n+        { objectID: '2', name: 'name 2' },\n+      ];\n+\n+      const results = new SearchResults(helper.state, [\n+        createSingleSearchResponse({ hits, queryID: 'theQueryID' }),\n+      ]);\n+\n+      const renderState2 = infiniteHitsWidget.getWidgetRenderState!(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519936377",
+    "id": 519936377,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTkzNjM3Nw==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 1070,
+    "original_position": 103,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/__tests__/connectInfiniteHits-test.ts",
+    "position": 1,
+    "pull_request_review_id": 526419809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936377/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519936377",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519937003"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937003"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the cache read is still here, but not the cache write, is that expected?",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T16:18:47Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519937003",
+    "id": 519937003,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTkzNzAwMw==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 225,
+    "original_position": 66,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 526419809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937003/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937003",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519937529"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937529"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the cache read should probably move from render to before here, wdyt?",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T16:19:26Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};\n-        if (cachedHits[page] === undefined) {\n-          cachedHits[page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n-\n-        const firstReceivedPage = getFirstReceivedPage(state, cachedHits);\n-        const lastReceivedPage = getLastReceivedPage(state, cachedHits);\n-        const isFirstPage = firstReceivedPage === 0;\n-        const isLastPage = results.nbPages <= lastReceivedPage + 1;\n+        const { page = 0 } = state;\n \n         sendEvent('view', cachedHits[page]);\n \n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n+            ...widgetRenderState,\n             instantSearchInstance,\n-            widgetParams,\n           },\n           false\n         );\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          infiniteHits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper, state, instantSearchInstance }) {\n+        let isFirstPage;\n+        const cachedHits = cache.read({ state }) || {};\n+\n+        if (!results) {\n+          showPrevious = getShowPrevious(helper, cachedHits);\n+          showMore = getShowMore(helper, cachedHits);\n+          sendEvent = createSendEventForHits({\n+            instantSearchInstance,\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          bindEvent = createBindEventForHits({\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          isFirstPage =\n+            helper.state.page === undefined ||\n+            getFirstReceivedPage(helper.state, cachedHits) === 0;\n+        } else {\n+          const { page = 0 } = state;\n+\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n+\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n+\n+          results.hits = addQueryID(results.hits, results.queryID);\n+\n+          results.hits = transformItems(results.hits);\n+\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n+\n+          if (cachedHits[page] === undefined) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519937529",
+    "id": 519937529,
+    "line": 291,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTkzNzUyOQ==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 288,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 159,
+    "pull_request_review_id": 526419809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937529/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519937529",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519939597"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519939597"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "maybe we can expose it from getWidgetRenderState as well, something like \"currentPage\", to use for sendEvent?\r\n\r\nIt makes sense not to compute the cache read multiple times",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T16:22:12Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519939597",
+    "id": 519939597,
+    "in_reply_to_id": 519937003,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTkzOTU5Nw==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 225,
+    "original_position": 66,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 526419809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519939597/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519939597",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519997588"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519997588"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't really see the advantage of doing this, we will still have 2 renders to do in the second test anyway. Also since there is a relation between the 2 renders (the functions we got from the second render must match the ones we received in the first), I think it is clearer to keep everything in the same test.",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T17:40:10Z",
+    "diff_hunk": "@@ -968,6 +968,134 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/infinite-hi\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const renderFn = jest.fn();\n+      const unmountFn = jest.fn();\n+      const createInfiniteHits = connectInfiniteHits(renderFn, unmountFn);\n+      const infiniteHitsWidget = createInfiniteHits({});\n+      const helper = algoliasearchHelper(createSearchClient(), 'indexName', {\n+        index: 'indexName',\n+      });\n+\n+      const renderState1 = infiniteHitsWidget.getRenderState!(\n+        {},\n+        createInitOptions({ state: helper.state, helper })\n+      );\n+\n+      expect(renderState1.infiniteHits).toEqual({\n+        hits: [],\n+        sendEvent: expect.any(Function),\n+        bindEvent: expect.any(Function),\n+        isFirstPage: true,\n+        isLastPage: true,\n+        results: undefined,\n+        showMore: expect.any(Function),\n+        showPrevious: expect.any(Function),\n+        widgetParams: {},\n+      });\n+\n+      const hits = [\n+        { objectID: '1', name: 'name 1' },\n+        { objectID: '2', name: 'name 2' },\n+      ];\n+\n+      const results = new SearchResults(helper.state, [\n+        createSingleSearchResponse({ hits, queryID: 'theQueryID' }),\n+      ]);\n+\n+      const renderState2 = infiniteHitsWidget.getRenderState!(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r519997588",
+    "id": 519997588,
+    "in_reply_to_id": 519936061,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTk5NzU4OA==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 1007,
+    "original_position": 40,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/__tests__/connectInfiniteHits-test.ts",
+    "position": 1,
+    "pull_request_review_id": 526497518,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519997588/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519997588",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520003075"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520003075"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It is expected, we need it for the `sendEvent` call that must stay in `render`.\r\nOne alternative way I thought of was to return `cachedHits` from `getWidgetRenderState` but I don't know if it is better or not.",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T17:48:57Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520003075",
+    "id": 520003075,
+    "in_reply_to_id": 519937003,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDAwMzA3NQ==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 225,
+    "original_position": 66,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 526504555,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520003075/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520003075",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520007390"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520007390"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I did not understood what you meant by that, can you explain more precisely?\r\n\r\n(all this side effects like update of the `results` object and `cache.write` should not be in `getWidgetRenderState` which should be a pure getter but I did not wanted to mess with the logic here for now)",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-09T17:55:52Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};\n-        if (cachedHits[page] === undefined) {\n-          cachedHits[page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n-\n-        const firstReceivedPage = getFirstReceivedPage(state, cachedHits);\n-        const lastReceivedPage = getLastReceivedPage(state, cachedHits);\n-        const isFirstPage = firstReceivedPage === 0;\n-        const isLastPage = results.nbPages <= lastReceivedPage + 1;\n+        const { page = 0 } = state;\n \n         sendEvent('view', cachedHits[page]);\n \n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n+            ...widgetRenderState,\n             instantSearchInstance,\n-            widgetParams,\n           },\n           false\n         );\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          infiniteHits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper, state, instantSearchInstance }) {\n+        let isFirstPage;\n+        const cachedHits = cache.read({ state }) || {};\n+\n+        if (!results) {\n+          showPrevious = getShowPrevious(helper, cachedHits);\n+          showMore = getShowMore(helper, cachedHits);\n+          sendEvent = createSendEventForHits({\n+            instantSearchInstance,\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          bindEvent = createBindEventForHits({\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          isFirstPage =\n+            helper.state.page === undefined ||\n+            getFirstReceivedPage(helper.state, cachedHits) === 0;\n+        } else {\n+          const { page = 0 } = state;\n+\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n+\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n+\n+          results.hits = addQueryID(results.hits, results.queryID);\n+\n+          results.hits = transformItems(results.hits);\n+\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n+\n+          if (cachedHits[page] === undefined) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520007390",
+    "id": 520007390,
+    "in_reply_to_id": 519937529,
+    "line": 291,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDAwNzM5MA==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 288,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 159,
+    "pull_request_review_id": 526510156,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520007390/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520007390",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520408978"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520408978"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "As @Haroenv and @francoischalifour discussed in another PR, when we get rid of `init` in the future, it's natural that `getWidgetRenderState` is the place where side effects occur.\r\n\r\nAlthough `getWidgetRenderState` has side effects, I think it's okay as long as it's idempotent. In this case, it's okay to call `getWidgetRenderState` multiple times as long as it reads the cache and writes the same one (not changing the cache). And, of course, `getWidgetRenderState` shouldn't trigger `sendEvent` inside it.\r\n\r\nTo sum up, I think it's good to have `cache.read` inside `getWidgetRenderState`. And we add another property to `InfiniteHitsWidgetRenderState`, which is something like `currentPageHits`. If so, inside `render` we can get `currentPageHits` from the render state and call `sendEvent`.\r\n\r\nWhat do you think?",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-10T09:22:18Z",
+    "diff_hunk": "@@ -207,92 +207,110 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n     return {\n       $$type: 'ais.infiniteHits',\n \n-      init({ instantSearchInstance, helper }) {\n-        const cachedHits = cache.read({ state: helper.state }) || {};\n-        showPrevious = getShowPrevious(helper, cachedHits);\n-        showMore = getShowMore(helper, cachedHits);\n-        sendEvent = createSendEventForHits({\n-          instantSearchInstance,\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-        bindEvent = createBindEventForHits({\n-          index: helper.getIndex(),\n-          widgetType: this.$$type!,\n-        });\n-\n+      init(initOptions) {\n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results: undefined,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage:\n-              helper.state.page === undefined ||\n-              getFirstReceivedPage(helper.state, cachedHits) === 0,\n-            isLastPage: true,\n-            instantSearchInstance,\n-            widgetParams,\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n           },\n           true\n         );\n       },\n \n-      render({ results, state, instantSearchInstance }) {\n-        const { page = 0 } = state;\n-\n-        if (escapeHTML && results.hits.length > 0) {\n-          results.hits = escapeHits(results.hits);\n-        }\n-        const initialEscaped = (results.hits as any).__escaped;\n-\n-        results.hits = addAbsolutePosition(\n-          results.hits,\n-          results.page,\n-          results.hitsPerPage\n-        );\n-\n-        results.hits = addQueryID(results.hits, results.queryID);\n+      render(renderOptions) {\n+        const { state, instantSearchInstance } = renderOptions;\n \n-        results.hits = transformItems(results.hits);\n-\n-        // Make sure the escaped tag stays after mapping over the hits.\n-        // This prevents the hits from being double-escaped if there are multiple\n-        // hits widgets mounted on the page.\n-        (results.hits as any).__escaped = initialEscaped;\n+        const widgetRenderState = this.getWidgetRenderState(renderOptions);\n \n         const cachedHits = cache.read({ state }) || {};\n-        if (cachedHits[page] === undefined) {\n-          cachedHits[page] = results.hits;\n-          cache.write({ state, hits: cachedHits });\n-        }\n-\n-        const firstReceivedPage = getFirstReceivedPage(state, cachedHits);\n-        const lastReceivedPage = getLastReceivedPage(state, cachedHits);\n-        const isFirstPage = firstReceivedPage === 0;\n-        const isLastPage = results.nbPages <= lastReceivedPage + 1;\n+        const { page = 0 } = state;\n \n         sendEvent('view', cachedHits[page]);\n \n         renderFn(\n           {\n-            hits: extractHitsFromCachedHits(cachedHits),\n-            results,\n-            sendEvent,\n-            bindEvent,\n-            showPrevious,\n-            showMore,\n-            isFirstPage,\n-            isLastPage,\n+            ...widgetRenderState,\n             instantSearchInstance,\n-            widgetParams,\n           },\n           false\n         );\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          infiniteHits: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper, state, instantSearchInstance }) {\n+        let isFirstPage;\n+        const cachedHits = cache.read({ state }) || {};\n+\n+        if (!results) {\n+          showPrevious = getShowPrevious(helper, cachedHits);\n+          showMore = getShowMore(helper, cachedHits);\n+          sendEvent = createSendEventForHits({\n+            instantSearchInstance,\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          bindEvent = createBindEventForHits({\n+            index: helper.getIndex(),\n+            widgetType: this.$$type!,\n+          });\n+          isFirstPage =\n+            helper.state.page === undefined ||\n+            getFirstReceivedPage(helper.state, cachedHits) === 0;\n+        } else {\n+          const { page = 0 } = state;\n+\n+          if (escapeHTML && results.hits.length > 0) {\n+            results.hits = escapeHits(results.hits);\n+          }\n+          const initialEscaped = (results.hits as any).__escaped;\n+\n+          results.hits = addAbsolutePosition(\n+            results.hits,\n+            results.page,\n+            results.hitsPerPage\n+          );\n+\n+          results.hits = addQueryID(results.hits, results.queryID);\n+\n+          results.hits = transformItems(results.hits);\n+\n+          // Make sure the escaped tag stays after mapping over the hits.\n+          // This prevents the hits from being double-escaped if there are multiple\n+          // hits widgets mounted on the page.\n+          (results.hits as any).__escaped = initialEscaped;\n+\n+          if (cachedHits[page] === undefined) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r520408978",
+    "id": 520408978,
+    "in_reply_to_id": 519937529,
+    "line": 291,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDQwODk3OA==",
+    "original_commit_id": "82648516f9bf529ba3766c674ee301b8fe093e6f",
+    "original_line": 288,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 159,
+    "pull_request_review_id": 527003937,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520408978/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520408978",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4535#discussion_r522143623"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4535"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522143623"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We'd better make this `[]` by default, or to make the type optional, because `getWidgetRenderState` here returns `undefind` as `currentPageHits` when there's no results.",
+    "commit_id": "2613c7eb38bc1df33eff957c431282cc5c99ed5c",
+    "created_at": "2020-11-12T14:24:41Z",
+    "diff_hunk": "@@ -245,6 +247,7 @@ const connectInfiniteHits: InfiniteHitsConnector = function connectInfiniteHits(\n \n       getWidgetRenderState({ results, helper, state, instantSearchInstance }) {\n         let isFirstPage;\n+        let currentPageHits;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4535#discussion_r522143623",
+    "id": 522143623,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMjE0MzYyMw==",
+    "original_commit_id": "2b80a7208f861970057173fff6a25b968ca491d5",
+    "original_line": 250,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/connectors/infinite-hits/connectInfiniteHits.ts",
+    "position": 1,
+    "pull_request_review_id": 529135522,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4535",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522143623/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-12T14:31:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522143623",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  }
+]

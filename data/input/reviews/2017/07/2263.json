@@ -1,0 +1,1395 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130338972"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130338972"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Do we need to clean up the node_modules folder beforehand with `yarn`?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:28:06Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130338972",
+    "id": 130338972,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDMzODk3Mg==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130338972/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130338972",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130339438"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339438"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "In my experience, this step can be annoying because you can't go back to the output when choosing the version number. What I do in the Helper JS script, is that I take the output and display it inline with the script: https://github.com/algolia/algoliasearch-helper-js/blob/develop/scripts/release.js#L60-L64",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:30:33Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130339438",
+    "id": 130339438,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDMzOTQzOA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 114,
+    "original_position": 114,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339438/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339438",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130339879"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339879"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Why do we execute it here?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:32:54Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130339879",
+    "id": 130339879,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDMzOTg3OQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 149,
+    "original_position": 149,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339879/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130339879",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130340202"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340202"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Does the changelog contain some information about the version?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:34:37Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130340202",
+    "id": 130340202,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM0MDIwMg==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 165,
+    "original_position": 165,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340202/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340202",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130340740"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340740"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I would use an else here to indicate we're not continuing the flow. Something like:\r\n```js\r\nif (publishNpm) {\r\n  // do the release\r\n} else {\r\n  rollback(newVersion);\r\n}\r\n```",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:37:36Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;\n+        execSync(\n+          'git add src/lib/version.js yarn.lock package.json CHANGELOG.md README.md CONTRIBUTING.md'\n+        );\n+        execSync(`git commit -m \"${commitMessage}\"`);\n+        execSync(`git tag \"v${newVersion}\"`);\n+\n+        console.log(\n+          colors.yellow.underline(\n+            'Almost done, check everything in another terminal tab'\n+          )\n+        );\n+\n+        inquirer\n+          .prompt([\n+            {\n+              type: 'confirm',\n+              name: 'publishNpm',\n+              message: colors.yellow.underline(\n+                'Is everything OK? Continue to push to github and publish the package?'\n+              ),\n+            },\n+          ])\n+          .then(({ publishNpm }) => {\n+            if (!publishNpm) rollback(newVersion);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130340740",
+    "id": 130340740,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM0MDc0MA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 189,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340740/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130340740",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130341338"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130341338"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This part could be a function.",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T12:40:35Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;\n+        execSync(\n+          'git add src/lib/version.js yarn.lock package.json CHANGELOG.md README.md CONTRIBUTING.md'\n+        );\n+        execSync(`git commit -m \"${commitMessage}\"`);\n+        execSync(`git tag \"v${newVersion}\"`);\n+\n+        console.log(\n+          colors.yellow.underline(\n+            'Almost done, check everything in another terminal tab'\n+          )\n+        );\n+\n+        inquirer\n+          .prompt([\n+            {\n+              type: 'confirm',\n+              name: 'publishNpm',\n+              message: colors.yellow.underline(\n+                'Is everything OK? Continue to push to github and publish the package?'\n+              ),\n+            },\n+          ])\n+          .then(({ publishNpm }) => {\n+            if (!publishNpm) rollback(newVersion);\n+\n+            console.log(colors.blue('Push to github, publish on npm'));\n+            if (strategy === 'stable') {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130341338",
+    "id": 130341338,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM0MTMzOA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 192,
+    "original_position": 192,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53201720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130341338/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130341338",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130349641"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130349641"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't quite understand this line, does it means when on develop you can only do stable releases and on any other branch (but master), do a beta release?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T13:19:49Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130349641",
+    "id": 130349641,
+    "line": 58,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM0OTY0MQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 58,
+    "pull_request_review_id": 53214031,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130349641/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130349641",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130350122"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130350122"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Good question, if you mess up with your node_modules/... then yarn should ensure that everything is good, I have no idea if that's the case you will have to test it",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T13:21:54Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130350122",
+    "id": 130350122,
+    "in_reply_to_id": 130338972,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM1MDEyMg==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53214031,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130350122/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130350122",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130355109"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130355109"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Correct.",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T13:42:33Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130355109",
+    "id": 130355109,
+    "in_reply_to_id": 130349641,
+    "line": 58,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM1NTEwOQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 58,
+    "pull_request_review_id": 53220286,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130355109/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130355109",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130370540"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130370540"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "No later than yesterday, I realized that yarn is not that clever. If you manually delete something inside of the node_modules folder, it not always catches it. I would go for the safer  \"reboot\".",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-07-31T14:36:48Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130370540",
+    "id": 130370540,
+    "in_reply_to_id": 130338972,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDM3MDU0MA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53237519,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130370540/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130370540",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5570853?v=4",
+      "events_url": "https://api.github.com/users/rayrutjes/events{/privacy}",
+      "followers_url": "https://api.github.com/users/rayrutjes/followers",
+      "following_url": "https://api.github.com/users/rayrutjes/following{/other_user}",
+      "gists_url": "https://api.github.com/users/rayrutjes/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/rayrutjes",
+      "id": 5570853,
+      "login": "rayrutjes",
+      "node_id": "MDQ6VXNlcjU1NzA4NTM=",
+      "organizations_url": "https://api.github.com/users/rayrutjes/orgs",
+      "received_events_url": "https://api.github.com/users/rayrutjes/received_events",
+      "repos_url": "https://api.github.com/users/rayrutjes/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/rayrutjes/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/rayrutjes/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/rayrutjes",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587179"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587179"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Because we need the changelog for the commit message and I think that a changelog for beta versions could be good as well. Maybe reset it before a new stable version, wdyt?\r\n",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T11:54:31Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587179",
+    "id": 130587179,
+    "in_reply_to_id": 130339879,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4NzE3OQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 149,
+    "original_position": 149,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53477590,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587179/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587179",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587283"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587283"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't understand what you meant.",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T11:55:09Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587283",
+    "id": 130587283,
+    "in_reply_to_id": 130340202,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4NzI4Mw==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 165,
+    "original_position": 165,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53477720,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587283/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587283",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587528"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587528"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Are you okey with:\r\n\r\n```js\r\nif (!publishNpm) return rollback(newVersion)\r\n```\r\n\r\nThe `return` keyword explicitly stops the execution here?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T11:56:25Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;\n+        execSync(\n+          'git add src/lib/version.js yarn.lock package.json CHANGELOG.md README.md CONTRIBUTING.md'\n+        );\n+        execSync(`git commit -m \"${commitMessage}\"`);\n+        execSync(`git tag \"v${newVersion}\"`);\n+\n+        console.log(\n+          colors.yellow.underline(\n+            'Almost done, check everything in another terminal tab'\n+          )\n+        );\n+\n+        inquirer\n+          .prompt([\n+            {\n+              type: 'confirm',\n+              name: 'publishNpm',\n+              message: colors.yellow.underline(\n+                'Is everything OK? Continue to push to github and publish the package?'\n+              ),\n+            },\n+          ])\n+          .then(({ publishNpm }) => {\n+            if (!publishNpm) rollback(newVersion);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587528",
+    "id": 130587528,
+    "in_reply_to_id": 130340740,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4NzUyOA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 189,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53477955,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587528/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587528",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587751"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587751"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I did some functions before, it was harder to read because going to reference to references. Since it's a script I wanted something straightforward that you can read like a text from the top to the bottom without jumping elsewhere to avoid mistakes when we will work on it again.",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T11:57:52Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;\n+        execSync(\n+          'git add src/lib/version.js yarn.lock package.json CHANGELOG.md README.md CONTRIBUTING.md'\n+        );\n+        execSync(`git commit -m \"${commitMessage}\"`);\n+        execSync(`git tag \"v${newVersion}\"`);\n+\n+        console.log(\n+          colors.yellow.underline(\n+            'Almost done, check everything in another terminal tab'\n+          )\n+        );\n+\n+        inquirer\n+          .prompt([\n+            {\n+              type: 'confirm',\n+              name: 'publishNpm',\n+              message: colors.yellow.underline(\n+                'Is everything OK? Continue to push to github and publish the package?'\n+              ),\n+            },\n+          ])\n+          .then(({ publishNpm }) => {\n+            if (!publishNpm) rollback(newVersion);\n+\n+            console.log(colors.blue('Push to github, publish on npm'));\n+            if (strategy === 'stable') {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130587751",
+    "id": 130587751,
+    "in_reply_to_id": 130341338,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4Nzc1MQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 192,
+    "original_position": 192,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53478207,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587751/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130587751",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130588042"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588042"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The \"safest\" way is to:\r\n\r\n```shell\r\nrm -rf node_modules docgen/node_modules && \r\n    yarn cache clean &&\r\n    yarn\r\n\r\ncd docgen && yarn\r\n```\r\n\r\nThis way we will have no cache, same packages as described into the `yarn.lock` and `package.json`\r\n\r\nWhat do you think?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T11:59:48Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130588042",
+    "id": 130588042,
+    "in_reply_to_id": 130338972,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4ODA0Mg==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53478553,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588042/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588042",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130588287"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588287"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "👍 ",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-01T12:01:09Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130588287",
+    "id": 130588287,
+    "in_reply_to_id": 130339438,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDU4ODI4Nw==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 114,
+    "original_position": 114,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53478827,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588287/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130588287",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828140"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828140"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That'll do the trick 👍 ",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-02T09:27:45Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;\n+        execSync(\n+          'git add src/lib/version.js yarn.lock package.json CHANGELOG.md README.md CONTRIBUTING.md'\n+        );\n+        execSync(`git commit -m \"${commitMessage}\"`);\n+        execSync(`git tag \"v${newVersion}\"`);\n+\n+        console.log(\n+          colors.yellow.underline(\n+            'Almost done, check everything in another terminal tab'\n+          )\n+        );\n+\n+        inquirer\n+          .prompt([\n+            {\n+              type: 'confirm',\n+              name: 'publishNpm',\n+              message: colors.yellow.underline(\n+                'Is everything OK? Continue to push to github and publish the package?'\n+              ),\n+            },\n+          ])\n+          .then(({ publishNpm }) => {\n+            if (!publishNpm) rollback(newVersion);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828140",
+    "id": 130828140,
+    "in_reply_to_id": 130340740,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDgyODE0MA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 189,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53744476,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828140/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828140",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828737"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828737"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What is the content of `changelog`? Are you sure it does not contain a header with the version? I'm pretty it does, can you check?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-02T09:30:24Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828737",
+    "id": 130828737,
+    "in_reply_to_id": 130340202,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDgyODczNw==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 165,
+    "original_position": 165,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53745125,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828737/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828737",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828971"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828971"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Go for it @iam4x :)",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-02T09:31:29Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130828971",
+    "id": 130828971,
+    "in_reply_to_id": 130338972,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDgyODk3MQ==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53745382,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828971/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130828971",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130856584"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2263"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130856584"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes it does, what is the issue?",
+    "commit_id": "1afa86f73adb9a9b2bb4a1aeeec927eeaa600687",
+    "created_at": "2017-08-02T12:03:43Z",
+    "diff_hunk": "@@ -0,0 +1,214 @@\n+#!/usr/bin/env node\n+\n+/* eslint-disable no-console */\n+/* eslint-disable no-process-exit */\n+/* eslint-disable import/no-commonjs */\n+\n+const { execSync } = require('child_process');\n+const colors = require('colors/safe');\n+const inquirer = require('inquirer');\n+\n+// check if user can publish new version to npm\n+try {\n+  execSync('$(npm owner add `npm whoami`)');\n+} catch (e) {\n+  console.log(\n+    colors.red(`\n+    You are not an owner of the npm repository,\n+    ask for it before trying to bundle a release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+// check if branch is clean with all changes commited\n+const uncommitedChanges = execSync('git status --porcelain').toString().trim();\n+if (uncommitedChanges) {\n+  console.log(\n+    colors.red(`\n+    Working tree is not clean, please commit all your changes before release.\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')\n+  .toString()\n+  .trim();\n+\n+// check if we are not on branch master or exit\n+if (currentBranch === 'master') {\n+  console.log(\n+    colors.red(`\n+    It's not possible to release a new version from the master branch.\n+    Please checkout any other branch:\n+      - develop: release new stable version\n+      - xxxxxxx: release new beta version\n+  `)\n+  );\n+  process.exit(1);\n+}\n+\n+const strategy = currentBranch === 'develop' ? 'stable' : 'beta';\n+\n+// called if process aborted before publish,\n+// nothing is pushed nor published remove local changes\n+function rollback(newVersion) {\n+  if (strategy === 'stable') {\n+    // reset master\n+    execSync('git reset --hard origin master');\n+    execSync('git checkout develop');\n+  } else {\n+    // remove last commit\n+    execSync('git reset --hard HEAD~1');\n+  }\n+\n+  // remove local created tag\n+  execSync(`git tag -d v${newVersion}`);\n+  process.exit(1);\n+}\n+\n+inquirer\n+  .prompt([\n+    {\n+      type: 'confirm',\n+      name: 'confirm',\n+      message: colors.yellow.underline(\n+        `You are on \"${currentBranch}\" branch. Are you sure you want to release a ${strategy ===\n+        'stable'\n+          ? 'new stable'\n+          : 'beta'} version?`\n+      ),\n+      default: false,\n+    },\n+  ])\n+  .then(({ confirm }) => {\n+    if (!confirm) process.exit(0);\n+\n+    if (strategy === 'stable') {\n+      // merge develop on master first\n+      // and start release from master branch\n+      console.log(colors.blue('Updating working tree'));\n+      execSync('git checkout master');\n+      execSync('git pull origin master');\n+      execSync('git fetch origin --tags');\n+      execSync('git fetch origin develop');\n+      execSync('git merge origin/develop');\n+    }\n+\n+    console.log(colors.blue('Install dependencies'));\n+    execSync('yarn');\n+\n+    const { version: currentVersion } = require('../package.json');\n+    console.log(\n+      colors.blue(`\n+      - Current version is \"${currentVersion}\"\n+      - Changelog will be generated only if a fix/feat/performance/breaking is found in git log\n+      - You must choose a new ve.rs.ion (semver) ${strategy === 'beta'\n+        ? 'with -beta.x suffix'\n+        : ''}\n+    `)\n+    );\n+\n+    execSync(\n+      'conventional-changelog --preset angular --output-unreleased | less'\n+    );\n+\n+    inquirer\n+      .prompt([\n+        {\n+          type: 'input',\n+          name: 'newVersion',\n+          message: colors.blue.underline(\n+            strategy === 'stable'\n+              ? 'Please type the new chosen version'\n+              : 'Please type the new chosen version (with -beta.x suffix)'\n+          ),\n+          validate(newVersion) {\n+            return (\n+              strategy === 'stable' ||\n+              (newVersion && /-beta\\.\\d{1,}$/.test(newVersion)) ||\n+              'You must include `-beta.x` suffix in the version number'\n+            );\n+          },\n+        },\n+      ])\n+      .then(({ newVersion }) => {\n+        // bump new version\n+        console.log(colors.blue(`Bump version to \"${newVersion}\"`));\n+        execSync(\n+          `VERSION=${newVersion} babel-node ./scripts/bump-package-version.js`\n+        );\n+\n+        // build library new version\n+        console.log(colors.blue('Building library new version'));\n+        execSync(`NODE_ENV=production VERSION=${newVersion} npm run build`);\n+\n+        // update changelog\n+        console.log(colors.blue('Update changelog'));\n+        const changelog = execSync('conventional-changelog -p angular')\n+          .toString()\n+          .trim();\n+\n+        execSync(\n+          'conventional-changelog --preset angular --infile CHANGELOG.md --same-file'\n+        );\n+\n+        // regenerate README TOC\n+        console.log(colors.blue('Generate TOCS'));\n+        execSync('npm run doctoc');\n+\n+        // regenerate yarn.lock\n+        execSync('yarn');\n+\n+        // git add and tag\n+        const commitMessage = `v${newVersion}\\n\\n${changelog}`;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2263#discussion_r130856584",
+    "id": 130856584,
+    "in_reply_to_id": 130340202,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDEzMDg1NjU4NA==",
+    "original_commit_id": "d259bfaae108392acabde5d2d35de080ef49de85",
+    "original_line": 165,
+    "original_position": 165,
+    "original_start_line": null,
+    "path": "scripts/release.js",
+    "position": 1,
+    "pull_request_review_id": 53776270,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2263",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130856584/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-08-02T13:24:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/130856584",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  }
+]

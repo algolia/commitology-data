@@ -1,0 +1,1045 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92807694"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92807694"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We use a custom connector here to be able to gather every props we need before sending them to the higher component. We need to gather all those data because the external autocomplete component (here react-autosuggest) needs to be initialize with the entire state at once. ",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-16T13:01:48Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */\n+import 'react-instantsearch-theme-algolia/style.css';\n+/* eslint-enable import/no-unresolved */\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}, hits: {}, query: ''};\n+  }\n+\n+  onSearchStateChange(searchState) {\n+    this.setState({searchState: {...this.state.searchState, ...searchState}});\n+  }\n+\n+  onProps(props) {\n+    props.facets[props.indexName] = props.hits;\n+    this.setState({hits: {...this.state.hits, ...props.facets}, query: props.query});\n+  }\n+\n+  formatHitsForAutoSuggest() {\n+    const hits = [];\n+    forOwn(this.state.hits, (value, key) => {\n+      hits.push({title: key, hits: value});\n+    });\n+    return hits;\n+  }\n+\n+  render() {\n+    return (\n+      <div>\n+        <FirstResults onProps={this.onProps.bind(this)}\n+                      searchState={this.state.searchState}\n+                      onSearchStateChange={this.onSearchStateChange.bind(this)}/>\n+        <InstantSearch\n+          appId=\"latency\"\n+          apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+          indexName=\"bestbuy\"\n+        >\n+          <Autosuggest\n+            suggestions={this.formatHitsForAutoSuggest()}\n+            multiSection={true}\n+            onSuggestionsFetchRequested={({value}) => this.onSearchStateChange({query: value})}\n+            onSuggestionsClearRequested={() => this.onSearchStateChange({query: ''})}\n+            getSuggestionValue={hit => hit.name}\n+            renderSuggestion={hit =>\n+              <div>\n+                <div>{hit.name}</div>\n+              </div>\n+            }\n+            inputProps={{\n+              placeholder: 'Type a product',\n+              value: this.state.query,\n+              onChange: () => {\n+              },\n+            }}\n+            renderSectionTitle={section => section.title}\n+            getSectionSuggestions={section => section.hits}\n+          />\n+        </InstantSearch>\n+      </div>\n+    );\n+  }\n+}\n+\n+class FirstResults extends React.Component {\n+  shouldComponentUpdate(nextProps) {\n+    return !isEqual(this.props.searchState, nextProps.searchState);\n+  }\n+\n+  render() {\n+    return <InstantSearch\n+      appId=\"latency\"\n+      apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+      indexName=\"bestbuy\"\n+      searchState={this.props.searchState}\n+      onSearchStateChange={this.props.onSearchStateChange}\n+      searchParameters={{hitsPerPage: 3}}\n+    >\n+      <div>\n+        <VirtualSearchBox/>\n+        <VirtualRefinementList attributeName=\"manufacturer\"/>\n+        <VirtualRefinementList attributeName=\"category\"/>\n+        <VirtualAutoSuggest indexName=\"product\" onProps={this.props.onProps} attributes={['manufacturer', 'category']}/>\n+      </div>\n+    </InstantSearch>;\n+  }\n+}\n+\n+FirstResults.propTypes = {\n+  searchState: React.PropTypes.object.isRequired,\n+  onSearchStateChange: React.PropTypes.func.isRequired,\n+  onProps: React.PropTypes.func.isRequired,\n+};\n+\n+const VirtualSearchBox = connectSearchBox(() => null);\n+const VirtualRefinementList = connectRefinementList(() => null);\n+\n+const connectAutoComplete = createConnector({\n+  displayName: 'AutoComplete',\n+\n+  getProvidedProps(props, state, search) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92807694",
+    "id": 92807694,
+    "line": 45,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkyODA3Njk0",
+    "original_commit_id": "ac4464ea6905ae008d50f551fb2f718bfa13dc95",
+    "original_line": null,
+    "original_position": 107,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13329327,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92807694/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92807694",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92996307"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996307"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You can use `eslint-disable-line` to disable the next line.",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T09:37:49Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92996307",
+    "id": 92996307,
+    "line": 7,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkyOTk2MzA3",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13516353,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996307/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996307",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92996530"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996530"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You should bind that in the constructor so it doesn't create a new function at each `render`.",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T09:39:31Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */\n+import 'react-instantsearch-theme-algolia/style.css';\n+/* eslint-enable import/no-unresolved */\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}, hits: {}, query: ''};\n+  }\n+\n+  onSearchStateChange(searchState) {\n+    this.setState({searchState: {...this.state.searchState, ...searchState}});\n+  }\n+\n+  onProps(props) {\n+    props.facets[props.indexName] = props.hits;\n+    this.setState({hits: {...this.state.hits, ...props.facets}, query: props.query});\n+  }\n+\n+  formatHitsForAutoSuggest() {\n+    const hits = [];\n+    forOwn(this.state.hits, (value, key) => {\n+      hits.push({title: key, hits: value});\n+    });\n+    return hits;\n+  }\n+\n+  render() {\n+    return (\n+      <div>\n+        <FirstResults onProps={this.onProps.bind(this)}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92996530",
+    "id": 92996530,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkyOTk2NTMw",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13516353,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996530/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92996530",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92997062"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92997062"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I would add more implementation details to let the user know what he/she should focus their attention on.",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T09:43:05Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r92997062",
+    "id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkyOTk3MDYy",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13516353,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92997062/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/92997062",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93049001"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93049001"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Comments inside the source code of the example would be better no? And maybe a link back to the guide from the README, WDYT? \r\n\r\n\r\n\r\n",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T15:09:56Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93049001",
+    "id": 93049001,
+    "in_reply_to_id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMDQ5MDAx",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13570003,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93049001/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93049001",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93051327"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93051327"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Do you think it would be clearer (I assume you have only one line of comment instead of two?) ? I link to add the precise one for not having to think at which rule was failing. ",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T15:21:54Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93051327",
+    "id": 93051327,
+    "in_reply_to_id": 92996307,
+    "line": 7,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMDUxMzI3",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13572363,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93051327/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93051327",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93139396"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139396"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "OK no problem, it was just a suggestion (I fail to remember it every time :))",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T23:04:43Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93139396",
+    "id": 93139396,
+    "in_reply_to_id": 92996307,
+    "line": 7,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMTM5Mzk2",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13661584,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139396/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139396",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93139572"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139572"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Well I think that I would like to have a bit more context before diving in the example itself. But sure, comments in the code would help too! Do you plan on creating a dedicated guide?",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-19T23:05:53Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93139572",
+    "id": 93139572,
+    "in_reply_to_id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMTM5NTcy",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13661755,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139572/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93139572",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93189919"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93189919"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure, at least, not with this solution. \r\nWhat I can explain on a guide is the idea behind the example: having a function listening to all changes and then construct the autocomplete state with it. But the way we can achieve this now seems very fragile, that's why I'm not sure about a dedicated guide in the end.\r\n\r\nBut I can still do that in the README, and then if we come up with a good solution to simplify this kind of use-cases, then we could write a guide. We also need to add all the recipes to the documentation website. ",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-20T08:31:45Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93189919",
+    "id": 93189919,
+    "in_reply_to_id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMTg5OTE5",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13711160,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93189919/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93189919",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93191512"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93191512"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> What I can explain on a guide is the idea behind the example: having a function listening to all changes and then construct the autocomplete state with it\r\n\r\nOK that sounds great! Also I think you can mention that another specificity of this example is that it relies on a custom connector. This is very advanced, so let's be sure it's not too confusing.\r\n\r\nAbout the robustness, it worries me a bit. Maybe it's not worth documenting at all unless we have a more solid solution? I don't know how much documentation are those examples either :) @vvo an idea on the subject?",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-20T08:44:37Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93191512",
+    "id": 93191512,
+    "in_reply_to_id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzMTkxNTEy",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13712788,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93191512/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93191512",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93412801"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93412801"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Thanks to @zasmail that tried the example yesterday, there's one part that is complex to understand: the namespacing when gathering all the data. I will detail this using comment in the code. I'll also add details in the README to explain the main idea behind the example, but without going to far as it might heavily depends on the underlying autocomplete component you choose to use. ",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-21T10:27:59Z",
+    "diff_hunk": "@@ -0,0 +1,8 @@\n+This example shows how to build an autocomplete with react-instantsearch\n+\n+To start the example: \n+\n+* npm install\n+* npm start\n+\n+Read more about react-instantsearch [in our documentation](https://community.algolia.com/instantsearch.js/react/).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93412801",
+    "id": 93412801,
+    "in_reply_to_id": 92997062,
+    "line": 14,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDEyODAx",
+    "original_commit_id": "21b0745334f46e31d394f8431c124aeda03bfb4f",
+    "original_line": null,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/README.md",
+    "position": 14,
+    "pull_request_review_id": 13938380,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93412801/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93412801",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93416700"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416700"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I must say, I read this part way too quickly. Being used to react-instantsearch, it's a bit confusing to have a component that will be connected and yet doesn't really have any \"connection\".",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-21T10:55:00Z",
+    "diff_hunk": "@@ -0,0 +1,145 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */\n+import 'react-instantsearch-theme-algolia/style.css';\n+/* eslint-enable import/no-unresolved */\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.onProps = this.onProps.bind(this);\n+    this.onSearchStateChange = this.onSearchStateChange.bind(this);\n+    this.state = {searchState: {}, hits: {}, query: ''};\n+  }\n+\n+  onSearchStateChange(searchState) {\n+    this.setState({searchState: {...this.state.searchState, ...searchState}});\n+  }\n+\n+  onProps(props) {\n+    props.facets[props.indexName] = props.hits;\n+    this.setState({hits: {...this.state.hits, ...props.facets}, query: props.query});\n+  }\n+\n+  formatHitsForAutoSuggest() {\n+    const hits = [];\n+    forOwn(this.state.hits, (value, key) => {\n+      hits.push({title: key, hits: value});\n+    });\n+    return hits;\n+  }\n+\n+  render() {\n+    return (\n+      <div>\n+        <FirstResults onProps={this.onProps}\n+                      searchState={this.state.searchState}\n+                      onSearchStateChange={this.onSearchStateChange}/>\n+        <InstantSearch\n+          appId=\"latency\"\n+          apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+          indexName=\"bestbuy\"\n+        >\n+          <Autosuggest",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93416700",
+    "id": 93416700,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDE2NzAw",
+    "original_commit_id": "2c5b9b0113d7fb3788cb4daec8ebba3faa0fe8ea",
+    "original_line": null,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13942545,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416700/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416700",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93416881"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416881"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Maybe the fact that autocompletes in the \"market\" don't play nicely with instantsearch means that we have to create our own?",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-21T10:56:07Z",
+    "diff_hunk": "@@ -0,0 +1,143 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {isEqual, forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */\n+import 'react-instantsearch-theme-algolia/style.css';\n+/* eslint-enable import/no-unresolved */\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}, hits: {}, query: ''};\n+  }\n+\n+  onSearchStateChange(searchState) {\n+    this.setState({searchState: {...this.state.searchState, ...searchState}});\n+  }\n+\n+  onProps(props) {\n+    props.facets[props.indexName] = props.hits;\n+    this.setState({hits: {...this.state.hits, ...props.facets}, query: props.query});\n+  }\n+\n+  formatHitsForAutoSuggest() {\n+    const hits = [];\n+    forOwn(this.state.hits, (value, key) => {\n+      hits.push({title: key, hits: value});\n+    });\n+    return hits;\n+  }\n+\n+  render() {\n+    return (\n+      <div>\n+        <FirstResults onProps={this.onProps.bind(this)}\n+                      searchState={this.state.searchState}\n+                      onSearchStateChange={this.onSearchStateChange.bind(this)}/>\n+        <InstantSearch\n+          appId=\"latency\"\n+          apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+          indexName=\"bestbuy\"\n+        >\n+          <Autosuggest\n+            suggestions={this.formatHitsForAutoSuggest()}\n+            multiSection={true}\n+            onSuggestionsFetchRequested={({value}) => this.onSearchStateChange({query: value})}\n+            onSuggestionsClearRequested={() => this.onSearchStateChange({query: ''})}\n+            getSuggestionValue={hit => hit.name}\n+            renderSuggestion={hit =>\n+              <div>\n+                <div>{hit.name}</div>\n+              </div>\n+            }\n+            inputProps={{\n+              placeholder: 'Type a product',\n+              value: this.state.query,\n+              onChange: () => {\n+              },\n+            }}\n+            renderSectionTitle={section => section.title}\n+            getSectionSuggestions={section => section.hits}\n+          />\n+        </InstantSearch>\n+      </div>\n+    );\n+  }\n+}\n+\n+class FirstResults extends React.Component {\n+  shouldComponentUpdate(nextProps) {\n+    return !isEqual(this.props.searchState, nextProps.searchState);\n+  }\n+\n+  render() {\n+    return <InstantSearch\n+      appId=\"latency\"\n+      apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+      indexName=\"bestbuy\"\n+      searchState={this.props.searchState}\n+      onSearchStateChange={this.props.onSearchStateChange}\n+      searchParameters={{hitsPerPage: 3}}\n+    >\n+      <div>\n+        <VirtualSearchBox/>\n+        <VirtualRefinementList attributeName=\"manufacturer\"/>\n+        <VirtualRefinementList attributeName=\"category\"/>\n+        <VirtualAutoSuggest indexName=\"product\" onProps={this.props.onProps} attributes={['manufacturer', 'category']}/>\n+      </div>\n+    </InstantSearch>;\n+  }\n+}\n+\n+FirstResults.propTypes = {\n+  searchState: React.PropTypes.object.isRequired,\n+  onSearchStateChange: React.PropTypes.func.isRequired,\n+  onProps: React.PropTypes.func.isRequired,\n+};\n+\n+const VirtualSearchBox = connectSearchBox(() => null);\n+const VirtualRefinementList = connectRefinementList(() => null);\n+\n+const connectAutoComplete = createConnector({\n+  displayName: 'AutoComplete',\n+\n+  getProvidedProps(props, state, search) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93416881",
+    "id": 93416881,
+    "in_reply_to_id": 92807694,
+    "line": 45,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDE2ODgx",
+    "original_commit_id": "ac4464ea6905ae008d50f551fb2f718bfa13dc95",
+    "original_line": null,
+    "original_position": 107,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 1,
+    "pull_request_review_id": 13942733,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416881/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93416881",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93449262"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93449262"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I made some changes about the example of an autocomplete displaying values from the same index. In this case you don't need to manage the state externally and can only use a connector.\r\n\r\nAs you can see, this connector only implement `getProvidedProps` and `refine` (to change the value of the query). In order for this to work, you still need to use `Virtual Widgets` for the search box and the facets. \r\n\r\nWe could ship this connector with react-instantsearch but going a little bit further and adding the behavior to actually set the search parameters. What do you think? ",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-21T14:43:03Z",
+    "diff_hunk": "@@ -0,0 +1,113 @@\n+import React, {Component} from 'react';\n+import {InstantSearch} from 'react-instantsearch/dom';\n+import {createConnector} from 'react-instantsearch';\n+import {connectSearchBox, connectRefinementList} from 'react-instantsearch/connectors';\n+import Autosuggest from 'react-autosuggest';\n+import {forOwn} from 'lodash';\n+/* eslint-disable import/no-unresolved */\n+import 'react-instantsearch-theme-algolia/style.css';\n+/* eslint-enable import/no-unresolved */\n+\n+class App extends Component {\n+  render() {\n+    return (\n+      <InstantSearch\n+        appId=\"latency\"\n+        apiKey=\"6be0576ff61c053d5f9a3225e2a90f76\"\n+        indexName=\"bestbuy\"\n+        searchParameters={{hitsPerPage: 3}}\n+      >\n+        <div>\n+          <VirtualSearchBox/>\n+          <VirtualRefinementList attributeName=\"manufacturer\"/>\n+          <VirtualRefinementList attributeName=\"category\"/>\n+          <ConnectedAutoComplete attributes={['manufacturer', 'category']}/>\n+        </div>\n+      </InstantSearch>\n+    );\n+  }\n+}\n+\n+const VirtualSearchBox = connectSearchBox(() => null);\n+const VirtualRefinementList = connectRefinementList(() => null);\n+\n+const connectAutoComplete = createConnector({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93449262",
+    "id": 93449262,
+    "line": 34,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDQ5MjYy",
+    "original_commit_id": "9e748d837cf10d199e7f2667ac833e5a398b809c",
+    "original_line": null,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js",
+    "position": 34,
+    "pull_request_review_id": 13976941,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93449262/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93449262",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93459497"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1761"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93459497"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can't we use the source files rather than the dist?",
+    "commit_id": "a03b3a23253a1b96db26ddc1773b7f893ec963bf",
+    "created_at": "2016-12-21T15:32:40Z",
+    "diff_hunk": "@@ -0,0 +1,19 @@\n+{\n+  \"private\": true,\n+  \"devDependencies\": {\n+    \"react-scripts\": \"0.7.0\"\n+  },\n+  \"dependencies\": {\n+    \"lodash\": \"^4.16.6\",\n+    \"react-autosuggest\": \"^7.0.1\",\n+    \"react\": \"^15.3.2\",\n+    \"react-dom\": \"^15.3.2\",\n+    \"react-instantsearch\": \"file:../../dist\",",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1761#discussion_r93459497",
+    "id": 93459497,
+    "line": 11,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkzNDU5NDk3",
+    "original_commit_id": "9e748d837cf10d199e7f2667ac833e5a398b809c",
+    "original_line": null,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/examples/autocomplete/package.json",
+    "position": 11,
+    "pull_request_review_id": 13987488,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1761",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93459497/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-22T12:15:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/93459497",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  }
+]

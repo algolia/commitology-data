@@ -1,0 +1,140 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5579#discussion_r1158198139"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5579"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158198139"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "in a real use case, we wouldn't add these all in current global scope, but as exposed variables to the isolate which runs the instantsearch code.",
+    "commit_id": "ea48b5ead5c31be16222dd4ac1a6cbbf05f5fb83",
+    "created_at": "2023-04-05T08:30:25Z",
+    "diff_hunk": "@@ -0,0 +1,113 @@\n+import http from 'node:http';\n+import { JSDOM, ResourceLoader } from 'jsdom';\n+import { readFile } from 'node:fs/promises';\n+\n+import {\n+  getInitialResults,\n+  waitForResults,\n+} from 'instantsearch.js/es/lib/server.js';\n+\n+// eslint-disable-next-line @typescript-eslint/no-unused-vars\n+import instantsearch from 'instantsearch.js/dist/instantsearch.development.js';\n+// eslint-disable-next-line @typescript-eslint/no-unused-vars\n+import algoliasearch from 'algoliasearch/dist/algoliasearch-lite.esm.browser.mjs';\n+\n+class CustomResourceLoader extends ResourceLoader {\n+  fetch(url, options) {\n+    if (options.element.name === 'HTMLLinkElement') {\n+      return Promise.resolve(Buffer.from(''));\n+    }\n+\n+    return super.fetch(url, options);\n+  }\n+}\n+\n+http\n+  .createServer(async (req, res) => {\n+    const clientURL = new URL(\n+      req.url,\n+      'http://localhost:3000'\n+    ).searchParams.get('url');\n+\n+    const { window } = new JSDOM(\n+      await readFile(\n+        new URL('./instantsearch-code.html', import.meta.url),\n+        'utf-8'\n+      ),\n+      {\n+        url: new URL(clientURL, 'http://localhost:3000'),\n+        resources: new CustomResourceLoader(),\n+        runScripts: 'dangerously',\n+      }\n+    );\n+\n+    await new Promise((resolve) => {\n+      window.addEventListener('load', resolve);\n+    });\n+\n+    window.setTimeout = setTimeout;\n+    window.setInterval = setInterval;\n+\n+    Object.assign(global, window, {\n+      window,\n+      // @TODO: how to add all global window properties?\n+      HTMLElement: window.HTMLElement,\n+      XMLHttpRequest: window.XMLHttpRequest,\n+    });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5579#discussion_r1158198139",
+    "id": 1158198139,
+    "line": 56,
+    "node_id": "PRRC_kwDOAlnbOs5FCLN7",
+    "original_commit_id": "ea48b5ead5c31be16222dd4ac1a6cbbf05f5fb83",
+    "original_line": 56,
+    "original_position": 56,
+    "original_start_line": 48,
+    "path": "examples/js/server-rendering/instantsearch-server.js",
+    "position": 56,
+    "pull_request_review_id": 1372415990,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5579",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158198139/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 48,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-04-05T08:32:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158198139",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5579#discussion_r1158199665"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5579"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158199665"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this should also be in an isolated part of the code",
+    "commit_id": "ea48b5ead5c31be16222dd4ac1a6cbbf05f5fb83",
+    "created_at": "2023-04-05T08:31:38Z",
+    "diff_hunk": "@@ -0,0 +1,113 @@\n+import http from 'node:http';\n+import { JSDOM, ResourceLoader } from 'jsdom';\n+import { readFile } from 'node:fs/promises';\n+\n+import {\n+  getInitialResults,\n+  waitForResults,\n+} from 'instantsearch.js/es/lib/server.js';\n+\n+// eslint-disable-next-line @typescript-eslint/no-unused-vars\n+import instantsearch from 'instantsearch.js/dist/instantsearch.development.js';\n+// eslint-disable-next-line @typescript-eslint/no-unused-vars\n+import algoliasearch from 'algoliasearch/dist/algoliasearch-lite.esm.browser.mjs';\n+\n+class CustomResourceLoader extends ResourceLoader {\n+  fetch(url, options) {\n+    if (options.element.name === 'HTMLLinkElement') {\n+      return Promise.resolve(Buffer.from(''));\n+    }\n+\n+    return super.fetch(url, options);\n+  }\n+}\n+\n+http\n+  .createServer(async (req, res) => {\n+    const clientURL = new URL(\n+      req.url,\n+      'http://localhost:3000'\n+    ).searchParams.get('url');\n+\n+    const { window } = new JSDOM(\n+      await readFile(\n+        new URL('./instantsearch-code.html', import.meta.url),\n+        'utf-8'\n+      ),\n+      {\n+        url: new URL(clientURL, 'http://localhost:3000'),\n+        resources: new CustomResourceLoader(),\n+        runScripts: 'dangerously',\n+      }\n+    );\n+\n+    await new Promise((resolve) => {\n+      window.addEventListener('load', resolve);\n+    });\n+\n+    window.setTimeout = setTimeout;\n+    window.setInterval = setInterval;\n+\n+    Object.assign(global, window, {\n+      window,\n+      // @TODO: how to add all global window properties?\n+      HTMLElement: window.HTMLElement,\n+      XMLHttpRequest: window.XMLHttpRequest,\n+    });\n+\n+    const code = await readFile(\n+      new URL('./instantsearch-code.js', import.meta.url),\n+      'utf-8'\n+    );\n+\n+    const { search } = createDOM(code);\n+\n+    search._initialResults = {};\n+    search.start();\n+    search.sendEventToInsights = () => {};\n+\n+    await waitForResults(search);\n+    const initialResults = getInitialResults(search.mainIndex);\n+    search.mainIndex.render({\n+      instantSearchInstance: search,\n+    });\n+\n+    const templates = Object.fromEntries(\n+      Array.from(document.querySelectorAll('x-template')).map((template) => [\n+        template.id,\n+        template.innerHTML,\n+      ])\n+    );\n+\n+    res.writeHead(200, { 'Content-Type': 'application/json' });\n+    res.end(\n+      JSON.stringify(\n+        {\n+          templates,\n+          resources: {\n+            scripts: `\n+            <script src=\"https://cdn.jsdelivr.net/npm/instantsearch.js@4.53.0/dist/instantsearch.production.min.js\"></script>\n+            <script src=\"https://cdn.jsdelivr.net/npm/algoliasearch@4.15.0/dist/algoliasearch.umd.min.js\"></script>\n+            <script>\n+              ${code};\n+              search._initialResults = ${JSON.stringify(initialResults)};\n+              search.start();\n+            </script>\n+          `,\n+          },\n+        },\n+        null,\n+        2\n+      )\n+    );\n+  })\n+  .listen(3000);\n+\n+function createDOM(code) {\n+  window.search = undefined;\n+\n+  // eslint-disable-next-line no-eval\n+  eval(code);\n+\n+  return { search: window.search };\n+}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5579#discussion_r1158199665",
+    "id": 1158199665,
+    "line": 113,
+    "node_id": "PRRC_kwDOAlnbOs5FCLlx",
+    "original_commit_id": "ea48b5ead5c31be16222dd4ac1a6cbbf05f5fb83",
+    "original_line": 113,
+    "original_position": 113,
+    "original_start_line": 106,
+    "path": "examples/js/server-rendering/instantsearch-server.js",
+    "position": 113,
+    "pull_request_review_id": 1372415990,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5579",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158199665/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 106,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-04-05T08:32:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1158199665",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

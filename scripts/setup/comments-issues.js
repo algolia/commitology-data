@@ -1,5 +1,13 @@
 import { dayjs, pMap } from 'golgoth';
-import { absolute, glob, readJson, sleep, spinner, writeJson } from 'firost';
+import {
+  absolute,
+  exists,
+  glob,
+  readJson,
+  sleep,
+  spinner,
+  writeJson,
+} from 'firost';
 import {
   dataInputCommentsPath,
   dataInputIssuesPath,
@@ -21,8 +29,6 @@ await pMap(
     const tickTitle = `[${issueIndex}/${maxIssueCount}] ${title}`;
     progress.tick(tickTitle);
 
-    const commentsContent = await getComments(number);
-
     const issueDatePath = dayjs(created_at).format('YYYY/MM');
     const commentsPath = absolute(
       dataInputCommentsPath,
@@ -30,6 +36,13 @@ await pMap(
       issueDatePath,
       `${number}.json`,
     );
+
+    if (await exists(commentsPath)) {
+      progress.tick(`${tickTitle} (Already exists, skipping)`);
+      return;
+    }
+
+    const commentsContent = await getComments(number);
 
     await writeJson(commentsContent, commentsPath);
     progress.tick(`${tickTitle} (Throttling for rate limit...)`);

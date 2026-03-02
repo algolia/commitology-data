@@ -1,0 +1,280 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4659#discussion_r586395662"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/586395662"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't remember which API we have decided on in the last RFC meeting, but what if\r\n\r\n```js\r\nstack.add(container => menu({ container, attribute: 'categories' }));\r\n```\r\n\r\nin `add()` we can create a container and set the object to `localWidgets` altogether.",
+    "commit_id": "50b86af4298ea6f5da397bb760e2720bd89de1e1",
+    "created_at": "2021-03-03T12:59:13Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import { storiesOf } from '@storybook/html';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { withHits } from '../.storybook/decorators';\n+import { Widget } from '../src/types';\n+import { refinementList, menu } from '../src/widgets';\n+\n+type DynamicWidgetsParams = {\n+  container: HTMLElement;\n+  transformItems(items: string[], results: SearchResults): string[];\n+};\n+\n+type DynamicWidgets = Widget & {\n+  // addWidgets(widget: Widget[]): DynamicWidgets;\n+  // removeWidgets(widget: Widget[]): DynamicWidgets;\n+\n+  createContainer(\n+    attribute: string\n+  ): { container: HTMLElement; apply(widget: Widget): void };\n+};\n+\n+function dynamicWidgets({\n+  container: rootContainer,\n+  transformItems,\n+}: DynamicWidgetsParams): DynamicWidgets {\n+  const localWidgets: Map<\n+    string,\n+    { widget: Widget; container: HTMLElement; isMounted: boolean }\n+  > = new Map();\n+\n+  return {\n+    // @ts-expect-error\n+    $$type: 'ais.dynamicWidgets',\n+    // @ts-expect-error\n+    $$widgetType: 'ais.dynamicWidgets',\n+    init() {},\n+    render({ results, parent }) {\n+      // results.facetOrder.map(facet => facet.attribute)\n+      const attributesToRender = transformItems([], results);\n+\n+      localWidgets.forEach(\n+        ({ widget, isMounted, container }, attribute, localWidgets) => {\n+          const shouldMount = attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            parent!.addWidgets([widget]);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            // make sure this only happens after the regular render, otherwise it happens too quick\n+            // render is \"deferred\" for the next microtask\n+            // so this needs to be a whole task later\n+            setTimeout(() => parent!.removeWidgets([widget]), 0);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: false,\n+            });\n+          }\n+        }\n+      );\n+    },\n+    createContainer(attribute) {\n+      const container = document.createElement('div');\n+      container.className = 'ais-DynamicWidget';\n+\n+      rootContainer.appendChild(container);\n+\n+      return {\n+        container,\n+        apply: widget => {\n+          localWidgets.set(attribute, { widget, container, isMounted: false });\n+        },\n+      };\n+    },\n+  };\n+}\n+\n+storiesOf('Basics/DynamicWidgets', module).add(\n+  'default',\n+  withHits(({ search, container }) => {\n+    const stack = dynamicWidgets({\n+      transformItems(_attributes, results) {\n+        if (results._state.query === 'dog') {\n+          return ['categories'];\n+        }\n+        return ['brand', 'categories'];\n+      },\n+      container,\n+    });\n+\n+    const categoryContainer = stack.createContainer('categories');\n+\n+    categoryContainer.apply(\n+      menu({\n+        container: categoryContainer.container,\n+        attribute: 'categories',\n+      })\n+    );",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4659#discussion_r586395662",
+    "id": 586395662,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU4NjM5NTY2Mg==",
+    "original_commit_id": "b9353c41ebc62f6c2e3a6a29fa8e61211f040030",
+    "original_line": 101,
+    "original_position": 101,
+    "original_start_line": 94,
+    "path": "stories/stack.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 602865081,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4659",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/586395662/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 94,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-03-05T15:43:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/586395662",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4659#discussion_r587357122"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587357122"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "how would you know what the attribute is in that case?",
+    "commit_id": "50b86af4298ea6f5da397bb760e2720bd89de1e1",
+    "created_at": "2021-03-04T10:43:02Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import { storiesOf } from '@storybook/html';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { withHits } from '../.storybook/decorators';\n+import { Widget } from '../src/types';\n+import { refinementList, menu } from '../src/widgets';\n+\n+type DynamicWidgetsParams = {\n+  container: HTMLElement;\n+  transformItems(items: string[], results: SearchResults): string[];\n+};\n+\n+type DynamicWidgets = Widget & {\n+  // addWidgets(widget: Widget[]): DynamicWidgets;\n+  // removeWidgets(widget: Widget[]): DynamicWidgets;\n+\n+  createContainer(\n+    attribute: string\n+  ): { container: HTMLElement; apply(widget: Widget): void };\n+};\n+\n+function dynamicWidgets({\n+  container: rootContainer,\n+  transformItems,\n+}: DynamicWidgetsParams): DynamicWidgets {\n+  const localWidgets: Map<\n+    string,\n+    { widget: Widget; container: HTMLElement; isMounted: boolean }\n+  > = new Map();\n+\n+  return {\n+    // @ts-expect-error\n+    $$type: 'ais.dynamicWidgets',\n+    // @ts-expect-error\n+    $$widgetType: 'ais.dynamicWidgets',\n+    init() {},\n+    render({ results, parent }) {\n+      // results.facetOrder.map(facet => facet.attribute)\n+      const attributesToRender = transformItems([], results);\n+\n+      localWidgets.forEach(\n+        ({ widget, isMounted, container }, attribute, localWidgets) => {\n+          const shouldMount = attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            parent!.addWidgets([widget]);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            // make sure this only happens after the regular render, otherwise it happens too quick\n+            // render is \"deferred\" for the next microtask\n+            // so this needs to be a whole task later\n+            setTimeout(() => parent!.removeWidgets([widget]), 0);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: false,\n+            });\n+          }\n+        }\n+      );\n+    },\n+    createContainer(attribute) {\n+      const container = document.createElement('div');\n+      container.className = 'ais-DynamicWidget';\n+\n+      rootContainer.appendChild(container);\n+\n+      return {\n+        container,\n+        apply: widget => {\n+          localWidgets.set(attribute, { widget, container, isMounted: false });\n+        },\n+      };\n+    },\n+  };\n+}\n+\n+storiesOf('Basics/DynamicWidgets', module).add(\n+  'default',\n+  withHits(({ search, container }) => {\n+    const stack = dynamicWidgets({\n+      transformItems(_attributes, results) {\n+        if (results._state.query === 'dog') {\n+          return ['categories'];\n+        }\n+        return ['brand', 'categories'];\n+      },\n+      container,\n+    });\n+\n+    const categoryContainer = stack.createContainer('categories');\n+\n+    categoryContainer.apply(\n+      menu({\n+        container: categoryContainer.container,\n+        attribute: 'categories',\n+      })\n+    );",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4659#discussion_r587357122",
+    "id": 587357122,
+    "in_reply_to_id": 586395662,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU4NzM1NzEyMg==",
+    "original_commit_id": "b9353c41ebc62f6c2e3a6a29fa8e61211f040030",
+    "original_line": 101,
+    "original_position": 101,
+    "original_start_line": 94,
+    "path": "stories/stack.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 603954959,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587357122/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 94,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-03-05T15:43:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587357122",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4659#discussion_r587504561"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587504561"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I've tried a similar option in https://github.com/algolia/instantsearch.js/pull/4659/commits/b785c1cb740ca421c36fd904144b84819ccde99c#diff-e1fb3ad37886947412250842890ce946afafddf6239f99be67cd710141bf6275",
+    "commit_id": "50b86af4298ea6f5da397bb760e2720bd89de1e1",
+    "created_at": "2021-03-04T14:16:20Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import { storiesOf } from '@storybook/html';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { withHits } from '../.storybook/decorators';\n+import { Widget } from '../src/types';\n+import { refinementList, menu } from '../src/widgets';\n+\n+type DynamicWidgetsParams = {\n+  container: HTMLElement;\n+  transformItems(items: string[], results: SearchResults): string[];\n+};\n+\n+type DynamicWidgets = Widget & {\n+  // addWidgets(widget: Widget[]): DynamicWidgets;\n+  // removeWidgets(widget: Widget[]): DynamicWidgets;\n+\n+  createContainer(\n+    attribute: string\n+  ): { container: HTMLElement; apply(widget: Widget): void };\n+};\n+\n+function dynamicWidgets({\n+  container: rootContainer,\n+  transformItems,\n+}: DynamicWidgetsParams): DynamicWidgets {\n+  const localWidgets: Map<\n+    string,\n+    { widget: Widget; container: HTMLElement; isMounted: boolean }\n+  > = new Map();\n+\n+  return {\n+    // @ts-expect-error\n+    $$type: 'ais.dynamicWidgets',\n+    // @ts-expect-error\n+    $$widgetType: 'ais.dynamicWidgets',\n+    init() {},\n+    render({ results, parent }) {\n+      // results.facetOrder.map(facet => facet.attribute)\n+      const attributesToRender = transformItems([], results);\n+\n+      localWidgets.forEach(\n+        ({ widget, isMounted, container }, attribute, localWidgets) => {\n+          const shouldMount = attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            parent!.addWidgets([widget]);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            // make sure this only happens after the regular render, otherwise it happens too quick\n+            // render is \"deferred\" for the next microtask\n+            // so this needs to be a whole task later\n+            setTimeout(() => parent!.removeWidgets([widget]), 0);\n+            localWidgets.set(attribute, {\n+              widget,\n+              container,\n+              isMounted: false,\n+            });\n+          }\n+        }\n+      );\n+    },\n+    createContainer(attribute) {\n+      const container = document.createElement('div');\n+      container.className = 'ais-DynamicWidget';\n+\n+      rootContainer.appendChild(container);\n+\n+      return {\n+        container,\n+        apply: widget => {\n+          localWidgets.set(attribute, { widget, container, isMounted: false });\n+        },\n+      };\n+    },\n+  };\n+}\n+\n+storiesOf('Basics/DynamicWidgets', module).add(\n+  'default',\n+  withHits(({ search, container }) => {\n+    const stack = dynamicWidgets({\n+      transformItems(_attributes, results) {\n+        if (results._state.query === 'dog') {\n+          return ['categories'];\n+        }\n+        return ['brand', 'categories'];\n+      },\n+      container,\n+    });\n+\n+    const categoryContainer = stack.createContainer('categories');\n+\n+    categoryContainer.apply(\n+      menu({\n+        container: categoryContainer.container,\n+        attribute: 'categories',\n+      })\n+    );",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4659#discussion_r587504561",
+    "id": 587504561,
+    "in_reply_to_id": 586395662,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU4NzUwNDU2MQ==",
+    "original_commit_id": "b9353c41ebc62f6c2e3a6a29fa8e61211f040030",
+    "original_line": 101,
+    "original_position": 101,
+    "original_start_line": 94,
+    "path": "stories/stack.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 604145553,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587504561/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 94,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-03-05T15:43:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/587504561",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4659#discussion_r589338801"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/589338801"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Nice little addition for a good impact :) ",
+    "commit_id": "50b86af4298ea6f5da397bb760e2720bd89de1e1",
+    "created_at": "2021-03-08T11:00:58Z",
+    "diff_hunk": "@@ -76,8 +77,9 @@ const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWi\n       init(initOptions) {\n         widgets.forEach(widget => {\n           const attribute = getAttribute(widget, initOptions);\n-          localWidgets.set(attribute, { widget, isMounted: false });\n+          localWidgets.set(attribute, { widget, isMounted: true });\n         });\n+        initOptions.parent!.addWidgets(widgets);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4659#discussion_r589338801",
+    "id": 589338801,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU4OTMzODgwMQ==",
+    "original_commit_id": "50b86af4298ea6f5da397bb760e2720bd89de1e1",
+    "original_line": 82,
+    "original_position": 15,
+    "original_start_line": 80,
+    "path": "stories/stack-4.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 606178178,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/589338801/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 80,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-03-08T11:00:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/589338801",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  }
+]

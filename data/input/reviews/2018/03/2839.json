@@ -1,0 +1,2085 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682633"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682633"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "can we have a test for the behaviour when you refine, and after that dispose?",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:02:26Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import algoliasearchHelper, { SearchParameters } from 'algoliasearch-helper';\n+\n+import connectConfigure from '../connectConfigure.js';\n+\n+const fakeClient = { addAlgoliaAgent: () => {}, search: jest.fn() };\n+\n+describe('connectConfigure', () => {\n+  let helper;\n+\n+  beforeEach(() => {\n+    helper = algoliasearchHelper(fakeClient, '', {});\n+  });\n+\n+  it('throws on bad usage', () => {\n+    // without searchParameters\n+    {\n+      const makeWidget = connectConfigure();\n+      expect(() => makeWidget()).toThrow();\n+    }\n+\n+    // with a renderFn but no unmountFn\n+    {\n+      const makeWidget = connectConfigure(jest.fn(), undefined);\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+\n+    // with a unmountFn but no renderFn\n+    {\n+      const makeWidget = connectConfigure(undefined, jest.fn());\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+  });\n+\n+  it('should apply searchParameters', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    const config = widget.getConfiguration(SearchParameters.make({}));\n+    expect(config).toEqual({ analytics: true });\n+  });\n+\n+  it('should apply searchParameters with a higher priority', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false, extra: true })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+  });\n+\n+  it('should apply new searchParameters on refine()', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    helper.setState(widget.getConfiguration());\n+    widget.init({ helper });\n+\n+    expect(widget.getConfiguration()).toEqual({ analytics: true });\n+    expect(helper.getState().analytics).toEqual(true);\n+\n+    widget._refine({ hitsPerPage: 3 });\n+\n+    expect(widget.getConfiguration()).toEqual({ hitsPerPage: 3 });\n+    expect(helper.getState().analytics).toBe(undefined);\n+    expect(helper.getState().hitsPerPage).toBe(3);\n+  });\n+\n+  it('should dispose all the state setted by configure', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    helper.setState(widget.getConfiguration());\n+    widget.init({ helper });\n+\n+    expect(widget.getConfiguration()).toEqual({ analytics: true });\n+    expect(helper.getState().analytics).toBe(true);\n+\n+    const nextState = widget.dispose({ state: helper.getState() });\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682633",
+    "id": 177682633,
+    "line": 88,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MjYzMw==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 89,
+    "original_position": 89,
+    "original_start_line": null,
+    "path": "src/connectors/configure/__tests__/connectConfigure-test.js",
+    "position": 88,
+    "pull_request_review_id": 107595553,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682633/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682633",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682736"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682736"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the **Configure** [...]",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:02:50Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682736",
+    "id": 177682736,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MjczNg==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 30,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682736/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682736",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682777"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682777"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "set by configure",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:03:02Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import algoliasearchHelper, { SearchParameters } from 'algoliasearch-helper';\n+\n+import connectConfigure from '../connectConfigure.js';\n+\n+const fakeClient = { addAlgoliaAgent: () => {}, search: jest.fn() };\n+\n+describe('connectConfigure', () => {\n+  let helper;\n+\n+  beforeEach(() => {\n+    helper = algoliasearchHelper(fakeClient, '', {});\n+  });\n+\n+  it('throws on bad usage', () => {\n+    // without searchParameters\n+    {\n+      const makeWidget = connectConfigure();\n+      expect(() => makeWidget()).toThrow();\n+    }\n+\n+    // with a renderFn but no unmountFn\n+    {\n+      const makeWidget = connectConfigure(jest.fn(), undefined);\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+\n+    // with a unmountFn but no renderFn\n+    {\n+      const makeWidget = connectConfigure(undefined, jest.fn());\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+  });\n+\n+  it('should apply searchParameters', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    const config = widget.getConfiguration(SearchParameters.make({}));\n+    expect(config).toEqual({ analytics: true });\n+  });\n+\n+  it('should apply searchParameters with a higher priority', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false, extra: true })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+  });\n+\n+  it('should apply new searchParameters on refine()', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    helper.setState(widget.getConfiguration());\n+    widget.init({ helper });\n+\n+    expect(widget.getConfiguration()).toEqual({ analytics: true });\n+    expect(helper.getState().analytics).toEqual(true);\n+\n+    widget._refine({ hitsPerPage: 3 });\n+\n+    expect(widget.getConfiguration()).toEqual({ hitsPerPage: 3 });\n+    expect(helper.getState().analytics).toBe(undefined);\n+    expect(helper.getState().hitsPerPage).toBe(3);\n+  });\n+\n+  it('should dispose all the state setted by configure', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177682777",
+    "id": 177682777,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4Mjc3Nw==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure/__tests__/connectConfigure-test.js",
+    "position": 1,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682777/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177682777",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683051"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683051"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "with the ones set from other widgets",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:04:04Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683051",
+    "id": 177683051,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MzA1MQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 72,
+    "original_position": 72,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683051/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683051",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683104"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683104"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "searchParameters",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:04:17Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets\n+          const actualState = helper.getState();\n+          const nextSearchParameters = enhanceConfiguration({})(actualState, {\n+            getConfiguration: () => searchParameters,\n+          });\n+\n+          // trigger a search with the new merged searchParameter",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683104",
+    "id": 177683104,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MzEwNA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683104/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683104",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683155"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683155"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`widgetParams.searchParameters`",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:04:30Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets\n+          const actualState = helper.getState();\n+          const nextSearchParameters = enhanceConfiguration({})(actualState, {\n+            getConfiguration: () => searchParameters,\n+          });\n+\n+          // trigger a search with the new merged searchParameter\n+          helper.setState(nextSearchParameters).search();\n+\n+          // update original `widgetParams.searchParameter` to the new refined one",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683155",
+    "id": 177683155,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MzE1NQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 81,
+    "original_position": 81,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683155/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683155",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683672"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683672"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "did these tests still pass?",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:06:10Z",
+    "diff_hunk": "@@ -9,77 +8,4 @@ describe('configure', () => {\n       () => configure(/ok/),\n     ].forEach(widget => expect(widget).toThrowError(/Usage/));\n   });\n-\n-  it('Applies searchParameters if nothing in configuration yet', () => {\n-    const widget = configure({ analytics: true });\n-    const config = widget.getConfiguration(SearchParameters.make({}));\n-    expect(config).toEqual({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177683672",
+    "id": 177683672,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY4MzY3Mg==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 16,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/widgets/configure/__tests__/configure-test.js",
+    "position": 13,
+    "pull_request_review_id": 107595698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683672/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177683672",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177690243"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177690243"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, just moved them to the connector side since it holds the logic now",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:29:53Z",
+    "diff_hunk": "@@ -9,77 +8,4 @@ describe('configure', () => {\n       () => configure(/ok/),\n     ].forEach(widget => expect(widget).toThrowError(/Usage/));\n   });\n-\n-  it('Applies searchParameters if nothing in configuration yet', () => {\n-    const widget = configure({ analytics: true });\n-    const config = widget.getConfiguration(SearchParameters.make({}));\n-    expect(config).toEqual({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177690243",
+    "id": 177690243,
+    "in_reply_to_id": 177683672,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY5MDI0Mw==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 16,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/widgets/configure/__tests__/configure-test.js",
+    "position": 13,
+    "pull_request_review_id": 107604756,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177690243/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177690243",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177696102"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177696102"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You should nest another `describe` and use multiple `it`",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T09:51:58Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import algoliasearchHelper, { SearchParameters } from 'algoliasearch-helper';\n+\n+import connectConfigure from '../connectConfigure.js';\n+\n+const fakeClient = { addAlgoliaAgent: () => {}, search: jest.fn() };\n+\n+describe('connectConfigure', () => {\n+  let helper;\n+\n+  beforeEach(() => {\n+    helper = algoliasearchHelper(fakeClient, '', {});\n+  });\n+\n+  it('throws on bad usage', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177696102",
+    "id": 177696102,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzY5NjEwMg==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 14,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "src/connectors/configure/__tests__/connectConfigure-test.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177696102/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177696102",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177722775"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722775"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This should be checked before returning the widget factory l.39",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T11:51:46Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177722775",
+    "id": 177722775,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyMjc3NQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 42,
+    "original_position": 42,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722775/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722775",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177722959"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722959"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What are use cases behind those two checks?",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T11:52:45Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177722959",
+    "id": 177722959,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyMjk1OQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 43,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722959/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177722959",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177723676"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177723676"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't think we have a strong convention on `render` and `_render`. However I'm thinking that the most useful method is the one that should \"public\" (not prefixed by _). In this case the most useful would be the one bound to the helper, so maybe we should exhange those two names here.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T11:56:21Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177723676",
+    "id": 177723676,
+    "line": 57,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyMzY3Ng==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 54,
+    "original_position": 54,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 57,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177723676/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177723676",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177724186"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177724186"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`actualState === this.removeSearchParameters(helper.getState())` and you don't need to do a `setState`, just keep the reference to the newly created state.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T11:58:41Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets\n+          const actualState = helper.getState();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177724186",
+    "id": 177724186,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNDE4Ng==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 73,
+    "original_position": 73,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177724186/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177724186",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177725159"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177725159"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if unmountFn exist, we already that it is a function. We can just test if it's defined.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:03:22Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets\n+          const actualState = helper.getState();\n+          const nextSearchParameters = enhanceConfiguration({})(actualState, {\n+            getConfiguration: () => searchParameters,\n+          });\n+\n+          // trigger a search with the new merged searchParameter\n+          helper.setState(nextSearchParameters).search();\n+\n+          // update original `widgetParams.searchParameter` to the new refined one\n+          widgetParams.searchParameters = searchParameters;\n+        };\n+      },\n+\n+      render() {\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            false\n+          );\n+        }\n+      },\n+\n+      dispose({ state }) {\n+        if (isFunction(unmountFn)) unmountFn();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177725159",
+    "id": 177725159,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNTE1OQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177725159/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177725159",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726031"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726031"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'd move that either in its own files or in a dedicated package that is less \"everything go\". What about \"lifecycle.js\"?",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:07:26Z",
+    "diff_hunk": "@@ -3,13 +3,11 @@\n import algoliasearch from 'algoliasearch/src/browser/builds/algoliasearchLite.js';\n import algoliasearchHelper from 'algoliasearch-helper';\n import forEach from 'lodash/forEach';\n-import mergeWith from 'lodash/mergeWith';\n-import union from 'lodash/union';\n-import isPlainObject from 'lodash/isPlainObject';\n import { EventEmitter } from 'events';\n import urlSyncWidget from './url-sync.js';\n import version from './version.js';\n import createHelpers from './createHelpers.js';\n+import { enhanceConfiguration } from './utils.js';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726031",
+    "id": 177726031,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNjAzMQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 10,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726031/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726031",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726414"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726414"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I like the explicitness, but isn't a bit redundant? Why not `connectConfigure()`",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:09:15Z",
+    "diff_hunk": "@@ -29,23 +30,12 @@ Full documentation available at https://community.algolia.com/instantsearch.js/v\n  *   })\n  * );\n  */\n-export default function configure(searchParameters = {}) {\n-  if (!isPlainObject(searchParameters)) {\n+export default function configure(searchParameters) {\n+  try {\n+    // make it clear we do not have default renderFn && unmountFn for this widget\n+    const makeWidget = connectConfigure(undefined, undefined);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726414",
+    "id": 177726414,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNjQxNA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 36,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/widgets/configure/configure.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726414/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726414",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726771"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726771"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'd add some tests. This a good opportunity since it's now standalone.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:10:42Z",
+    "diff_hunk": "@@ -412,3 +416,31 @@ function parseAroundLatLngFromString(value) {\n     lng: parseFloat(pattern[2]),\n   };\n }\n+\n+function enhanceConfiguration(searchParametersFromUrl) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177726771",
+    "id": 177726771,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNjc3MQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 420,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/lib/utils.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726771/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177726771",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177727739"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177727739"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You should extract the function through the render function and also test that the reference is the same at init and render.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:14:51Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import algoliasearchHelper, { SearchParameters } from 'algoliasearch-helper';\n+\n+import connectConfigure from '../connectConfigure.js';\n+\n+const fakeClient = { addAlgoliaAgent: () => {}, search: jest.fn() };\n+\n+describe('connectConfigure', () => {\n+  let helper;\n+\n+  beforeEach(() => {\n+    helper = algoliasearchHelper(fakeClient, '', {});\n+  });\n+\n+  it('throws on bad usage', () => {\n+    // without searchParameters\n+    {\n+      const makeWidget = connectConfigure();\n+      expect(() => makeWidget()).toThrow();\n+    }\n+\n+    // with a renderFn but no unmountFn\n+    {\n+      const makeWidget = connectConfigure(jest.fn(), undefined);\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+\n+    // with a unmountFn but no renderFn\n+    {\n+      const makeWidget = connectConfigure(undefined, jest.fn());\n+      expect(() => makeWidget({ searchParameters: {} })).toThrow();\n+    }\n+  });\n+\n+  it('should apply searchParameters', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    const config = widget.getConfiguration(SearchParameters.make({}));\n+    expect(config).toEqual({ analytics: true });\n+  });\n+\n+  it('should apply searchParameters with a higher priority', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+\n+    {\n+      const config = widget.getConfiguration(\n+        SearchParameters.make({ analytics: false, extra: true })\n+      );\n+      expect(config).toEqual({ analytics: true });\n+    }\n+  });\n+\n+  it('should apply new searchParameters on refine()', () => {\n+    const makeWidget = connectConfigure();\n+    const widget = makeWidget({ searchParameters: { analytics: true } });\n+\n+    helper.setState(widget.getConfiguration());\n+    widget.init({ helper });\n+\n+    expect(widget.getConfiguration()).toEqual({ analytics: true });\n+    expect(helper.getState().analytics).toEqual(true);\n+\n+    widget._refine({ hitsPerPage: 3 });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177727739",
+    "id": 177727739,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyNzczOQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 71,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "src/connectors/configure/__tests__/connectConfigure-test.js",
+    "position": 1,
+    "pull_request_review_id": 107608478,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177727739/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177727739",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177728969"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177728969"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ensure we have a renderFn and an unmountFn if one is specified, they should come by pair.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:20:05Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177728969",
+    "id": 177728969,
+    "in_reply_to_id": 177722959,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyODk2OQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 43,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107652477,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177728969/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177728969",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729270"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729270"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Even if there is no strong convention on this one, it's still this pattern used in some other connectors. I think we should leave it like that until we agree on a pattern.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:21:23Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729270",
+    "id": 177729270,
+    "in_reply_to_id": 177723676,
+    "line": 57,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyOTI3MA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 54,
+    "original_position": 54,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 57,
+    "pull_request_review_id": 107652846,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729270/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729270",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729610"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729610"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Not the scope of the PR, we should keep this on mind and have it in another one or with the instantsearch-core refactoring.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:22:47Z",
+    "diff_hunk": "@@ -3,13 +3,11 @@\n import algoliasearch from 'algoliasearch/src/browser/builds/algoliasearchLite.js';\n import algoliasearchHelper from 'algoliasearch-helper';\n import forEach from 'lodash/forEach';\n-import mergeWith from 'lodash/mergeWith';\n-import union from 'lodash/union';\n-import isPlainObject from 'lodash/isPlainObject';\n import { EventEmitter } from 'events';\n import urlSyncWidget from './url-sync.js';\n import version from './version.js';\n import createHelpers from './createHelpers.js';\n+import { enhanceConfiguration } from './utils.js';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729610",
+    "id": 177729610,
+    "in_reply_to_id": 177726031,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyOTYxMA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 10,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.js",
+    "position": 1,
+    "pull_request_review_id": 107653278,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729610/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729610",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729954"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729954"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, might feel more strange with `undefined` than witout",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:23:59Z",
+    "diff_hunk": "@@ -29,23 +30,12 @@ Full documentation available at https://community.algolia.com/instantsearch.js/v\n  *   })\n  * );\n  */\n-export default function configure(searchParameters = {}) {\n-  if (!isPlainObject(searchParameters)) {\n+export default function configure(searchParameters) {\n+  try {\n+    // make it clear we do not have default renderFn && unmountFn for this widget\n+    const makeWidget = connectConfigure(undefined, undefined);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177729954",
+    "id": 177729954,
+    "in_reply_to_id": 177726414,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzcyOTk1NA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 36,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/widgets/configure/configure.js",
+    "position": 1,
+    "pull_request_review_id": 107653667,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729954/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177729954",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177730045"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177730045"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Not the scope of the PR as well, let's try to keep them small 👍 ",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T12:24:18Z",
+    "diff_hunk": "@@ -412,3 +416,31 @@ function parseAroundLatLngFromString(value) {\n     lng: parseFloat(pattern[2]),\n   };\n }\n+\n+function enhanceConfiguration(searchParametersFromUrl) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177730045",
+    "id": 177730045,
+    "in_reply_to_id": 177726771,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzczMDA0NQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 420,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/lib/utils.js",
+    "position": 1,
+    "pull_request_review_id": 107653768,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177730045/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177730045",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177766247"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177766247"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Same for the case in the `init` & `render`.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T14:20:48Z",
+    "diff_hunk": "@@ -0,0 +1,114 @@\n+import isFunction from 'lodash/isFunction';\n+import isPlainObject from 'lodash/isPlainObject';\n+\n+import { enhanceConfiguration } from '../../lib/utils.js';\n+\n+const usage = `Usage:\n+var customConfigureWidget = connectConfigure(\n+  function renderFn(params, isFirstRendering) {\n+    // params = {\n+    //   refine,\n+    //   widgetParams\n+    // }\n+  },\n+  function disposeFn() {}\n+)\n+`;\n+\n+/**\n+ * @typedef {Object} CustomConfigureWidgetOptions\n+ * @property {Object} searchParameters The Configure widget options are search parameters\n+ */\n+\n+/**\n+ * @typedef {Object} ConfigureRenderingOptions\n+ * @property {function(searchParameters: Object)} refine Sets new `searchParameters` and trigger a search.\n+ * @property {Object} widgetParams All original `CustomConfigureWidgetOptions` forwarded to the `renderFn`.\n+ */\n+\n+/**\n+ * **Configure** connector provides the logic to build a custom widget\n+ * that will give you ability to override or force some search parameters sent to Algolia API.\n+ *\n+ * @type {Connector}\n+ * @param {function(ConfigureRenderingOptions)} renderFn Rendering function for the custom **Configure** Widget.\n+ * @param {function} unmountFn Unmount function called when the widget is disposed.\n+ * @return {function(CustomConfigureWidgetOptions)} Re-usable widget factory for a custom **Configure** widget.\n+ */\n+export default function connectConfigure(renderFn, unmountFn) {\n+  return (widgetParams = {}) => {\n+    if (\n+      !isPlainObject(widgetParams.searchParameters) ||\n+      (isFunction(renderFn) && !isFunction(unmountFn)) ||\n+      (!isFunction(renderFn) && isFunction(unmountFn))\n+    ) {\n+      throw new Error(usage);\n+    }\n+\n+    return {\n+      getConfiguration() {\n+        return widgetParams.searchParameters;\n+      },\n+\n+      init({ helper }) {\n+        this._refine = this.refine(helper);\n+\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            true\n+          );\n+        }\n+      },\n+\n+      refine(helper) {\n+        return searchParameters => {\n+          // remove old `searchParameters` setted by the widget\n+          helper.setState(this.removeSearchParameters(helper.getState()));\n+\n+          // merge new `searchParameters` with the setted one from other widgets\n+          const actualState = helper.getState();\n+          const nextSearchParameters = enhanceConfiguration({})(actualState, {\n+            getConfiguration: () => searchParameters,\n+          });\n+\n+          // trigger a search with the new merged searchParameter\n+          helper.setState(nextSearchParameters).search();\n+\n+          // update original `widgetParams.searchParameter` to the new refined one\n+          widgetParams.searchParameters = searchParameters;\n+        };\n+      },\n+\n+      render() {\n+        if (isFunction(renderFn)) {\n+          renderFn(\n+            {\n+              refine: this._refine,\n+              widgetParams,\n+            },\n+            false\n+          );\n+        }\n+      },\n+\n+      dispose({ state }) {\n+        if (isFunction(unmountFn)) unmountFn();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177766247",
+    "id": 177766247,
+    "in_reply_to_id": 177725159,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3Nzc2NjI0Nw==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "src/connectors/configure/connectConfigure.js",
+    "position": 1,
+    "pull_request_review_id": 107696781,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177766247/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177766247",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177769633"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177769633"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes but you can still test that the widget calls the appropriate functions of the connector.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T14:29:30Z",
+    "diff_hunk": "@@ -9,77 +8,4 @@ describe('configure', () => {\n       () => configure(/ok/),\n     ].forEach(widget => expect(widget).toThrowError(/Usage/));\n   });\n-\n-  it('Applies searchParameters if nothing in configuration yet', () => {\n-    const widget = configure({ analytics: true });\n-    const config = widget.getConfiguration(SearchParameters.make({}));\n-    expect(config).toEqual({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177769633",
+    "id": 177769633,
+    "in_reply_to_id": 177683672,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3Nzc2OTYzMw==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 16,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/widgets/configure/__tests__/configure-test.js",
+    "position": 13,
+    "pull_request_review_id": 107696781,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177769633/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177769633",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177804888"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177804888"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@samouss The widget shipped with instantsearch.js is a \"dumb\" one there's no logic nor rendering, only forwarding options to the connector. Does not makes senses.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T16:10:40Z",
+    "diff_hunk": "@@ -9,77 +8,4 @@ describe('configure', () => {\n       () => configure(/ok/),\n     ].forEach(widget => expect(widget).toThrowError(/Usage/));\n   });\n-\n-  it('Applies searchParameters if nothing in configuration yet', () => {\n-    const widget = configure({ analytics: true });\n-    const config = widget.getConfiguration(SearchParameters.make({}));\n-    expect(config).toEqual({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177804888",
+    "id": 177804888,
+    "in_reply_to_id": 177683672,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzgwNDg4OA==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 16,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/widgets/configure/__tests__/configure-test.js",
+    "position": 13,
+    "pull_request_review_id": 107746462,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177804888/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177804888",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177820102"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177820102"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yep I know but I prefer to always over tests rather than no tests, but I understood your point. I'm fine with it.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-28T17:01:27Z",
+    "diff_hunk": "@@ -9,77 +8,4 @@ describe('configure', () => {\n       () => configure(/ok/),\n     ].forEach(widget => expect(widget).toThrowError(/Usage/));\n   });\n-\n-  it('Applies searchParameters if nothing in configuration yet', () => {\n-    const widget = configure({ analytics: true });\n-    const config = widget.getConfiguration(SearchParameters.make({}));\n-    expect(config).toEqual({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r177820102",
+    "id": 177820102,
+    "in_reply_to_id": 177683672,
+    "line": 16,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3NzgyMDEwMg==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 16,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/widgets/configure/__tests__/configure-test.js",
+    "position": 13,
+    "pull_request_review_id": 107764897,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177820102/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/177820102",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178030955"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178030955"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't agree on this one. You are moving some code out of a file, but utils.js is not the good file for that.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-29T11:47:03Z",
+    "diff_hunk": "@@ -3,13 +3,11 @@\n import algoliasearch from 'algoliasearch/src/browser/builds/algoliasearchLite.js';\n import algoliasearchHelper from 'algoliasearch-helper';\n import forEach from 'lodash/forEach';\n-import mergeWith from 'lodash/mergeWith';\n-import union from 'lodash/union';\n-import isPlainObject from 'lodash/isPlainObject';\n import { EventEmitter } from 'events';\n import urlSyncWidget from './url-sync.js';\n import version from './version.js';\n import createHelpers from './createHelpers.js';\n+import { enhanceConfiguration } from './utils.js';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178030955",
+    "id": 178030955,
+    "in_reply_to_id": 177726031,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3ODAzMDk1NQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 10,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.js",
+    "position": 1,
+    "pull_request_review_id": 108016670,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178030955/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178030955",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178031106"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178031106"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I do not agree. You should test this function.",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-29T11:47:56Z",
+    "diff_hunk": "@@ -412,3 +416,31 @@ function parseAroundLatLngFromString(value) {\n     lng: parseFloat(pattern[2]),\n   };\n }\n+\n+function enhanceConfiguration(searchParametersFromUrl) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178031106",
+    "id": 178031106,
+    "in_reply_to_id": 177726771,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3ODAzMTEwNg==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 420,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/lib/utils.js",
+    "position": 1,
+    "pull_request_review_id": 108016874,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178031106/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178031106",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178278901"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2839"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178278901"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "One way to take a decision on this is to ask ourselves \"Is this code already tested by other tests\". i.e. if I completely break this module, will tests still pass? If yes then this is an issue and we need to add tests on it. If not, less of an issue but we'd have to discuss about which parts we consider needed for unit tests or not.\r\n\r\nAs a general rule we can agree that, when moving code around for your own needs, if this code is not tested (our fault), let's add tests to it. Especially since it is not a big function and especially if you are moving this to be reused in a new feature you are developing.\r\n\r\nOn a side note, this code is probably part mine so I'd be happy to write some tests with you @iam4x in pair, deal? Book some time with me!\r\n\r\nParts of the code seems to be tested, maybe not the function itself but the way it's used by others. So most of the tests should already be written: https://github.com/algolia/instantsearch.js/commit/0ea3bef85922b876b4efacf64f3025fb730ee982",
+    "commit_id": "53b96b82c2716b52086e3b8983b5388e78ab1374",
+    "created_at": "2018-03-30T11:58:45Z",
+    "diff_hunk": "@@ -412,3 +416,31 @@ function parseAroundLatLngFromString(value) {\n     lng: parseFloat(pattern[2]),\n   };\n }\n+\n+function enhanceConfiguration(searchParametersFromUrl) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2839#discussion_r178278901",
+    "id": 178278901,
+    "in_reply_to_id": 177726771,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE3ODI3ODkwMQ==",
+    "original_commit_id": "f4a367fb4b653a105cb9e2fcc87d6d668dc46a67",
+    "original_line": 420,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/lib/utils.js",
+    "position": 1,
+    "pull_request_review_id": 108317485,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2839",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178278901/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-04T12:45:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/178278901",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  }
+]

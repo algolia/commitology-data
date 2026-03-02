@@ -1,0 +1,71 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5746#discussion_r1261096048"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5746"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1261096048"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "![well done!](https://i.giphy.com/media/NEvPzZ8bd1V4Y/200w.gif)",
+    "commit_id": "b738e425394ac307bb8066d6f2723c5c677de58a",
+    "created_at": "2023-07-12T12:20:32Z",
+    "diff_hunk": "@@ -0,0 +1,355 @@\n+/**\n+ * @jest-environment jsdom\n+ */\n+import {\n+  createBreadcrumbConnectorTests,\n+  createCurrentRefinementsConnectorTests,\n+  createHierarchicalMenuConnectorTests,\n+  createHitsPerPageConnectorTests,\n+  createMenuConnectorTests,\n+  createNumericMenuConnectorTests,\n+  createPaginationConnectorTests,\n+  createRatingMenuConnectorTests,\n+  createRefinementListConnectorTests,\n+  createToggleRefinementConnectorTests,\n+} from '@instantsearch/tests';\n+\n+import { nextTick, mountApp } from '../../test/utils';\n+import { renderCompat } from '../util/vue-compat';\n+import {\n+  AisInstantSearch,\n+  AisMenu,\n+  AisRefinementList,\n+  createWidgetMixin,\n+} from '../instantsearch';\n+import {\n+  connectBreadcrumb,\n+  connectCurrentRefinements,\n+  connectHierarchicalMenu,\n+  connectHitsPerPage,\n+  connectMenu,\n+  connectNumericMenu,\n+  connectPagination,\n+  connectRatingMenu,\n+  connectRefinementList,\n+  connectToggleRefinement,\n+} from 'instantsearch.js/es/connectors';\n+jest.unmock('instantsearch.js/es');\n+\n+createRefinementListConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomRefinementList = createCustomWidget({\n+      connector: connectRefinementList,\n+      name: 'RefinementList',\n+      requiredProps: ['attribute'],\n+      urlValue: 'value',\n+      refineValue: 'Apple',\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomRefinementList, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createHierarchicalMenuConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomHierarchicalMenu = createCustomWidget({\n+      connector: connectHierarchicalMenu,\n+      name: 'HierarchicalMenu',\n+      requiredProps: ['attributes'],\n+      urlValue: 'value',\n+      refineValue: 'Apple',\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomHierarchicalMenu, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createBreadcrumbConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomBreadcrumb = createCustomWidget({\n+      connector: connectBreadcrumb,\n+      name: 'Breadcrumb',\n+      requiredProps: ['attributes'],\n+      urlValue: 'Apple > iPhone',\n+      refineValue: 'Apple',\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomBreadcrumb, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createMenuConnectorTests(async ({ instantSearchOptions, widgetParams }) => {\n+  const CustomMenu = createCustomWidget({\n+    connector: connectMenu,\n+    name: 'Menu',\n+    requiredProps: ['attribute'],\n+    urlValue: 'value',\n+    refineValue: 'Apple',\n+  });\n+\n+  mountApp(\n+    {\n+      render: renderCompat((h) =>\n+        h(AisInstantSearch, { props: instantSearchOptions }, [\n+          h(CustomMenu, { props: widgetParams }),\n+          h(AisMenu, { props: widgetParams }),\n+        ])\n+      ),\n+    },\n+    document.body.appendChild(document.createElement('div'))\n+  );\n+\n+  await nextTick();\n+});\n+\n+createPaginationConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomPagination = createCustomWidget({\n+      connector: connectPagination,\n+      name: 'Pagination',\n+      urlValue: 10,\n+      refineValue: (state) => (state.currentRefinement === 0 ? 1 : 0),\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomPagination, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createCurrentRefinementsConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomCurrentRefinements = createCustomWidget({\n+      connector: connectCurrentRefinements,\n+      name: 'CurrentRefinements',\n+      urlValue: {\n+        attribute: 'brand',\n+        type: 'disjunctive',\n+        value: 'Apple',\n+        label: 'Apple',\n+      },\n+      refineValue: {\n+        attribute: 'brand',\n+        type: 'disjunctive',\n+        value: 'Samsung',\n+        label: 'Samsung',\n+      },\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomCurrentRefinements, { props: widgetParams }),\n+            h(AisRefinementList, { props: { attribute: 'brand' } }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createHitsPerPageConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomHitsPerPage = createCustomWidget({\n+      connector: connectHitsPerPage,\n+      name: 'HitsPerPage',\n+      requiredProps: ['items'],\n+      urlValue: 12,\n+      refineValue: (state) => (state.value === 10 ? 5 : 10),\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomHitsPerPage, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createNumericMenuConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomNumericMenu = createCustomWidget({\n+      connector: connectNumericMenu,\n+      name: 'NumericMenu',\n+      requiredProps: ['attribute', 'items'],\n+      urlValue: encodeURI('{ \"start\": 500 }'),\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomNumericMenu, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createRatingMenuConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomRatingMenu = createCustomWidget({\n+      connector: connectRatingMenu,\n+      name: 'RatingMenu',\n+      requiredProps: ['attribute'],\n+      urlValue: encodeURI('5'),\n+    });\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomRatingMenu, { props: widgetParams }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+createToggleRefinementConnectorTests(\n+  async ({ instantSearchOptions, widgetParams }) => {\n+    const CustomToggleRefinement = createCustomWidget({\n+      name: 'ToggleRefinement',\n+      connector: connectToggleRefinement,\n+      requiredProps: ['attribute', 'label'],\n+      refineValue: (state) => state.value,\n+    });\n+\n+    // Label is required in Vue\n+    const props = {\n+      ...widgetParams,\n+      label: 'Free Shipping',\n+    };\n+\n+    mountApp(\n+      {\n+        render: renderCompat((h) =>\n+          h(AisInstantSearch, { props: instantSearchOptions }, [\n+            h(CustomToggleRefinement, { props }),\n+          ])\n+        ),\n+      },\n+      document.body.appendChild(document.createElement('div'))\n+    );\n+\n+    await nextTick();\n+  }\n+);\n+\n+function createCustomWidget({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5746#discussion_r1261096048",
+    "id": 1261096048,
+    "line": 300,
+    "node_id": "PRRC_kwDOAlnbOs5LKsxw",
+    "original_commit_id": "b738e425394ac307bb8066d6f2723c5c677de58a",
+    "original_line": 300,
+    "original_position": 300,
+    "original_start_line": null,
+    "path": "packages/vue-instantsearch/src/__tests__/common-connectors.test.js",
+    "position": 300,
+    "pull_request_review_id": 1526226236,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5746",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1261096048/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-07-12T12:20:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1261096048",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,556 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1574793566"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574793566"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "We shouldn't test this in the CTS since passing templates is flavor-specific.",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-22T13:50:30Z",
+    "diff_hunk": "@@ -0,0 +1,429 @@\n+import {\n+  createRecommendResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { normalizeSnapshot } from '@instantsearch/testutils';\n+import { wait } from '@testing-library/user-event/dist/utils';\n+\n+import type { FrequentlyBoughtTogetherWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+export function createOptionsTests(\n+  setup: FrequentlyBoughtTogetherWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with default props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {\n+          objectIDs: ['objectID'],\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-FrequentlyBoughtTogether')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <section\n+          class=\"ais-FrequentlyBoughtTogether\"\n+        >\n+          <div\n+            class=\"ais-FrequentlyBoughtTogether-container\"\n+          >\n+            <ol\n+              class=\"ais-FrequentlyBoughtTogether-list\"\n+            >\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Moschino Love\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Moschino Love – Shoulder bag\"\n+            }\n+          },\n+          \"_score\": 40.87,\n+          \"brand\": \"Moschino Love\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Moschino Love – Shoulder bag\",\n+          \"objectID\": \"A0E200000002BLK\",\n+          \"parentID\": \"JC4052PP10LB100A\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 227.5\n+          }\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Gabs\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Bag “Sabrina“ medium Gabs\"\n+            }\n+          },\n+          \"_score\": 40.91,\n+          \"brand\": \"Gabs\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Bag “Sabrina“ medium Gabs\",\n+          \"objectID\": \"A0E200000001WFI\",\n+          \"parentID\": \"SABRINA\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 210\n+          }\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"La Carrie Bag\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Bag La Carrie Bag small black\"\n+            }\n+          },\n+          \"_score\": 39.92,\n+          \"brand\": \"La Carrie Bag\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Bag La Carrie Bag small black\",\n+          \"objectID\": \"A0E2000000024R1\",\n+          \"parentID\": \"151\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 161.25\n+          }\n+        }\n+              </li>\n+            </ol>\n+          </div>\n+        </section>\n+      `\n+      );\n+    });\n+\n+    test('renders transformed items', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {\n+          objectIDs: ['objectID'],\n+          transformItems(items) {\n+            return items.map((item) => ({\n+              objectID: item.objectID,\n+              __position: item.__position,\n+            }));\n+          },\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-FrequentlyBoughtTogether')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <section\n+          class=\"ais-FrequentlyBoughtTogether\"\n+        >\n+          <div\n+            class=\"ais-FrequentlyBoughtTogether-container\"\n+          >\n+            <ol\n+              class=\"ais-FrequentlyBoughtTogether-list\"\n+            >\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E200000002BLK\"\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E200000001WFI\"\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E2000000024R1\"\n+        }\n+              </li>\n+            </ol>\n+          </div>\n+        </section>\n+      `\n+      );\n+    });\n+\n+    describe('components', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1574793566",
+    "id": 1574793566,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5d3XFe",
+    "original_commit_id": "b1721eafd52db354e6ece7c85c36cf7f0e305ac5",
+    "original_line": 235,
+    "original_position": 225,
+    "original_start_line": null,
+    "path": "tests/common/widgets/frequently-bought-together/options.ts",
+    "position": 1,
+    "pull_request_review_id": 2014821849,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574793566/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T13:50:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574793566",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1575843520"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1575843520"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I mentioned in the description that this is a new behavior, because this is our first \"true\" unified ui component, which should not have differences between flavors as, except for the containing element (`rootTagName` in js), everything is coming from the ui component.",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-23T08:17:31Z",
+    "diff_hunk": "@@ -0,0 +1,429 @@\n+import {\n+  createRecommendResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { normalizeSnapshot } from '@instantsearch/testutils';\n+import { wait } from '@testing-library/user-event/dist/utils';\n+\n+import type { FrequentlyBoughtTogetherWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+export function createOptionsTests(\n+  setup: FrequentlyBoughtTogetherWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with default props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {\n+          objectIDs: ['objectID'],\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-FrequentlyBoughtTogether')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <section\n+          class=\"ais-FrequentlyBoughtTogether\"\n+        >\n+          <div\n+            class=\"ais-FrequentlyBoughtTogether-container\"\n+          >\n+            <ol\n+              class=\"ais-FrequentlyBoughtTogether-list\"\n+            >\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Moschino Love\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Moschino Love – Shoulder bag\"\n+            }\n+          },\n+          \"_score\": 40.87,\n+          \"brand\": \"Moschino Love\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Moschino Love – Shoulder bag\",\n+          \"objectID\": \"A0E200000002BLK\",\n+          \"parentID\": \"JC4052PP10LB100A\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 227.5\n+          }\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Gabs\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Bag “Sabrina“ medium Gabs\"\n+            }\n+          },\n+          \"_score\": 40.91,\n+          \"brand\": \"Gabs\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Bag “Sabrina“ medium Gabs\",\n+          \"objectID\": \"A0E200000001WFI\",\n+          \"parentID\": \"SABRINA\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 210\n+          }\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"_highlightResult\": {\n+            \"brand\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"La Carrie Bag\"\n+            },\n+            \"name\": {\n+              \"matchLevel\": \"none\",\n+              \"matchedWords\": [],\n+              \"value\": \"Bag La Carrie Bag small black\"\n+            }\n+          },\n+          \"_score\": 39.92,\n+          \"brand\": \"La Carrie Bag\",\n+          \"list_categories\": [\n+            \"Women\",\n+            \"Bags\",\n+            \"Shoulder bags\"\n+          ],\n+          \"name\": \"Bag La Carrie Bag small black\",\n+          \"objectID\": \"A0E2000000024R1\",\n+          \"parentID\": \"151\",\n+          \"price\": {\n+            \"currency\": \"EUR\",\n+            \"discount_level\": -100,\n+            \"discounted_value\": 0,\n+            \"on_sales\": false,\n+            \"value\": 161.25\n+          }\n+        }\n+              </li>\n+            </ol>\n+          </div>\n+        </section>\n+      `\n+      );\n+    });\n+\n+    test('renders transformed items', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {\n+          objectIDs: ['objectID'],\n+          transformItems(items) {\n+            return items.map((item) => ({\n+              objectID: item.objectID,\n+              __position: item.__position,\n+            }));\n+          },\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-FrequentlyBoughtTogether')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <section\n+          class=\"ais-FrequentlyBoughtTogether\"\n+        >\n+          <div\n+            class=\"ais-FrequentlyBoughtTogether-container\"\n+          >\n+            <ol\n+              class=\"ais-FrequentlyBoughtTogether-list\"\n+            >\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E200000002BLK\"\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E200000001WFI\"\n+        }\n+              </li>\n+              <li\n+                class=\"ais-FrequentlyBoughtTogether-item\"\n+              >\n+                {\n+          \"objectID\": \"A0E2000000024R1\"\n+        }\n+              </li>\n+            </ol>\n+          </div>\n+        </section>\n+      `\n+      );\n+    });\n+\n+    describe('components', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1575843520",
+    "id": 1575843520,
+    "in_reply_to_id": 1574793566,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5d7XbA",
+    "original_commit_id": "b1721eafd52db354e6ece7c85c36cf7f0e305ac5",
+    "original_line": 235,
+    "original_position": 225,
+    "original_start_line": null,
+    "path": "tests/common/widgets/frequently-bought-together/options.ts",
+    "position": 1,
+    "pull_request_review_id": 2016569466,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1575843520/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-23T08:17:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1575843520",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577577432"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577577432"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "No biggie and no need to change anything now, but the size of each records makes snapshots quite big. In the future we can make the mocks simpler (or override them in the tests) to make snapshots digestible.",
+    "commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "created_at": "2024-04-24T09:22:41Z",
+    "diff_hunk": "",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577577432",
+    "id": 1577577432,
+    "line": 1,
+    "node_id": "PRRC_kwDOAlnbOs5eB-vY",
+    "original_commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "tests/common/widgets/frequently-bought-together/options.ts",
+    "position": 1,
+    "pull_request_review_id": 2019357959,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577577432/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "file",
+    "updated_at": "2024-04-24T09:25:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577577432",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577579602"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577579602"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "You don't need dollar signs in JSX for interpolation.",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-24T09:24:18Z",
+    "diff_hunk": "@@ -359,42 +250,32 @@ describe('frequentlyBoughtTogether', () => {\n \n     test('renders with templates using JSX', async () => {\n       const container = document.createElement('div');\n-      const containerNoResults = document.createElement('div');\n       const searchClient = createMockedSearchClient();\n-\n-      const search = instantsearch({ indexName: 'indexName', searchClient });\n-\n-      search.addWidgets([\n-        frequentlyBoughtTogether({\n-          container,\n-          objectIDs: ['objectID'],\n-          templates: {\n-            header({ translations }) {\n-              return <Fragment>{translations.title}</Fragment>;\n-            },\n-            item(hit) {\n-              return (\n-                <Fragment>\n-                  <h2>${hit.name}</h2>\n-                  <p>${hit.brand}</p>\n-                </Fragment>\n-              );\n-            },\n+      const options: Parameters<typeof frequentlyBoughtTogether>[0] = {\n+        container,\n+        objectIDs: ['1'],\n+        templates: {\n+          header({ translations }) {\n+            return <Fragment>{translations.title}</Fragment>;\n           },\n-        }),\n-        frequentlyBoughtTogether({\n-          container: containerNoResults,\n-          objectIDs: ['objectID3'],\n-          // Using this to mock an empty response\n-          maxRecommendations: 0,\n-          templates: {\n-            empty() {\n-              return <p>No results</p>;\n-            },\n+          item(hit) {\n+            return (\n+              <Fragment>\n+                <h2>${hit.name}</h2>\n+                <p>${hit.brand}</p>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577579602",
+    "id": 1577579602,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5eB_RS",
+    "original_commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "original_line": 265,
+    "original_position": 313,
+    "original_start_line": 264,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/__tests__/frequently-bought-together.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 2019357959,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577579602/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-04-24T09:25:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577579602",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577580277"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580277"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Why are those empty?",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-24T09:24:47Z",
+    "diff_hunk": "@@ -313,40 +213,31 @@ describe('frequentlyBoughtTogether', () => {\n                 <li\n                   class=\"ais-FrequentlyBoughtTogether-item\"\n                 >\n-                  <h2>\n-                    Moschino Love – Shoulder bag\n-                  </h2>\n-                  <p>\n-                    Moschino Love\n-                  </p>\n+                  <h2 />\n+                  <p />",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577580277",
+    "id": 1577580277,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5eB_b1",
+    "original_commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "original_line": 217,
+    "original_position": 223,
+    "original_start_line": 216,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/__tests__/frequently-bought-together.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 2019357959,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580277/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-04-24T09:25:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580277",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577580909"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580909"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Why are those empty?",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-24T09:25:11Z",
+    "diff_hunk": "@@ -313,40 +213,31 @@ describe('frequentlyBoughtTogether', () => {\n                 <li\n                   class=\"ais-FrequentlyBoughtTogether-item\"\n                 >\n-                  <h2>\n-                    Moschino Love – Shoulder bag\n-                  </h2>\n-                  <p>\n-                    Moschino Love\n-                  </p>\n+                  <h2 />\n+                  <p />\n                 </li>\n                 <li\n                   class=\"ais-FrequentlyBoughtTogether-item\"\n                 >\n-                  <h2>\n-                    Bag “Sabrina“ medium Gabs\n-                  </h2>\n-                  <p>\n-                    Gabs\n-                  </p>\n-                </li>\n-                <li\n-                  class=\"ais-FrequentlyBoughtTogether-item\"\n-                >\n-                  <h2>\n-                    Bag La Carrie Bag small black\n-                  </h2>\n-                  <p>\n-                    La Carrie Bag\n-                  </p>\n+                  <h2 />\n+                  <p />",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577580909",
+    "id": 1577580909,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5eB_lt",
+    "original_commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "original_line": 223,
+    "original_position": 245,
+    "original_start_line": 222,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/__tests__/frequently-bought-together.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 2019357959,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580909/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-04-24T09:25:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577580909",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577594047"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577594047"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Oh I see, I changed the mocked data to reduce the amount of unnecessary elements in the dataset, but forgot to adjust the templates 🤦 ...",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-24T09:34:42Z",
+    "diff_hunk": "@@ -313,40 +213,31 @@ describe('frequentlyBoughtTogether', () => {\n                 <li\n                   class=\"ais-FrequentlyBoughtTogether-item\"\n                 >\n-                  <h2>\n-                    Moschino Love – Shoulder bag\n-                  </h2>\n-                  <p>\n-                    Moschino Love\n-                  </p>\n+                  <h2 />\n+                  <p />",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577594047",
+    "id": 1577594047,
+    "in_reply_to_id": 1577580277,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5eCCy_",
+    "original_commit_id": "f983a6709d2a1a6895e63cf28563675b35393212",
+    "original_line": 217,
+    "original_position": 223,
+    "original_start_line": 216,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/__tests__/frequently-bought-together.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 2019384170,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577594047/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-04-24T09:34:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577594047",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577616015"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6143"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577616015"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "```suggestion\r\n            return html`Frequently bought with (${recommendations.length})`;\r\n```",
+    "commit_id": "44d8a820d8704c443699c1d18abe94b2b4c2ca97",
+    "created_at": "2024-04-24T09:51:16Z",
+    "diff_hunk": "@@ -258,38 +168,27 @@ describe('frequentlyBoughtTogether', () => {\n \n     test('renders with templates using `html`', async () => {\n       const container = document.createElement('div');\n-      const containerNoResults = document.createElement('div');\n       const searchClient = createMockedSearchClient();\n-\n-      const search = instantsearch({ indexName: 'indexName', searchClient });\n-\n-      search.addWidgets([\n-        frequentlyBoughtTogether({\n-          container,\n-          objectIDs: ['objectID'],\n-          templates: {\n-            header({ translations }, { html }) {\n-              return html`${translations.title}`;\n-            },\n-            item(hit, { html }) {\n-              return html`<h2>${hit.name}</h2>\n-                <p>${hit.brand}</p>`;\n-            },\n+      const options: Parameters<typeof frequentlyBoughtTogether>[0] = {\n+        container,\n+        objectIDs: ['1'],\n+        templates: {\n+          header({ recommendations }, { html }) {\n+            return html` Frequently bought with (${recommendations.length})`;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6143#discussion_r1577616015",
+    "id": 1577616015,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5eCIKP",
+    "original_commit_id": "d8cbf51c5157decfc7550e8647b624bc685297b0",
+    "original_line": 177,
+    "original_position": 181,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/__tests__/frequently-bought-together.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 2019419190,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6143",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577616015/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-24T09:52:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1577616015",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  }
+]

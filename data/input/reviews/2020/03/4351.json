@@ -1,0 +1,1388 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392097747"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392097747"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n   * Sets the number of hits per page and triggers a search.\r\n```",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T08:51:12Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392097747",
+    "id": 392097747,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjA5Nzc0Nw==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 80,
+    "original_position": 162,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392097747/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392097747",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098286"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098286"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The definition we use in the doc:\r\n\r\n```suggestion\r\n   * Indicates whether or not the search has results.\r\n```",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T08:52:22Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098286",
+    "id": 392098286,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjA5ODI4Ng==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 85,
+    "original_position": 167,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098286/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098286",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098345"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098345"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Note: we don't document this option in the [API ref](https://www.algolia.com/doc/api-reference/widgets/hits-per-page/js/).",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T08:52:29Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098345",
+    "id": 392098345,
+    "line": 84,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjA5ODM0NQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 84,
+    "original_position": 159,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 166,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098345/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098345",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098879"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098879"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The new vocabulary that we use is \"render function\", not \"rendering function\".\r\n\r\n```suggestion\r\n   * Render function for the custom **HitsPerPage** widget.\r\n```",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T08:53:35Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392098879",
+    "id": 392098879,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjA5ODg3OQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 102,
+    "original_position": 184,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098879/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392098879",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392099731"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392099731"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We've introduced an [`Unmounter`](https://github.com/algolia/instantsearch.js/blob/385ab744f6ff8f870a26bf4c1f0ff5bce01eeec7/src/types/connector.ts#L22) type at some point, we can reuse it here.",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T08:55:27Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.\n+   */\n+  render: HitsPerPageRenderer<THitsPerPageWidgetParams>,\n+\n+  /**\n+   * Unmount function called when the widget is disposed.\n+   */\n+  unmount?: () => void",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392099731",
+    "id": 392099731,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjA5OTczMQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 109,
+    "original_position": 191,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392099731/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392099731",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392103402"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103402"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Wdyt about reusing (i.e. \"extending\") `HitsPerPageConnectorParams` here?",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:03:14Z",
+    "diff_hunk": "@@ -38,56 +43,57 @@ const renderer = ({ containerNode, cssClasses }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} HitsPerPageCSSClasses\n- * @property {string|string[]} [root] CSS classes added to the outer `<div>`.\n- * @property {string|string[]} [select] CSS classes added to the parent `<select>`.\n- * @property {string|string[]} [option] CSS classes added to each `<option>`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageItems\n- * @property {number} value number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {HitsPerPageItems[]} items Array of objects defining the different values and labels.\n- * @property {HitsPerPageCSSClasses} [cssClasses] CSS classes to be added.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * The hitsPerPage widget gives the user the ability to change the number of results\n- * displayed in the hits widget.\n- *\n- * You can specify the default hits per page using a boolean in the items[] array. If none is specified, this first hits per page option will be picked.\n- * @type {WidgetFactory}\n- * @devNovel HitsPerPage\n- * @category basic\n- * @param {HitsPerPageWidgetOptions} $0 The options of the HitPerPageSelector widget.\n- * @return {Widget} A new instance of the HitPerPageSelector widget.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.hitsPerPage({\n- *     container: '#hits-per-page',\n- *     items: [\n- *       {value: 3, label: '3 per page', default: true},\n- *       {value: 6, label: '6 per page'},\n- *       {value: 12, label: '12 per page'},\n- *     ]\n- *   })\n- * ]);\n- */\n-export default function hitsPerPage({\n-  container,\n-  items,\n-  cssClasses: userCssClasses = {},\n-  transformItems,\n-} = {}) {\n+export type HitsPerPageCSSClasses = {\n+  /**\n+   * CSS classes added to the outer `<div>`.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS classes added to the parent `<select>`.\n+   */\n+  select?: string | string[];\n+\n+  /**\n+   * CSS classes added to each `<option>`.\n+   */\n+  option?: string | string[];\n+};\n+\n+export type HitsPerPageItems = HitsPerPageConnectorParams['items'];\n+\n+export type HitsPerPageWidgetOptions = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392103402",
+    "id": 392103402,
+    "line": 65,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwMzQwMg==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 65,
+    "original_position": 105,
+    "original_start_line": null,
+    "path": "src/widgets/hits-per-page/hits-per-page.tsx",
+    "position": 105,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103402/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103402",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392103888"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103888"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We could be explicit as we are in the widget file by naming the variable `connectHitsPerPage`.",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:04:27Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.\n+   */\n+  render: HitsPerPageRenderer<THitsPerPageWidgetParams>,\n+\n+  /**\n+   * Unmount function called when the widget is disposed.\n+   */\n+  unmount?: () => void\n+) => HitsPerPageWidgetFactory<THitsPerPageWidgetParams>;\n+\n+const connector: HitsPerPageConnector = function connectHitsPerPage(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392103888",
+    "id": 392103888,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwMzg4OA==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 112,
+    "original_position": 194,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103888/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392103888",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392105465"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392105465"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Since we forward the `widgetParams` to the render function, defaulting the widget params to `{}` is different than destructuring the widget params with a `{}` fallback.\r\n\r\nWe should probably add a test to make this behavior consistent across connectors.\r\n\r\n**Edit**: we seem to have used the same pattern for other TypeScript widgets so you can ignore this.",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:07:42Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.\n+   */\n+  render: HitsPerPageRenderer<THitsPerPageWidgetParams>,\n+\n+  /**\n+   * Unmount function called when the widget is disposed.\n+   */\n+  unmount?: () => void\n+) => HitsPerPageWidgetFactory<THitsPerPageWidgetParams>;\n+\n+const connector: HitsPerPageConnector = function connectHitsPerPage(\n+  renderFn,\n+  unmountFn = noop\n+) {\n   checkRendering(renderFn, withUsage());\n \n-  return (widgetParams = {}) => {\n-    const { items: userItems, transformItems = items => items } = widgetParams;\n+  return widgetParams => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392105465",
+    "id": 392105465,
+    "line": 125,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwNTQ2NQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 125,
+    "original_position": 202,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 209,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392105465/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392105465",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392106325"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106325"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "TS is supposed to throw once you pass the options with a wrong type. Wdyt about not using explicit types in the tests?",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:09:20Z",
+    "diff_hunk": "@@ -19,10 +30,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/hits-per-pa\n     });\n \n     it('throws with empty items', () => {\n+      const items: HitsPerPageConnectorParamsItem[] = [];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392106325",
+    "id": 392106325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwNjMyNQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 33,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/__tests__/connectHitsPerPage-test.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106325/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106325",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392106610"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106610"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You can remove the default `createURL` implems since they're handled in `createInitOptions`.",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:09:55Z",
+    "diff_hunk": "@@ -116,16 +130,19 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/hits-per-pa\n \n     expect(renderFn).toHaveBeenCalledTimes(0);\n \n-    const helper = algoliasearchHelper({}, '', {\n+    const searchClient = createSearchClient();\n+    const helper = algoliasearchHelper(searchClient, '', {\n       hitsPerPage: 3,\n     });\n     helper.search = jest.fn();\n \n-    widget.init({\n-      helper,\n-      state: helper.state,\n-      createURL: () => '#',\n-    });\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+        createURL: () => '#',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392106610",
+    "id": 392106610,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwNjYxMA==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 143,
+    "original_position": 72,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/__tests__/connectHitsPerPage-test.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106610/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392106610",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392107465"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392107465"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "If you want to keep type safety, you can return `JSON.stringify(state)` and parse it line 360.",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:11:39Z",
+    "diff_hunk": "@@ -308,27 +343,34 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/hits-per-pa\n       ],\n     });\n \n-    const helper = algoliasearchHelper({}, '', {\n+    const searchClient = createSearchClient();\n+    const helper = algoliasearchHelper(searchClient, '', {\n       hitsPerPage: 20,\n     });\n     helper.search = jest.fn();\n \n-    widget.init({\n-      helper,\n-      state: helper.state,\n-      createURL: state => state,\n-    });\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+        createURL: state => state as any,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392107465",
+    "id": 392107465,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEwNzQ2NQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 356,
+    "original_position": 233,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/__tests__/connectHitsPerPage-test.ts",
+    "position": 1,
+    "pull_request_review_id": 374131648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392107465/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392107465",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392127381"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392127381"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  refine: (number: number) => void;\r\n```",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:52:38Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392127381",
+    "id": 392127381,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEyNzM4MQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374169754,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392127381/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392127381",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392129269"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129269"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't understand why we do the aliasing here? I don't see the usage, so it could just as well be `items` all the way, no?",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:56:03Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.\n+   */\n+  render: HitsPerPageRenderer<THitsPerPageWidgetParams>,\n+\n+  /**\n+   * Unmount function called when the widget is disposed.\n+   */\n+  unmount?: () => void\n+) => HitsPerPageWidgetFactory<THitsPerPageWidgetParams>;\n+\n+const connector: HitsPerPageConnector = function connectHitsPerPage(\n+  renderFn,\n+  unmountFn = noop\n+) {\n   checkRendering(renderFn, withUsage());\n \n-  return (widgetParams = {}) => {\n-    const { items: userItems, transformItems = items => items } = widgetParams;\n+  return widgetParams => {\n+    const { items: userItems, transformItems = items => items } =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392129269",
+    "id": 392129269,
+    "line": 126,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEyOTI2OQ==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 126,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 210,
+    "pull_request_review_id": 374172228,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129269/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129269",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392129520"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129520"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@Haroenv Using `void`, we are enforcing a return type public API that we don't care actually. Not allowing people to use short closures that actually return something. ",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T09:56:33Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392129520",
+    "id": 392129520,
+    "in_reply_to_id": 392127381,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEyOTUyMA==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374172532,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129520/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392129520",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392132753"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392132753"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually, having `void` or `any` works the same way:\r\n\r\n```ts\r\ntype Refine = (number: Number) => void;\r\nconst myArray: Number[] = [];\r\nconst myRefine: Refine = (number) => myArray.push(number); // works\r\n```\r\n\r\nplayground: http://www.typescriptlang.org/play/#code/C4TwDgpgBAShBmBLAdtAvFAFMgrgWwCMIAnALigDl8jiBKKNAPigDcB7RAEwG4AoAYzbIAzsCh4QAQWLEAhiHJVCJANoBdBlHV9BIsRLhJU5QynRZcyug2YTpckADowOYQAts1ErT5A",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:02:53Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392132753",
+    "id": 392132753,
+    "in_reply_to_id": 392127381,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEzMjc1Mw==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374176767,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392132753/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392132753",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392133756"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392133756"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ah nice!",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:05:02Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392133756",
+    "id": 392133756,
+    "in_reply_to_id": 392127381,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEzMzc1Ng==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374178068,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392133756/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392133756",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392134468"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392134468"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I though we had an ESLint rule that forbids the use of argument name similar to a type name. I'd be in favor of removing this confusion.\r\n\r\n```suggestion\r\n  refine: (value: number) => any;\r\n```",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:06:29Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392134468",
+    "id": 392134468,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEzNDQ2OA==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374178949,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392134468/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392134468",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392138303"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392138303"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Good idea!",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:14:21Z",
+    "diff_hunk": "@@ -38,56 +43,57 @@ const renderer = ({ containerNode, cssClasses }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} HitsPerPageCSSClasses\n- * @property {string|string[]} [root] CSS classes added to the outer `<div>`.\n- * @property {string|string[]} [select] CSS classes added to the parent `<select>`.\n- * @property {string|string[]} [option] CSS classes added to each `<option>`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageItems\n- * @property {number} value number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {HitsPerPageItems[]} items Array of objects defining the different values and labels.\n- * @property {HitsPerPageCSSClasses} [cssClasses] CSS classes to be added.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * The hitsPerPage widget gives the user the ability to change the number of results\n- * displayed in the hits widget.\n- *\n- * You can specify the default hits per page using a boolean in the items[] array. If none is specified, this first hits per page option will be picked.\n- * @type {WidgetFactory}\n- * @devNovel HitsPerPage\n- * @category basic\n- * @param {HitsPerPageWidgetOptions} $0 The options of the HitPerPageSelector widget.\n- * @return {Widget} A new instance of the HitPerPageSelector widget.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.hitsPerPage({\n- *     container: '#hits-per-page',\n- *     items: [\n- *       {value: 3, label: '3 per page', default: true},\n- *       {value: 6, label: '6 per page'},\n- *       {value: 12, label: '12 per page'},\n- *     ]\n- *   })\n- * ]);\n- */\n-export default function hitsPerPage({\n-  container,\n-  items,\n-  cssClasses: userCssClasses = {},\n-  transformItems,\n-} = {}) {\n+export type HitsPerPageCSSClasses = {\n+  /**\n+   * CSS classes added to the outer `<div>`.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS classes added to the parent `<select>`.\n+   */\n+  select?: string | string[];\n+\n+  /**\n+   * CSS classes added to each `<option>`.\n+   */\n+  option?: string | string[];\n+};\n+\n+export type HitsPerPageItems = HitsPerPageConnectorParams['items'];\n+\n+export type HitsPerPageWidgetOptions = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392138303",
+    "id": 392138303,
+    "in_reply_to_id": 392103402,
+    "line": 65,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjEzODMwMw==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 65,
+    "original_position": 105,
+    "original_start_line": null,
+    "path": "src/widgets/hits-per-page/hits-per-page.tsx",
+    "position": 105,
+    "pull_request_review_id": 374183922,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392138303/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392138303",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392142877"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392142877"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "true, but refine is our function no?",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:23:34Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392142877",
+    "id": 392142877,
+    "in_reply_to_id": 392127381,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjE0Mjg3Nw==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 82,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 1,
+    "pull_request_review_id": 374189787,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392142877/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392142877",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392144876"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4351"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392144876"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's because items is being used on the line `transformItems = items => items`. And narrowing a type is bad practice. ",
+    "commit_id": "a694c4d41c061c3a6ac09c4d3ea75cc26c4252b4",
+    "created_at": "2020-03-13T10:27:30Z",
+    "diff_hunk": "@@ -4,101 +4,120 @@ import {\n   createDocumentationMessageGenerator,\n   noop,\n } from '../../lib/utils';\n+import { WidgetFactory, Renderer, RendererOptions } from '../../types';\n+\n+import { SearchParameters } from 'algoliasearch-helper';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'hits-per-page',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} HitsPerPageRenderingOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} isRefined Indicates if it's the current refined value.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptionsItem\n- * @property {number} value Number of hits to display per page.\n- * @property {string} label Label to display in the option.\n- * @property {boolean} default The default hits per page on first search.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageRenderingOptions\n- * @property {HitsPerPageRenderingOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(item.value)} createURL Creates the URL for a single item name in the list.\n- * @property {function(number)} refine Sets the number of hits per page and trigger a search.\n- * @property {boolean} hasNoResults `true` if the last search contains no result.\n- * @property {Object} widgetParams Original `HitsPerPageWidgetOptions` forwarded to `renderFn`.\n- */\n-\n-/**\n- * @typedef {Object} HitsPerPageWidgetOptions\n- * @property {HitsPerPageWidgetOptionsItem[]} items Array of objects defining the different values and labels.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- */\n-\n-/**\n- * **HitsPerPage** connector provides the logic to create custom widget that will\n- * allow a user to choose to display more or less results from Algolia.\n- *\n- * This connector provides a `refine()` function to change the hits per page configuration and trigger a new search.\n- * @type {Connector}\n- * @param {function(HitsPerPageRenderingOptions, boolean)} renderFn Rendering function for the custom **HitsPerPage** widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(HitsPerPageWidgetOptions)} Re-usable widget factory for a custom **HitsPerPage** widget.\n- * @example\n- * // custom `renderFn` to render the custom HitsPerPage widget\n- * function renderFn(HitsPerPageRenderingOptions, isFirstRendering) {\n- *   var containerNode = HitsPerPageRenderingOptions.widgetParams.containerNode\n- *   var items = HitsPerPageRenderingOptions.items\n- *   var refine = HitsPerPageRenderingOptions.refine\n- *\n- *   if (isFirstRendering) {\n- *     var markup = '<select></select>';\n- *     containerNode.append(markup);\n- *   }\n- *\n- *   const itemsHTML = items.map(({value, label, isRefined}) => `\n- *     <option\n- *       value=\"${value}\"\n- *       ${isRefined ? 'selected' : ''}\n- *     >\n- *       ${label}\n- *     </option>\n- *   `);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .html(itemsHTML);\n- *\n- *   containerNode\n- *     .find('select')\n- *     .off('change')\n- *     .on('change', e => { refine(e.target.value); });\n- * }\n- *\n- * // connect `renderFn` to HitsPerPage logic\n- * var customHitsPerPage = instantsearch.connectors.connectHitsPerPage(renderFn);\n- *\n- * // mount widget on the page\n- * search.addWidgets([\n- *   customHitsPerPage({\n- *     containerNode: $('#custom-hits-per-page-container'),\n- *     items: [\n- *       {value: 6, label: '6 per page', default: true},\n- *       {value: 12, label: '12 per page'},\n- *       {value: 24, label: '24 per page'},\n- *     ],\n- *   })\n- * ]);\n- */\n-export default function connectHitsPerPage(renderFn, unmountFn = noop) {\n+export type HitsPerPageRendererOptionsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * Indicates if it's the current refined value.\n+   */\n+  isRefined: boolean;\n+};\n+\n+export type HitsPerPageConnectorParamsItem = {\n+  /**\n+   * Label to display in the option.\n+   */\n+  label: string;\n+\n+  /**\n+   * Number of hits to display per page.\n+   */\n+  value: number;\n+\n+  /**\n+   * The default hits per page on first search.\n+   *\n+   * @default false\n+   */\n+  default?: boolean;\n+};\n+\n+export type HitsPerPageConnectorParams = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageConnectorParamsItem[];\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: (\n+    objects: HitsPerPageConnectorParamsItem[]\n+  ) => HitsPerPageConnectorParamsItem[];\n+};\n+\n+export type HitsPerPageRendererOptions<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = {\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: HitsPerPageRendererOptionsItem[];\n+\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: (value: HitsPerPageRendererOptionsItem['value']) => string;\n+\n+  /**\n+   * Sets the number of hits per page and trigger a search.\n+   */\n+  refine: (number: number) => any;\n+\n+  /**\n+   * `true` if the last search contains no result.\n+   */\n+  hasNoResults: boolean;\n+} & RendererOptions<THitsPerPageWidgetParams>;\n+\n+export type HitsPerPageRenderer<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = Renderer<HitsPerPageRendererOptions<THitsPerPageWidgetParams>>;\n+\n+export type HitsPerPageWidgetFactory<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = WidgetFactory<HitsPerPageConnectorParams & THitsPerPageWidgetParams>;\n+\n+type HitsPerPageConnector<\n+  THitsPerPageWidgetParams extends HitsPerPageConnectorParams = HitsPerPageConnectorParams\n+> = (\n+  /**\n+   * Rendering function for the custom **HitsPerPage** widget.\n+   */\n+  render: HitsPerPageRenderer<THitsPerPageWidgetParams>,\n+\n+  /**\n+   * Unmount function called when the widget is disposed.\n+   */\n+  unmount?: () => void\n+) => HitsPerPageWidgetFactory<THitsPerPageWidgetParams>;\n+\n+const connector: HitsPerPageConnector = function connectHitsPerPage(\n+  renderFn,\n+  unmountFn = noop\n+) {\n   checkRendering(renderFn, withUsage());\n \n-  return (widgetParams = {}) => {\n-    const { items: userItems, transformItems = items => items } = widgetParams;\n+  return widgetParams => {\n+    const { items: userItems, transformItems = items => items } =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4351#discussion_r392144876",
+    "id": 392144876,
+    "in_reply_to_id": 392129269,
+    "line": 126,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM5MjE0NDg3Ng==",
+    "original_commit_id": "ddbb15c887225be8e2d1433768e3bf4faffea1d7",
+    "original_line": 126,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 210,
+    "pull_request_review_id": 374192302,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4351",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392144876/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-03-13T12:27:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/392144876",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  }
+]

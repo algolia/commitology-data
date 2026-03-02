@@ -1,0 +1,280 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373243973"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5908"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373243973"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I'd love for middlewares to remove some of the load from this method. Maybe we could iterate over middlewares, call their `update()` method, and get a returned value (boolean? object?) which could tell `InstantSearch.update()` to unuse them.",
+    "commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "created_at": "2023-10-26T14:08:07Z",
+    "diff_hunk": "@@ -840,6 +842,100 @@ See documentation: ${createDocumentationLink({\n \n     this.mainHelper.clearCache().search();\n   }\n+\n+  /**\n+   * Update the parameters passed to the InstantSearch constructor.\n+   */\n+  public update(\n+    options: Partial<InstantSearchOptions<TUiState, TRouteState>>\n+  ): void {\n+    if (this.indexName !== options.indexName) {\n+      this.helper!.setIndex(options.indexName || '').search();\n+    }\n+\n+    if (this.client !== options.searchClient) {\n+      warning(\n+        false,\n+        // TODO: flavor-specific warning (search._flavor = 'vue') URL\n+        'The `searchClient` parameter changed, which may cause more search requests than necessary. If this is an unwanted behavior, please provide a stable reference.'\n+      );\n+\n+      if (!options.searchClient) {\n+        throw new Error(withUsage('The `searchClient` option is required.'));\n+      }\n+\n+      if (typeof options.searchClient.search !== 'function') {\n+        throw new Error(\n+          `The \\`searchClient\\` must implement a \\`search\\` method.\n+  \n+  See: https://www.algolia.com/doc/guides/building-search-ui/going-further/backend-search/in-depth/backend-instantsearch/js/`\n+        );\n+      }\n+\n+      // TODO: proper API for this too\n+      // InstantSearch._algoliaAgents (or constructor)\n+      // addAlgoliaAgents(props.searchClient, [\n+      //   ...defaultUserAgents,\n+      //   serverContext && serverUserAgent,\n+      // ]);\n+\n+      this.mainHelper!.setClient(options.searchClient).search();\n+    }\n+\n+    if (this.onStateChange !== options.onStateChange) {\n+      this.onStateChange = options.onStateChange;\n+    }\n+\n+    if (this._searchFunction !== options.searchFunction) {\n+      this._searchFunction =\n+        options.searchFunction ??\n+        ((helper) => {\n+          helper.search();\n+        });\n+    }\n+\n+    if (this._stalledSearchDelay !== options.stalledSearchDelay) {\n+      this._stalledSearchDelay =\n+        options.stalledSearchDelay ?? INSTANTSEARCH_STALLED_SEARCH_DEFAULTS;\n+    }\n+\n+    // TODO: move dequal to a shared package?\n+    // if (!dequal(this.future, props.future)) {\n+    //   this.future = {\n+    //     ...INSTANTSEARCH_FUTURE_DEFAULTS,\n+    //     ...props.future,\n+    //   };\n+    // }\n+\n+    // TODO: implement update in middleware\n+    // TODO: can this be simplified?\n+    // if (!dequal(this._insights, options.insights)) {\n+    //   this._insights = options.insights;\n+    //   const existing = this.middleware.find(\n+    //     (m) => m.instance.$$type === 'ais.insights' && m.instance.$$internal\n+    //   );\n+    //   if (options.insights && existing) {\n+    //     // TODO: update existing middleware somehow (or maybe remount it)\n+    //   } else if (options.insights && !existing) {\n+    //     const insightsOptions =\n+    //       typeof options.insights === 'boolean' ? {} : options.insights;\n+    //     insightsOptions.$$internal = true;\n+    //     this.use(createInsightsMiddleware(insightsOptions));\n+    //   } else if (!options.insights && existing) {\n+    //     this.unuse(existing.creator);\n+    //   }\n+    // }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373243973",
+    "id": 1373243973,
+    "line": 927,
+    "node_id": "PRRC_kwDOAlnbOs5R2gpF",
+    "original_commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "original_line": 927,
+    "original_position": 115,
+    "original_start_line": 910,
+    "path": "packages/instantsearch.js/src/lib/InstantSearch.ts",
+    "position": 392,
+    "pull_request_review_id": 1699762552,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5908",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373243973/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 910,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-10-26T14:08:07Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373243973",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373262448"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5908"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373262448"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Still can't see why routing would need to change during the lifecycle of an InstantSearch app 😅.",
+    "commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "created_at": "2023-10-26T14:20:40Z",
+    "diff_hunk": "@@ -840,6 +842,100 @@ See documentation: ${createDocumentationLink({\n \n     this.mainHelper.clearCache().search();\n   }\n+\n+  /**\n+   * Update the parameters passed to the InstantSearch constructor.\n+   */\n+  public update(\n+    options: Partial<InstantSearchOptions<TUiState, TRouteState>>\n+  ): void {\n+    if (this.indexName !== options.indexName) {\n+      this.helper!.setIndex(options.indexName || '').search();\n+    }\n+\n+    if (this.client !== options.searchClient) {\n+      warning(\n+        false,\n+        // TODO: flavor-specific warning (search._flavor = 'vue') URL\n+        'The `searchClient` parameter changed, which may cause more search requests than necessary. If this is an unwanted behavior, please provide a stable reference.'\n+      );\n+\n+      if (!options.searchClient) {\n+        throw new Error(withUsage('The `searchClient` option is required.'));\n+      }\n+\n+      if (typeof options.searchClient.search !== 'function') {\n+        throw new Error(\n+          `The \\`searchClient\\` must implement a \\`search\\` method.\n+  \n+  See: https://www.algolia.com/doc/guides/building-search-ui/going-further/backend-search/in-depth/backend-instantsearch/js/`\n+        );\n+      }\n+\n+      // TODO: proper API for this too\n+      // InstantSearch._algoliaAgents (or constructor)\n+      // addAlgoliaAgents(props.searchClient, [\n+      //   ...defaultUserAgents,\n+      //   serverContext && serverUserAgent,\n+      // ]);\n+\n+      this.mainHelper!.setClient(options.searchClient).search();\n+    }\n+\n+    if (this.onStateChange !== options.onStateChange) {\n+      this.onStateChange = options.onStateChange;\n+    }\n+\n+    if (this._searchFunction !== options.searchFunction) {\n+      this._searchFunction =\n+        options.searchFunction ??\n+        ((helper) => {\n+          helper.search();\n+        });\n+    }\n+\n+    if (this._stalledSearchDelay !== options.stalledSearchDelay) {\n+      this._stalledSearchDelay =\n+        options.stalledSearchDelay ?? INSTANTSEARCH_STALLED_SEARCH_DEFAULTS;\n+    }\n+\n+    // TODO: move dequal to a shared package?\n+    // if (!dequal(this.future, props.future)) {\n+    //   this.future = {\n+    //     ...INSTANTSEARCH_FUTURE_DEFAULTS,\n+    //     ...props.future,\n+    //   };\n+    // }\n+\n+    // TODO: implement update in middleware\n+    // TODO: can this be simplified?\n+    // if (!dequal(this._insights, options.insights)) {\n+    //   this._insights = options.insights;\n+    //   const existing = this.middleware.find(\n+    //     (m) => m.instance.$$type === 'ais.insights' && m.instance.$$internal\n+    //   );\n+    //   if (options.insights && existing) {\n+    //     // TODO: update existing middleware somehow (or maybe remount it)\n+    //   } else if (options.insights && !existing) {\n+    //     const insightsOptions =\n+    //       typeof options.insights === 'boolean' ? {} : options.insights;\n+    //     insightsOptions.$$internal = true;\n+    //     this.use(createInsightsMiddleware(insightsOptions));\n+    //   } else if (!options.insights && existing) {\n+    //     this.unuse(existing.creator);\n+    //   }\n+    // }\n+\n+    // TODO: validate other options (onStateChange, routing, give a warning for all non-updated values?)\n+\n+    // Updating the `routing` prop is not supported because InstantSearch.js\n+    // doesn't let us change it. This might not be a problem though, because `routing`\n+    // shouldn't need to be dynamic.\n+    // If we find scenarios where `routing` needs to change, we can always expose\n+    // it privately on the InstantSearch instance. Another way would be to\n+    // manually inject the routing middleware in this library, and not rely\n+    // on the provided `routing` prop.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373262448",
+    "id": 1373262448,
+    "line": 937,
+    "node_id": "PRRC_kwDOAlnbOs5R2lJw",
+    "original_commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "original_line": 937,
+    "original_position": 125,
+    "original_start_line": 931,
+    "path": "packages/instantsearch.js/src/lib/InstantSearch.ts",
+    "position": 402,
+    "pull_request_review_id": 1699792047,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5908",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373262448/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 931,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-10-26T14:20:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373262448",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373341991"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5908"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373341991"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "yeah I'd rather ignore or show an error than handling it",
+    "commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "created_at": "2023-10-26T15:13:48Z",
+    "diff_hunk": "@@ -840,6 +842,100 @@ See documentation: ${createDocumentationLink({\n \n     this.mainHelper.clearCache().search();\n   }\n+\n+  /**\n+   * Update the parameters passed to the InstantSearch constructor.\n+   */\n+  public update(\n+    options: Partial<InstantSearchOptions<TUiState, TRouteState>>\n+  ): void {\n+    if (this.indexName !== options.indexName) {\n+      this.helper!.setIndex(options.indexName || '').search();\n+    }\n+\n+    if (this.client !== options.searchClient) {\n+      warning(\n+        false,\n+        // TODO: flavor-specific warning (search._flavor = 'vue') URL\n+        'The `searchClient` parameter changed, which may cause more search requests than necessary. If this is an unwanted behavior, please provide a stable reference.'\n+      );\n+\n+      if (!options.searchClient) {\n+        throw new Error(withUsage('The `searchClient` option is required.'));\n+      }\n+\n+      if (typeof options.searchClient.search !== 'function') {\n+        throw new Error(\n+          `The \\`searchClient\\` must implement a \\`search\\` method.\n+  \n+  See: https://www.algolia.com/doc/guides/building-search-ui/going-further/backend-search/in-depth/backend-instantsearch/js/`\n+        );\n+      }\n+\n+      // TODO: proper API for this too\n+      // InstantSearch._algoliaAgents (or constructor)\n+      // addAlgoliaAgents(props.searchClient, [\n+      //   ...defaultUserAgents,\n+      //   serverContext && serverUserAgent,\n+      // ]);\n+\n+      this.mainHelper!.setClient(options.searchClient).search();\n+    }\n+\n+    if (this.onStateChange !== options.onStateChange) {\n+      this.onStateChange = options.onStateChange;\n+    }\n+\n+    if (this._searchFunction !== options.searchFunction) {\n+      this._searchFunction =\n+        options.searchFunction ??\n+        ((helper) => {\n+          helper.search();\n+        });\n+    }\n+\n+    if (this._stalledSearchDelay !== options.stalledSearchDelay) {\n+      this._stalledSearchDelay =\n+        options.stalledSearchDelay ?? INSTANTSEARCH_STALLED_SEARCH_DEFAULTS;\n+    }\n+\n+    // TODO: move dequal to a shared package?\n+    // if (!dequal(this.future, props.future)) {\n+    //   this.future = {\n+    //     ...INSTANTSEARCH_FUTURE_DEFAULTS,\n+    //     ...props.future,\n+    //   };\n+    // }\n+\n+    // TODO: implement update in middleware\n+    // TODO: can this be simplified?\n+    // if (!dequal(this._insights, options.insights)) {\n+    //   this._insights = options.insights;\n+    //   const existing = this.middleware.find(\n+    //     (m) => m.instance.$$type === 'ais.insights' && m.instance.$$internal\n+    //   );\n+    //   if (options.insights && existing) {\n+    //     // TODO: update existing middleware somehow (or maybe remount it)\n+    //   } else if (options.insights && !existing) {\n+    //     const insightsOptions =\n+    //       typeof options.insights === 'boolean' ? {} : options.insights;\n+    //     insightsOptions.$$internal = true;\n+    //     this.use(createInsightsMiddleware(insightsOptions));\n+    //   } else if (!options.insights && existing) {\n+    //     this.unuse(existing.creator);\n+    //   }\n+    // }\n+\n+    // TODO: validate other options (onStateChange, routing, give a warning for all non-updated values?)\n+\n+    // Updating the `routing` prop is not supported because InstantSearch.js\n+    // doesn't let us change it. This might not be a problem though, because `routing`\n+    // shouldn't need to be dynamic.\n+    // If we find scenarios where `routing` needs to change, we can always expose\n+    // it privately on the InstantSearch instance. Another way would be to\n+    // manually inject the routing middleware in this library, and not rely\n+    // on the provided `routing` prop.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373341991",
+    "id": 1373341991,
+    "in_reply_to_id": 1373262448,
+    "line": 937,
+    "node_id": "PRRC_kwDOAlnbOs5R24kn",
+    "original_commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "original_line": 937,
+    "original_position": 125,
+    "original_start_line": 931,
+    "path": "packages/instantsearch.js/src/lib/InstantSearch.ts",
+    "position": 402,
+    "pull_request_review_id": 1699916025,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5908",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373341991/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 931,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-10-26T15:13:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373341991",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373343503"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5908"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373343503"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "in this case probably `existing.update(options.insights)` and handling that somehow in the middleware indeed was best, wasn't sure whether the api was worth the coals",
+    "commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "created_at": "2023-10-26T15:14:42Z",
+    "diff_hunk": "@@ -840,6 +842,100 @@ See documentation: ${createDocumentationLink({\n \n     this.mainHelper.clearCache().search();\n   }\n+\n+  /**\n+   * Update the parameters passed to the InstantSearch constructor.\n+   */\n+  public update(\n+    options: Partial<InstantSearchOptions<TUiState, TRouteState>>\n+  ): void {\n+    if (this.indexName !== options.indexName) {\n+      this.helper!.setIndex(options.indexName || '').search();\n+    }\n+\n+    if (this.client !== options.searchClient) {\n+      warning(\n+        false,\n+        // TODO: flavor-specific warning (search._flavor = 'vue') URL\n+        'The `searchClient` parameter changed, which may cause more search requests than necessary. If this is an unwanted behavior, please provide a stable reference.'\n+      );\n+\n+      if (!options.searchClient) {\n+        throw new Error(withUsage('The `searchClient` option is required.'));\n+      }\n+\n+      if (typeof options.searchClient.search !== 'function') {\n+        throw new Error(\n+          `The \\`searchClient\\` must implement a \\`search\\` method.\n+  \n+  See: https://www.algolia.com/doc/guides/building-search-ui/going-further/backend-search/in-depth/backend-instantsearch/js/`\n+        );\n+      }\n+\n+      // TODO: proper API for this too\n+      // InstantSearch._algoliaAgents (or constructor)\n+      // addAlgoliaAgents(props.searchClient, [\n+      //   ...defaultUserAgents,\n+      //   serverContext && serverUserAgent,\n+      // ]);\n+\n+      this.mainHelper!.setClient(options.searchClient).search();\n+    }\n+\n+    if (this.onStateChange !== options.onStateChange) {\n+      this.onStateChange = options.onStateChange;\n+    }\n+\n+    if (this._searchFunction !== options.searchFunction) {\n+      this._searchFunction =\n+        options.searchFunction ??\n+        ((helper) => {\n+          helper.search();\n+        });\n+    }\n+\n+    if (this._stalledSearchDelay !== options.stalledSearchDelay) {\n+      this._stalledSearchDelay =\n+        options.stalledSearchDelay ?? INSTANTSEARCH_STALLED_SEARCH_DEFAULTS;\n+    }\n+\n+    // TODO: move dequal to a shared package?\n+    // if (!dequal(this.future, props.future)) {\n+    //   this.future = {\n+    //     ...INSTANTSEARCH_FUTURE_DEFAULTS,\n+    //     ...props.future,\n+    //   };\n+    // }\n+\n+    // TODO: implement update in middleware\n+    // TODO: can this be simplified?\n+    // if (!dequal(this._insights, options.insights)) {\n+    //   this._insights = options.insights;\n+    //   const existing = this.middleware.find(\n+    //     (m) => m.instance.$$type === 'ais.insights' && m.instance.$$internal\n+    //   );\n+    //   if (options.insights && existing) {\n+    //     // TODO: update existing middleware somehow (or maybe remount it)\n+    //   } else if (options.insights && !existing) {\n+    //     const insightsOptions =\n+    //       typeof options.insights === 'boolean' ? {} : options.insights;\n+    //     insightsOptions.$$internal = true;\n+    //     this.use(createInsightsMiddleware(insightsOptions));\n+    //   } else if (!options.insights && existing) {\n+    //     this.unuse(existing.creator);\n+    //   }\n+    // }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5908#discussion_r1373343503",
+    "id": 1373343503,
+    "in_reply_to_id": 1373243973,
+    "line": 927,
+    "node_id": "PRRC_kwDOAlnbOs5R248P",
+    "original_commit_id": "d7186ad1754ed5c38d50e88ab07c7ac076d798b2",
+    "original_line": 927,
+    "original_position": 115,
+    "original_start_line": 910,
+    "path": "packages/instantsearch.js/src/lib/InstantSearch.ts",
+    "position": 392,
+    "pull_request_review_id": 1699918672,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5908",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373343503/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 910,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-10-26T15:14:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1373343503",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

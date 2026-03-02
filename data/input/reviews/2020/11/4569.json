@@ -1,0 +1,1948 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516736892"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516736892"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I've tried to avoid the `if:else` but I didn't find a way to make a distinction between `init` and `render` other than by using this method.",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T15:07:24Z",
+    "diff_hunk": "@@ -279,6 +181,124 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n         return state.removeDisjunctiveFacet(attribute);\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        let value;\n+\n+        // results are null at init",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516736892",
+    "id": 516736892,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjczNjg5Mg==",
+    "original_commit_id": "a7d1ac4c0ea8afe2ae77fa3fa00e313aeff8e365",
+    "original_line": 194,
+    "original_position": 224,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 522590361,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516736892/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516736892",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516739587"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516739587"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "some of the code is now duplicated in both branches, and could put put top-level and deduplicated, right?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T15:11:04Z",
+    "diff_hunk": "@@ -279,6 +181,124 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n         return state.removeDisjunctiveFacet(attribute);\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        let value;\n+\n+        // results are null at init\n+        if (results) {\n+          const isRefined =\n+            on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n+\n+          const onData =\n+            on &&\n+            on\n+              .map(v =>\n+                find(\n+                  allFacetValues,\n+                  ({ name }) => name === unescapeRefinement(v)\n+                )\n+              )\n+              .filter(v => v !== undefined);\n+          const onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          const offFacetValue = {\n+            isRefined:\n+              offData.length > 0 ? offData.every(v => v.isRefined) : false,\n+            count:\n+              offData.length === 0\n+                ? allFacetValues.reduce((total, { count }) => total + count, 0)\n+                : offData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          // what will we show by default,\n+          // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n+          // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n+          const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n+\n+          value = {\n+            name: attribute,\n+            isRefined,\n+            count: nextRefinement === undefined ? null : nextRefinement.count,\n+            onFacetValue,\n+            offFacetValue,\n+          };\n+        } else {\n+          const isRefined =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516739587",
+    "id": 516739587,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjczOTU4Nw==",
+    "original_commit_id": "a7d1ac4c0ea8afe2ae77fa3fa00e313aeff8e365",
+    "original_line": 253,
+    "original_position": 283,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 522593943,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516739587/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516739587",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516743824"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516743824"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I might be able to group `onFacetValue` and `offFacetValue` with a spicy ternary, I'll try that!",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T15:16:41Z",
+    "diff_hunk": "@@ -279,6 +181,124 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n         return state.removeDisjunctiveFacet(attribute);\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        let value;\n+\n+        // results are null at init\n+        if (results) {\n+          const isRefined =\n+            on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n+\n+          const onData =\n+            on &&\n+            on\n+              .map(v =>\n+                find(\n+                  allFacetValues,\n+                  ({ name }) => name === unescapeRefinement(v)\n+                )\n+              )\n+              .filter(v => v !== undefined);\n+          const onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          const offFacetValue = {\n+            isRefined:\n+              offData.length > 0 ? offData.every(v => v.isRefined) : false,\n+            count:\n+              offData.length === 0\n+                ? allFacetValues.reduce((total, { count }) => total + count, 0)\n+                : offData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          // what will we show by default,\n+          // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n+          // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n+          const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n+\n+          value = {\n+            name: attribute,\n+            isRefined,\n+            count: nextRefinement === undefined ? null : nextRefinement.count,\n+            onFacetValue,\n+            offFacetValue,\n+          };\n+        } else {\n+          const isRefined =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516743824",
+    "id": 516743824,
+    "in_reply_to_id": 516739587,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjc0MzgyNA==",
+    "original_commit_id": "a7d1ac4c0ea8afe2ae77fa3fa00e313aeff8e365",
+    "original_line": 253,
+    "original_position": 283,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 522599571,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 1,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516743824/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516743824",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516801568"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516801568"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "@eunjae-lee I had to add this after merging the `createSendEvent` function, could you please check?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T16:34:53Z",
+    "diff_hunk": "@@ -332,6 +332,7 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n           addDisjunctiveFacetRefinement: jest.fn(),\n           search: jest.fn(),\n           setPage: jest.fn(),\n+          getIndex: jest.fn(),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516801568",
+    "id": 516801568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjgwMTU2OA==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 335,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 522677573,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516801568/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516801568",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516802357"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802357"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "@Haroenv I've removed duplicated code as much as I could and replaced it with some ternaries, let me know if it's still readable",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T16:36:06Z",
+    "diff_hunk": "@@ -256,64 +275,34 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n                 )\n                 .filter(v => v !== undefined)\n             : [];\n-          const offFacetValue = {\n+          offFacetValue = {\n             isRefined:\n               offData.length > 0 ? offData.every(v => v.isRefined) : false,\n             count:\n               offData.length === 0\n                 ? allFacetValues.reduce((total, { count }) => total + count, 0)\n                 : offData.reduce((acc, v) => acc + v.count, 0),\n           };\n-\n-          // what will we show by default,\n-          // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n-          // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n-          const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n-\n-          value = {\n-            name: attribute,\n-            isRefined,\n-            count: nextRefinement === undefined ? null : nextRefinement.count,\n-            onFacetValue,\n-            offFacetValue,\n-          };\n-        } else {\n-          const isRefined =\n-            on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n-\n-          // no need to refine anything at init if no custom off values\n-          if (hasAnOffValue) {\n-            // Add filtering on the 'off' value if set\n-            if (!isRefined) {\n-              const currentPage = helper.state.page;\n-              if (off) {\n-                off.forEach(v =>\n-                  helper.addDisjunctiveFacetRefinement(attribute, v)\n-                );\n-              }\n-\n-              helper.setPage(currentPage);\n-            }\n+        } else if (hasAnOffValue && !isRefined) {\n+          const currentPage = helper.state.page;\n+          if (off) {\n+            off.forEach(v =>\n+              helper.addDisjunctiveFacetRefinement(attribute, v)\n+            );\n           }\n \n-          const onFacetValue = {\n-            isRefined,\n-            count: 0,\n-          };\n+          helper.setPage(currentPage);\n+        }\n \n-          const offFacetValue = {\n-            isRefined: hasAnOffValue && !isRefined,\n-            count: 0,\n-          };\n+        const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n \n-          value = {\n-            name: attribute,\n-            isRefined,\n-            count: null,\n-            onFacetValue,\n-            offFacetValue,\n-          };\n-        }\n+        const value = {\n+          name: attribute,\n+          isRefined,\n+          count: results && nextRefinement ? nextRefinement.count : null,\n+          onFacetValue,\n+          offFacetValue,\n+        };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516802357",
+    "id": 516802357,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjgwMjM1Nw==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 305,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 522678650,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802357/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802357",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516802676"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802676"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "https://github.com/algolia/instantsearch.js/pull/4569#discussion_r516802357",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-03T16:36:33Z",
+    "diff_hunk": "@@ -279,6 +181,124 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n         return state.removeDisjunctiveFacet(attribute);\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        let value;\n+\n+        // results are null at init\n+        if (results) {\n+          const isRefined =\n+            on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n+\n+          const onData =\n+            on &&\n+            on\n+              .map(v =>\n+                find(\n+                  allFacetValues,\n+                  ({ name }) => name === unescapeRefinement(v)\n+                )\n+              )\n+              .filter(v => v !== undefined);\n+          const onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          const offFacetValue = {\n+            isRefined:\n+              offData.length > 0 ? offData.every(v => v.isRefined) : false,\n+            count:\n+              offData.length === 0\n+                ? allFacetValues.reduce((total, { count }) => total + count, 0)\n+                : offData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          // what will we show by default,\n+          // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n+          // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n+          const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n+\n+          value = {\n+            name: attribute,\n+            isRefined,\n+            count: nextRefinement === undefined ? null : nextRefinement.count,\n+            onFacetValue,\n+            offFacetValue,\n+          };\n+        } else {\n+          const isRefined =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r516802676",
+    "id": 516802676,
+    "in_reply_to_id": 516739587,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNjgwMjY3Ng==",
+    "original_commit_id": "a7d1ac4c0ea8afe2ae77fa3fa00e313aeff8e365",
+    "original_line": 253,
+    "original_position": 283,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 522679056,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802676/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/516802676",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517232374"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517232374"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can you explain why you had to add this? With the previous helper initialization, it didn't work?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:10:30Z",
+    "diff_hunk": "@@ -332,6 +332,7 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n           addDisjunctiveFacetRefinement: jest.fn(),\n           search: jest.fn(),\n           setPage: jest.fn(),\n+          getIndex: jest.fn(),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517232374",
+    "id": 517232374,
+    "in_reply_to_id": 516801568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzIzMjM3NA==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 335,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523214810,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517232374/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517232374",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517234583"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517234583"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "The `getIndex()` function was `undefined` in the tests\r\nhttps://github.com/algolia/instantsearch.js/blob/f5b796c78e4f208f9daea152239d6bdd2477fe93/src/connectors/toggle-refinement/connectToggleRefinement.js#L37",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:14:15Z",
+    "diff_hunk": "@@ -332,6 +332,7 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n           addDisjunctiveFacetRefinement: jest.fn(),\n           search: jest.fn(),\n           setPage: jest.fn(),\n+          getIndex: jest.fn(),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517234583",
+    "id": 517234583,
+    "in_reply_to_id": 516801568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzIzNDU4Mw==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 335,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523217648,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517234583/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517234583",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517243925"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517243925"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      function toggleOn({ createURL, altHelper = helper }) {\r\n        widget\r\n          .getWidgetRenderState({\r\n            state: altHelper.state,\r\n            helper: altHelper,\r\n```",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:29:04Z",
+    "diff_hunk": "@@ -301,18 +308,32 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n     describe('refine', () => {\n       let helper;\n \n-      function toggleOn() {\n-        widget.toggleRefinement({ isRefined: false });\n+      function toggleOn({ createURL, altHelper }) {\n+        widget\n+          .getWidgetRenderState({\n+            state: helper.state,\n+            helper: altHelper ? altHelper : helper,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517243925",
+    "id": 517243925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzI0MzkyNQ==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 315,
+    "original_position": 26,
+    "original_start_line": 311,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523229584,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517243925/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517243925",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517247223"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517247223"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yeah, but in this file, `createSendEvent` function is not tested, and it's tested in `connectToggleRefinement-test.js`.\r\n\r\nIf you revert this part back to \r\n\r\n```js\r\n        helper = jsHelper({}, '');\r\n        helper.removeDisjunctiveFacetRefinement = jest.fn();\r\n        helper.addDisjunctiveFacetRefinement = jest.fn();\r\n        helper.search = jest.fn();\r\n```\r\n\r\nthe tests still pass, right?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:34:27Z",
+    "diff_hunk": "@@ -332,6 +332,7 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n           addDisjunctiveFacetRefinement: jest.fn(),\n           search: jest.fn(),\n           setPage: jest.fn(),\n+          getIndex: jest.fn(),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517247223",
+    "id": 517247223,
+    "in_reply_to_id": 516801568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzI0NzIyMw==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 335,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523233958,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517247223/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517247223",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517251813"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517251813"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "You're right, all the tests still pass. I might have changed something while I was trying to resolve the conflicts.",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:42:15Z",
+    "diff_hunk": "@@ -332,6 +332,7 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n           addDisjunctiveFacetRefinement: jest.fn(),\n           search: jest.fn(),\n           setPage: jest.fn(),\n+          getIndex: jest.fn(),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517251813",
+    "id": 517251813,
+    "in_reply_to_id": 516801568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzI1MTgxMw==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 335,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523240435,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517251813/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517251813",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517252308"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517252308"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Much cleaner like that, thanks!",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T10:43:08Z",
+    "diff_hunk": "@@ -301,18 +308,32 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n     describe('refine', () => {\n       let helper;\n \n-      function toggleOn() {\n-        widget.toggleRefinement({ isRefined: false });\n+      function toggleOn({ createURL, altHelper }) {\n+        widget\n+          .getWidgetRenderState({\n+            state: helper.state,\n+            helper: altHelper ? altHelper : helper,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517252308",
+    "id": 517252308,
+    "in_reply_to_id": 517243925,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzI1MjMwOA==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 315,
+    "original_position": 26,
+    "original_start_line": 311,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 523241058,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517252308/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517252308",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517431930"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517431930"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this condition will take null if nextRefinement is 0 I think",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-04T15:34:39Z",
+    "diff_hunk": "@@ -135,188 +135,186 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n \n-        const onFacetValue = {\n+        let onFacetValue = {\n           isRefined,\n           count: 0,\n         };\n \n-        const offFacetValue = {\n+        let offFacetValue = {\n           isRefined: hasAnOffValue && !isRefined,\n           count: 0,\n         };\n \n-        const value = {\n-          name: attribute,\n-          isRefined,\n-          count: null,\n-          onFacetValue,\n-          offFacetValue,\n-        };\n-\n-        renderFn(\n-          {\n-            value,\n-            createURL: this._createURL(value.isRefined),\n-            refine: this.toggleRefinement,\n-            sendEvent,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          true\n-        );\n-      },\n-\n-      render({ helper, results, state, instantSearchInstance }) {\n-        const isRefined =\n-          on &&\n-          on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n-        const offValue = toArray(off === undefined ? false : off);\n-        const allFacetValues = results.getFacetValues(attribute) || [];\n-\n-        const onData =\n-          on &&\n-          on\n-            .map(v =>\n-              find(allFacetValues, ({ name }) => name === unescapeRefinement(v))\n-            )\n-            .filter(v => v !== undefined);\n-        const onFacetValue = {\n-          isRefined: onData.length > 0 ? onData.every(v => v.isRefined) : false,\n-          count:\n-            onData.length === 0\n-              ? null\n-              : onData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+        // results are null at init\n+        if (results) {\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n \n-        const offData = hasAnOffValue\n-          ? offValue\n+          const onData =\n+            on &&\n+            on\n               .map(v =>\n                 find(\n                   allFacetValues,\n                   ({ name }) => name === unescapeRefinement(v)\n                 )\n               )\n-              .filter(v => v !== undefined)\n-          : [];\n-        const offFacetValue = {\n-          isRefined:\n-            offData.length > 0 ? offData.every(v => v.isRefined) : false,\n-          count:\n-            offData.length === 0\n-              ? allFacetValues.reduce((total, { count }) => total + count, 0)\n-              : offData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+              .filter(v => v !== undefined);\n+          onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          offFacetValue = {\n+            isRefined:\n+              offData.length > 0 ? offData.every(v => v.isRefined) : false,\n+            count:\n+              offData.length === 0\n+                ? allFacetValues.reduce((total, { count }) => total + count, 0)\n+                : offData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+        } else if (hasAnOffValue && !isRefined) {\n+          const currentPage = helper.state.page;\n+          if (off) {\n+            off.forEach(v =>\n+              helper.addDisjunctiveFacetRefinement(attribute, v)\n+            );\n+          }\n+\n+          helper.setPage(currentPage);\n+        }\n \n-        // what will we show by default,\n-        // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n-        // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n         const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n \n         const value = {\n           name: attribute,\n           isRefined,\n-          count: nextRefinement === undefined ? null : nextRefinement.count,\n+          count: results && nextRefinement ? nextRefinement.count : null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r517431930",
+    "id": 517431930,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNzQzMTkzMA==",
+    "original_commit_id": "e1646411cc46d72b4e5dab2ba1a3e05250c1ca8a",
+    "original_line": 302,
+    "original_position": 285,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 523477804,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517431930/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/517431930",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518591010"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591010"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I love these changes in the tests",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T08:24:18Z",
+    "diff_hunk": "@@ -301,11 +308,19 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n     describe('refine', () => {\n       let helper;\n \n-      function toggleOn() {\n-        widget.toggleRefinement({ isRefined: false });\n+      function toggleOn({ createURL, altHelper = helper }) {\n+        widget",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518591010",
+    "id": 518591010,
+    "line": 312,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODU5MTAxMA==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 312,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/widgets/toggle-refinement/__tests__/toggle-refinement-test.js",
+    "position": 23,
+    "pull_request_review_id": 524939934,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591010/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591010",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518591528"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591528"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't think `this` needs to be bound here; since it's not using `this` in the function",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T08:25:12Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518591528",
+    "id": 518591528,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODU5MTUyOA==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 162,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 524939934,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591528/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518591528",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518608893"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518608893"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think it might be more readable if there's newlines between these variables, not sure what the rest thinks, I find it a bit dense now",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T08:58:37Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n \n-        const onFacetValue = {\n+        let onFacetValue = {\n           isRefined,\n           count: 0,\n         };\n \n-        const offFacetValue = {\n+        let offFacetValue = {\n           isRefined: hasAnOffValue && !isRefined,\n           count: 0,\n         };\n \n-        const value = {\n-          name: attribute,\n-          isRefined,\n-          count: null,\n-          onFacetValue,\n-          offFacetValue,\n-        };\n-\n-        renderFn(\n-          {\n-            value,\n-            createURL: this._createURL(value.isRefined),\n-            refine: this.toggleRefinement,\n-            sendEvent,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          true\n-        );\n-      },\n-\n-      render({ helper, results, state, instantSearchInstance }) {\n-        const isRefined =\n-          on &&\n-          on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n-        const offValue = toArray(off === undefined ? false : off);\n-        const allFacetValues = results.getFacetValues(attribute) || [];\n-\n-        const onData =\n-          on &&\n-          on\n-            .map(v =>\n-              find(allFacetValues, ({ name }) => name === unescapeRefinement(v))\n-            )\n-            .filter(v => v !== undefined);\n-        const onFacetValue = {\n-          isRefined: onData.length > 0 ? onData.every(v => v.isRefined) : false,\n-          count:\n-            onData.length === 0\n-              ? null\n-              : onData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+        // results are null at init\n+        if (results) {\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n \n-        const offData = hasAnOffValue\n-          ? offValue\n+          const onData =\n+            on &&\n+            on\n               .map(v =>\n                 find(\n                   allFacetValues,\n                   ({ name }) => name === unescapeRefinement(v)\n                 )\n               )\n-              .filter(v => v !== undefined)\n-          : [];\n-        const offFacetValue = {\n-          isRefined:\n-            offData.length > 0 ? offData.every(v => v.isRefined) : false,\n-          count:\n-            offData.length === 0\n-              ? allFacetValues.reduce((total, { count }) => total + count, 0)\n-              : offData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+              .filter(v => v !== undefined);\n+          onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          offFacetValue = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518608893",
+    "id": 518608893,
+    "line": 268,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODYwODg5Mw==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 278,
+    "original_position": 257,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 248,
+    "pull_request_review_id": 524939934,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518608893/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518608893",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518929233"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518929233"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's probably easier to read this way?\r\n\r\n```suggestion\r\n        const isRefined = results\r\n          ? on?.every((v) => helper.state.isDisjunctiveFacetRefined(attribute, v))\r\n          : on?.every((v) => state.isDisjunctiveFacetRefined(attribute, v));\r\n```",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T18:27:52Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518929233",
+    "id": 518929233,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkyOTIzMw==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 232,
+    "original_position": 155,
+    "original_start_line": 229,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 525394853,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518929233/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518929233",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518930143"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930143"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is the right way to do it—and I'm not sure this comment is necessary since we do the same is most other connectors that rely on the results.",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T18:29:35Z",
+    "diff_hunk": "@@ -279,6 +181,124 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n         return state.removeDisjunctiveFacet(attribute);\n       },\n \n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        let value;\n+\n+        // results are null at init",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518930143",
+    "id": 518930143,
+    "in_reply_to_id": 516736892,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkzMDE0Mw==",
+    "original_commit_id": "a7d1ac4c0ea8afe2ae77fa3fa00e313aeff8e365",
+    "original_line": 194,
+    "original_position": 224,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 525394853,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930143/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930143",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518930582"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930582"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Same suggestion as above (`on?.map`) if that's fine with you all.",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T18:30:24Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n \n-        const onFacetValue = {\n+        let onFacetValue = {\n           isRefined,\n           count: 0,\n         };\n \n-        const offFacetValue = {\n+        let offFacetValue = {\n           isRefined: hasAnOffValue && !isRefined,\n           count: 0,\n         };\n \n-        const value = {\n-          name: attribute,\n-          isRefined,\n-          count: null,\n-          onFacetValue,\n-          offFacetValue,\n-        };\n-\n-        renderFn(\n-          {\n-            value,\n-            createURL: this._createURL(value.isRefined),\n-            refine: this.toggleRefinement,\n-            sendEvent,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          true\n-        );\n-      },\n-\n-      render({ helper, results, state, instantSearchInstance }) {\n-        const isRefined =\n-          on &&\n-          on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n-        const offValue = toArray(off === undefined ? false : off);\n-        const allFacetValues = results.getFacetValues(attribute) || [];\n-\n-        const onData =\n-          on &&\n-          on\n-            .map(v =>\n-              find(allFacetValues, ({ name }) => name === unescapeRefinement(v))\n-            )\n-            .filter(v => v !== undefined);\n-        const onFacetValue = {\n-          isRefined: onData.length > 0 ? onData.every(v => v.isRefined) : false,\n-          count:\n-            onData.length === 0\n-              ? null\n-              : onData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+        // results are null at init\n+        if (results) {\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n \n-        const offData = hasAnOffValue\n-          ? offValue\n+          const onData =\n+            on &&",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518930582",
+    "id": 518930582,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkzMDU4Mg==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 250,
+    "original_position": 219,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 525394853,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930582/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518930582",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518936834"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518936834"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That code has always been so hard to read—it scares me every time haha. Not sure if that's just me. If not, it'd be nice to rethink why it's been made like that.\r\n\r\nEither way is fine to me for this line though.",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T18:42:50Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n \n-        const onFacetValue = {\n+        let onFacetValue = {\n           isRefined,\n           count: 0,\n         };\n \n-        const offFacetValue = {\n+        let offFacetValue = {\n           isRefined: hasAnOffValue && !isRefined,\n           count: 0,\n         };\n \n-        const value = {\n-          name: attribute,\n-          isRefined,\n-          count: null,\n-          onFacetValue,\n-          offFacetValue,\n-        };\n-\n-        renderFn(\n-          {\n-            value,\n-            createURL: this._createURL(value.isRefined),\n-            refine: this.toggleRefinement,\n-            sendEvent,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          true\n-        );\n-      },\n-\n-      render({ helper, results, state, instantSearchInstance }) {\n-        const isRefined =\n-          on &&\n-          on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n-        const offValue = toArray(off === undefined ? false : off);\n-        const allFacetValues = results.getFacetValues(attribute) || [];\n-\n-        const onData =\n-          on &&\n-          on\n-            .map(v =>\n-              find(allFacetValues, ({ name }) => name === unescapeRefinement(v))\n-            )\n-            .filter(v => v !== undefined);\n-        const onFacetValue = {\n-          isRefined: onData.length > 0 ? onData.every(v => v.isRefined) : false,\n-          count:\n-            onData.length === 0\n-              ? null\n-              : onData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+        // results are null at init\n+        if (results) {\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n \n-        const offData = hasAnOffValue\n-          ? offValue\n+          const onData =\n+            on &&\n+            on\n               .map(v =>\n                 find(\n                   allFacetValues,\n                   ({ name }) => name === unescapeRefinement(v)\n                 )\n               )\n-              .filter(v => v !== undefined)\n-          : [];\n-        const offFacetValue = {\n-          isRefined:\n-            offData.length > 0 ? offData.every(v => v.isRefined) : false,\n-          count:\n-            offData.length === 0\n-              ? allFacetValues.reduce((total, { count }) => total + count, 0)\n-              : offData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+              .filter(v => v !== undefined);\n+          onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          offFacetValue = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518936834",
+    "id": 518936834,
+    "in_reply_to_id": 518608893,
+    "line": 268,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkzNjgzNA==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 278,
+    "original_position": 257,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 248,
+    "pull_request_review_id": 525394853,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518936834/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518936834",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518940614"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518940614"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Not sure you're aware but we plan long-term to remove the `init` step and solely rely on `render`. Looking forward to this time—it'll remove all the conditional logic so we can focus on a single contained behavior.\r\n\r\nI've already wrote a suite of RFC ([Request For Comments](https://en.wikipedia.org/wiki/Request_for_Comments), kind of proposal + specs) if ever it's of interest, there's a bunch of stuff I learned experimenting on this, so you might too!\r\n\r\nIt's a 3-part series:\r\n\r\n- [Render Lifecycle: Schedule Renders (1/3)](https://github.com/algolia/instantsearch-rfcs/pull/28)\r\n- [Render Lifecycle: Run Effects (2/3)](https://github.com/algolia/instantsearch-rfcs/pull/29)\r\n- [Render Lifecycle: Memoize Renders (3/3) ](https://github.com/algolia/instantsearch-rfcs/pull/30)\r\n\r\nIt might be the next simplification that we bring to InstantSearch?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-06T18:50:34Z",
+    "diff_hunk": "@@ -256,64 +275,34 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n                 )\n                 .filter(v => v !== undefined)\n             : [];\n-          const offFacetValue = {\n+          offFacetValue = {\n             isRefined:\n               offData.length > 0 ? offData.every(v => v.isRefined) : false,\n             count:\n               offData.length === 0\n                 ? allFacetValues.reduce((total, { count }) => total + count, 0)\n                 : offData.reduce((acc, v) => acc + v.count, 0),\n           };\n-\n-          // what will we show by default,\n-          // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n-          // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n-          const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n-\n-          value = {\n-            name: attribute,\n-            isRefined,\n-            count: nextRefinement === undefined ? null : nextRefinement.count,\n-            onFacetValue,\n-            offFacetValue,\n-          };\n-        } else {\n-          const isRefined =\n-            on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n-\n-          // no need to refine anything at init if no custom off values\n-          if (hasAnOffValue) {\n-            // Add filtering on the 'off' value if set\n-            if (!isRefined) {\n-              const currentPage = helper.state.page;\n-              if (off) {\n-                off.forEach(v =>\n-                  helper.addDisjunctiveFacetRefinement(attribute, v)\n-                );\n-              }\n-\n-              helper.setPage(currentPage);\n-            }\n+        } else if (hasAnOffValue && !isRefined) {\n+          const currentPage = helper.state.page;\n+          if (off) {\n+            off.forEach(v =>\n+              helper.addDisjunctiveFacetRefinement(attribute, v)\n+            );\n           }\n \n-          const onFacetValue = {\n-            isRefined,\n-            count: 0,\n-          };\n+          helper.setPage(currentPage);\n+        }\n \n-          const offFacetValue = {\n-            isRefined: hasAnOffValue && !isRefined,\n-            count: 0,\n-          };\n+        const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n \n-          value = {\n-            name: attribute,\n-            isRefined,\n-            count: null,\n-            onFacetValue,\n-            offFacetValue,\n-          };\n-        }\n+        const value = {\n+          name: attribute,\n+          isRefined,\n+          count: results && nextRefinement ? nextRefinement.count : null,\n+          onFacetValue,\n+          offFacetValue,\n+        };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r518940614",
+    "id": 518940614,
+    "in_reply_to_id": 516802357,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODk0MDYxNA==",
+    "original_commit_id": "f5b796c78e4f208f9daea152239d6bdd2477fe93",
+    "original_line": 305,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 525394853,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518940614/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518940614",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520485015"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520485015"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I can't seem to find a good solution for now, It's either **duplicate code with separated blocs** (which is easier to read) or **remove duplicated logic but add conditional logic/complexity** (which is harder to read but with less duplications).\r\n\r\nSee the changes here https://github.com/algolia/instantsearch.js/pull/4569/commits/1c064840506d8568c22f75876b7dd4156c741160, let me know if you have any ideas",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-10T11:17:22Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),\n+      createURLFactory: (isRefined, { state, createURL }) => () => {\n+        const valuesToRemove = isRefined ? on : off;\n+        if (valuesToRemove) {\n+          valuesToRemove.forEach(v => {\n+            state.removeDisjunctiveFacetRefinement(attribute, v);\n+          });\n         }\n \n-        helper.search();\n+        const valuesToAdd = isRefined ? off : on;\n+        if (valuesToAdd) {\n+          valuesToAdd.forEach(v => {\n+            state.addDisjunctiveFacetRefinement(attribute, v);\n+          });\n+        }\n+\n+        return createURL(state);\n       },\n+    };\n+\n+    return {\n+      $$type,\n \n-      init({ state, helper, createURL, instantSearchInstance }) {\n+      init(initOptions) {\n+        const { instantSearchInstance, helper } = initOptions;\n         sendEvent = createSendEvent({\n           instantSearchInstance,\n           attribute,\n           on,\n           helper,\n         });\n \n-        this._createURL = isCurrentlyRefined => () => {\n-          const valuesToRemove = isCurrentlyRefined ? on : off;\n-          if (valuesToRemove) {\n-            valuesToRemove.forEach(v => {\n-              state.removeDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n \n-          const valuesToAdd = isCurrentlyRefined ? off : on;\n-          if (valuesToAdd) {\n-            valuesToAdd.forEach(v => {\n-              state.addDisjunctiveFacetRefinement(attribute, v);\n-            });\n-          }\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n \n-          return createURL(state);\n-        };\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n \n-        this.toggleRefinement = opts => {\n-          this._toggleRefinement(helper, opts);\n-        };\n+      dispose({ state }) {\n+        unmountFn();\n \n-        const isRefined =\n-          on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n+        return state.removeDisjunctiveFacet(attribute);\n+      },\n \n-        // no need to refine anything at init if no custom off values\n-        if (hasAnOffValue) {\n-          // Add filtering on the 'off' value if set\n-          if (!isRefined) {\n-            const currentPage = helper.state.page;\n-            if (off) {\n-              off.forEach(v =>\n-                helper.addDisjunctiveFacetRefinement(attribute, v)\n-              );\n-            }\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          toggleRefinement: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n \n-            helper.setPage(currentPage);\n-          }\n-        }\n+      getWidgetRenderState({ state, helper, results, createURL }) {\n+        const isRefined = results\n+          ? on &&\n+            on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v))\n+          : on && on.every(v => state.isDisjunctiveFacetRefined(attribute, v));\n \n-        const onFacetValue = {\n+        let onFacetValue = {\n           isRefined,\n           count: 0,\n         };\n \n-        const offFacetValue = {\n+        let offFacetValue = {\n           isRefined: hasAnOffValue && !isRefined,\n           count: 0,\n         };\n \n-        const value = {\n-          name: attribute,\n-          isRefined,\n-          count: null,\n-          onFacetValue,\n-          offFacetValue,\n-        };\n-\n-        renderFn(\n-          {\n-            value,\n-            createURL: this._createURL(value.isRefined),\n-            refine: this.toggleRefinement,\n-            sendEvent,\n-            instantSearchInstance,\n-            widgetParams,\n-          },\n-          true\n-        );\n-      },\n-\n-      render({ helper, results, state, instantSearchInstance }) {\n-        const isRefined =\n-          on &&\n-          on.every(v => helper.state.isDisjunctiveFacetRefined(attribute, v));\n-        const offValue = toArray(off === undefined ? false : off);\n-        const allFacetValues = results.getFacetValues(attribute) || [];\n-\n-        const onData =\n-          on &&\n-          on\n-            .map(v =>\n-              find(allFacetValues, ({ name }) => name === unescapeRefinement(v))\n-            )\n-            .filter(v => v !== undefined);\n-        const onFacetValue = {\n-          isRefined: onData.length > 0 ? onData.every(v => v.isRefined) : false,\n-          count:\n-            onData.length === 0\n-              ? null\n-              : onData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+        // results are null at init\n+        if (results) {\n+          const offValue = toArray(off === undefined ? false : off);\n+          const allFacetValues = results.getFacetValues(attribute) || [];\n \n-        const offData = hasAnOffValue\n-          ? offValue\n+          const onData =\n+            on &&\n+            on\n               .map(v =>\n                 find(\n                   allFacetValues,\n                   ({ name }) => name === unescapeRefinement(v)\n                 )\n               )\n-              .filter(v => v !== undefined)\n-          : [];\n-        const offFacetValue = {\n-          isRefined:\n-            offData.length > 0 ? offData.every(v => v.isRefined) : false,\n-          count:\n-            offData.length === 0\n-              ? allFacetValues.reduce((total, { count }) => total + count, 0)\n-              : offData.reduce((acc, v) => acc + v.count, 0),\n-        };\n+              .filter(v => v !== undefined);\n+          onFacetValue = {\n+            isRefined:\n+              onData.length > 0 ? onData.every(v => v.isRefined) : false,\n+            count:\n+              onData.length === 0\n+                ? null\n+                : onData.reduce((acc, v) => acc + v.count, 0),\n+          };\n+\n+          const offData = hasAnOffValue\n+            ? offValue\n+                .map(v =>\n+                  find(\n+                    allFacetValues,\n+                    ({ name }) => name === unescapeRefinement(v)\n+                  )\n+                )\n+                .filter(v => v !== undefined)\n+            : [];\n+          offFacetValue = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520485015",
+    "id": 520485015,
+    "in_reply_to_id": 518608893,
+    "line": 268,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDQ4NTAxNQ==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 278,
+    "original_position": 257,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 248,
+    "pull_request_review_id": 527100376,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520485015/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520485015",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520644352"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644352"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "these tests could be split",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-10T15:19:39Z",
+    "diff_hunk": "@@ -823,6 +829,180 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/toggle-refi\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    test('returns the render state', () => {\n+      const renderFn = jest.fn();\n+      const unmountFn = jest.fn();\n+      const createToggleRefinement = connectToggleRefinement(\n+        renderFn,\n+        unmountFn\n+      );\n+      const toggleRefinement = createToggleRefinement({\n+        attribute: 'free_shipping',\n+      });\n+      const helper = jsHelper(createSearchClient(), 'indexName', {\n+        disjunctiveFacets: ['free_shipping'],\n+        disjunctiveFacetsRefinements: {\n+          free_shipping: ['false'],\n+        },\n+      });\n+\n+      const renderState1 = toggleRefinement.getRenderState(\n+        {},\n+        createInitOptions({ state: helper.state, helper })\n+      );\n+\n+      expect(renderState1.toggleRefinement).toEqual({\n+        createURL: expect.any(Function),\n+        refine: expect.any(Function),\n+        state: helper.state,\n+        value: {\n+          count: null,\n+          isRefined: false,\n+          name: 'free_shipping',\n+          offFacetValue: {\n+            count: 0,\n+            isRefined: false,\n+          },\n+          onFacetValue: {\n+            count: 0,\n+            isRefined: false,\n+          },\n+        },\n+        widgetParams: {\n+          attribute: 'free_shipping',\n+        },\n+      });\n+\n+      const renderState2 = toggleRefinement.getRenderState(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520644352",
+    "id": 520644352,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDY0NDM1Mg==",
+    "original_commit_id": "1c064840506d8568c22f75876b7dd4156c741160",
+    "original_line": 877,
+    "original_position": 62,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/__tests__/connectToggleRefinement-test.js",
+    "position": 1,
+    "pull_request_review_id": 527311296,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644352/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644352",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520644839"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644839"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "did you check this? it doesn't seem to use `this.` anything in the function, so I don't think it needs to be bound",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-10T15:20:17Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r520644839",
+    "id": 520644839,
+    "in_reply_to_id": 518591528,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMDY0NDgzOQ==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 162,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 527311296,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644839/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/520644839",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r521914261"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/521914261"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Sorry I forgot to send my answer.\r\n\r\nI don't use `this` but is it better to pass `null` instead?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-12T08:19:22Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r521914261",
+    "id": 521914261,
+    "in_reply_to_id": 518591528,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMTkxNDI2MQ==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 162,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 528843388,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/521914261/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/521914261",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r522825586"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522825586"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "@eunjae-lee I've moved the `createInitializedWidget` for `insight` function to the top level because I needed it in the `renderState` and `getWidgetRenderState` tests and updated the `helper` with `createSearchClient`",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-13T09:22:57Z",
+    "diff_hunk": "@@ -3,9 +3,42 @@ import jsHelper, {\n   SearchParameters,\n } from 'algoliasearch-helper';\n import connectToggleRefinement from '../connectToggleRefinement';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n import { createInstantSearch } from '../../../../test/mock/createInstantSearch';\n \n describe('connectToggleRefinement', () => {\n+  const createInitializedWidget = () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r522825586",
+    "id": 522825586,
+    "line": 15,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMjgyNTU4Ng==",
+    "original_commit_id": "3114c1330379eb3d382fc55acacb60b1f2a4fc84",
+    "original_line": 15,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/__tests__/connectToggleRefinement-test.js",
+    "position": 13,
+    "pull_request_review_id": 529901160,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522825586/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522825586",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r524392229"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524392229"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "toggleRefinementFactory: helper => toggleRefinement(helper)\r\n\r\nwould this not work?",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-16T16:19:17Z",
+    "diff_hunk": "@@ -135,188 +135,189 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    return {\n-      $$type,\n-\n-      _toggleRefinement(helper, { isRefined } = {}) {\n-        // Checking\n-        if (!isRefined) {\n-          sendEvent('click', isRefined);\n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.removeDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n-\n-          on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n-        } else {\n-          // Unchecking\n-          on.forEach(v =>\n+    const toggleRefinement = (helper, { isRefined } = {}) => {\n+      // Checking\n+      if (!isRefined) {\n+        sendEvent('click', isRefined);\n+        if (hasAnOffValue) {\n+          off.forEach(v =>\n             helper.removeDisjunctiveFacetRefinement(attribute, v)\n           );\n+        }\n \n-          if (hasAnOffValue) {\n-            off.forEach(v =>\n-              helper.addDisjunctiveFacetRefinement(attribute, v)\n-            );\n-          }\n+        on.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+      } else {\n+        // Unchecking\n+        on.forEach(v => helper.removeDisjunctiveFacetRefinement(attribute, v));\n+\n+        if (hasAnOffValue) {\n+          off.forEach(v => helper.addDisjunctiveFacetRefinement(attribute, v));\n+        }\n+      }\n+\n+      helper.search();\n+    };\n+\n+    const connectorState = {\n+      toggleRefinementFactory: helper => toggleRefinement.bind(this, helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r524392229",
+    "id": 524392229,
+    "in_reply_to_id": 518591528,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyNDM5MjIyOQ==",
+    "original_commit_id": "ec9425957f263713bb168e978400bd7bf4a92c35",
+    "original_line": 162,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 1,
+    "pull_request_review_id": 531480265,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524392229/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-16T16:57:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524392229",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4569#discussion_r524969399"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4569"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524969399"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "It make sense!!! 🤯",
+    "commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "created_at": "2020-11-17T08:31:29Z",
+    "diff_hunk": "@@ -135,7 +135,7 @@ export default function connectToggleRefinement(renderFn, unmountFn = noop) {\n \n     let sendEvent;\n \n-    const toggleRefinement = (helper, { isRefined } = {}) => {\n+    const toggleRefinementFactory = helper => ({ isRefined } = {}) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4569#discussion_r524969399",
+    "id": 524969399,
+    "line": 138,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyNDk2OTM5OQ==",
+    "original_commit_id": "c1d41e9314a087bb72f7bb3c43fd2665067c3a6a",
+    "original_line": 138,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/toggle-refinement/connectToggleRefinement.js",
+    "position": 21,
+    "pull_request_review_id": 532124747,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4569",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524969399/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-17T08:31:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/524969399",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  }
+]

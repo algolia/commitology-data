@@ -1,0 +1,558 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616668316"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616668316"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Makes so much sense!",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-20T13:11:29Z",
+    "diff_hunk": "@@ -1,14 +1,14 @@\n import { SearchResults } from 'algoliasearch-helper';\n import { InstantSearch } from './instantsearch';\n import { InsightsClient } from './insights';\n-import { WidgetFactory } from './widget-factory';\n import { Hits } from './results';\n+import { Widget, WidgetDescription } from './widget';\n \n /**\n  * The base renderer options. All render functions receive\n  * the options below plus the specific options per connector.\n  */\n-export type RendererOptions<TWidgetParams> = {\n+export type RenderState<TWidgetParams> = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616668316",
+    "id": 616668316,
+    "line": 11,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYxNjY2ODMxNg==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 11,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 13,
+    "pull_request_review_id": 639928873,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616668316/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-20T13:51:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616668316",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616702461"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616702461"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "A widget must have at least one of [init, render]. What if we extract this part and use `AtLeastOne` type util?",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-20T13:50:12Z",
+    "diff_hunk": "@@ -110,102 +111,167 @@ export type BuiltinWidgetTypes =\n   | 'ais.toggleRefinement'\n   | 'ais.voiceSearch';\n \n-/**\n- * Widgets are the building blocks of InstantSearch.js. Any valid widget must\n- * have at least a `render` or a `init` function.\n- */\n-export type Widget<\n-  TWidgetOptions extends { renderState: unknown } = { renderState: unknown }\n-> = {\n-  /**\n-   * Identifier for official connectors and widgets\n-   */\n-  $$type?: BuiltinTypes;\n+export type WidgetParams = {\n+  widgetParams: NonNullable<unknown>;\n+};\n \n+export type WidgetDescription = {\n+  $$type: string;\n+  $$widgetType?: string;\n+  renderState?: Record<string, unknown>;\n+  indexRenderState?: Record<string, unknown>;\n+  indexUiState?: Record<string, unknown>;\n+};\n+\n+type RequiredWidgetLifeCycle<TWidgetDescription extends WidgetDescription> = {\n   /**\n-   * Identifier for official widgets\n+   * Identifier for connectors and widgets.\n    */\n-  $$widgetType?: BuiltinWidgetTypes;\n+  $$type: TWidgetDescription['$$type'];\n \n   /**\n-   * Called once before the first search\n+   * Called once before the first search.\n    */\n-  init?(options: InitOptions): void;\n+  init?: (options: InitOptions) => void;\n   /**\n-   * Called after each search response has been received\n+   * Called after each search response has been received.\n    */\n-  render?(options: RenderOptions): void;\n+  render?: (options: RenderOptions) => void;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616702461",
+    "id": 616702461,
+    "line": 139,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYxNjcwMjQ2MQ==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 139,
+    "original_position": 56,
+    "original_start_line": 133,
+    "path": "src/types/widget.ts",
+    "position": 56,
+    "pull_request_review_id": 639928873,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616702461/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 133,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-20T13:51:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616702461",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616784549"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616784549"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I thought about that, but in practice that would make the type more complicated for few gain, since $$type is required now, and it doesn't really make the usage simpler (will still need to use `init?.()`, since you can't know which one of the two is actually implemented). Instead I think we should in a major version make render required both here and in addWidgets;",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-20T15:17:24Z",
+    "diff_hunk": "@@ -110,102 +111,167 @@ export type BuiltinWidgetTypes =\n   | 'ais.toggleRefinement'\n   | 'ais.voiceSearch';\n \n-/**\n- * Widgets are the building blocks of InstantSearch.js. Any valid widget must\n- * have at least a `render` or a `init` function.\n- */\n-export type Widget<\n-  TWidgetOptions extends { renderState: unknown } = { renderState: unknown }\n-> = {\n-  /**\n-   * Identifier for official connectors and widgets\n-   */\n-  $$type?: BuiltinTypes;\n+export type WidgetParams = {\n+  widgetParams: NonNullable<unknown>;\n+};\n \n+export type WidgetDescription = {\n+  $$type: string;\n+  $$widgetType?: string;\n+  renderState?: Record<string, unknown>;\n+  indexRenderState?: Record<string, unknown>;\n+  indexUiState?: Record<string, unknown>;\n+};\n+\n+type RequiredWidgetLifeCycle<TWidgetDescription extends WidgetDescription> = {\n   /**\n-   * Identifier for official widgets\n+   * Identifier for connectors and widgets.\n    */\n-  $$widgetType?: BuiltinWidgetTypes;\n+  $$type: TWidgetDescription['$$type'];\n \n   /**\n-   * Called once before the first search\n+   * Called once before the first search.\n    */\n-  init?(options: InitOptions): void;\n+  init?: (options: InitOptions) => void;\n   /**\n-   * Called after each search response has been received\n+   * Called after each search response has been received.\n    */\n-  render?(options: RenderOptions): void;\n+  render?: (options: RenderOptions) => void;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r616784549",
+    "id": 616784549,
+    "in_reply_to_id": 616702461,
+    "line": 139,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYxNjc4NDU0OQ==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 139,
+    "original_position": 56,
+    "original_start_line": 133,
+    "path": "src/types/widget.ts",
+    "position": 56,
+    "pull_request_review_id": 640086973,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616784549/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 133,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-20T15:17:33Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/616784549",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r617306408"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/617306408"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Oh yeah, it makes sense!",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-21T08:22:27Z",
+    "diff_hunk": "@@ -110,102 +111,167 @@ export type BuiltinWidgetTypes =\n   | 'ais.toggleRefinement'\n   | 'ais.voiceSearch';\n \n-/**\n- * Widgets are the building blocks of InstantSearch.js. Any valid widget must\n- * have at least a `render` or a `init` function.\n- */\n-export type Widget<\n-  TWidgetOptions extends { renderState: unknown } = { renderState: unknown }\n-> = {\n-  /**\n-   * Identifier for official connectors and widgets\n-   */\n-  $$type?: BuiltinTypes;\n+export type WidgetParams = {\n+  widgetParams: NonNullable<unknown>;\n+};\n \n+export type WidgetDescription = {\n+  $$type: string;\n+  $$widgetType?: string;\n+  renderState?: Record<string, unknown>;\n+  indexRenderState?: Record<string, unknown>;\n+  indexUiState?: Record<string, unknown>;\n+};\n+\n+type RequiredWidgetLifeCycle<TWidgetDescription extends WidgetDescription> = {\n   /**\n-   * Identifier for official widgets\n+   * Identifier for connectors and widgets.\n    */\n-  $$widgetType?: BuiltinWidgetTypes;\n+  $$type: TWidgetDescription['$$type'];\n \n   /**\n-   * Called once before the first search\n+   * Called once before the first search.\n    */\n-  init?(options: InitOptions): void;\n+  init?: (options: InitOptions) => void;\n   /**\n-   * Called after each search response has been received\n+   * Called after each search response has been received.\n    */\n-  render?(options: RenderOptions): void;\n+  render?: (options: RenderOptions) => void;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r617306408",
+    "id": 617306408,
+    "in_reply_to_id": 616702461,
+    "line": 139,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYxNzMwNjQwOA==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 139,
+    "original_position": 56,
+    "original_start_line": 133,
+    "path": "src/types/widget.ts",
+    "position": 56,
+    "pull_request_review_id": 640760375,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/617306408/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 133,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-21T08:22:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/617306408",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623668025"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623668025"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "shouldn't we use the Expand helper here? ",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-30T07:19:11Z",
+    "diff_hunk": "@@ -1,223 +1,68 @@\n-import { Hit, GeoLoc } from './results';\n-import { SendEventForHits } from '../lib/utils';\n-import {\n-  AutocompleteRendererOptions,\n-  AutocompleteConnectorParams,\n-} from '../connectors/autocomplete/connectAutocomplete';\n-import {\n-  BreadcrumbRendererOptions,\n-  BreadcrumbConnectorParams,\n-} from '../connectors/breadcrumb/connectBreadcrumb';\n-import {\n-  ClearRefinementsRendererOptions,\n-  ClearRefinementsConnectorParams,\n-} from '../connectors/clear-refinements/connectClearRefinements';\n-import {\n-  ConfigureRendererOptions,\n-  ConfigureConnectorParams,\n-} from '../connectors/configure/connectConfigure';\n-import {\n-  CurrentRefinementsRendererOptions,\n-  CurrentRefinementsConnectorParams,\n-} from '../connectors/current-refinements/connectCurrentRefinements';\n-import {\n-  HitsPerPageConnectorParams,\n-  HitsPerPageRendererOptions,\n-} from '../connectors/hits-per-page/connectHitsPerPage';\n-import {\n-  HitsRendererOptions,\n-  HitsConnectorParams,\n-} from '../connectors/hits/connectHits';\n-import {\n-  InfiniteHitsRendererOptions,\n-  InfiniteHitsConnectorParams,\n-} from '../connectors/infinite-hits/connectInfiniteHits';\n-import { AnalyticsWidgetParams } from '../widgets/analytics/analytics';\n-import { PlacesWidgetParams } from '../widgets/places/places';\n-import {\n-  NumericMenuConnectorParams,\n-  NumericMenuRendererOptions,\n-} from '../connectors/numeric-menu/connectNumericMenu';\n-import {\n-  PoweredByConnectorParams,\n-  PoweredByRendererOptions,\n-} from '../connectors/powered-by/connectPoweredBy';\n-import {\n-  VoiceSearchRendererOptions,\n-  VoiceSearchConnectorParams,\n-} from '../connectors/voice-search/connectVoiceSearch';\n-import {\n-  QueryRulesRendererOptions,\n-  QueryRulesConnectorParams,\n-} from '../connectors/query-rules/connectQueryRules';\n-import {\n-  PaginationRendererOptions,\n-  PaginationConnectorParams,\n-} from '../connectors/pagination/connectPagination';\n-import {\n-  AnswersRendererOptions,\n-  AnswersConnectorParams,\n-} from '../connectors/answers/connectAnswers';\n-import {\n-  RatingMenuConnectorParams,\n-  RatingMenuRendererOptions,\n-} from '../connectors/rating-menu/connectRatingMenu';\n-import {\n-  RangeConnectorParams,\n-  RangeRendererOptions,\n-} from '../connectors/range/connectRange';\n-import {\n-  RelevantSortConnectorParams,\n-  RelevantSortRendererOptions,\n-} from '../connectors/relevant-sort/connectRelevantSort';\n-import {\n-  MenuConnectorParams,\n-  MenuRendererOptions,\n-} from '../connectors/menu/connectMenu';\n-import {\n-  HierarchicalMenuConnectorParams,\n-  HierarchicalMenuRendererOptions,\n-} from '../connectors/hierarchical-menu/connectHierarchicalMenu';\n-import {\n-  RefinementListRendererOptions,\n-  RefinementListConnectorParams,\n-} from '../connectors/refinement-list/connectRefinementList';\n-import {\n-  StatsConnectorParams,\n-  StatsRendererOptions,\n-} from '../connectors/stats/connectStats';\n-import {\n-  SortByConnectorParams,\n-  SortByRendererOptions,\n-} from '../connectors/sort-by/connectSortBy';\n+import { AnswersWidgetDescription } from '../connectors/answers/connectAnswers';\n+import { AutocompleteWidgetDescription } from '../connectors/autocomplete/connectAutocomplete';\n+import { BreadcrumbWidgetDescription } from '../connectors/breadcrumb/connectBreadcrumb';\n+import { ClearRefinementsWidgetDescription } from '../connectors/clear-refinements/connectClearRefinements';\n+import { ConfigureWidgetDescription } from '../connectors/configure/connectConfigure';\n+import { CurrentRefinementsWidgetDescription } from '../connectors/current-refinements/connectCurrentRefinements';\n+import { GeoSearchWidgetDescription } from '../connectors/geo-search/types';\n+import { HierarchicalMenuWidgetDescription } from '../connectors/hierarchical-menu/connectHierarchicalMenu';\n+import { HitsPerPageWidgetDescription } from '../connectors/hits-per-page/connectHitsPerPage';\n+import { HitsWidgetDescription } from '../connectors/hits/connectHits';\n+import { InfiniteHitsWidgetDescription } from '../connectors/infinite-hits/connectInfiniteHits';\n+import { MenuWidgetDescription } from '../connectors/menu/connectMenu';\n+import { NumericMenuWidgetDescription } from '../connectors/numeric-menu/connectNumericMenu';\n+import { PaginationWidgetDescription } from '../connectors/pagination/connectPagination';\n+import { PoweredByWidgetDescription } from '../connectors/powered-by/connectPoweredBy';\n+import { QueryRulesWidgetDescription } from '../connectors/query-rules/connectQueryRules';\n+import { RangeWidgetDescription } from '../connectors/range/connectRange';\n+import { RatingMenuWidgetDescription } from '../connectors/rating-menu/connectRatingMenu';\n+import { RefinementListWidgetDescription } from '../connectors/refinement-list/connectRefinementList';\n+import { RelevantSortWidgetDescription } from '../connectors/relevant-sort/connectRelevantSort';\n+import { SearchBoxWidgetDescription } from '../connectors/search-box/connectSearchBox';\n+import { SortByWidgetDescription } from '../connectors/sort-by/connectSortBy';\n+import { StatsWidgetDescription } from '../connectors/stats/connectStats';\n+import { ToggleRefinementWidgetDescription } from '../connectors/toggle-refinement/types';\n+import { VoiceSearchWidgetDescription } from '../connectors/voice-search/connectVoiceSearch';\n+import { AnalyticsWidgetDescription } from '../widgets/analytics/analytics';\n+import { PlacesWidgetDescription } from '../widgets/places/places';\n+\n+type ConnectorRenderStates = AnswersWidgetDescription['indexRenderState'] &",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623668025",
+    "id": 623668025,
+    "line": 29,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMzY2ODAyNQ==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 29,
+    "original_position": 121,
+    "original_start_line": null,
+    "path": "src/types/render-state.ts",
+    "position": 121,
+    "pull_request_review_id": 648946971,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623668025/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T07:19:11Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623668025",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623670680"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623670680"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why not use WidgetDescription directly here?",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-30T07:24:16Z",
+    "diff_hunk": "@@ -110,102 +111,167 @@ export type BuiltinWidgetTypes =\n   | 'ais.toggleRefinement'\n   | 'ais.voiceSearch';\n \n-/**\n- * Widgets are the building blocks of InstantSearch.js. Any valid widget must\n- * have at least a `render` or a `init` function.\n- */\n-export type Widget<\n-  TWidgetOptions extends { renderState: unknown } = { renderState: unknown }\n-> = {\n-  /**\n-   * Identifier for official connectors and widgets\n-   */\n-  $$type?: BuiltinTypes;\n+export type WidgetParams = {\n+  widgetParams: NonNullable<unknown>;\n+};\n \n+export type WidgetDescription = {\n+  $$type: string;\n+  $$widgetType?: string;\n+  renderState?: Record<string, unknown>;\n+  indexRenderState?: Record<string, unknown>;\n+  indexUiState?: Record<string, unknown>;\n+};\n+\n+type RequiredWidgetLifeCycle<TWidgetDescription extends WidgetDescription> = {\n   /**\n-   * Identifier for official widgets\n+   * Identifier for connectors and widgets.\n    */\n-  $$widgetType?: BuiltinWidgetTypes;\n+  $$type: TWidgetDescription['$$type'];\n \n   /**\n-   * Called once before the first search\n+   * Called once before the first search.\n    */\n-  init?(options: InitOptions): void;\n+  init?: (options: InitOptions) => void;\n   /**\n-   * Called after each search response has been received\n+   * Called after each search response has been received.\n    */\n-  render?(options: RenderOptions): void;\n+  render?: (options: RenderOptions) => void;\n   /**\n    * Called when this widget is unmounted. Used to remove refinements set by\n    * during this widget's initialization and life time.\n    */\n-  dispose?(options: DisposeOptions): SearchParameters | void;\n+  dispose?: (options: DisposeOptions) => SearchParameters | void;\n+};\n+\n+type RequiredWidgetType<TWidgetDescription extends WidgetDescription> = {\n+  /**\n+   * Identifier for widgets.\n+   */\n+  $$widgetType: TWidgetDescription['$$widgetType'];\n+};\n+\n+type WidgetType<\n+  TWidgetDescription extends WidgetDescription",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623670680",
+    "id": 623670680,
+    "line": 155,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMzY3MDY4MA==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 155,
+    "original_position": 73,
+    "original_start_line": null,
+    "path": "src/types/widget.ts",
+    "position": 73,
+    "pull_request_review_id": 648950186,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623670680/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T07:24:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623670680",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623676206"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676206"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "there's no conditionals, so intellisense automatically expanded the type already :)",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-30T07:34:43Z",
+    "diff_hunk": "@@ -1,223 +1,68 @@\n-import { Hit, GeoLoc } from './results';\n-import { SendEventForHits } from '../lib/utils';\n-import {\n-  AutocompleteRendererOptions,\n-  AutocompleteConnectorParams,\n-} from '../connectors/autocomplete/connectAutocomplete';\n-import {\n-  BreadcrumbRendererOptions,\n-  BreadcrumbConnectorParams,\n-} from '../connectors/breadcrumb/connectBreadcrumb';\n-import {\n-  ClearRefinementsRendererOptions,\n-  ClearRefinementsConnectorParams,\n-} from '../connectors/clear-refinements/connectClearRefinements';\n-import {\n-  ConfigureRendererOptions,\n-  ConfigureConnectorParams,\n-} from '../connectors/configure/connectConfigure';\n-import {\n-  CurrentRefinementsRendererOptions,\n-  CurrentRefinementsConnectorParams,\n-} from '../connectors/current-refinements/connectCurrentRefinements';\n-import {\n-  HitsPerPageConnectorParams,\n-  HitsPerPageRendererOptions,\n-} from '../connectors/hits-per-page/connectHitsPerPage';\n-import {\n-  HitsRendererOptions,\n-  HitsConnectorParams,\n-} from '../connectors/hits/connectHits';\n-import {\n-  InfiniteHitsRendererOptions,\n-  InfiniteHitsConnectorParams,\n-} from '../connectors/infinite-hits/connectInfiniteHits';\n-import { AnalyticsWidgetParams } from '../widgets/analytics/analytics';\n-import { PlacesWidgetParams } from '../widgets/places/places';\n-import {\n-  NumericMenuConnectorParams,\n-  NumericMenuRendererOptions,\n-} from '../connectors/numeric-menu/connectNumericMenu';\n-import {\n-  PoweredByConnectorParams,\n-  PoweredByRendererOptions,\n-} from '../connectors/powered-by/connectPoweredBy';\n-import {\n-  VoiceSearchRendererOptions,\n-  VoiceSearchConnectorParams,\n-} from '../connectors/voice-search/connectVoiceSearch';\n-import {\n-  QueryRulesRendererOptions,\n-  QueryRulesConnectorParams,\n-} from '../connectors/query-rules/connectQueryRules';\n-import {\n-  PaginationRendererOptions,\n-  PaginationConnectorParams,\n-} from '../connectors/pagination/connectPagination';\n-import {\n-  AnswersRendererOptions,\n-  AnswersConnectorParams,\n-} from '../connectors/answers/connectAnswers';\n-import {\n-  RatingMenuConnectorParams,\n-  RatingMenuRendererOptions,\n-} from '../connectors/rating-menu/connectRatingMenu';\n-import {\n-  RangeConnectorParams,\n-  RangeRendererOptions,\n-} from '../connectors/range/connectRange';\n-import {\n-  RelevantSortConnectorParams,\n-  RelevantSortRendererOptions,\n-} from '../connectors/relevant-sort/connectRelevantSort';\n-import {\n-  MenuConnectorParams,\n-  MenuRendererOptions,\n-} from '../connectors/menu/connectMenu';\n-import {\n-  HierarchicalMenuConnectorParams,\n-  HierarchicalMenuRendererOptions,\n-} from '../connectors/hierarchical-menu/connectHierarchicalMenu';\n-import {\n-  RefinementListRendererOptions,\n-  RefinementListConnectorParams,\n-} from '../connectors/refinement-list/connectRefinementList';\n-import {\n-  StatsConnectorParams,\n-  StatsRendererOptions,\n-} from '../connectors/stats/connectStats';\n-import {\n-  SortByConnectorParams,\n-  SortByRendererOptions,\n-} from '../connectors/sort-by/connectSortBy';\n+import { AnswersWidgetDescription } from '../connectors/answers/connectAnswers';\n+import { AutocompleteWidgetDescription } from '../connectors/autocomplete/connectAutocomplete';\n+import { BreadcrumbWidgetDescription } from '../connectors/breadcrumb/connectBreadcrumb';\n+import { ClearRefinementsWidgetDescription } from '../connectors/clear-refinements/connectClearRefinements';\n+import { ConfigureWidgetDescription } from '../connectors/configure/connectConfigure';\n+import { CurrentRefinementsWidgetDescription } from '../connectors/current-refinements/connectCurrentRefinements';\n+import { GeoSearchWidgetDescription } from '../connectors/geo-search/types';\n+import { HierarchicalMenuWidgetDescription } from '../connectors/hierarchical-menu/connectHierarchicalMenu';\n+import { HitsPerPageWidgetDescription } from '../connectors/hits-per-page/connectHitsPerPage';\n+import { HitsWidgetDescription } from '../connectors/hits/connectHits';\n+import { InfiniteHitsWidgetDescription } from '../connectors/infinite-hits/connectInfiniteHits';\n+import { MenuWidgetDescription } from '../connectors/menu/connectMenu';\n+import { NumericMenuWidgetDescription } from '../connectors/numeric-menu/connectNumericMenu';\n+import { PaginationWidgetDescription } from '../connectors/pagination/connectPagination';\n+import { PoweredByWidgetDescription } from '../connectors/powered-by/connectPoweredBy';\n+import { QueryRulesWidgetDescription } from '../connectors/query-rules/connectQueryRules';\n+import { RangeWidgetDescription } from '../connectors/range/connectRange';\n+import { RatingMenuWidgetDescription } from '../connectors/rating-menu/connectRatingMenu';\n+import { RefinementListWidgetDescription } from '../connectors/refinement-list/connectRefinementList';\n+import { RelevantSortWidgetDescription } from '../connectors/relevant-sort/connectRelevantSort';\n+import { SearchBoxWidgetDescription } from '../connectors/search-box/connectSearchBox';\n+import { SortByWidgetDescription } from '../connectors/sort-by/connectSortBy';\n+import { StatsWidgetDescription } from '../connectors/stats/connectStats';\n+import { ToggleRefinementWidgetDescription } from '../connectors/toggle-refinement/types';\n+import { VoiceSearchWidgetDescription } from '../connectors/voice-search/connectVoiceSearch';\n+import { AnalyticsWidgetDescription } from '../widgets/analytics/analytics';\n+import { PlacesWidgetDescription } from '../widgets/places/places';\n+\n+type ConnectorRenderStates = AnswersWidgetDescription['indexRenderState'] &",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623676206",
+    "id": 623676206,
+    "in_reply_to_id": 623668025,
+    "line": 29,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMzY3NjIwNg==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 29,
+    "original_position": 121,
+    "original_start_line": null,
+    "path": "src/types/render-state.ts",
+    "position": 121,
+    "pull_request_review_id": 648957115,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676206/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T07:34:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676206",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623676585"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4734"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676585"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "because the actual value of the description is needed, so it needs to be a generic :)",
+    "commit_id": "53d48120fd30f2176a0d8a638eea3c404cccf3bc",
+    "created_at": "2021-04-30T07:35:19Z",
+    "diff_hunk": "@@ -110,102 +111,167 @@ export type BuiltinWidgetTypes =\n   | 'ais.toggleRefinement'\n   | 'ais.voiceSearch';\n \n-/**\n- * Widgets are the building blocks of InstantSearch.js. Any valid widget must\n- * have at least a `render` or a `init` function.\n- */\n-export type Widget<\n-  TWidgetOptions extends { renderState: unknown } = { renderState: unknown }\n-> = {\n-  /**\n-   * Identifier for official connectors and widgets\n-   */\n-  $$type?: BuiltinTypes;\n+export type WidgetParams = {\n+  widgetParams: NonNullable<unknown>;\n+};\n \n+export type WidgetDescription = {\n+  $$type: string;\n+  $$widgetType?: string;\n+  renderState?: Record<string, unknown>;\n+  indexRenderState?: Record<string, unknown>;\n+  indexUiState?: Record<string, unknown>;\n+};\n+\n+type RequiredWidgetLifeCycle<TWidgetDescription extends WidgetDescription> = {\n   /**\n-   * Identifier for official widgets\n+   * Identifier for connectors and widgets.\n    */\n-  $$widgetType?: BuiltinWidgetTypes;\n+  $$type: TWidgetDescription['$$type'];\n \n   /**\n-   * Called once before the first search\n+   * Called once before the first search.\n    */\n-  init?(options: InitOptions): void;\n+  init?: (options: InitOptions) => void;\n   /**\n-   * Called after each search response has been received\n+   * Called after each search response has been received.\n    */\n-  render?(options: RenderOptions): void;\n+  render?: (options: RenderOptions) => void;\n   /**\n    * Called when this widget is unmounted. Used to remove refinements set by\n    * during this widget's initialization and life time.\n    */\n-  dispose?(options: DisposeOptions): SearchParameters | void;\n+  dispose?: (options: DisposeOptions) => SearchParameters | void;\n+};\n+\n+type RequiredWidgetType<TWidgetDescription extends WidgetDescription> = {\n+  /**\n+   * Identifier for widgets.\n+   */\n+  $$widgetType: TWidgetDescription['$$widgetType'];\n+};\n+\n+type WidgetType<\n+  TWidgetDescription extends WidgetDescription",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4734#discussion_r623676585",
+    "id": 623676585,
+    "in_reply_to_id": 623670680,
+    "line": 155,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMzY3NjU4NQ==",
+    "original_commit_id": "01ece8c5c4d678bd1efdde54c1c8c2c917f12363",
+    "original_line": 155,
+    "original_position": 73,
+    "original_start_line": null,
+    "path": "src/types/widget.ts",
+    "position": 73,
+    "pull_request_review_id": 648957550,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4734",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676585/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T07:35:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623676585",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

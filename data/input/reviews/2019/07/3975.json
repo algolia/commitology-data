@@ -1,0 +1,2085 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r305820588"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/305820588"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "something which the previous version also doesn't implement yet, and thus could be done in a separate PR, is adding `queryID` & absolute position to the hits array so it can be used for insights, like it can for Hits & InfiniteHits; cc @tkrugg \r\n\r\nsee also https://github.com/algolia/react-instantsearch/pull/2687",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-22T12:35:06Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration() {\n+        const parameters = {\n+          query: '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return parameters;\n+        }\n+\n+        return {\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        };\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) =>\n+          helper.setQuery(query).search();\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          scopedResult.results.hits = escapeHTML\n+            ? escapeHits(scopedResult.results.hits)\n+            : scopedResult.results.hits;\n+\n+          return {\n+            index: scopedResult.results.index,\n+            hits: scopedResult.results.hits,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r305820588",
+    "id": 305820588,
+    "line": 148,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNTgyMDU4OA==",
+    "original_commit_id": "ed7177df6dcf113c017e8a70fcc9f01b9726605c",
+    "original_line": 131,
+    "original_position": 131,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 148,
+    "pull_request_review_id": 264783512,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/305820588/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/305820588",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306259740"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306259740"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We don't have to repeat the type inside the name, the information is already carried by the type.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:08:26Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306259740",
+    "id": 306259740,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI1OTc0MA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306259740/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306259740",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306260457"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260457"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We could print the alternative usage WDYT?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:10:25Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306260457",
+    "id": 306260457,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2MDQ1Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260457/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260457",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306260822"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260822"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The function should read from the previous parameter then fallback.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:11:35Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: '',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306260822",
+    "id": 306260822,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2MDgyMg==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 93,
+    "original_position": 93,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260822/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306260822",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306261287"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306261287"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The return value should be `void` we don't have to expose the Helper through the connector.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:12:49Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306261287",
+    "id": 306261287,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2MTI4Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306261287/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306261287",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306262219"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262219"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We could add a comment that explain why we mutate the results.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:15:10Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) =>\n+          helper.setQuery(query).search();\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          scopedResult.results.hits = escapeHTML",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306262219",
+    "id": 306262219,
+    "line": 142,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2MjIxOQ==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 125,
+    "original_position": 125,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 142,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262219/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262219",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306262847"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262847"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "For which cases the value is `undefined`?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:17:01Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306262847",
+    "id": 306262847,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2Mjg0Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 29,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262847/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306262847",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306263700"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306263700"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can already name it `indexName`.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:19:29Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306263700",
+    "id": 306263700,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2MzcwMA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 27,
+    "original_position": 27,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306263700/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306263700",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306264977"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306264977"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We don't really showcase the full power of the connector. IMO we should use the `refine` behaviour of the connector, rather than relying on the `searchBox` (for the design we can give it the same class).",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:23:11Z",
+    "diff_hunk": "@@ -0,0 +1,63 @@\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+\n+storiesOf('Autocomplete', module).add(\n+  'default',\n+  withHits(({ search, container, instantsearch }) => {\n+    const instantSearchRatingAscSearchBox = document.createElement('div');\n+    const instantSearchAutocomplete = document.createElement('div');\n+\n+    container.appendChild(instantSearchRatingAscSearchBox);\n+    container.appendChild(instantSearchAutocomplete);\n+\n+    const customAutocomplete = instantsearch.connectors.connectAutocomplete(\n+      renderOptions => {\n+        const { indices, widgetParams } = renderOptions;\n+\n+        widgetParams.container.innerHTML = indices\n+          .map(\n+            ({ index, hits }) => `\n+<li>\n+  Index: <strong>${index}</strong>\n+  <ol>\n+    ${hits\n+      .map(\n+        hit => `<li>${instantsearch.highlight({ attribute: 'name', hit })}</li>`\n+      )\n+      .join('')}\n+  </ol>\n+</li>\n+`\n+          )\n+          .join('');\n+      }\n+    );\n+\n+    search.addWidgets([\n+      instantsearch.widgets\n+        .index({ indexName: 'instant_search_price_asc' })\n+        .addWidgets([\n+          instantsearch.widgets.configure({\n+            hitsPerPage: 3,\n+          }),\n+\n+          instantsearch.widgets.searchBox({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306264977",
+    "id": 306264977,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2NDk3Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 44,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "stories/autocomplete.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306264977/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306264977",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306266714"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306266714"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can add the `widgetParams` and `instantSearchInstance` to the test.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:28:02Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306266714",
+    "id": 306266714,
+    "line": 93,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2NjcxNA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 77,
+    "original_position": 77,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 93,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306266714/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306266714",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306267047"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267047"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    const widget = makeWidget();\r\n```\r\n\r\nIt doesn't make sense to add the option for test, we don't use it.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:28:59Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),\n+      }),\n+      true\n+    );\n+\n+    widget.render!(createRenderOptions());\n+\n+    expect(renderFn).toHaveBeenCalledTimes(2);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: expect.any(Array),\n+        refine: expect.any(Function),\n+      }),\n+      false\n+    );\n+  });\n+\n+  it('consumes the correct indices', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({ escapeHTML: false });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306267047",
+    "id": 306267047,
+    "line": 119,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2NzA0Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 119,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267047/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267047",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306267318"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267318"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We should create a mock helper for this we do it thousand times across the codebase.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:29:43Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),\n+      }),\n+      true\n+    );\n+\n+    widget.render!(createRenderOptions());\n+\n+    expect(renderFn).toHaveBeenCalledTimes(2);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: expect.any(Array),\n+        refine: expect.any(Function),\n+      }),\n+      false\n+    );\n+  });\n+\n+  it('consumes the correct indices', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({ escapeHTML: false });\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306267318",
+    "id": 306267318,
+    "line": 122,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2NzMxOA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 102,
+    "original_position": 102,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 122,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267318/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306267318",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306268228"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268228"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The widget does not implement the routing lifecycle, we can add them in a separate PR though.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:32:19Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) =>\n+          helper.setQuery(query).search();\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          scopedResult.results.hits = escapeHTML\n+            ? escapeHits(scopedResult.results.hits)\n+            : scopedResult.results.hits;\n+\n+          return {\n+            index: scopedResult.results.index,\n+            hits: scopedResult.results.hits,\n+            results: scopedResult.results,\n+          };\n+        });\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices,\n+            refine: connectorState.refine!,\n+            instantSearchInstance: connectorState.instantSearchInstance!,\n+          },\n+          false\n+        );\n+      },\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306268228",
+    "id": 306268228,
+    "line": 164,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2ODIyOA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 164,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268228/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268228",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306268788"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268788"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Those types are a nightmare to follow, would be nice to simplify them at some point. No idea how though.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:33:49Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306268788",
+    "id": 306268788,
+    "line": 59,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI2ODc4OA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 64,
+    "original_position": 64,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 59,
+    "pull_request_review_id": 265333495,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268788/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306268788",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306271403"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306271403"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is needed otherwise we cannot do this assertion:\r\n\r\n```ts\r\nexpect(secondRenderOptions.indices[0].hits).toEqual(firstIndexHits);\r\n```\r\n\r\nBecause we add `__escaped`, to the array with `escapeHTML` to `true`. Jest considers them as different arrays.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:41:16Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),\n+      }),\n+      true\n+    );\n+\n+    widget.render!(createRenderOptions());\n+\n+    expect(renderFn).toHaveBeenCalledTimes(2);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: expect.any(Array),\n+        refine: expect.any(Function),\n+      }),\n+      false\n+    );\n+  });\n+\n+  it('consumes the correct indices', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({ escapeHTML: false });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306271403",
+    "id": 306271403,
+    "in_reply_to_id": 306267047,
+    "line": 119,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI3MTQwMw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 119,
+    "pull_request_review_id": 265348138,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306271403/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306271403",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306275376"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306275376"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "WDYM? A link to the doc?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T11:52:09Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306275376",
+    "id": 306275376,
+    "in_reply_to_id": 306260457,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI3NTM3Ng==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265352962,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306275376/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306275376",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306278340"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306278340"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "None, it's mistyped.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T12:00:04Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306278340",
+    "id": 306278340,
+    "in_reply_to_id": 306262847,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI3ODM0MA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 29,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265356796,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306278340/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306278340",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306280231"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306280231"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We mutate the results also in `connectHits` and `connectInfiniteHits`. What kind of comment would you expect?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T12:05:05Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) =>\n+          helper.setQuery(query).search();\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          scopedResult.results.hits = escapeHTML",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306280231",
+    "id": 306280231,
+    "in_reply_to_id": 306262219,
+    "line": 142,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI4MDIzMQ==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 125,
+    "original_position": 125,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 142,
+    "pull_request_review_id": 265359100,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306280231/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306280231",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306282808"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306282808"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What could we showcase more with the search box connector that we don't with the widget?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T12:11:43Z",
+    "diff_hunk": "@@ -0,0 +1,63 @@\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+\n+storiesOf('Autocomplete', module).add(\n+  'default',\n+  withHits(({ search, container, instantsearch }) => {\n+    const instantSearchRatingAscSearchBox = document.createElement('div');\n+    const instantSearchAutocomplete = document.createElement('div');\n+\n+    container.appendChild(instantSearchRatingAscSearchBox);\n+    container.appendChild(instantSearchAutocomplete);\n+\n+    const customAutocomplete = instantsearch.connectors.connectAutocomplete(\n+      renderOptions => {\n+        const { indices, widgetParams } = renderOptions;\n+\n+        widgetParams.container.innerHTML = indices\n+          .map(\n+            ({ index, hits }) => `\n+<li>\n+  Index: <strong>${index}</strong>\n+  <ol>\n+    ${hits\n+      .map(\n+        hit => `<li>${instantsearch.highlight({ attribute: 'name', hit })}</li>`\n+      )\n+      .join('')}\n+  </ol>\n+</li>\n+`\n+          )\n+          .join('');\n+      }\n+    );\n+\n+    search.addWidgets([\n+      instantsearch.widgets\n+        .index({ indexName: 'instant_search_price_asc' })\n+        .addWidgets([\n+          instantsearch.widgets.configure({\n+            hitsPerPage: 3,\n+          }),\n+\n+          instantsearch.widgets.searchBox({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306282808",
+    "id": 306282808,
+    "in_reply_to_id": 306264977,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI4MjgwOA==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 44,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "stories/autocomplete.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 265362359,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306282808/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306282808",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306286271"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306286271"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Let's do it in another PR.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T12:20:14Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),\n+      }),\n+      true\n+    );\n+\n+    widget.render!(createRenderOptions());\n+\n+    expect(renderFn).toHaveBeenCalledTimes(2);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: expect.any(Array),\n+        refine: expect.any(Function),\n+      }),\n+      false\n+    );\n+  });\n+\n+  it('consumes the correct indices', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({ escapeHTML: false });\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306286271",
+    "id": 306286271,
+    "in_reply_to_id": 306267318,
+    "line": 122,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjI4NjI3MQ==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 102,
+    "original_position": 102,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 122,
+    "pull_request_review_id": 265366671,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306286271/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306286271",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306345253"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306345253"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Convert the usage of `indices` into `index` This what we did for [the `geoSearch` warnings](https://github.com/algolia/instantsearch.js/blob/509513c0feafaad522f6f18d87a441559f4aa050/src/connectors/geo-search/connectGeoSearch.js#L117-L132).",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T14:19:14Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306345253",
+    "id": 306345253,
+    "in_reply_to_id": 306260457,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjM0NTI1Mw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 1,
+    "pull_request_review_id": 265442051,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306345253/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306345253",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306346276"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306346276"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes we do, but it's not obvious why we do it. Something that mention highlighting.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T14:21:00Z",
+    "diff_hunk": "@@ -0,0 +1,171 @@\n+import {\n+  AlgoliaSearchHelper as Helper,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  index: string;\n+  hits: Hits;\n+  results: SearchResults | undefined;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+type RefineFunction = (query: string) => Helper;\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: RefineFunction;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `Since InstantSearch.js 4, \\`connectAutocomplete\\` infers the indices from the tree of widgets.\n+The \\`indices\\` option is ignored.`\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: RefineFunction;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) =>\n+          helper.setQuery(query).search();\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          scopedResult.results.hits = escapeHTML",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306346276",
+    "id": 306346276,
+    "in_reply_to_id": 306262219,
+    "line": 142,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjM0NjI3Ng==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 125,
+    "original_position": 125,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 142,
+    "pull_request_review_id": 265443366,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306346276/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306346276",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306348667"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348667"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The story do not use `refine`, `currentRefinement` to implement the autocomplete. We leverage the `searchBox` widget. Most of the time people will build their autocomplete with the connector only, specially if it's an integration with a pre-built component. IMO it worth showcasing the full API.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T14:25:05Z",
+    "diff_hunk": "@@ -0,0 +1,63 @@\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+\n+storiesOf('Autocomplete', module).add(\n+  'default',\n+  withHits(({ search, container, instantsearch }) => {\n+    const instantSearchRatingAscSearchBox = document.createElement('div');\n+    const instantSearchAutocomplete = document.createElement('div');\n+\n+    container.appendChild(instantSearchRatingAscSearchBox);\n+    container.appendChild(instantSearchAutocomplete);\n+\n+    const customAutocomplete = instantsearch.connectors.connectAutocomplete(\n+      renderOptions => {\n+        const { indices, widgetParams } = renderOptions;\n+\n+        widgetParams.container.innerHTML = indices\n+          .map(\n+            ({ index, hits }) => `\n+<li>\n+  Index: <strong>${index}</strong>\n+  <ol>\n+    ${hits\n+      .map(\n+        hit => `<li>${instantsearch.highlight({ attribute: 'name', hit })}</li>`\n+      )\n+      .join('')}\n+  </ol>\n+</li>\n+`\n+          )\n+          .join('');\n+      }\n+    );\n+\n+    search.addWidgets([\n+      instantsearch.widgets\n+        .index({ indexName: 'instant_search_price_asc' })\n+        .addWidgets([\n+          instantsearch.widgets.configure({\n+            hitsPerPage: 3,\n+          }),\n+\n+          instantsearch.widgets.searchBox({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306348667",
+    "id": 306348667,
+    "in_reply_to_id": 306264977,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjM0ODY2Nw==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 44,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "stories/autocomplete.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 265446320,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348667/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348667",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306348836"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348836"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "My bad.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-23T14:25:22Z",
+    "diff_hunk": "@@ -0,0 +1,421 @@\n+import algoliasearchHelper, {\n+  SearchResults,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+  createDisposeOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectAutocomplete from '../connectAutocomplete';\n+import { TAG_PLACEHOLDER } from '../../../lib/escape-highlight';\n+\n+describe('connectAutocomplete', () => {\n+  it('throws without render function', () => {\n+    expect(() => {\n+      // @ts-ignore\n+      connectAutocomplete();\n+    }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/#connector\"\n+`);\n+  });\n+\n+  it('warns when using the outdated `indices` option', () => {\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+\n+    const trigger = () => {\n+      // @ts-ignore outdated `indices` option\n+      makeWidget({ indices: [{ label: 'foo', value: 'foo' }] });\n+    };\n+\n+    expect(trigger).toWarnDev(\n+      '[InstantSearch.js]: Since InstantSearch.js 4, `connectAutocomplete` infers the indices from the tree of widgets.\\nThe `indices` option is ignored.'\n+    );\n+  });\n+\n+  it('is a widget', () => {\n+    const render = jest.fn();\n+    const unmount = jest.fn();\n+\n+    const customAutocomplete = connectAutocomplete(render, unmount);\n+    const widget = customAutocomplete({});\n+\n+    expect(widget).toEqual(\n+      expect.objectContaining({\n+        $$type: 'ais.autocomplete',\n+        init: expect.any(Function),\n+        render: expect.any(Function),\n+        dispose: expect.any(Function),\n+        getConfiguration: expect.any(Function),\n+      })\n+    );\n+  });\n+\n+  it('renders during init and render', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({});\n+\n+    expect(renderFn).toHaveBeenCalledTimes(0);\n+\n+    const helper = algoliasearchHelper(searchClient, '', {});\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    expect(renderFn).toHaveBeenCalledTimes(1);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: [],\n+        refine: expect.any(Function),\n+      }),\n+      true\n+    );\n+\n+    widget.render!(createRenderOptions());\n+\n+    expect(renderFn).toHaveBeenCalledTimes(2);\n+    expect(renderFn).toHaveBeenLastCalledWith(\n+      expect.objectContaining({\n+        currentRefinement: '',\n+        indices: expect.any(Array),\n+        refine: expect.any(Function),\n+      }),\n+      false\n+    );\n+  });\n+\n+  it('consumes the correct indices', () => {\n+    const searchClient = createSearchClient();\n+    const renderFn = jest.fn();\n+    const makeWidget = connectAutocomplete(renderFn);\n+    const widget = makeWidget({ escapeHTML: false });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306348836",
+    "id": 306348836,
+    "in_reply_to_id": 306267047,
+    "line": 119,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjM0ODgzNg==",
+    "original_commit_id": "adbd2c353083b3579b77d94956230c13fcae5d15",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.ts",
+    "position": 119,
+    "pull_request_review_id": 265446529,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348836/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306348836",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306667615"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306667615"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is fine, but we should probably avoid calling state functions multiple times, and can join them all in a single setQueryParameters, WDYT?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T07:39:21Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: (query: string) => void;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `\n+The option \\`indices\\` has been removed from the Autocomplete connector.\n+\n+The indices to target are now inferred from the widgets tree.\n+${\n+  Array.isArray((widgetParams as any).indices)\n+    ? `\n+An alternative would be:\n+\n+const autocomplete = connectAutocomplete(renderer);\n+\n+search.addWidgets([\n+  ${(widgetParams as any).indices\n+    .map(({ value }: { value: string }) => `index({ indexName: '${value}'}),`)\n+    .join('\\n  ')}\n+  autocomplete()\n+]);\n+`\n+    : ''\n+}\n+      `\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: (query: string) => void;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: previousParameters.query || '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) => {\n+          helper.setQuery(query).search();\n+        };\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          // We need to escape the hits because highlighting\n+          // exposes HTML tags to the end-user.\n+          scopedResult.results.hits = escapeHTML\n+            ? escapeHits(scopedResult.results.hits)\n+            : scopedResult.results.hits;\n+\n+          return {\n+            indexName: scopedResult.results.index,\n+            hits: scopedResult.results.hits,\n+            results: scopedResult.results,\n+          };\n+        });\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices,\n+            refine: connectorState.refine!,\n+            instantSearchInstance: connectorState.instantSearchInstance!,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        const stateWithoutQuery = state.setQueryParameter('query', undefined);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306667615",
+    "id": 306667615,
+    "line": 168,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjY2NzYxNQ==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 168,
+    "original_position": 168,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 168,
+    "pull_request_review_id": 265841111,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306667615/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306667615",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306695224"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695224"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Do we want to support previous highlighting tags?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T08:45:59Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: (query: string) => void;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `\n+The option \\`indices\\` has been removed from the Autocomplete connector.\n+\n+The indices to target are now inferred from the widgets tree.\n+${\n+  Array.isArray((widgetParams as any).indices)\n+    ? `\n+An alternative would be:\n+\n+const autocomplete = connectAutocomplete(renderer);\n+\n+search.addWidgets([\n+  ${(widgetParams as any).indices\n+    .map(({ value }: { value: string }) => `index({ indexName: '${value}'}),`)\n+    .join('\\n  ')}\n+  autocomplete()\n+]);\n+`\n+    : ''\n+}\n+      `\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: (query: string) => void;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: previousParameters.query || '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306695224",
+    "id": 306695224,
+    "line": 116,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjY5NTIyNA==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 116,
+    "original_position": 116,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 116,
+    "pull_request_review_id": 265874796,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695224/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695224",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306695457"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695457"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Do we keep `indices` or rename it to `items` like the other widgets?",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T08:46:19Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306695457",
+    "id": 306695457,
+    "line": 41,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjY5NTQ1Nw==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 41,
+    "pull_request_review_id": 265874796,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695457/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306695457",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306697111"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306697111"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We do that in other connectors. They don't mutate the global state, they return a new object.\r\nWhy would you recommend not calling these functions multiple times? ",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T08:49:28Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: (query: string) => void;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `\n+The option \\`indices\\` has been removed from the Autocomplete connector.\n+\n+The indices to target are now inferred from the widgets tree.\n+${\n+  Array.isArray((widgetParams as any).indices)\n+    ? `\n+An alternative would be:\n+\n+const autocomplete = connectAutocomplete(renderer);\n+\n+search.addWidgets([\n+  ${(widgetParams as any).indices\n+    .map(({ value }: { value: string }) => `index({ indexName: '${value}'}),`)\n+    .join('\\n  ')}\n+  autocomplete()\n+]);\n+`\n+    : ''\n+}\n+      `\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: (query: string) => void;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: previousParameters.query || '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,\n+        });\n+      },\n+\n+      init({ instantSearchInstance, helper }) {\n+        connectorState.instantSearchInstance = instantSearchInstance;\n+        connectorState.refine = (query: string) => {\n+          helper.setQuery(query).search();\n+        };\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices: [],\n+            refine: connectorState.refine,\n+            instantSearchInstance: connectorState.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ helper, scopedResults }) {\n+        const indices = scopedResults.map(scopedResult => {\n+          // We need to escape the hits because highlighting\n+          // exposes HTML tags to the end-user.\n+          scopedResult.results.hits = escapeHTML\n+            ? escapeHits(scopedResult.results.hits)\n+            : scopedResult.results.hits;\n+\n+          return {\n+            indexName: scopedResult.results.index,\n+            hits: scopedResult.results.hits,\n+            results: scopedResult.results,\n+          };\n+        });\n+\n+        renderFn(\n+          {\n+            widgetParams,\n+            currentRefinement: helper.state.query || '',\n+            indices,\n+            refine: connectorState.refine!,\n+            instantSearchInstance: connectorState.instantSearchInstance!,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        const stateWithoutQuery = state.setQueryParameter('query', undefined);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306697111",
+    "id": 306697111,
+    "in_reply_to_id": 306667615,
+    "line": 168,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjY5NzExMQ==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 168,
+    "original_position": 168,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 168,
+    "pull_request_review_id": 265874796,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306697111/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T09:59:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306697111",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306734234"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306734234"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't think so, otherwise it might break our highlighting feature.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T10:12:53Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];\n+  instantSearchInstance: InstantSearch;\n+  refine: (query: string) => void;\n+}\n+\n+export type AutocompleteRenderer<TAutocompleteWidgetParams> = Renderer<\n+  AutocompleteRendererOptions<\n+    AutocompleteConnectorParams & TAutocompleteWidgetParams\n+  >\n+>;\n+\n+export type AutocompleteWidgetFactory<\n+  TAutocompleteWidgetParams\n+> = WidgetFactory<AutocompleteConnectorParams & TAutocompleteWidgetParams>;\n+\n+export type AutocompleteConnector = <TAutocompleteWidgetParams>(\n+  render: AutocompleteRenderer<TAutocompleteWidgetParams>,\n+  unmount?: Unmounter\n+) => AutocompleteWidgetFactory<TAutocompleteWidgetParams>;\n+\n+const connectAutocomplete: AutocompleteConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { escapeHTML = true } = widgetParams || {};\n+\n+    warning(\n+      !(widgetParams as any).indices,\n+      `\n+The option \\`indices\\` has been removed from the Autocomplete connector.\n+\n+The indices to target are now inferred from the widgets tree.\n+${\n+  Array.isArray((widgetParams as any).indices)\n+    ? `\n+An alternative would be:\n+\n+const autocomplete = connectAutocomplete(renderer);\n+\n+search.addWidgets([\n+  ${(widgetParams as any).indices\n+    .map(({ value }: { value: string }) => `index({ indexName: '${value}'}),`)\n+    .join('\\n  ')}\n+  autocomplete()\n+]);\n+`\n+    : ''\n+}\n+      `\n+    );\n+\n+    type ConnectorState = {\n+      instantSearchInstance?: InstantSearch;\n+      refine?: (query: string) => void;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.autocomplete',\n+\n+      getConfiguration(previousParameters) {\n+        const parameters = {\n+          query: previousParameters.query || '',\n+        };\n+\n+        if (!escapeHTML) {\n+          return previousParameters.setQueryParameters(parameters);\n+        }\n+\n+        return previousParameters.setQueryParameters({\n+          ...parameters,\n+          ...TAG_PLACEHOLDER,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306734234",
+    "id": 306734234,
+    "in_reply_to_id": 306695224,
+    "line": 116,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjczNDIzNA==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 116,
+    "original_position": 116,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 116,
+    "pull_request_review_id": 265922943,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306734234/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T10:12:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306734234",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306737640"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3975"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306737640"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`items` refers most of the time to a list of facet values, `hits` refers to a list of hits, `indices` could make sense. Both are valid, I don't think it matters much.",
+    "commit_id": "3d92a59a499c43e9ad099fb6d5e43ff584c48ca0",
+    "created_at": "2019-07-24T10:21:44Z",
+    "diff_hunk": "@@ -0,0 +1,188 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import escapeHits, { TAG_PLACEHOLDER } from '../../lib/escape-highlight';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  RendererOptions,\n+  Renderer,\n+  WidgetFactory,\n+  Hits,\n+  InstantSearch,\n+  Unmounter,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'autocomplete',\n+  connector: true,\n+});\n+\n+interface AutocompleteIndex {\n+  indexName: string;\n+  hits: Hits;\n+  results: SearchResults;\n+}\n+\n+interface AutocompleteConnectorParams {\n+  /**\n+   * Escapes HTML entities from hits string values.\n+   *\n+   * @default `true`\n+   */\n+  escapeHTML?: boolean;\n+}\n+\n+export interface AutocompleteRendererOptions<TAutocompleteWidgetParams>\n+  extends RendererOptions<TAutocompleteWidgetParams> {\n+  currentRefinement: string;\n+  indices: AutocompleteIndex[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3975#discussion_r306737640",
+    "id": 306737640,
+    "in_reply_to_id": 306695457,
+    "line": 41,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwNjczNzY0MA==",
+    "original_commit_id": "c9e3677687c38a86e739f58a93ffac152d50f4ac",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/connectAutocomplete.ts",
+    "position": 41,
+    "pull_request_review_id": 265927269,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3975",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306737640/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-24T10:21:44Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/306737640",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  }
+]

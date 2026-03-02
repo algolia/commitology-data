@@ -1,0 +1,211 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1877870108"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6467"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1877870108"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Why a `useMemo` when `isServer` won't ever change ?\r\n\r\nThere's more overhead in calling that than just a single-line :\r\n```ts\r\nconst hasRouteChanged = !isServer && !window[InstantSearchInitialResults]\r\n```\r\n\r\nWe can still make it multiple lines to make it more readable",
+    "commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "created_at": "2024-12-10T10:54:28Z",
+    "diff_hunk": "@@ -51,11 +48,17 @@ export function InstantSearchNext<\n }: InstantSearchNextProps<TUiState, TRouteState>) {\n   const isMounting = useRef(true);\n   const isServer = typeof window === 'undefined';\n-  const pathname = usePathname();\n-  const hasRouteChanged =\n-    !isServer &&\n-    window[InstantSearchLastPath] &&\n-    window[InstantSearchLastPath] !== pathname;\n+\n+  const hasRouteChanged = useMemo(() => {\n+    // On server, always return false\n+    if (isServer) {\n+      return false;\n+    }\n+\n+    // On client, route has changed if initialResults have been cleaned up\n+    const hasInitialResults = window[InstantSearchInitialResults] !== undefined;\n+    return !hasInitialResults;\n+  }, [isServer]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1877870108",
+    "id": 1877870108,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs5v7gYc",
+    "original_commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "original_line": 61,
+    "original_position": 40,
+    "original_start_line": 52,
+    "path": "packages/react-instantsearch-nextjs/src/InstantSearchNext.tsx",
+    "position": 40,
+    "pull_request_review_id": 2491920509,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6467",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1877870108/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 52,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-12-10T10:54:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1877870108",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1878053562"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6467"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878053562"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "`useMemo()` prevents the value from being true during a rerender triggered by a wrapping component.\r\n\r\nBecause of strict mode, the initial results are cleaned during the automatic unmount/remount, which will cause the issue the previous PR aimed to fix.",
+    "commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "created_at": "2024-12-10T13:00:06Z",
+    "diff_hunk": "@@ -51,11 +48,17 @@ export function InstantSearchNext<\n }: InstantSearchNextProps<TUiState, TRouteState>) {\n   const isMounting = useRef(true);\n   const isServer = typeof window === 'undefined';\n-  const pathname = usePathname();\n-  const hasRouteChanged =\n-    !isServer &&\n-    window[InstantSearchLastPath] &&\n-    window[InstantSearchLastPath] !== pathname;\n+\n+  const hasRouteChanged = useMemo(() => {\n+    // On server, always return false\n+    if (isServer) {\n+      return false;\n+    }\n+\n+    // On client, route has changed if initialResults have been cleaned up\n+    const hasInitialResults = window[InstantSearchInitialResults] !== undefined;\n+    return !hasInitialResults;\n+  }, [isServer]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1878053562",
+    "id": 1878053562,
+    "in_reply_to_id": 1877870108,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs5v8NK6",
+    "original_commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "original_line": 61,
+    "original_position": 40,
+    "original_start_line": 52,
+    "path": "packages/react-instantsearch-nextjs/src/InstantSearchNext.tsx",
+    "position": 40,
+    "pull_request_review_id": 2492255330,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6467",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878053562/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 52,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-12-10T13:00:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878053562",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1878079414"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6467"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878079414"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Ah yes because `window[InstantSearchInitialResults]` is not in the dependency array",
+    "commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "created_at": "2024-12-10T13:18:02Z",
+    "diff_hunk": "@@ -51,11 +48,17 @@ export function InstantSearchNext<\n }: InstantSearchNextProps<TUiState, TRouteState>) {\n   const isMounting = useRef(true);\n   const isServer = typeof window === 'undefined';\n-  const pathname = usePathname();\n-  const hasRouteChanged =\n-    !isServer &&\n-    window[InstantSearchLastPath] &&\n-    window[InstantSearchLastPath] !== pathname;\n+\n+  const hasRouteChanged = useMemo(() => {\n+    // On server, always return false\n+    if (isServer) {\n+      return false;\n+    }\n+\n+    // On client, route has changed if initialResults have been cleaned up\n+    const hasInitialResults = window[InstantSearchInitialResults] !== undefined;\n+    return !hasInitialResults;\n+  }, [isServer]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6467#discussion_r1878079414",
+    "id": 1878079414,
+    "in_reply_to_id": 1877870108,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs5v8Te2",
+    "original_commit_id": "0772c03d1a5a9382e5678075cb7c75977e0f78df",
+    "original_line": 61,
+    "original_position": 40,
+    "original_start_line": 52,
+    "path": "packages/react-instantsearch-nextjs/src/InstantSearchNext.tsx",
+    "position": 40,
+    "pull_request_review_id": 2492299694,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6467",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878079414/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 52,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-12-10T13:18:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1878079414",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  }
+]

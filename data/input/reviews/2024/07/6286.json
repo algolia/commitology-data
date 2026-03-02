@@ -1,0 +1,280 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679154549"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6286"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679154549"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Struggled with yarn which still keeps `4.23.2` with the `algoliasearch-v4` name, even if we remove the alias.\r\n\r\nIt does output some warnings like \"warning Pattern is trying to unpack in the same destination\" which may be related.\r\n\r\nCopying it manually works though so idk if we should bother",
+    "commit_id": "545a804868f3ee3e4a1858bc8a692129cde7e02f",
+    "created_at": "2024-07-16T10:27:21Z",
+    "diff_hunk": "@@ -0,0 +1,67 @@\n+#!/usr/bin/env node\n+const path = require('path');\n+\n+const shell = require('shelljs');\n+\n+const packageJsonPaths = [\n+  path.resolve(__dirname, '../../package.json'),\n+  ...JSON.parse(\n+    shell.exec(\n+      \"yarn run --silent lerna list --json --all --ignore='example-*'\",\n+      {\n+        silent: true,\n+      }\n+    ).stdout\n+  ).map(({ location }) => path.resolve(location, 'package.json')),\n+];\n+\n+console.log(\n+  `Downgrading algoliasearch dependency to v4 in:\n+- ${packageJsonPaths.join('\\n- ')}`\n+);\n+\n+// change main dependency\n+shell.sed(\n+  '-i',\n+  /\"algoliasearch\": \"5.*\"(,?)/,\n+  '\"algoliasearch\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// Downgrade other dependency\n+shell.sed(\n+  '-i',\n+  /\"@algolia\\/client-search\": \"5.*\"(,?)/,\n+  '\"@algolia/client-search\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// remove resolution\n+shell.sed('-i', /\"@algolia\\/client-common\": \"5.*\"(,?)/, '', packageJsonPaths);\n+shell.sed(\n+  '-i',\n+  /\"places.js\\/algoliasearch\": \"5.*\"(,?)/,\n+  '\"places.js/algoliasearch\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// replace import in examples\n+shell.sed(\n+  '-i',\n+  /import { liteClient as algoliasearch } from 'algoliasearch\\/lite'/,\n+  \"import algoliasearch from 'algoliasearch/lite'\",\n+  ...shell.ls('examples/*/*/*.{js,ts,tsx,vue}'),\n+  ...shell.ls('examples/*/*/{src,pages,app}/*.{js,ts,tsx,vue}')\n+);\n+\n+// replace dependency in examples\n+shell.sed(\n+  '-i',\n+  /\"algoliasearch\": \".*\"(,)?/,\n+  '\"algoliasearch\": \"4.23.2\"$1',\n+  ...shell.ls('examples/*/*/package.json')\n+);\n+\n+shell.exec('yarn install');\n+\n+shell.exec('cp -r node_modules/algoliasearch-v4 node_modules/algoliasearch');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679154549",
+    "id": 1679154549,
+    "line": 67,
+    "node_id": "PRRC_kwDOAlnbOs5kFd11",
+    "original_commit_id": "7cb60d098bab2f42d0d1acf7ddbd93057d85ff76",
+    "original_line": 67,
+    "original_position": 67,
+    "original_start_line": null,
+    "path": "scripts/legacy/downgrade-algoliasearch-v4.js",
+    "position": 67,
+    "pull_request_review_id": 2179852999,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6286",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679154549/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-07-16T10:27:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679154549",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679250275"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6286"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679250275"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I wonder if this is because of Create InstantSearch App ",
+    "commit_id": "545a804868f3ee3e4a1858bc8a692129cde7e02f",
+    "created_at": "2024-07-16T11:47:59Z",
+    "diff_hunk": "@@ -0,0 +1,67 @@\n+#!/usr/bin/env node\n+const path = require('path');\n+\n+const shell = require('shelljs');\n+\n+const packageJsonPaths = [\n+  path.resolve(__dirname, '../../package.json'),\n+  ...JSON.parse(\n+    shell.exec(\n+      \"yarn run --silent lerna list --json --all --ignore='example-*'\",\n+      {\n+        silent: true,\n+      }\n+    ).stdout\n+  ).map(({ location }) => path.resolve(location, 'package.json')),\n+];\n+\n+console.log(\n+  `Downgrading algoliasearch dependency to v4 in:\n+- ${packageJsonPaths.join('\\n- ')}`\n+);\n+\n+// change main dependency\n+shell.sed(\n+  '-i',\n+  /\"algoliasearch\": \"5.*\"(,?)/,\n+  '\"algoliasearch\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// Downgrade other dependency\n+shell.sed(\n+  '-i',\n+  /\"@algolia\\/client-search\": \"5.*\"(,?)/,\n+  '\"@algolia/client-search\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// remove resolution\n+shell.sed('-i', /\"@algolia\\/client-common\": \"5.*\"(,?)/, '', packageJsonPaths);\n+shell.sed(\n+  '-i',\n+  /\"places.js\\/algoliasearch\": \"5.*\"(,?)/,\n+  '\"places.js/algoliasearch\": \"4.23.2\"$1',\n+  packageJsonPaths\n+);\n+\n+// replace import in examples\n+shell.sed(\n+  '-i',\n+  /import { liteClient as algoliasearch } from 'algoliasearch\\/lite'/,\n+  \"import algoliasearch from 'algoliasearch/lite'\",\n+  ...shell.ls('examples/*/*/*.{js,ts,tsx,vue}'),\n+  ...shell.ls('examples/*/*/{src,pages,app}/*.{js,ts,tsx,vue}')\n+);\n+\n+// replace dependency in examples\n+shell.sed(\n+  '-i',\n+  /\"algoliasearch\": \".*\"(,)?/,\n+  '\"algoliasearch\": \"4.23.2\"$1',\n+  ...shell.ls('examples/*/*/package.json')\n+);\n+\n+shell.exec('yarn install');\n+\n+shell.exec('cp -r node_modules/algoliasearch-v4 node_modules/algoliasearch');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679250275",
+    "id": 1679250275,
+    "in_reply_to_id": 1679154549,
+    "line": 67,
+    "node_id": "PRRC_kwDOAlnbOs5kF1Nj",
+    "original_commit_id": "7cb60d098bab2f42d0d1acf7ddbd93057d85ff76",
+    "original_line": 67,
+    "original_position": 67,
+    "original_start_line": null,
+    "path": "scripts/legacy/downgrade-algoliasearch-v4.js",
+    "position": 67,
+    "pull_request_review_id": 2180006018,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6286",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679250275/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-07-16T11:47:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679250275",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679251198"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6286"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679251198"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we need to store the test results like in unit tests ",
+    "commit_id": "545a804868f3ee3e4a1858bc8a692129cde7e02f",
+    "created_at": "2024-07-16T11:48:44Z",
+    "diff_hunk": "@@ -221,6 +225,25 @@ jobs:\n           name: Type Checking\n           command: yarn run type-check:v3\n \n+  legacy algoliasearch v4:\n+    <<: *defaults\n+    steps:\n+      - checkout\n+      - *attach_workspace\n+      - *install_yarn_version\n+      - *restore_yarn_cache\n+      - *run_yarn_install\n+      - run:\n+          name: Update dependencies\n+          command: |\n+            ./scripts/legacy/downgrade-algoliasearch-v4.js\n+      - run:\n+          name: Unit & Integration tests\n+          command: yarn run test",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679251198",
+    "id": 1679251198,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5kF1b-",
+    "original_commit_id": "7cb60d098bab2f42d0d1acf7ddbd93057d85ff76",
+    "original_line": 242,
+    "original_position": 49,
+    "original_start_line": null,
+    "path": ".circleci/config.yml",
+    "position": 1,
+    "pull_request_review_id": 2180007461,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6286",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679251198/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-07-16T11:49:26Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679251198",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679313206"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6286"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679313206"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Done and everything passes ! Thanks !",
+    "commit_id": "545a804868f3ee3e4a1858bc8a692129cde7e02f",
+    "created_at": "2024-07-16T12:36:15Z",
+    "diff_hunk": "@@ -221,6 +225,25 @@ jobs:\n           name: Type Checking\n           command: yarn run type-check:v3\n \n+  legacy algoliasearch v4:\n+    <<: *defaults\n+    steps:\n+      - checkout\n+      - *attach_workspace\n+      - *install_yarn_version\n+      - *restore_yarn_cache\n+      - *run_yarn_install\n+      - run:\n+          name: Update dependencies\n+          command: |\n+            ./scripts/legacy/downgrade-algoliasearch-v4.js\n+      - run:\n+          name: Unit & Integration tests\n+          command: yarn run test",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6286#discussion_r1679313206",
+    "id": 1679313206,
+    "in_reply_to_id": 1679251198,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5kGEk2",
+    "original_commit_id": "7cb60d098bab2f42d0d1acf7ddbd93057d85ff76",
+    "original_line": 242,
+    "original_position": 49,
+    "original_start_line": null,
+    "path": ".circleci/config.yml",
+    "position": 1,
+    "pull_request_review_id": 2180106963,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6286",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679313206/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-07-16T12:36:15Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1679313206",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  }
+]

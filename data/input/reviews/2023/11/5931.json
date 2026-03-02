@@ -1,0 +1,279 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394240334"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5931"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394240334"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "could be computed instead of method",
+    "commit_id": "b7d4638db2ce447c2bc962f7f49890e03aac0e39",
+    "created_at": "2023-11-15T13:59:32Z",
+    "diff_hunk": "@@ -23,6 +23,46 @@ import { createWidgetMixin } from '../mixins/widget';\n \n export default {\n   name: 'AisStats',\n+  methods: {\n+    getSortedResultsSentence() {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394240334",
+    "id": 1394240334,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5TGmtO",
+    "original_commit_id": "20ce609f1daf3714230f3c75f0608a0f00cd53e4",
+    "original_line": 27,
+    "original_position": 16,
+    "original_start_line": 26,
+    "path": "packages/vue-instantsearch/src/components/Stats.vue",
+    "position": 1,
+    "pull_request_review_id": 1732097493,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5931",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394240334/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-11-15T16:16:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394240334",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394436719"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5931"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394436719"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    test('renders with many hits', async () => {\r\n```",
+    "commit_id": "b7d4638db2ce447c2bc962f7f49890e03aac0e39",
+    "created_at": "2023-11-15T16:14:42Z",
+    "diff_hunk": "@@ -0,0 +1,210 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { normalizeSnapshot, wait } from '@instantsearch/testutils';\n+\n+import type { StatsWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function createMockedSearchClient(\n+  responseProps: {\n+    nbHits?: number;\n+    nbSortedHits?: number;\n+    processingTimeMS?: number;\n+  } = {}\n+) {\n+  return createSearchClient({\n+    search: jest.fn((requests) =>\n+      Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map((request) =>\n+            createSingleSearchResponse({\n+              index: request.indexName,\n+              nbHits: 1000,\n+              appliedRelevancyStrictness:\n+                typeof responseProps.nbSortedHits !== 'undefined' ? 1 : 0,\n+              nbSortedHits: 0,\n+              processingTimeMS: 10,\n+              ...responseProps,\n+            })\n+          )\n+        )\n+      )\n+    ),\n+  });\n+}\n+\n+export function createOptionsTests(\n+  setup: StatsWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with 0 hits', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 0 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(searchClient.search).toHaveBeenCalledTimes(1);\n+\n+      expect(\n+        document.querySelector('.ais-Stats')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-Stats\"\n+        >\n+          <span\n+            class=\"ais-Stats-text\"\n+          >\n+            No results found in 10ms\n+          </span>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with 1 hit', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 1 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+        '1 result found in 10ms'\n+      );\n+    });\n+\n+    test('renders with many hits and custom processingTimeMS', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394436719",
+    "id": 1394436719,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5THWpv",
+    "original_commit_id": "20ce609f1daf3714230f3c75f0608a0f00cd53e4",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "tests/common/widgets/stats/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1732097493,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5931",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394436719/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-11-15T16:16:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394436719",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394438876"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5931"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394438876"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      test('renders with many sorted hits', async () => {\r\n```",
+    "commit_id": "b7d4638db2ce447c2bc962f7f49890e03aac0e39",
+    "created_at": "2023-11-15T16:16:21Z",
+    "diff_hunk": "@@ -0,0 +1,210 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { normalizeSnapshot, wait } from '@instantsearch/testutils';\n+\n+import type { StatsWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function createMockedSearchClient(\n+  responseProps: {\n+    nbHits?: number;\n+    nbSortedHits?: number;\n+    processingTimeMS?: number;\n+  } = {}\n+) {\n+  return createSearchClient({\n+    search: jest.fn((requests) =>\n+      Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map((request) =>\n+            createSingleSearchResponse({\n+              index: request.indexName,\n+              nbHits: 1000,\n+              appliedRelevancyStrictness:\n+                typeof responseProps.nbSortedHits !== 'undefined' ? 1 : 0,\n+              nbSortedHits: 0,\n+              processingTimeMS: 10,\n+              ...responseProps,\n+            })\n+          )\n+        )\n+      )\n+    ),\n+  });\n+}\n+\n+export function createOptionsTests(\n+  setup: StatsWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with 0 hits', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 0 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(searchClient.search).toHaveBeenCalledTimes(1);\n+\n+      expect(\n+        document.querySelector('.ais-Stats')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-Stats\"\n+        >\n+          <span\n+            class=\"ais-Stats-text\"\n+          >\n+            No results found in 10ms\n+          </span>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with 1 hit', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 1 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+        '1 result found in 10ms'\n+      );\n+    });\n+\n+    test('renders with many hits and custom processingTimeMS', async () => {\n+      const searchClient = createMockedSearchClient({\n+        nbHits: 1000,\n+        processingTimeMS: 2,\n+      });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+        '1,000 results found in 2ms'\n+      );\n+    });\n+\n+    describe('with relevant sort', () => {\n+      test('renders with 0 sorted hits', async () => {\n+        const searchClient = createMockedSearchClient({ nbSortedHits: 0 });\n+\n+        await setup({\n+          instantSearchOptions: {\n+            indexName: 'instant_search',\n+            searchClient,\n+          },\n+          widgetParams: {},\n+        });\n+\n+        await act(async () => {\n+          await wait(0);\n+        });\n+\n+        expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+          'No relevant results sorted out of 1,000 found in 10ms'\n+        );\n+      });\n+\n+      test('renders with 1 sorted hit', async () => {\n+        const searchClient = createMockedSearchClient({ nbSortedHits: 1 });\n+\n+        await setup({\n+          instantSearchOptions: {\n+            indexName: 'instant_search',\n+            searchClient,\n+          },\n+          widgetParams: {},\n+        });\n+\n+        await act(async () => {\n+          await wait(0);\n+        });\n+\n+        expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+          '1 relevant result sorted out of 1,000 found in 10ms'\n+        );\n+      });\n+\n+      test('renders with many sorted hits and custom processingTimeMS', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394438876",
+    "id": 1394438876,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5THXLc",
+    "original_commit_id": "20ce609f1daf3714230f3c75f0608a0f00cd53e4",
+    "original_line": 163,
+    "original_position": 163,
+    "original_start_line": null,
+    "path": "tests/common/widgets/stats/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1732097493,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5931",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394438876/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-11-15T16:16:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394438876",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394439322"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5931"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394439322"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "maybe a separate processingTimeMS per test, no need to put in title imo",
+    "commit_id": "b7d4638db2ce447c2bc962f7f49890e03aac0e39",
+    "created_at": "2023-11-15T16:16:43Z",
+    "diff_hunk": "@@ -0,0 +1,210 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { normalizeSnapshot, wait } from '@instantsearch/testutils';\n+\n+import type { StatsWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function createMockedSearchClient(\n+  responseProps: {\n+    nbHits?: number;\n+    nbSortedHits?: number;\n+    processingTimeMS?: number;\n+  } = {}\n+) {\n+  return createSearchClient({\n+    search: jest.fn((requests) =>\n+      Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map((request) =>\n+            createSingleSearchResponse({\n+              index: request.indexName,\n+              nbHits: 1000,\n+              appliedRelevancyStrictness:\n+                typeof responseProps.nbSortedHits !== 'undefined' ? 1 : 0,\n+              nbSortedHits: 0,\n+              processingTimeMS: 10,\n+              ...responseProps,\n+            })\n+          )\n+        )\n+      )\n+    ),\n+  });\n+}\n+\n+export function createOptionsTests(\n+  setup: StatsWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with 0 hits', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 0 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(searchClient.search).toHaveBeenCalledTimes(1);\n+\n+      expect(\n+        document.querySelector('.ais-Stats')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-Stats\"\n+        >\n+          <span\n+            class=\"ais-Stats-text\"\n+          >\n+            No results found in 10ms\n+          </span>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with 1 hit', async () => {\n+      const searchClient = createMockedSearchClient({ nbHits: 1 });\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'instant_search',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-Stats-text')).toHaveTextContent(\n+        '1 result found in 10ms'\n+      );\n+    });\n+\n+    test('renders with many hits and custom processingTimeMS', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5931#discussion_r1394439322",
+    "id": 1394439322,
+    "in_reply_to_id": 1394436719,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5THXSa",
+    "original_commit_id": "20ce609f1daf3714230f3c75f0608a0f00cd53e4",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "tests/common/widgets/stats/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1732097493,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5931",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394439322/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-11-15T16:16:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1394439322",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

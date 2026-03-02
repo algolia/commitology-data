@@ -1,0 +1,2090 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1447450640"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447450640"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this should use the widget's index name, not index id, as requestParams only uses the indexNames. With duplicate index names I'm not sure how you could distinguish at that point. Maybe the derived helper index could help?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-10T14:20:02Z",
+    "diff_hunk": "@@ -37,17 +55,28 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParams?: RequestParams\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        requestParams: requestParams?.find(\n+          ({ indexName }) => indexName === indexId",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1447450640",
+    "id": 1447450640,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WRlgQ",
+    "original_commit_id": "9f20c01572f776edd3b2c4f2a9f18f98f078c896",
+    "original_line": 78,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1813338646,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447450640/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-10T14:21:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447450640",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1447697132"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447697132"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We might want to store the request params by index in a map to reduce the algorithm complexity of the function?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-10T17:25:42Z",
+    "diff_hunk": "@@ -37,17 +55,28 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParams?: RequestParams\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        requestParams: requestParams?.find(\n+          ({ indexName }) => indexName === indexId\n+        )?.params,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1447697132",
+    "id": 1447697132,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WShrs",
+    "original_commit_id": "fe651306462941e7086887ffe3f32c1cb6cc2840",
+    "original_line": 79,
+    "original_position": 70,
+    "original_start_line": 77,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1813739759,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447697132/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-10T18:01:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1447697132",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1448546115"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1448546115"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Ah I see. I'll update the sample code to use multiple of the same index with different ids and check if I can match request + results in the hydration step.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T09:23:46Z",
+    "diff_hunk": "@@ -37,17 +55,28 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParams?: RequestParams\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        requestParams: requestParams?.find(\n+          ({ indexName }) => indexName === indexId",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1448546115",
+    "id": 1448546115,
+    "in_reply_to_id": 1447450640,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WVw9D",
+    "original_commit_id": "9f20c01572f776edd3b2c4f2a9f18f98f078c896",
+    "original_line": 78,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1815066994,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1448546115/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T09:23:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1448546115",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449080128"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449080128"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I simplified the implementation as extracted request params and initial results are ordered identically.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T16:05:38Z",
+    "diff_hunk": "@@ -37,17 +55,28 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParams?: RequestParams\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        requestParams: requestParams?.find(\n+          ({ indexName }) => indexName === indexId",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449080128",
+    "id": 1449080128,
+    "in_reply_to_id": 1447450640,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WXzVA",
+    "original_commit_id": "9f20c01572f776edd3b2c4f2a9f18f98f078c896",
+    "original_line": 78,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1815948474,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449080128/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T16:05:38Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449080128",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449199011"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449199011"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n       requestParams,\r\n```\r\n\r\nWhat's the difference with this? undefined if it's not available? ",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:41:49Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      const requestParams = requestParamsList?.shift();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        ...(requestParams && { requestParams }),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449199011",
+    "id": 1449199011,
+    "line": 78,
+    "node_id": "PRRC_kwDOAlnbOs5WYQWj",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 80,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 68,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449199011/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449199011",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449202369"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449202369"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I guess I don't really understand this code right now, but how come this can't be read from waitForResults? does it need to be set before the results are known or something? ",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:43:34Z",
+    "diff_hunk": "@@ -26,7 +38,7 @@ export function InitializePromise() {\n \n   const injectInitialResults = () => {\n     let inserted = false;\n-    const results = getInitialResults(search.mainIndex);\n+    const results = getInitialResults(search.mainIndex, requestParamsList);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449202369",
+    "id": 1449202369,
+    "line": 41,
+    "node_id": "PRRC_kwDOAlnbOs5WYRLB",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 41,
+    "original_position": 31,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 31,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449202369/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449202369",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449203694"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449203694"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "params is always defined, no? why isn't this:\r\n\r\n```suggestion\r\n  let requestParamsList: SearchOptions[];\r\n```",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:44:57Z",
+    "diff_hunk": "@@ -17,6 +19,16 @@ export function InitializePromise() {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n+  // Extract search parameters from the search client to use them\n+  // later during hydration.\n+  let requestParamsList: Array<SearchOptions | undefined>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449203694",
+    "id": 1449203694,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYRfu",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 24,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449203694/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449203694",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449206432"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449206432"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm fine with keeping the indexId variable, but just making sure that it's not doing anything now",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:47:32Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449206432",
+    "id": 1449206432,
+    "line": 46,
+    "node_id": "PRRC_kwDOAlnbOs5WYSKg",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 46,
+    "original_position": 63,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 63,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449206432/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449206432",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449207273"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207273"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "should we keep track of the index and use the item at index `i` instead of mutating? Not sure if it's a good idea that `getInitialResults` effectively can only be called once (also let's add a test for calling it multiple times)",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:48:21Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      const requestParams = requestParamsList?.shift();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449207273",
+    "id": 1449207273,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYSXp",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 74,
+    "original_position": 65,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207273/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207273",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449207868"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207868"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "usually?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:48:54Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449207868",
+    "id": 1449207868,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYSg8",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 63,
+    "original_position": 53,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207868/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449207868",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449208491"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449208491"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "same question, how can this be undefined?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:49:28Z",
+    "diff_hunk": "@@ -1,21 +1,41 @@\n import { walkIndex } from './utils';\n \n-import type { IndexWidget, InitialResults, InstantSearch } from '../types';\n+import type {\n+  IndexWidget,\n+  InitialResults,\n+  InstantSearch,\n+  SearchOptions,\n+} from '../types';\n+\n+type RequestParams = SearchOptions | undefined;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449208491",
+    "id": 1449208491,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYSqr",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 10,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449208491/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449208491",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449209883"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449209883"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we need another test with two indices with the same indexName and indexId that aren't adjacent too I think. I wonder if the deduplication could cause issues",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:50:47Z",
+    "diff_hunk": "@@ -239,4 +249,52 @@ describe('getInitialResults', () => {\n       },\n     });\n   });\n+\n+  test('returns the current results with request params if specified', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449209883",
+    "id": 1449209883,
+    "line": 253,
+    "node_id": "PRRC_kwDOAlnbOs5WYTAb",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 253,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/__tests__/server.test.ts",
+    "position": 43,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449209883/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449209883",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449211809"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449211809"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      indexName: state.index || result.index,\r\n```",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:52:47Z",
+    "diff_hunk": "@@ -34,16 +34,24 @@ export function hydrateSearchClient(\n     return;\n   }\n \n-  const cachedRequest = Object.keys(results).map((key) =>\n-    results[key].results.map((result) => ({\n-      indexName: result.index,\n+  const cachedRequest = Object.keys(results).map((key) => {\n+    const { state, requestParams, results: serverResults } = results[key];\n+    return serverResults.map((result) => ({\n+      indexName: result.index || state.index,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449211809",
+    "id": 1449211809,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYTeh",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 40,
+    "original_position": 10,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/hydrateSearchClient.ts",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449211809/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449211809",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449212392"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212392"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this should be good if we ever add a feature in the backend that redirects indices (I believe I've heard of it, not sure if it ever came to fruition)",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:53:19Z",
+    "diff_hunk": "@@ -34,16 +34,24 @@ export function hydrateSearchClient(\n     return;\n   }\n \n-  const cachedRequest = Object.keys(results).map((key) =>\n-    results[key].results.map((result) => ({\n-      indexName: result.index,\n+  const cachedRequest = Object.keys(results).map((key) => {\n+    const { state, requestParams, results: serverResults } = results[key];\n+    return serverResults.map((result) => ({\n+      indexName: result.index || state.index,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449212392",
+    "id": 1449212392,
+    "in_reply_to_id": 1449211809,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WYTno",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 40,
+    "original_position": 10,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/hydrateSearchClient.ts",
+    "position": 1,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212392/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212392",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449212720"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212720"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "can we early return if `!(requestParams || result.params)` so we don't need the conditional in this map?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-11T17:53:39Z",
+    "diff_hunk": "@@ -34,16 +34,24 @@ export function hydrateSearchClient(\n     return;\n   }\n \n-  const cachedRequest = Object.keys(results).map((key) =>\n-    results[key].results.map((result) => ({\n-      indexName: result.index,\n+  const cachedRequest = Object.keys(results).map((key) => {\n+    const { state, requestParams, results: serverResults } = results[key];\n+    return serverResults.map((result) => ({\n+      indexName: result.index || state.index,\n       // We normalize the params received from the server as they can\n       // be serialized differently depending on the engine.\n-      params: serializeQueryParameters(\n-        deserializeQueryParameters(result.params)\n-      ),\n-    }))\n-  );\n+      // We use search parameters from the server request to craft the cache\n+      // if possible, and fallback to those from results if not.\n+      ...(requestParams || result.params",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1449212720",
+    "id": 1449212720,
+    "line": 45,
+    "node_id": "PRRC_kwDOAlnbOs5WYTsw",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 45,
+    "original_position": 20,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/hydrateSearchClient.ts",
+    "position": 20,
+    "pull_request_review_id": 1816137249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212720/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-11T17:54:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1449212720",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450154513"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450154513"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes, if it's `undefined` it will throw because Next won't serialize it as JSON.\r\n\r\nThe 2 options are either omitting the property or returning `null`. I chose the first option in this case.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T09:51:16Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      const requestParams = requestParamsList?.shift();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        ...(requestParams && { requestParams }),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450154513",
+    "id": 1450154513,
+    "in_reply_to_id": 1449199011,
+    "line": 78,
+    "node_id": "PRRC_kwDOAlnbOs5Wb5oR",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 80,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 68,
+    "pull_request_review_id": 1817809976,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450154513/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T09:51:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450154513",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450173031"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450173031"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "It's similar to what's in server.ts for the pages router, just that because we have access to the search instance outside of both `waitForResults()` and `injectInitialResults()`, it allows me to put the code that extracts the queries params before and directly reference them instead of passing them as a return value of promises.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T10:04:50Z",
+    "diff_hunk": "@@ -26,7 +38,7 @@ export function InitializePromise() {\n \n   const injectInitialResults = () => {\n     let inserted = false;\n-    const results = getInitialResults(search.mainIndex);\n+    const results = getInitialResults(search.mainIndex, requestParamsList);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450173031",
+    "id": 1450173031,
+    "in_reply_to_id": 1449202369,
+    "line": 41,
+    "node_id": "PRRC_kwDOAlnbOs5Wb-Jn",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 41,
+    "original_position": 31,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 31,
+    "pull_request_review_id": 1817834555,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450173031/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T10:04:50Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450173031",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450174589"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450174589"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I can revert that you're right.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T10:06:01Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450174589",
+    "id": 1450174589,
+    "in_reply_to_id": 1449206432,
+    "line": 46,
+    "node_id": "PRRC_kwDOAlnbOs5Wb-h9",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 46,
+    "original_position": 63,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 63,
+    "pull_request_review_id": 1817836990,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450174589/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T10:06:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450174589",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450220793"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450220793"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "`params` is typed as an optional parameter",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T10:41:54Z",
+    "diff_hunk": "@@ -17,6 +19,16 @@ export function InitializePromise() {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n+  // Extract search parameters from the search client to use them\n+  // later during hydration.\n+  let requestParamsList: Array<SearchOptions | undefined>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450220793",
+    "id": 1450220793,
+    "in_reply_to_id": 1449203694,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WcJz5",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 24,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 1,
+    "pull_request_review_id": 1817901927,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450220793/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T10:41:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450220793",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450222897"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450222897"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "There's a follow-up below 😅\r\n\r\n> Search parameters sent to the search client, usually returned by `waitForResults()`.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T10:43:39Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450222897",
+    "id": 1450222897,
+    "in_reply_to_id": 1449207868,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WcKUx",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 63,
+    "original_position": 53,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1817905010,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450222897/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T10:43:39Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450222897",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450253680"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450253680"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's annoying, I think `|| null` is a little simpler, but I see the point either way",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T11:06:56Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually\n+   * returned by `waitForResults()`.\n+   */\n+  requestParamsList?: RequestParams[]\n+): InitialResults {\n   const initialResults: InitialResults = {};\n \n   walkIndex(rootIndex, (widget) => {\n     const searchResults = widget.getResults();\n     if (searchResults) {\n-      initialResults[widget.getIndexId()] = {\n+      const indexId = widget.getIndexId();\n+      const requestParams = requestParamsList?.shift();\n+      initialResults[indexId] = {\n         // We convert the Helper state to a plain object to pass parsable data\n         // structures from server to client.\n         state: { ...searchResults._state },\n         results: searchResults._rawResults,\n+        ...(requestParams && { requestParams }),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450253680",
+    "id": 1450253680,
+    "in_reply_to_id": 1449199011,
+    "line": 78,
+    "node_id": "PRRC_kwDOAlnbOs5WcR1w",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 80,
+    "original_position": 71,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 68,
+    "pull_request_review_id": 1817948368,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450253680/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T11:06:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450253680",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450254789"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450254789"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "my question was more about the potential desynchronising of the search client wrapper in the future if we do any changes to that. Not sure if it matters",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T11:07:45Z",
+    "diff_hunk": "@@ -26,7 +38,7 @@ export function InitializePromise() {\n \n   const injectInitialResults = () => {\n     let inserted = false;\n-    const results = getInitialResults(search.mainIndex);\n+    const results = getInitialResults(search.mainIndex, requestParamsList);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450254789",
+    "id": 1450254789,
+    "in_reply_to_id": 1449202369,
+    "line": 41,
+    "node_id": "PRRC_kwDOAlnbOs5WcSHF",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 41,
+    "original_position": 31,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 31,
+    "pull_request_review_id": 1817951039,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450254789/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T11:07:45Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450254789",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450255759"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450255759"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "right, but when is it actually undefined? isn't it always there? is that to avoid a BC on internal API?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T11:08:31Z",
+    "diff_hunk": "@@ -17,6 +19,16 @@ export function InitializePromise() {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n+  // Extract search parameters from the search client to use them\n+  // later during hydration.\n+  let requestParamsList: Array<SearchOptions | undefined>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450255759",
+    "id": 1450255759,
+    "in_reply_to_id": 1449203694,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WcSWP",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 24,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.tsx",
+    "position": 1,
+    "pull_request_review_id": 1817953183,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450255759/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T11:08:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450255759",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450256455"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450256455"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I mean when is it not returned from waitForResults?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T11:09:02Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450256455",
+    "id": 1450256455,
+    "in_reply_to_id": 1449207868,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WcShH",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 63,
+    "original_position": 53,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1817954306,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450256455/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T11:09:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450256455",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450261138"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450261138"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Ah I get it, currently, never. I'll remove this word.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T11:12:57Z",
+    "diff_hunk": "@@ -37,17 +57,27 @@ export function waitForResults(search: InstantSearch): Promise<void> {\n /**\n  * Walks the InstantSearch root index to construct the initial results.\n  */\n-export function getInitialResults(rootIndex: IndexWidget): InitialResults {\n+export function getInitialResults(\n+  rootIndex: IndexWidget,\n+  /**\n+   * Search parameters sent to the search client, usually",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450261138",
+    "id": 1450261138,
+    "in_reply_to_id": 1449207868,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5WcTqS",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 63,
+    "original_position": 53,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/server.ts",
+    "position": 1,
+    "pull_request_review_id": 1817961110,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450261138/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T11:12:57Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450261138",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450571931"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450571931"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "We're in a map inside of another map. While I don't believe there will be reason for `requestParams` to ever be undefined (because we own the implementation inside of `getServerState` and `InitializePromise`), I think it is still simpler and safer to let each item of the results array handle their params.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-12T15:02:19Z",
+    "diff_hunk": "@@ -34,16 +34,24 @@ export function hydrateSearchClient(\n     return;\n   }\n \n-  const cachedRequest = Object.keys(results).map((key) =>\n-    results[key].results.map((result) => ({\n-      indexName: result.index,\n+  const cachedRequest = Object.keys(results).map((key) => {\n+    const { state, requestParams, results: serverResults } = results[key];\n+    return serverResults.map((result) => ({\n+      indexName: result.index || state.index,\n       // We normalize the params received from the server as they can\n       // be serialized differently depending on the engine.\n-      params: serializeQueryParameters(\n-        deserializeQueryParameters(result.params)\n-      ),\n-    }))\n-  );\n+      // We use search parameters from the server request to craft the cache\n+      // if possible, and fallback to those from results if not.\n+      ...(requestParams || result.params",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1450571931",
+    "id": 1450571931,
+    "in_reply_to_id": 1449212720,
+    "line": 45,
+    "node_id": "PRRC_kwDOAlnbOs5Wdfib",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 45,
+    "original_position": 20,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/hydrateSearchClient.ts",
+    "position": 20,
+    "pull_request_review_id": 1818463847,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450571931/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-12T15:02:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1450571931",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452184532"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452184532"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "You're right, because the extracted request parameters can't be associated to an indexId, they are not deduplicated, but the results are. This causes a mismatch in the hydration.\r\n\r\nI looked for a way to retrieve index ids to match them with request params in a server context but could not find a practical way to do so.\r\n\r\nMy guess is we could either:\r\n- try to make it work 100% (maybe walk the index to reconstitute an array of index ids?)\r\n- detect there's a mismatch between request params and results (`requestParams.length > results.length`) and stop hydration\r\n\r\nWdyt?",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-15T10:21:50Z",
+    "diff_hunk": "@@ -239,4 +249,52 @@ describe('getInitialResults', () => {\n       },\n     });\n   });\n+\n+  test('returns the current results with request params if specified', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452184532",
+    "id": 1452184532,
+    "in_reply_to_id": 1449209883,
+    "line": 253,
+    "node_id": "PRRC_kwDOAlnbOs5WjpPU",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 253,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/__tests__/server.test.ts",
+    "position": 43,
+    "pull_request_review_id": 1821389230,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452184532/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-15T10:21:51Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452184532",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452235078"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452235078"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if you walk through the indices, you should be able to \"skip back\" to a previous result if you store the \"request ids\" in order right?\r\n\r\n\r\npseudo code for how that could work in the hydration of index widgets phase:\r\n\r\n```js\r\nlet currentIndex = 0\r\nlet seenIndexIds: Record<IndexId, number> = {};\r\nwalkIndex(({indexName, indexId}) => {\r\n  currentIndex = seenIndexIds[indexId] ?? currentIndex + 1;\r\n  seenIndexIds[indexId] = currentIndex\r\n})\r\n```",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-15T11:02:36Z",
+    "diff_hunk": "@@ -239,4 +249,52 @@ describe('getInitialResults', () => {\n       },\n     });\n   });\n+\n+  test('returns the current results with request params if specified', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452235078",
+    "id": 1452235078,
+    "in_reply_to_id": 1449209883,
+    "line": 253,
+    "node_id": "PRRC_kwDOAlnbOs5Wj1lG",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 253,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/__tests__/server.test.ts",
+    "position": 43,
+    "pull_request_review_id": 1821460122,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452235078/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-15T11:02:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452235078",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452250648"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452250648"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I looked at it and it's actually working as expected: there are as many `requestParams` as there are `walkIndex()` iterations.\r\n\r\nThe reason there's a mismatch later on is actually unrelated, `initialResults` is an object that is keyed by index ids, so the same index ids in later iterations overwrite previous ones.\r\n\r\nI don't know if we should be more restrictive about having multiple identical index ids, but at least I can it knowingly and comment on the context.",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-15T11:18:39Z",
+    "diff_hunk": "@@ -239,4 +249,52 @@ describe('getInitialResults', () => {\n       },\n     });\n   });\n+\n+  test('returns the current results with request params if specified', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452250648",
+    "id": 1452250648,
+    "in_reply_to_id": 1449209883,
+    "line": 253,
+    "node_id": "PRRC_kwDOAlnbOs5Wj5YY",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 253,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/__tests__/server.test.ts",
+    "position": 43,
+    "pull_request_review_id": 1821485188,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452250648/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-15T11:18:39Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452250648",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452303163"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5991"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452303163"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Hmm that makes sense. I guess we can separately make sure initialResults contains the combined results / uiState, and not accidentally only those of one instance",
+    "commit_id": "81c5b6e2929519e247292504658220393e359da3",
+    "created_at": "2024-01-15T12:13:13Z",
+    "diff_hunk": "@@ -239,4 +249,52 @@ describe('getInitialResults', () => {\n       },\n     });\n   });\n+\n+  test('returns the current results with request params if specified', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5991#discussion_r1452303163",
+    "id": 1452303163,
+    "in_reply_to_id": 1449209883,
+    "line": 253,
+    "node_id": "PRRC_kwDOAlnbOs5WkGM7",
+    "original_commit_id": "616695626e7b3e92203732d4b3daa2273237539e",
+    "original_line": 253,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/__tests__/server.test.ts",
+    "position": 43,
+    "pull_request_review_id": 1821568976,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5991",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452303163/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-01-15T12:13:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452303163",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

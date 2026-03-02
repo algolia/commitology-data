@@ -1,0 +1,279 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515069530"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4557"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515069530"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Why not inline to the init call?",
+    "commit_id": "33ce5e8fb4f265ae4e2cff7d33aeeb98ec6181cd",
+    "created_at": "2020-10-30T12:41:10Z",
+    "diff_hunk": "@@ -257,6 +258,44 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/voice-searc\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const { widget, helper } = getInitializedWidget();\n+\n+      const initOptions = createInitOptions({ state: helper.state, helper });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515069530",
+    "id": 515069530,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNTA2OTUzMA==",
+    "original_commit_id": "4c29cc77edb5d3069a2a6af4db24ce19def707d5",
+    "original_line": 265,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "src/connectors/voice-search/__tests__/connectVoiceSearch-test.js",
+    "position": 19,
+    "pull_request_review_id": 520629613,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4557",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515069530/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-17T17:19:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515069530",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515070862"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4557"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515070862"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ideally we wouldn't need this (maybe connectorState), but since the PR didn't change it, it's ok to keep as is I think. ",
+    "commit_id": "33ce5e8fb4f265ae4e2cff7d33aeeb98ec6181cd",
+    "created_at": "2020-10-30T12:43:58Z",
+    "diff_hunk": "@@ -116,27 +84,67 @@ const connectVoiceSearch: VoiceSearchConnector = function connectVoiceSearch(\n           language,\n           onQueryChange: query => (this as any)._refine(query),\n           onStateChange: () => {\n-            render({\n-              isFirstRendering: false,\n-              instantSearchInstance,\n-              voiceSearchHelper: (this as any)._voiceSearchHelper,\n-            });\n+            renderFn(\n+              {\n+                ...this.getWidgetRenderState(initOptions),\n+                instantSearchInstance,\n+              },\n+              false\n+            );\n           },\n         });\n \n-        render({\n-          isFirstRendering: true,\n-          instantSearchInstance,\n-          voiceSearchHelper: (this as any)._voiceSearchHelper,\n-        });\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n       },\n \n-      render({ instantSearchInstance }) {\n-        render({\n-          isFirstRendering: false,\n-          instantSearchInstance,\n-          voiceSearchHelper: (this as any)._voiceSearchHelper,\n-        });\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          voiceSearch: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState() {\n+        const {\n+          isBrowserSupported,\n+          isListening,\n+          startListening,\n+          stopListening,\n+          getState,\n+        } = (this as any)._voiceSearchHelper;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515070862",
+    "id": 515070862,
+    "line": 136,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNTA3MDg2Mg==",
+    "original_commit_id": "c0f3f14b803e50e49558e2d1e7b063a878a9947f",
+    "original_line": 131,
+    "original_position": 114,
+    "original_start_line": null,
+    "path": "src/connectors/voice-search/connectVoiceSearch.ts",
+    "position": 105,
+    "pull_request_review_id": 520629613,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4557",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515070862/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-17T17:19:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515070862",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515071280"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4557"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515071280"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can we add another test with a custom createVoiceSearchHelper so we can check the output?",
+    "commit_id": "33ce5e8fb4f265ae4e2cff7d33aeeb98ec6181cd",
+    "created_at": "2020-10-30T12:44:49Z",
+    "diff_hunk": "@@ -257,6 +258,44 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/voice-searc\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const { widget, helper } = getInitializedWidget();\n+\n+      const initOptions = createInitOptions({ state: helper.state, helper });\n+\n+      const renderState = widget.getRenderState({}, initOptions);\n+\n+      expect(renderState.voiceSearch).toEqual({\n+        isBrowserSupported: true,\n+        isListening: false,\n+        toggleListening: expect.any(Function),\n+        voiceListeningState: undefined,\n+        widgetParams: {},\n+      });\n+    });\n+  });\n+\n+  describe('getWidgetRenderState', () => {\n+    it('returns the widget render state', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4557#discussion_r515071280",
+    "id": 515071280,
+    "line": 324,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxNTA3MTI4MA==",
+    "original_commit_id": "c0f3f14b803e50e49558e2d1e7b063a878a9947f",
+    "original_line": 280,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/connectors/voice-search/__tests__/connectVoiceSearch-test.js",
+    "position": 74,
+    "pull_request_review_id": 520629613,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4557",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515071280/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-17T17:19:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/515071280",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4557#discussion_r522119496"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4557"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522119496"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I find it way clearer that way.",
+    "commit_id": "33ce5e8fb4f265ae4e2cff7d33aeeb98ec6181cd",
+    "created_at": "2020-11-12T13:51:28Z",
+    "diff_hunk": "@@ -257,6 +258,44 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/voice-searc\n     });\n   });\n \n+  describe('getRenderState', () => {\n+    it('returns the render state', () => {\n+      const { widget, helper } = getInitializedWidget();\n+\n+      const initOptions = createInitOptions({ state: helper.state, helper });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4557#discussion_r522119496",
+    "id": 522119496,
+    "in_reply_to_id": 515069530,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyMjExOTQ5Ng==",
+    "original_commit_id": "4c29cc77edb5d3069a2a6af4db24ce19def707d5",
+    "original_line": 265,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "src/connectors/voice-search/__tests__/connectVoiceSearch-test.js",
+    "position": 19,
+    "pull_request_review_id": 529103976,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4557",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522119496/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-17T17:19:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/522119496",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  }
+]

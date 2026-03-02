@@ -1,0 +1,420 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435033969"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435033969"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Doesn't `<Chat>` already have the `ais-Chat` class name?\n\n```suggestion\n      <Chat {...widgetParams} />\n```",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T08:27:28Z",
+    "diff_hunk": "@@ -392,8 +393,15 @@ const testSetups: TestSetupsMap<TestSuites> = {\n       </InstantSearch>\n     );\n   },\n-  createChatWidgetTests() {\n-    throw new Error('Chat is not tested through the Common Test Suite yet');\n+  createChatWidgetTests({ instantSearchOptions, widgetParams }) {\n+    render(\n+      <InstantSearch {...instantSearchOptions}>\n+        <div className=\"ais-Chat\">\n+          <Chat {...widgetParams} />\n+        </div>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435033969",
+    "id": 2435033969,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RI6tx",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 401,
+    "original_position": 28,
+    "original_start_line": 399,
+    "path": "packages/react-instantsearch/src/__tests__/common-widgets.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 3343648271,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435033969/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T08:35:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435033969",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435052440"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435052440"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Would you be able to rely on an exported type based off of ChatWidgetSetup (before being scoped to `T`), instead of repeating the structure?",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T08:33:40Z",
+    "diff_hunk": "@@ -2,26 +2,55 @@ import { fakeAct, skippableDescribe } from '../../common';\n \n import { createOptionsTests } from './options';\n \n-import type { TestOptions, TestSetup } from '../../common';\n+import type { SupportedFlavor, TestOptions, TestSetup } from '../../common';\n import type { ChatConnectorParams } from 'instantsearch.js/es/connectors/chat/connectChat';\n import type { ChatWidget } from 'instantsearch.js/es/widgets/chat/chat';\n+import type { ChatProps } from 'react-instantsearch';\n \n-type WidgetParams = Parameters<ChatWidget>[0];\n-export type ChatWidgetSetup = TestSetup<{\n-  // Explicitly adding ChatConnectorParams back. For some reason\n-  // ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n-  widgetParams: Omit<WidgetParams, 'container'> & ChatConnectorParams;\n+type JSBaseWidgetParams = Parameters<ChatWidget>[0];\n+// Explicitly adding ChatConnectorParams back. For some reason\n+// ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n+export type JSChatWidgetParams = Omit<JSBaseWidgetParams, 'container'> &\n+  ChatConnectorParams;\n+export type ReactChatWidgetParams = ChatProps<unknown>;\n+\n+type ChatWidgetParams<T extends SupportedFlavor = 'javascript'> = {\n+  javascript: JSChatWidgetParams;\n+  react: ReactChatWidgetParams;\n+  vue: Record<string, never>;\n+}[T];\n+\n+export type ChatWidgetSetup<T extends SupportedFlavor> = TestSetup<{\n+  widgetParams: ChatWidgetParams<T>;\n }>;\n \n-export function createChatWidgetTests(\n-  setup: ChatWidgetSetup,\n-  { act = fakeAct, skippedTests = {} }: TestOptions = {}\n+declare module '../../common' {\n+  interface FlavoredWidgetParams {\n+    createChatWidgetTests: {\n+      javascript: JSChatWidgetParams;\n+      react: ReactChatWidgetParams;\n+      vue: Record<string, never>;\n+    };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435052440",
+    "id": 2435052440,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RI_OY",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 33,
+    "original_position": 41,
+    "original_start_line": 29,
+    "path": "tests/common/widgets/chat/index.ts",
+    "position": 1,
+    "pull_request_review_id": 3343648271,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435052440/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T08:35:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435052440",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435161123"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435161123"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the type is actually different, this is the type per flavour, but the exported one is the union of all parameters.",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T09:10:06Z",
+    "diff_hunk": "@@ -2,26 +2,55 @@ import { fakeAct, skippableDescribe } from '../../common';\n \n import { createOptionsTests } from './options';\n \n-import type { TestOptions, TestSetup } from '../../common';\n+import type { SupportedFlavor, TestOptions, TestSetup } from '../../common';\n import type { ChatConnectorParams } from 'instantsearch.js/es/connectors/chat/connectChat';\n import type { ChatWidget } from 'instantsearch.js/es/widgets/chat/chat';\n+import type { ChatProps } from 'react-instantsearch';\n \n-type WidgetParams = Parameters<ChatWidget>[0];\n-export type ChatWidgetSetup = TestSetup<{\n-  // Explicitly adding ChatConnectorParams back. For some reason\n-  // ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n-  widgetParams: Omit<WidgetParams, 'container'> & ChatConnectorParams;\n+type JSBaseWidgetParams = Parameters<ChatWidget>[0];\n+// Explicitly adding ChatConnectorParams back. For some reason\n+// ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n+export type JSChatWidgetParams = Omit<JSBaseWidgetParams, 'container'> &\n+  ChatConnectorParams;\n+export type ReactChatWidgetParams = ChatProps<unknown>;\n+\n+type ChatWidgetParams<T extends SupportedFlavor = 'javascript'> = {\n+  javascript: JSChatWidgetParams;\n+  react: ReactChatWidgetParams;\n+  vue: Record<string, never>;\n+}[T];\n+\n+export type ChatWidgetSetup<T extends SupportedFlavor> = TestSetup<{\n+  widgetParams: ChatWidgetParams<T>;\n }>;\n \n-export function createChatWidgetTests(\n-  setup: ChatWidgetSetup,\n-  { act = fakeAct, skippedTests = {} }: TestOptions = {}\n+declare module '../../common' {\n+  interface FlavoredWidgetParams {\n+    createChatWidgetTests: {\n+      javascript: JSChatWidgetParams;\n+      react: ReactChatWidgetParams;\n+      vue: Record<string, never>;\n+    };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435161123",
+    "id": 2435161123,
+    "in_reply_to_id": 2435052440,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RJZwj",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 33,
+    "original_position": 41,
+    "original_start_line": 29,
+    "path": "tests/common/widgets/chat/index.ts",
+    "position": 1,
+    "pull_request_review_id": 3343818884,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435161123/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T09:10:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435161123",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435252063"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435252063"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Not sure I follow, to me it looks like this would be possible:\n\n```ts\nexport type _FlavoredChatWidgetParams = {\n  javascript: JSChatWidgetParams;\n  react: ReactChatWidgetParams;\n  vue: Record<string, never>;\n};\n\nexport type ChatWidgetParams<T ...> = _FlavoredChatWidgetParams[T];\n\n// ...\n\ndeclare module '../../common' {\n  interface FlavoredWidgetParams {\n    createChatWidgetTests: _FlavoredChatWidgetParams\n  }\n}\n```\n\nAll in all, this is a nitpick, so feel free to disregard.",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T09:40:01Z",
+    "diff_hunk": "@@ -2,26 +2,55 @@ import { fakeAct, skippableDescribe } from '../../common';\n \n import { createOptionsTests } from './options';\n \n-import type { TestOptions, TestSetup } from '../../common';\n+import type { SupportedFlavor, TestOptions, TestSetup } from '../../common';\n import type { ChatConnectorParams } from 'instantsearch.js/es/connectors/chat/connectChat';\n import type { ChatWidget } from 'instantsearch.js/es/widgets/chat/chat';\n+import type { ChatProps } from 'react-instantsearch';\n \n-type WidgetParams = Parameters<ChatWidget>[0];\n-export type ChatWidgetSetup = TestSetup<{\n-  // Explicitly adding ChatConnectorParams back. For some reason\n-  // ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n-  widgetParams: Omit<WidgetParams, 'container'> & ChatConnectorParams;\n+type JSBaseWidgetParams = Parameters<ChatWidget>[0];\n+// Explicitly adding ChatConnectorParams back. For some reason\n+// ChatConnectorParams are not inferred when Omit is used with WidgetParams.\n+export type JSChatWidgetParams = Omit<JSBaseWidgetParams, 'container'> &\n+  ChatConnectorParams;\n+export type ReactChatWidgetParams = ChatProps<unknown>;\n+\n+type ChatWidgetParams<T extends SupportedFlavor = 'javascript'> = {\n+  javascript: JSChatWidgetParams;\n+  react: ReactChatWidgetParams;\n+  vue: Record<string, never>;\n+}[T];\n+\n+export type ChatWidgetSetup<T extends SupportedFlavor> = TestSetup<{\n+  widgetParams: ChatWidgetParams<T>;\n }>;\n \n-export function createChatWidgetTests(\n-  setup: ChatWidgetSetup,\n-  { act = fakeAct, skippedTests = {} }: TestOptions = {}\n+declare module '../../common' {\n+  interface FlavoredWidgetParams {\n+    createChatWidgetTests: {\n+      javascript: JSChatWidgetParams;\n+      react: ReactChatWidgetParams;\n+      vue: Record<string, never>;\n+    };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435252063",
+    "id": 2435252063,
+    "in_reply_to_id": 2435052440,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RJv9f",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 33,
+    "original_position": 41,
+    "original_start_line": 29,
+    "path": "tests/common/widgets/chat/index.ts",
+    "position": 1,
+    "pull_request_review_id": 3343943841,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435252063/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T09:40:01Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435252063",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435443084"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435443084"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is fixed on the follow-up PR adding more tests, but also makes sense to fix here if needed.",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T10:50:29Z",
+    "diff_hunk": "@@ -392,8 +393,15 @@ const testSetups: TestSetupsMap<TestSuites> = {\n       </InstantSearch>\n     );\n   },\n-  createChatWidgetTests() {\n-    throw new Error('Chat is not tested through the Common Test Suite yet');\n+  createChatWidgetTests({ instantSearchOptions, widgetParams }) {\n+    render(\n+      <InstantSearch {...instantSearchOptions}>\n+        <div className=\"ais-Chat\">\n+          <Chat {...widgetParams} />\n+        </div>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435443084",
+    "id": 2435443084,
+    "in_reply_to_id": 2435033969,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RKemM",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 401,
+    "original_position": 28,
+    "original_start_line": 399,
+    "path": "packages/react-instantsearch/src/__tests__/common-widgets.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344186752,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435443084/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T10:50:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435443084",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435525820"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6743"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435525820"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "That's fine then 👍 ",
+    "commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "created_at": "2025-10-16T11:19:05Z",
+    "diff_hunk": "@@ -392,8 +393,15 @@ const testSetups: TestSetupsMap<TestSuites> = {\n       </InstantSearch>\n     );\n   },\n-  createChatWidgetTests() {\n-    throw new Error('Chat is not tested through the Common Test Suite yet');\n+  createChatWidgetTests({ instantSearchOptions, widgetParams }) {\n+    render(\n+      <InstantSearch {...instantSearchOptions}>\n+        <div className=\"ais-Chat\">\n+          <Chat {...widgetParams} />\n+        </div>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6743#discussion_r2435525820",
+    "id": 2435525820,
+    "in_reply_to_id": 2435033969,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RKyy8",
+    "original_commit_id": "7c1a93efa43332fdc51bff017e959c5ab11bd898",
+    "original_line": 401,
+    "original_position": 28,
+    "original_start_line": 399,
+    "path": "packages/react-instantsearch/src/__tests__/common-widgets.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344313192,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6743",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435525820/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T11:19:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435525820",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

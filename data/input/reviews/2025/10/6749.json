@@ -1,0 +1,418 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2431835441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431835441"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if we'd use connectautocomplete at the level inside the index component, it could have the information and no need for a new store concept. The inconsistent part is then of course that the connector would know about the dom (unless there's a separate function that turns an autocomplete state into props. What do you think? ",
+    "commit_id": "4cc0794e9e0a413500687b85038665ec805a59db",
+    "created_at": "2025-10-15T09:29:12Z",
+    "diff_hunk": "@@ -60,19 +67,30 @@ export type AutocompleteProps = {\n   showSuggestions?: {\n     itemComponent?: ItemComponentProps<Hit<{ query: string }>>;\n     indexName?: string;\n-    classNames?: Partial<AutocompleteIndexClassNames>;\n+    classNames?: IndexConfig['classNames'];\n   };\n };\n \n+function VirtualSearchBox() {\n+  useSearchBox();\n+  return null;\n+}\n+\n export function EXPERIMENTAL_Autocomplete({\n   indices: userIndices = [],\n   showSuggestions,\n }: AutocompleteProps) {\n-  const [isOpen, setIsOpen] = useState(false);\n+  const {\n+    getIndexProps,\n+    getInputProps,\n+    getItemProps,\n+    getPanelProps,\n+    getRootProps,\n+    updateStore,\n+  } = useAutocomplete();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2431835441",
+    "id": 2431835441,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6Q8t0x",
+    "original_commit_id": "74607d4509d58d59c19581b7327e30dbd3035a0e",
+    "original_line": 90,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/Autocomplete.tsx",
+    "position": 1,
+    "pull_request_review_id": 3339359538,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431835441/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-15T09:31:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431835441",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2431839946"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431839946"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this function could be declared outside of the bode of useAutocomplete if it received the state as a prop. Not sure if it would be better though.",
+    "commit_id": "f3ff03d2dc2835456ad7b7cc73b5035f21903d87",
+    "created_at": "2025-10-15T09:30:34Z",
+    "diff_hunk": "@@ -0,0 +1,248 @@\n+import { useId, useLayoutEffect, useRef, useState } from 'react';\n+import { useInstantSearch } from 'react-instantsearch-core';\n+\n+import type { ComponentProps, Ref } from 'react';\n+\n+type AutocompleteGetInputProps = () => Pick<\n+  ComponentProps<'input'>,\n+  | 'id'\n+  | 'role'\n+  | 'aria-activedescendant'\n+  | 'aria-autocomplete'\n+  | 'aria-controls'\n+  | 'aria-expanded'\n+  | 'aria-haspopup'\n+  | 'onBlur'\n+  | 'onFocus'\n+  | 'onKeyDown'\n+  | 'onKeyUp'\n+>;\n+\n+type AutocompleteGetItemProps = (\n+  item: {\n+    objectID: string;\n+    __indexName?: string;\n+  } & Record<string, unknown>,\n+  index: number\n+) => Pick<\n+  ComponentProps<'div'>,\n+  'id' | 'role' | 'aria-selected' | 'onMouseEnter' | 'onMouseLeave'\n+>;\n+\n+type AutocompleteGetPanelProps = () => Pick<\n+  ComponentProps<'div'>,\n+  'id' | 'role' | 'aria-labelledby'\n+> & {\n+  ref: Ref<HTMLElement>;\n+  isOpen: boolean;\n+};\n+\n+type AutocompleteGetRootProps = () => {\n+  ref: Ref<HTMLDivElement>;\n+};\n+\n+type AutocompleteUpdateStoreParams = {\n+  indexName: string;\n+  items: Array<{ objectID: string } & Record<string, unknown>>;\n+  onSelect: (item: { objectID: string } & Record<string, unknown>) => void;\n+  getQuery?: (item: { objectID: string } & Record<string, unknown>) => string;\n+  getURL?: (item: { objectID: string } & Record<string, unknown>) => string;\n+};\n+\n+export const useAutocomplete = () => {\n+  const { setUiState } = useInstantSearch();\n+\n+  const getElementId = createGetElementId(useId());\n+  const rootRef = useRef<HTMLInputElement>(null);\n+  const panelRef = useRef<HTMLDivElement>(null);\n+  const [isOpen, setIsOpen] = useState(false);\n+  const [activeDescendent, setActiveDescendent] = useState<string | undefined>(\n+    undefined\n+  );\n+\n+  const store = new Map<\n+    string,\n+    {\n+      item: AutocompleteUpdateStoreParams['items'][0];\n+      getQuery: () => string;\n+      getURL: () => string;\n+    } & Omit<AutocompleteUpdateStoreParams, 'items' | 'getQuery' | 'getURL'>\n+  >();\n+\n+  useLayoutEffect(() => {\n+    const onBodyClick = (event: MouseEvent) => {\n+      if (rootRef.current?.contains(event.target as HTMLElement)) {\n+        return;\n+      }\n+\n+      setIsOpen(false);\n+    };\n+\n+    document.body.addEventListener('click', onBodyClick);\n+\n+    return () => {\n+      document.body.removeEventListener('click', onBodyClick);\n+    };\n+  }, [rootRef]);\n+\n+  const getNextActiveDescendent = (key: string): string | undefined => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2431839946",
+    "id": 2431839946,
+    "line": 138,
+    "node_id": "PRRC_kwDOAlnbOs6Q8u7K",
+    "original_commit_id": "74607d4509d58d59c19581b7327e30dbd3035a0e",
+    "original_line": 88,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/useAutocomplete.tsx",
+    "position": 138,
+    "pull_request_review_id": 3339359538,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431839946/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-15T09:31:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2431839946",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436375240"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436375240"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I'm now using `connectAutocomplete` to create the items store and refine, and I'll migrate most of the state in the connector in a next PR, as well as move the prop getters to a shared part (probably ui components).",
+    "commit_id": "4cc0794e9e0a413500687b85038665ec805a59db",
+    "created_at": "2025-10-16T15:00:52Z",
+    "diff_hunk": "@@ -60,19 +67,30 @@ export type AutocompleteProps = {\n   showSuggestions?: {\n     itemComponent?: ItemComponentProps<Hit<{ query: string }>>;\n     indexName?: string;\n-    classNames?: Partial<AutocompleteIndexClassNames>;\n+    classNames?: IndexConfig['classNames'];\n   };\n };\n \n+function VirtualSearchBox() {\n+  useSearchBox();\n+  return null;\n+}\n+\n export function EXPERIMENTAL_Autocomplete({\n   indices: userIndices = [],\n   showSuggestions,\n }: AutocompleteProps) {\n-  const [isOpen, setIsOpen] = useState(false);\n+  const {\n+    getIndexProps,\n+    getInputProps,\n+    getItemProps,\n+    getPanelProps,\n+    getRootProps,\n+    updateStore,\n+  } = useAutocomplete();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436375240",
+    "id": 2436375240,
+    "in_reply_to_id": 2431835441,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6ROCLI",
+    "original_commit_id": "74607d4509d58d59c19581b7327e30dbd3035a0e",
+    "original_line": 90,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/Autocomplete.tsx",
+    "position": 1,
+    "pull_request_review_id": 3345426467,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436375240/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T15:00:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436375240",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436569503"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436569503"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't really get why we're using connectAutocomplete at this level and not inside the isolated index. now it seems to be scoped differently and we can't use the refine of this useautocomplete for the state of the search input",
+    "commit_id": "f3ff03d2dc2835456ad7b7cc73b5035f21903d87",
+    "created_at": "2025-10-16T15:58:26Z",
+    "diff_hunk": "@@ -98,50 +96,54 @@ export function EXPERIMENTAL_Autocomplete({\n     });\n   }\n \n+  const {\n+    getIndexProps,\n+    getInputProps,\n+    getItemProps,\n+    getPanelProps,\n+    getRootProps,\n+  } = useAutocomplete({ indices });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436569503",
+    "id": 2436569503,
+    "line": 105,
+    "node_id": "PRRC_kwDOAlnbOs6ROxmf",
+    "original_commit_id": "c12615cba10ae87f064cc7c45f46033d458edbd5",
+    "original_line": 105,
+    "original_position": 92,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/Autocomplete.tsx",
+    "position": 96,
+    "pull_request_review_id": 3345697080,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436569503/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T15:58:45Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436569503",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436764235"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436764235"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "ideally this can be avoided if autocomplete connector is used inside the isolated index.",
+    "commit_id": "f3ff03d2dc2835456ad7b7cc73b5035f21903d87",
+    "created_at": "2025-10-16T17:07:11Z",
+    "diff_hunk": "@@ -0,0 +1,274 @@\n+import { connectAutocomplete } from 'instantsearch.js/es/connectors';\n+import { useId, useLayoutEffect, useRef, useState } from 'react';\n+import { useConnector, useInstantSearch } from 'react-instantsearch-core';\n+\n+import type { BaseHit, Hit } from 'instantsearch.js';\n+import type { ComponentProps } from 'react';\n+\n+export type IndexConfig<TItem extends BaseHit> = {\n+  indexName: string;\n+  getQuery?: (item: Hit<TItem>) => string;\n+  getURL?: (item: Hit<TItem>) => string;\n+  onSelect?: (params: {\n+    item: Hit<TItem>;\n+    getQuery: () => string;\n+    getURL: () => string;\n+    setQuery: (query: string) => void;\n+  }) => void;\n+};\n+\n+type GetIndexProps = () => {\n+  indexId: string;\n+};\n+\n+type GetInputProps = () => Pick<\n+  ComponentProps<'input'>,\n+  | 'id'\n+  | 'role'\n+  | 'aria-activedescendant'\n+  | 'aria-autocomplete'\n+  | 'aria-controls'\n+  | 'aria-expanded'\n+  | 'aria-haspopup'\n+  | 'onBlur'\n+  | 'onFocus'\n+  | 'onKeyDown'\n+  | 'onKeyUp'\n+>;\n+\n+type GetItemProps = (\n+  item: { __indexName: string } & Record<string, unknown>,\n+  index: number\n+) => Pick<\n+  ComponentProps<'li'>,\n+  'id' | 'role' | 'aria-selected' | 'onMouseEnter' | 'onMouseLeave'\n+> & {\n+  onSelect: () => void;\n+};\n+\n+type GetPanelProps = () => Pick<\n+  ComponentProps<'div'>,\n+  'id' | 'hidden' | 'ref' | 'role' | 'aria-labelledby'\n+>;\n+\n+type GetRootProps = () => Pick<ComponentProps<'div'>, 'ref'>;\n+\n+type UseAutocomplete<TItem extends BaseHit> = (params: {\n+  indices: Array<IndexConfig<TItem>>;\n+}) => {\n+  getIndexProps: GetIndexProps;\n+  getInputProps: GetInputProps;\n+  getItemProps: GetItemProps;\n+  getPanelProps: GetPanelProps;\n+  getRootProps: GetRootProps;\n+};\n+\n+type UseAutocompleteItems<TItem extends BaseHit> = Record<\n+  string,\n+  {\n+    item: Hit<TItem>;\n+    getQuery: () => string;\n+    getURL: () => string;\n+    onSelect?: IndexConfig<TItem>['onSelect'];\n+  }\n+>;\n+\n+export function useAutocomplete<TItem extends BaseHit = BaseHit>({\n+  indices,\n+}: Parameters<UseAutocomplete<TItem>>['0']): ReturnType<\n+  UseAutocomplete<TItem>\n+> {\n+  const { indices: connectorIndices, refine } = useConnector(\n+    connectAutocomplete,\n+    {}\n+  );\n+  const { setUiState } = useInstantSearch();\n+\n+  const getElementId = createGetElementId(useId());\n+  const rootRef = useRef<HTMLInputElement>(null);\n+  const panelRef = useRef<HTMLDivElement>(null);\n+  const [isOpen, setIsOpen] = useState(false);\n+  const [activeDescendent, setActiveDescendent] = useState<string | undefined>(\n+    undefined\n+  );\n+\n+  const items = indices.reduce<UseAutocompleteItems<TItem>>(\n+    (itemsAcc, index) => {\n+      const indexItems =\n+        connectorIndices\n+          .find(({ indexName }) => index.indexName === indexName)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2436764235",
+    "id": 2436764235,
+    "line": 99,
+    "node_id": "PRRC_kwDOAlnbOs6RPhJL",
+    "original_commit_id": "c12615cba10ae87f064cc7c45f46033d458edbd5",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/useAutocomplete.tsx",
+    "position": 99,
+    "pull_request_review_id": 3345979841,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436764235/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T17:07:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2436764235",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2438782134"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6749"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2438782134"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes, I'll switch this in a future PR to align JS + React implementations.",
+    "commit_id": "f3ff03d2dc2835456ad7b7cc73b5035f21903d87",
+    "created_at": "2025-10-17T08:11:01Z",
+    "diff_hunk": "@@ -0,0 +1,274 @@\n+import { connectAutocomplete } from 'instantsearch.js/es/connectors';\n+import { useId, useLayoutEffect, useRef, useState } from 'react';\n+import { useConnector, useInstantSearch } from 'react-instantsearch-core';\n+\n+import type { BaseHit, Hit } from 'instantsearch.js';\n+import type { ComponentProps } from 'react';\n+\n+export type IndexConfig<TItem extends BaseHit> = {\n+  indexName: string;\n+  getQuery?: (item: Hit<TItem>) => string;\n+  getURL?: (item: Hit<TItem>) => string;\n+  onSelect?: (params: {\n+    item: Hit<TItem>;\n+    getQuery: () => string;\n+    getURL: () => string;\n+    setQuery: (query: string) => void;\n+  }) => void;\n+};\n+\n+type GetIndexProps = () => {\n+  indexId: string;\n+};\n+\n+type GetInputProps = () => Pick<\n+  ComponentProps<'input'>,\n+  | 'id'\n+  | 'role'\n+  | 'aria-activedescendant'\n+  | 'aria-autocomplete'\n+  | 'aria-controls'\n+  | 'aria-expanded'\n+  | 'aria-haspopup'\n+  | 'onBlur'\n+  | 'onFocus'\n+  | 'onKeyDown'\n+  | 'onKeyUp'\n+>;\n+\n+type GetItemProps = (\n+  item: { __indexName: string } & Record<string, unknown>,\n+  index: number\n+) => Pick<\n+  ComponentProps<'li'>,\n+  'id' | 'role' | 'aria-selected' | 'onMouseEnter' | 'onMouseLeave'\n+> & {\n+  onSelect: () => void;\n+};\n+\n+type GetPanelProps = () => Pick<\n+  ComponentProps<'div'>,\n+  'id' | 'hidden' | 'ref' | 'role' | 'aria-labelledby'\n+>;\n+\n+type GetRootProps = () => Pick<ComponentProps<'div'>, 'ref'>;\n+\n+type UseAutocomplete<TItem extends BaseHit> = (params: {\n+  indices: Array<IndexConfig<TItem>>;\n+}) => {\n+  getIndexProps: GetIndexProps;\n+  getInputProps: GetInputProps;\n+  getItemProps: GetItemProps;\n+  getPanelProps: GetPanelProps;\n+  getRootProps: GetRootProps;\n+};\n+\n+type UseAutocompleteItems<TItem extends BaseHit> = Record<\n+  string,\n+  {\n+    item: Hit<TItem>;\n+    getQuery: () => string;\n+    getURL: () => string;\n+    onSelect?: IndexConfig<TItem>['onSelect'];\n+  }\n+>;\n+\n+export function useAutocomplete<TItem extends BaseHit = BaseHit>({\n+  indices,\n+}: Parameters<UseAutocomplete<TItem>>['0']): ReturnType<\n+  UseAutocomplete<TItem>\n+> {\n+  const { indices: connectorIndices, refine } = useConnector(\n+    connectAutocomplete,\n+    {}\n+  );\n+  const { setUiState } = useInstantSearch();\n+\n+  const getElementId = createGetElementId(useId());\n+  const rootRef = useRef<HTMLInputElement>(null);\n+  const panelRef = useRef<HTMLDivElement>(null);\n+  const [isOpen, setIsOpen] = useState(false);\n+  const [activeDescendent, setActiveDescendent] = useState<string | undefined>(\n+    undefined\n+  );\n+\n+  const items = indices.reduce<UseAutocompleteItems<TItem>>(\n+    (itemsAcc, index) => {\n+      const indexItems =\n+        connectorIndices\n+          .find(({ indexName }) => index.indexName === indexName)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6749#discussion_r2438782134",
+    "id": 2438782134,
+    "in_reply_to_id": 2436764235,
+    "line": 99,
+    "node_id": "PRRC_kwDOAlnbOs6RXNy2",
+    "original_commit_id": "c12615cba10ae87f064cc7c45f46033d458edbd5",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/components/useAutocomplete.tsx",
+    "position": 99,
+    "pull_request_review_id": 3348799231,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6749",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2438782134/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-17T08:11:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2438782134",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,2089 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354504336"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354504336"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we might as well keep `acc` immutable with a `concat`",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-05T19:28:18Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354504336",
+    "id": 354504336,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NDUwNDMzNg==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 96,
+    "original_position": 96,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 327796164,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354504336/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354504336",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354507001"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354507001"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "since both `typeof {} === \"object\"` and `typeof [] === \"object\"` this formulation feels a bit strange\r\n```\r\nThe `matchingPatterns` option returned a value of type `object` \r\n```\r\nI'm not sure how to improve it though",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-05T19:33:43Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          })\n+        );\n+      } else if (typeof attributeValue === 'string') {\n+        acc.push(\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          })\n+        );\n+      } else {\n+        warning(\n+          false,\n+          `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354507001",
+    "id": 354507001,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NDUwNzAwMQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 327799579,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354507001/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354507001",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354516016"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516016"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "actually why not import `ConfigureRelatedItemsWidgetFactory` from `../../connectors/configure-related-items/connectConfigureRelatedItems` here directly ?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-05T19:53:05Z",
+    "diff_hunk": "@@ -0,0 +1,16 @@\n+import connectConfigureRelatedItems, {\n+  ConfigureRelatedItemsConnectorParams,\n+} from '../../connectors/configure-related-items/connectConfigureRelatedItems';\n+import { WidgetFactory } from '../../types';\n+\n+type ConfigureRelatedItems = WidgetFactory<",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354516016",
+    "id": 354516016,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NDUxNjAxNg==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 6,
+    "original_position": 6,
+    "original_start_line": null,
+    "path": "src/widgets/configure-related-items/configure-related-items.ts",
+    "position": 1,
+    "pull_request_review_id": 327811433,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516016/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516016",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354516297"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516297"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It looks like there a typo here and you meant Configure~Configure~RelatedItemsWidgetFactory",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-05T19:53:45Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r354516297",
+    "id": 354516297,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NDUxNjI5Nw==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 327811855,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516297/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/354516297",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355323615"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355323615"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes – that's a pattern that we already use elsewhere in the codebase though. My suggestion would be to create a util function that returns the type of the input in a cleaner way in another PR.\r\n\r\nFor example:\r\n\r\n- `[]` → array with `Array.isArray()`\r\n- `{}` → object\r\n- `\"attribute\"` → string\r\n- etc.\r\n\r\nWdyt?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T08:53:31Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          })\n+        );\n+      } else if (typeof attributeValue === 'string') {\n+        acc.push(\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          })\n+        );\n+      } else {\n+        warning(\n+          false,\n+          `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355323615",
+    "id": 355323615,
+    "in_reply_to_id": 354507001,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTMyMzYxNQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328762061,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355323615/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355323615",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330275"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330275"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "8a9b9196f2b360d8675e647dc3fadaac46c367f2",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T09:08:40Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330275",
+    "id": 355330275,
+    "in_reply_to_id": 354516297,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTMzMDI3NQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328770503,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330275/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330275",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330375"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330375"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "95b754ec794f39bb3e5c4b457476d255e9741bf4",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T09:08:55Z",
+    "diff_hunk": "@@ -0,0 +1,16 @@\n+import connectConfigureRelatedItems, {\n+  ConfigureRelatedItemsConnectorParams,\n+} from '../../connectors/configure-related-items/connectConfigureRelatedItems';\n+import { WidgetFactory } from '../../types';\n+\n+type ConfigureRelatedItems = WidgetFactory<",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330375",
+    "id": 355330375,
+    "in_reply_to_id": 354516016,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTMzMDM3NQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 6,
+    "original_position": 6,
+    "original_start_line": null,
+    "path": "src/widgets/configure-related-items/configure-related-items.ts",
+    "position": 1,
+    "pull_request_review_id": 328770644,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330375/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330375",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330538"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330538"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I used spread: 52a140c69d3165e23e366e67ac430c8f0ca1117c.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T09:09:14Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355330538",
+    "id": 355330538,
+    "in_reply_to_id": 354504336,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTMzMDUzOA==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 96,
+    "original_position": 96,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328770818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330538/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355330538",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355366356"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355366356"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "should it not be the other way around? `Hit = AlgoliaHit & { __position, __queryID }`?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T10:21:13Z",
+    "diff_hunk": "@@ -64,6 +64,8 @@ export type Hit = {\n   __queryID?: string;\n };\n \n+export type ResultHit = Omit<Hit, '__position' | '__queryID'>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355366356",
+    "id": 355366356,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTM2NjM1Ng==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 67,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/types/instantsearch.ts",
+    "position": 1,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355366356/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355366356",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355372901"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355372901"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's a an option. Note that although generic, it doesn't solve the issue for class instances other than Array. `typeof new Date() === \"object\"`.\r\nSomething using `Object.prototype.toString.call(attributeValue)` would be more reliable.\r\n\r\nI just noticed we don't say what are the types expected: `this value is expected to be a string or an array`. It is useful information for someone seeing this error. \r\n\r\n\r\n",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T10:34:37Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          })\n+        );\n+      } else if (typeof attributeValue === 'string') {\n+        acc.push(\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          })\n+        );\n+      } else {\n+        warning(\n+          false,\n+          `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355372901",
+    "id": 355372901,
+    "in_reply_to_id": 354507001,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTM3MjkwMQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328824132,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355372901/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355372901",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355375529"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355375529"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's a good first step, we can use `Object.prototype.toString.call` which is more accurate.\r\n\r\nAbout the expected types, that's why I link to the documentation. I can add a sentence that makes it more explicit.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T10:40:07Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          })\n+        );\n+      } else if (typeof attributeValue === 'string') {\n+        acc.push(\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          })\n+        );\n+      } else {\n+        warning(\n+          false,\n+          `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355375529",
+    "id": 355375529,
+    "in_reply_to_id": 354507001,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTM3NTUyOQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328827458,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355375529/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355375529",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355402992"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355402992"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I know they are fully inferred but I find it more explicit to add types on the callback.\r\nI let you judge if it's necessary.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T11:41:30Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355402992",
+    "id": 355402992,
+    "line": 87,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQwMjk5Mg==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 88,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 87,
+    "pull_request_review_id": 328860862,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355402992/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355402992",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355403993"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355403993"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "not really  that important, but we can probably avoid the rendering in most cases, since it's always currentRefinement",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T11:44:00Z",
+    "diff_hunk": "@@ -0,0 +1,160 @@\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import { configureRelatedItems, configure, hits, index } from '../src/widgets';\n+import { connectHits, connectPagination } from '../src/connectors';\n+\n+storiesOf('Basics|ConfigureRelatedItems', module).add(\n+  'default',\n+  withHits(({ search, container }) => {\n+    const productContainer = document.createElement('div');\n+    const itemsContainer = document.createElement('div');\n+    const previousPageContainer = document.createElement('div');\n+    const nextPageContainer = document.createElement('div');\n+    const relatedContainer = document.createElement('div');\n+    relatedContainer.classList.add('related-items');\n+\n+    container.appendChild(productContainer);\n+    relatedContainer.append(\n+      previousPageContainer,\n+      itemsContainer,\n+      nextPageContainer\n+    );\n+    container.appendChild(relatedContainer);\n+\n+    const pagination = connectPagination(\n+      ({\n+        currentRefinement,\n+        refine,\n+        isFirstPage,\n+        isLastPage,\n+        nbPages,\n+        widgetParams,\n+      }) => {\n+        widgetParams.previousPageContainer.innerHTML = '';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355403993",
+    "id": 355403993,
+    "line": 38,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQwMzk5Mw==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 33,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "stories/configure-related-items.stories.ts",
+    "position": 38,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355403993/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355403993",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355424874"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355424874"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n   * Function called to transform the generated search parameters.\r\n```",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:35:41Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355424874",
+    "id": 355424874,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNDg3NA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 34,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355424874/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355424874",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425070"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425070"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n   * Function to transform the generated search parameters.\r\n```\r\n\r\n(called is optional here imo)",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:36:12Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425070",
+    "id": 355425070,
+    "in_reply_to_id": 355424874,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNTA3MA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 34,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425070/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425070",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425355"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425355"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "ideally you could opt-in to this widget without warning, maybe via an argument?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:36:56Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425355",
+    "id": 355425355,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNTM1NQ==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 70,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425355/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425355",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425774"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425774"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if these errors are done before the destructuring, the cast isn't needed I think.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:37:58Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355425774",
+    "id": 355425774,
+    "line": 77,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNTc3NA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 77,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425774/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355425774",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355426763"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355426763"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "interesting pattern, but seems to make for a clean implementation, so lgtm ",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:40:28Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        return [\n+          ...acc,\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          }),\n+        ];\n+      }\n+\n+      if (typeof attributeValue === 'string') {\n+        return [\n+          ...acc,\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          }),\n+        ];\n+      }\n+\n+      warning(\n+        false,\n+        `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.\n+\n+You can remove the \"${attributeName}\" key from the \\`matchingPatterns\\` option.\n+\n+See https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/\n+            `\n+      );\n+\n+      return acc;\n+    }, []);\n+\n+    const searchParameters: PlainSearchParameters = {\n+      ...transformSearchParameters(\n+        new algoliasearchHelper.SearchParameters({\n+          // @ts-ignore @TODO algoliasearch-helper@3.0.1 will contain the type\n+          // `sumOrFiltersScores`.\n+          // See https://github.com/algolia/algoliasearch-helper-js/pull/753\n+          sumOrFiltersScores: true,\n+          filters: `NOT objectID:${hit.objectID}`,\n+          // @ts-ignore @TODO algoliasearch-helper@3.0.1 will contain the type\n+          // `optionalFilters`.\n+          // See https://github.com/algolia/algoliasearch-helper-js/pull/754\n+          optionalFilters,\n+        })\n+      ),\n+    };\n+\n+    const makeConfigure = connectConfigure(renderFn, unmountFn);\n+\n+    return {\n+      ...makeConfigure({ searchParameters }),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355426763",
+    "id": 355426763,
+    "line": 151,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNjc2Mw==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 150,
+    "original_position": 150,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 151,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355426763/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355426763",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355427253"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427253"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Since we have no API for modifying props, we can indeed assume this all is static, but that will need to be rethought once we have an update api ",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:41:48Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        return [\n+          ...acc,\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          }),\n+        ];\n+      }\n+\n+      if (typeof attributeValue === 'string') {\n+        return [\n+          ...acc,\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          }),\n+        ];\n+      }\n+\n+      warning(\n+        false,\n+        `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.\n+\n+You can remove the \"${attributeName}\" key from the \\`matchingPatterns\\` option.\n+\n+See https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/\n+            `\n+      );\n+\n+      return acc;\n+    }, []);\n+\n+    const searchParameters: PlainSearchParameters = {\n+      ...transformSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355427253",
+    "id": 355427253,
+    "line": 133,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNzI1Mw==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 132,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 133,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427253/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427253",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355427909"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427909"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    test('sets the optionalFilters search parameter based on matchingPatterns', () => {\r\n```",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T12:43:24Z",
+    "diff_hunk": "@@ -0,0 +1,255 @@\n+import connectConfigureRelatedItems from '../connectConfigureRelatedItems';\n+import instantsearch from '../../../lib/main';\n+import { warning } from '../../../lib/utils';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+\n+const hit = {\n+  objectID: '1',\n+  name: 'Amazon - Fire TV Stick with Alexa Voice Remote - Black',\n+  description:\n+    'Enjoy smart access to videos, games and apps with this Amazon Fire TV stick.',\n+  brand: 'Amazon',\n+  categories: ['TV & Home Theater', 'Streaming Media Players'],\n+  hierarchicalCategories: {\n+    lvl0: 'TV & Home Theater',\n+    lvl1: 'TV & Home Theater > Streaming Media Players',\n+  },\n+  price: 39.99,\n+  free_shipping: false,\n+  rating: 4,\n+  _snippetResult: {\n+    description: {\n+      value:\n+        'Enjoy smart access to videos, games and apps with this Amazon Fire TV stick. Its […]',\n+      matchLevel: 'none',\n+    },\n+  },\n+  _highlightResult: {\n+    description: {\n+      value:\n+        'Enjoy smart access to videos, games and apps with this Amazon Fire TV stick. Its […]',\n+      matchLevel: 'none',\n+    },\n+  },\n+};\n+\n+describe('connectConfigureRelatedItems', () => {\n+  describe('usage', () => {\n+    test('throws without hit option', () => {\n+      const configureRelatedItems = connectConfigureRelatedItems();\n+\n+      expect(() => {\n+        // @ts-ignore missing options\n+        configureRelatedItems();\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`hit\\` option is required.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/configure-related-items/js/#connector\"\n+`);\n+    });\n+\n+    test('throws without matchingPatterns option', () => {\n+      const configureRelatedItems = connectConfigureRelatedItems();\n+\n+      expect(() => {\n+        // @ts-ignore missing options\n+        configureRelatedItems({\n+          hit,\n+        });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`matchingPatterns\\` option is required.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/configure-related-items/js/#connector\"\n+`);\n+    });\n+\n+    test('does not throw on correct usage', () => {\n+      const configureRelatedItems = connectConfigureRelatedItems();\n+\n+      expect(() => {\n+        configureRelatedItems({\n+          hit,\n+          matchingPatterns: {},\n+        });\n+      }).not.toThrow();\n+    });\n+\n+    test('is a widget', () => {\n+      const configureRelatedItems = connectConfigureRelatedItems();\n+      const widget = configureRelatedItems({\n+        hit,\n+        matchingPatterns: {},\n+      });\n+\n+      expect(widget).toEqual(\n+        expect.objectContaining({\n+          $$type: 'ais.configureRelatedItems',\n+          init: expect.any(Function),\n+          render: expect.any(Function),\n+          dispose: expect.any(Function),\n+          getWidgetSearchParameters: expect.any(Function),\n+          getWidgetState: expect.any(Function),\n+        })\n+      );\n+    });\n+\n+    test('warns about being an experimental widget', () => {\n+      warning.cache = {};\n+\n+      expect(() => {\n+        connectConfigureRelatedItems();\n+      }).toWarnDev(\n+        '[InstantSearch.js]: ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+      );\n+    });\n+  });\n+\n+  describe('options', () => {\n+    test('sets search parameters optionalFilters based on matchingPatterns', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355427909",
+    "id": 355427909,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQyNzkwOQ==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 108,
+    "original_position": 108,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/__tests__/connectConfigureRelatedItems-test.ts",
+    "position": 1,
+    "pull_request_review_id": 328815829,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427909/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355427909",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355439676"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355439676"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I agree this way of formulating it could be more intuitive.\r\nAlso are we sure the user will never try to pass `hit: Hit`?\r\nIn the [media use case of the RFC](https://github.com/algolia/instantsearch-rfcs/blob/master/accepted/related-items.md), it seemed like `hit` would be come from `connectHits`, and therefore have `__position` and optionally `__queryID`  ",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:12:01Z",
+    "diff_hunk": "@@ -64,6 +64,8 @@ export type Hit = {\n   __queryID?: string;\n };\n \n+export type ResultHit = Omit<Hit, '__position' | '__queryID'>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355439676",
+    "id": 355439676,
+    "in_reply_to_id": 355366356,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQzOTY3Ng==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 67,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/types/instantsearch.ts",
+    "position": 1,
+    "pull_request_review_id": 328907473,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355439676/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355439676",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355455204"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455204"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "IMHO it would be good to always warn about it in development. Users could set the argument, forget about it and then be surprised by a future breaking change in a minor version.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:43:48Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355455204",
+    "id": 355455204,
+    "in_reply_to_id": 355425355,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ1NTIwNA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 70,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328926628,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455204/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455204",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355455814"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455814"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'll rename the base one `AlgoliaHit` and the InstantSearch one (with `__position`, etc.) `Hit`.\r\n\r\n@tkrugg Here we just don't want users to have to pass a hit containing `__position`. If you pass it, it's still fine because it's satisfied with `[key: string]: any;`.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:44:49Z",
+    "diff_hunk": "@@ -64,6 +64,8 @@ export type Hit = {\n   __queryID?: string;\n };\n \n+export type ResultHit = Omit<Hit, '__position' | '__queryID'>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355455814",
+    "id": 355455814,
+    "in_reply_to_id": 355366356,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ1NTgxNA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 67,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/types/instantsearch.ts",
+    "position": 1,
+    "pull_request_review_id": 328927342,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455814/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355455814",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355456107"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456107"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Or name the connector `EXPERIMENTAL_connectConfigureRelatedItems`?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:45:27Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355456107",
+    "id": 355456107,
+    "in_reply_to_id": 355425355,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ1NjEwNw==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 70,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328927737,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456107/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456107",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355456442"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456442"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "So like most of the connectors.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:46:09Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        return [\n+          ...acc,\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          }),\n+        ];\n+      }\n+\n+      if (typeof attributeValue === 'string') {\n+        return [\n+          ...acc,\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          }),\n+        ];\n+      }\n+\n+      warning(\n+        false,\n+        `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.\n+\n+You can remove the \"${attributeName}\" key from the \\`matchingPatterns\\` option.\n+\n+See https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/\n+            `\n+      );\n+\n+      return acc;\n+    }, []);\n+\n+    const searchParameters: PlainSearchParameters = {\n+      ...transformSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355456442",
+    "id": 355456442,
+    "in_reply_to_id": 355427253,
+    "line": 133,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ1NjQ0Mg==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 132,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 133,
+    "pull_request_review_id": 328928173,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456442/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355456442",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355460414"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355460414"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`reduce` is generic and therefore they're typed.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:54:03Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355460414",
+    "id": 355460414,
+    "in_reply_to_id": 355402992,
+    "line": 87,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ2MDQxNA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 88,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 87,
+    "pull_request_review_id": 328933259,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355460414/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355460414",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355461459"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355461459"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Added more explanation about the warning in 168942fc59b76ed35159f77564126c42813a54a6.\r\n\r\n@tkrugg I'll send a separate PR that addresses more correct types in a more global way.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T13:55:59Z",
+    "diff_hunk": "@@ -0,0 +1,155 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+type ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {\n+      throw new Error(withUsage('The `hit` option is required.'));\n+    }\n+\n+    if (!matchingPatterns) {\n+      throw new Error(withUsage('The `matchingPatterns` option is required.'));\n+    }\n+\n+    const optionalFilters = Object.keys(matchingPatterns).reduce<\n+      Array<string | string[]>\n+    >((acc, attributeName) => {\n+      const attribute = matchingPatterns[attributeName];\n+      const attributeValue = hit[attributeName];\n+      const attributeScore = attribute.score;\n+\n+      if (Array.isArray(attributeValue)) {\n+        acc.push(\n+          attributeValue.map(attributeSubValue => {\n+            return createOptionalFilter({\n+              attributeName,\n+              attributeValue: attributeSubValue,\n+              attributeScore,\n+            });\n+          })\n+        );\n+      } else if (typeof attributeValue === 'string') {\n+        acc.push(\n+          createOptionalFilter({\n+            attributeName,\n+            attributeValue,\n+            attributeScore,\n+          })\n+        );\n+      } else {\n+        warning(\n+          false,\n+          `\n+The \\`matchingPatterns\\` option returned a value of type \\`${typeof attributeValue}\\` for the \"${attributeName}\" key. This value was not sent to Algolia because it's not supported by \\`optionalFilters\\`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355461459",
+    "id": 355461459,
+    "in_reply_to_id": 354507001,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ2MTQ1OQ==",
+    "original_commit_id": "7c521b4bdcc34683af8de5f3163631542916dcbf",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 1,
+    "pull_request_review_id": 328934555,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355461459/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355461459",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355465158"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355465158"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We'll need the cast anyway because we want to support passing an empty object (`{}`).",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T14:02:32Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355465158",
+    "id": 355465158,
+    "in_reply_to_id": 355425774,
+    "line": 77,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ2NTE1OA==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 77,
+    "pull_request_review_id": 328938907,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355465158/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355465158",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355467822"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355467822"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "isn't hit required?",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T14:07:53Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355467822",
+    "id": 355467822,
+    "in_reply_to_id": 355425774,
+    "line": 77,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ2NzgyMg==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 77,
+    "pull_request_review_id": 328942336,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355467822/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355467822",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355477929"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355477929"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It is. Not sure to follow what you're suggesting. Can you elaborate what you have in mind?\r\n\r\nNote that destructuring is also useful here to assign a default value to `transformSearchParameters`.",
+    "commit_id": "202d757ea445f2bc34cc5291c18206fb4f96d0ff",
+    "created_at": "2019-12-09T14:27:05Z",
+    "diff_hunk": "@@ -0,0 +1,157 @@\n+import algoliasearchHelper, {\n+  SearchParameters,\n+  PlainSearchParameters,\n+} from 'algoliasearch-helper';\n+import { Unmounter, WidgetFactory, ResultHit } from '../../types';\n+import { createDocumentationMessageGenerator, warning } from '../../lib/utils';\n+import connectConfigure, {\n+  ConfigureRenderer,\n+  ConfigureConnectorParams,\n+} from '../configure/connectConfigure';\n+\n+export type MatchingPatterns = {\n+  [attribute: string]: {\n+    /**\n+     * The score of the optional filter.\n+     *\n+     * @see https://www.algolia.com/doc/guides/managing-results/rules/merchandising-and-promoting/in-depth/optional-filters/\n+     */\n+    score: number;\n+  };\n+};\n+\n+export interface ConfigureRelatedItemsConnectorParams {\n+  /**\n+   * The reference hit to extract the filters from.\n+   */\n+  hit: ResultHit;\n+  /**\n+   * The schema to create the optional filters.\n+   * Each key represents an attribute from the hit.\n+   */\n+  matchingPatterns: MatchingPatterns;\n+  /**\n+   * Function called to transform the search parameters generated.\n+   */\n+  transformSearchParameters?(\n+    searchParameters: SearchParameters\n+  ): PlainSearchParameters;\n+}\n+\n+export type ConfigureRelatedItemsWidgetFactory<\n+  TConfigureRelatedItemsWidgetParams\n+> = WidgetFactory<\n+  ConfigureRelatedItemsConnectorParams & TConfigureRelatedItemsWidgetParams\n+>;\n+\n+type ConfigureRelatedItemsConnector = <TConfigureRelatedItemsWidgetParams>(\n+  render?: ConfigureRenderer<ConfigureConnectorParams>,\n+  unmount?: Unmounter\n+) => ConfigureRelatedItemsWidgetFactory<TConfigureRelatedItemsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'configure-related-items',\n+  connector: true,\n+});\n+\n+function createOptionalFilter({\n+  attributeName,\n+  attributeValue,\n+  attributeScore,\n+}) {\n+  return `${attributeName}:${attributeValue}<score=${attributeScore || 1}>`;\n+}\n+\n+const connectConfigureRelatedItems: ConfigureRelatedItemsConnector = (\n+  renderFn,\n+  unmountFn\n+) => {\n+  warning(\n+    false,\n+    'ConfigureRelatedItems is an experimental widget that is subject to change in next minor versions.'\n+  );\n+\n+  return widgetParams => {\n+    const { hit, matchingPatterns, transformSearchParameters = x => x } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    if (!hit) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4233#discussion_r355477929",
+    "id": 355477929,
+    "in_reply_to_id": 355425774,
+    "line": 77,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1NTQ3NzkyOQ==",
+    "original_commit_id": "29bc3b4f9fe70b14a70b0132fd00dd875442753c",
+    "original_line": 78,
+    "original_position": 78,
+    "original_start_line": null,
+    "path": "src/connectors/configure-related-items/connectConfigureRelatedItems.ts",
+    "position": 77,
+    "pull_request_review_id": 328955679,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355477929/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-10T09:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/355477929",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

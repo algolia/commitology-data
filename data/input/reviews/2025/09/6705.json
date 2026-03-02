@@ -1,0 +1,1530 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362879298"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362879298"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I tried to make it work in the widget but it was too janky. Maybe we should put the scroll logic inside of the UI component and not reimplement it twice? For the messages don't autoscroll, which is not ideal. This could be looked at in an improvement task right after merging all stacked PRs?",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T13:22:09Z",
+    "diff_hunk": "@@ -0,0 +1,342 @@\n+/** @jsx h */\n+\n+import { createChatComponent } from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+\n+import TemplateComponent from '../../components/Template/Template';\n+import connectChat from '../../connectors/chat/connectChat';\n+import { createInsightsEventHandler } from '../../lib/insights/listener';\n+import { prepareTemplateProps } from '../../lib/templating';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { carousel } from '../../templates';\n+\n+import defaultTemplates from './defaultTemplates';\n+\n+import type {\n+  ChatRenderState,\n+  ChatConnectorParams,\n+  ChatWidgetDescription,\n+} from '../../connectors/chat/connectChat';\n+import type { PreparedTemplateProps } from '../../lib/templating';\n+import type {\n+  WidgetFactory,\n+  Renderer,\n+  Hit,\n+  TemplateWithBindEvent,\n+  BaseHit,\n+} from '../../types';\n+import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+\n+type ItemComponent<THit> = (props: {\n+  item: THit;\n+  onClick: () => void;\n+  onAuxClick: () => void;\n+}) => VNode | VNode[];\n+\n+const withUsage = createDocumentationMessageGenerator({ name: 'chat' });\n+\n+const Chat = createChatComponent({ createElement: h, Fragment });\n+\n+function createDefaultTools<THit extends NonNullable<object> = BaseHit>(\n+  itemComponent?: ItemComponent<THit>\n+): Tools {\n+  return [\n+    {\n+      type: 'tool-algolia_search_index',\n+      component: ({ message, indexUiState, setIndexUiState }) => {\n+        const items =\n+          (\n+            message.output as {\n+              hits?: Array<Hit<THit>>;\n+            }\n+          )?.hits || [];\n+\n+        const input = message.input as { query: string };\n+\n+        return (\n+          <div>\n+            {carousel()({\n+              items,\n+              templates: { item: itemComponent },\n+              sendEvent: () => {},\n+            })}\n+\n+            {input?.query && (\n+              <button\n+                className=\"ais-ChatToolSearchIndexRefineButton\"\n+                onClick={() => {\n+                  if (input?.query) {\n+                    setIndexUiState({\n+                      ...indexUiState,\n+                      query: input.query,\n+                    });\n+                  }\n+                }}\n+              >\n+                Refine on this query\n+              </button>\n+            )}\n+          </div>\n+        );\n+      },\n+      onToolCall: ({ toolCall, addToolResult }) => {\n+        addToolResult({\n+          tool: toolCall.toolName,\n+          toolCallId: toolCall.toolCallId,\n+          output: '',\n+        });\n+      },\n+    },\n+  ];\n+}\n+\n+const createRenderer = <THit extends NonNullable<object> = BaseHit>({\n+  renderState,\n+  cssClasses,\n+  containerNode,\n+  templates,\n+  tools: userTools = [],\n+}: {\n+  containerNode: HTMLElement;\n+  cssClasses: ChatCSSClasses;\n+  renderState: {\n+    templateProps?: PreparedTemplateProps<Required<ChatTemplates<THit>>>;\n+  };\n+  templates: ChatTemplates<THit>;\n+  tools?: Tools;\n+}): Renderer<ChatRenderState, Partial<ChatWidgetParams>> => {\n+  const state = createLocalState();\n+  return (props, isFirstRendering) => {\n+    const {\n+      indexUiState,\n+      insights,\n+      input,\n+      instantSearchInstance,\n+      messages,\n+      open,\n+      sendEvent,\n+      sendMessage,\n+      setIndexUiState,\n+      setInput,\n+      setMessages,\n+      setOpen,\n+      status,\n+    } = props;\n+\n+    if (isFirstRendering) {\n+      renderState.templateProps = prepareTemplateProps({\n+        defaultTemplates,\n+        templatesConfig: instantSearchInstance.templatesConfig,\n+        templates,\n+      });\n+      return;\n+    }\n+\n+    const handleInsightsClick = createInsightsEventHandler({\n+      insights,\n+      sendEvent,\n+    });\n+\n+    const itemComponent: ItemComponent<THit> = ({ item, ...rootProps }) => (\n+      <TemplateComponent\n+        {...renderState.templateProps}\n+        templateKey=\"item\"\n+        rootTagName=\"div\"\n+        rootProps={{\n+          ...rootProps,\n+          onClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onClick?.();\n+          },\n+          onAuxClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onAuxClick?.();\n+          },\n+        }}\n+        data={item}\n+        sendEvent={sendEvent}\n+      />\n+    );\n+\n+    const hasSearchIndexTool = userTools.some(\n+      (tool) => tool.type === 'tool-algolia_search_index'\n+    );\n+\n+    const tools = hasSearchIndexTool\n+      ? userTools\n+      : [...createDefaultTools<THit>(itemComponent), ...userTools];\n+\n+    state.subscribe(rerender);\n+\n+    function rerender() {\n+      state.init();\n+\n+      const [isClearing, setIsClearing] = state.use(false);\n+      const [maximized, setMaximized] = state.use(false);\n+\n+      const onClear = () => setIsClearing(true);\n+      const onClearTransitionEnd = () => {\n+        setMessages([]);\n+        setIsClearing(false);\n+      };\n+      render(\n+        <Chat\n+          classNames={cssClasses}\n+          open={open}\n+          maximized={maximized}\n+          headerProps={{\n+            onClose: () => setOpen(false),\n+            onToggleMaximize: () => setMaximized(!maximized),\n+            onClear,\n+            canClear: messages.length > 0 && isClearing !== true,\n+          }}\n+          messagesProps={{\n+            messages,\n+            indexUiState,\n+            isClearing,\n+            onClearTransitionEnd,\n+            // temporary until we have a good solution in js\n+            // or move logic in ui-component\n+            hideScrollToBottom: true,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362879298",
+    "id": 2362879298,
+    "line": 203,
+    "node_id": "PRRC_kwDOAlnbOs6M1q1C",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 203,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 203,
+    "pull_request_review_id": 3244850012,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362879298/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-19T13:22:09Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362879298",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362881940"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362881940"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "These could potentially also be handled by the UI component later?",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T13:23:13Z",
+    "diff_hunk": "@@ -0,0 +1,342 @@\n+/** @jsx h */\n+\n+import { createChatComponent } from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+\n+import TemplateComponent from '../../components/Template/Template';\n+import connectChat from '../../connectors/chat/connectChat';\n+import { createInsightsEventHandler } from '../../lib/insights/listener';\n+import { prepareTemplateProps } from '../../lib/templating';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { carousel } from '../../templates';\n+\n+import defaultTemplates from './defaultTemplates';\n+\n+import type {\n+  ChatRenderState,\n+  ChatConnectorParams,\n+  ChatWidgetDescription,\n+} from '../../connectors/chat/connectChat';\n+import type { PreparedTemplateProps } from '../../lib/templating';\n+import type {\n+  WidgetFactory,\n+  Renderer,\n+  Hit,\n+  TemplateWithBindEvent,\n+  BaseHit,\n+} from '../../types';\n+import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+\n+type ItemComponent<THit> = (props: {\n+  item: THit;\n+  onClick: () => void;\n+  onAuxClick: () => void;\n+}) => VNode | VNode[];\n+\n+const withUsage = createDocumentationMessageGenerator({ name: 'chat' });\n+\n+const Chat = createChatComponent({ createElement: h, Fragment });\n+\n+function createDefaultTools<THit extends NonNullable<object> = BaseHit>(\n+  itemComponent?: ItemComponent<THit>\n+): Tools {\n+  return [\n+    {\n+      type: 'tool-algolia_search_index',\n+      component: ({ message, indexUiState, setIndexUiState }) => {\n+        const items =\n+          (\n+            message.output as {\n+              hits?: Array<Hit<THit>>;\n+            }\n+          )?.hits || [];\n+\n+        const input = message.input as { query: string };\n+\n+        return (\n+          <div>\n+            {carousel()({\n+              items,\n+              templates: { item: itemComponent },\n+              sendEvent: () => {},\n+            })}\n+\n+            {input?.query && (\n+              <button\n+                className=\"ais-ChatToolSearchIndexRefineButton\"\n+                onClick={() => {\n+                  if (input?.query) {\n+                    setIndexUiState({\n+                      ...indexUiState,\n+                      query: input.query,\n+                    });\n+                  }\n+                }}\n+              >\n+                Refine on this query\n+              </button>\n+            )}\n+          </div>\n+        );\n+      },\n+      onToolCall: ({ toolCall, addToolResult }) => {\n+        addToolResult({\n+          tool: toolCall.toolName,\n+          toolCallId: toolCall.toolCallId,\n+          output: '',\n+        });\n+      },\n+    },\n+  ];\n+}\n+\n+const createRenderer = <THit extends NonNullable<object> = BaseHit>({\n+  renderState,\n+  cssClasses,\n+  containerNode,\n+  templates,\n+  tools: userTools = [],\n+}: {\n+  containerNode: HTMLElement;\n+  cssClasses: ChatCSSClasses;\n+  renderState: {\n+    templateProps?: PreparedTemplateProps<Required<ChatTemplates<THit>>>;\n+  };\n+  templates: ChatTemplates<THit>;\n+  tools?: Tools;\n+}): Renderer<ChatRenderState, Partial<ChatWidgetParams>> => {\n+  const state = createLocalState();\n+  return (props, isFirstRendering) => {\n+    const {\n+      indexUiState,\n+      insights,\n+      input,\n+      instantSearchInstance,\n+      messages,\n+      open,\n+      sendEvent,\n+      sendMessage,\n+      setIndexUiState,\n+      setInput,\n+      setMessages,\n+      setOpen,\n+      status,\n+    } = props;\n+\n+    if (isFirstRendering) {\n+      renderState.templateProps = prepareTemplateProps({\n+        defaultTemplates,\n+        templatesConfig: instantSearchInstance.templatesConfig,\n+        templates,\n+      });\n+      return;\n+    }\n+\n+    const handleInsightsClick = createInsightsEventHandler({\n+      insights,\n+      sendEvent,\n+    });\n+\n+    const itemComponent: ItemComponent<THit> = ({ item, ...rootProps }) => (\n+      <TemplateComponent\n+        {...renderState.templateProps}\n+        templateKey=\"item\"\n+        rootTagName=\"div\"\n+        rootProps={{\n+          ...rootProps,\n+          onClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onClick?.();\n+          },\n+          onAuxClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onAuxClick?.();\n+          },\n+        }}\n+        data={item}\n+        sendEvent={sendEvent}\n+      />\n+    );\n+\n+    const hasSearchIndexTool = userTools.some(\n+      (tool) => tool.type === 'tool-algolia_search_index'\n+    );\n+\n+    const tools = hasSearchIndexTool\n+      ? userTools\n+      : [...createDefaultTools<THit>(itemComponent), ...userTools];\n+\n+    state.subscribe(rerender);\n+\n+    function rerender() {\n+      state.init();\n+\n+      const [isClearing, setIsClearing] = state.use(false);\n+      const [maximized, setMaximized] = state.use(false);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362881940",
+    "id": 2362881940,
+    "line": 178,
+    "node_id": "PRRC_kwDOAlnbOs6M1reU",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 178,
+    "original_position": 178,
+    "original_start_line": 177,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 178,
+    "pull_request_review_id": 3244853992,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362881940/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 177,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-09-19T13:23:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362881940",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362883963"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362883963"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Should we change this? It's the default we have for hits as well, but it is especially bad loooking in the chat right now.",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T13:23:58Z",
+    "diff_hunk": "@@ -0,0 +1,9 @@\n+import { ChatTemplates } from './chat';\n+\n+const defaultTemplates = {\n+  item(data) {\n+    return JSON.stringify(data, null, 2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362883963",
+    "id": 2362883963,
+    "line": 5,
+    "node_id": "PRRC_kwDOAlnbOs6M1r97",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/defaultTemplates.ts",
+    "position": 5,
+    "pull_request_review_id": 3244857171,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362883963/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-19T13:23:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362883963",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362918300"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362918300"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "what do you suggest instead? just the objectID maybe, or the keys in the object?",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T13:35:55Z",
+    "diff_hunk": "@@ -0,0 +1,9 @@\n+import { ChatTemplates } from './chat';\n+\n+const defaultTemplates = {\n+  item(data) {\n+    return JSON.stringify(data, null, 2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362918300",
+    "id": 2362918300,
+    "in_reply_to_id": 2362883963,
+    "line": 5,
+    "node_id": "PRRC_kwDOAlnbOs6M10Wc",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/defaultTemplates.ts",
+    "position": 5,
+    "pull_request_review_id": 3244904918,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362918300/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-19T13:36:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362918300",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362926267"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362926267"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "yes can be done in a separate task, problem is that scroll to bottom requires a few hooks, and ui components can't currently use hooks (as react and preact have different imports). Did you try a fork of use-scroll-to-bottom that has preact hooks instead? ",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T13:38:59Z",
+    "diff_hunk": "@@ -0,0 +1,342 @@\n+/** @jsx h */\n+\n+import { createChatComponent } from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+\n+import TemplateComponent from '../../components/Template/Template';\n+import connectChat from '../../connectors/chat/connectChat';\n+import { createInsightsEventHandler } from '../../lib/insights/listener';\n+import { prepareTemplateProps } from '../../lib/templating';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { carousel } from '../../templates';\n+\n+import defaultTemplates from './defaultTemplates';\n+\n+import type {\n+  ChatRenderState,\n+  ChatConnectorParams,\n+  ChatWidgetDescription,\n+} from '../../connectors/chat/connectChat';\n+import type { PreparedTemplateProps } from '../../lib/templating';\n+import type {\n+  WidgetFactory,\n+  Renderer,\n+  Hit,\n+  TemplateWithBindEvent,\n+  BaseHit,\n+} from '../../types';\n+import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+\n+type ItemComponent<THit> = (props: {\n+  item: THit;\n+  onClick: () => void;\n+  onAuxClick: () => void;\n+}) => VNode | VNode[];\n+\n+const withUsage = createDocumentationMessageGenerator({ name: 'chat' });\n+\n+const Chat = createChatComponent({ createElement: h, Fragment });\n+\n+function createDefaultTools<THit extends NonNullable<object> = BaseHit>(\n+  itemComponent?: ItemComponent<THit>\n+): Tools {\n+  return [\n+    {\n+      type: 'tool-algolia_search_index',\n+      component: ({ message, indexUiState, setIndexUiState }) => {\n+        const items =\n+          (\n+            message.output as {\n+              hits?: Array<Hit<THit>>;\n+            }\n+          )?.hits || [];\n+\n+        const input = message.input as { query: string };\n+\n+        return (\n+          <div>\n+            {carousel()({\n+              items,\n+              templates: { item: itemComponent },\n+              sendEvent: () => {},\n+            })}\n+\n+            {input?.query && (\n+              <button\n+                className=\"ais-ChatToolSearchIndexRefineButton\"\n+                onClick={() => {\n+                  if (input?.query) {\n+                    setIndexUiState({\n+                      ...indexUiState,\n+                      query: input.query,\n+                    });\n+                  }\n+                }}\n+              >\n+                Refine on this query\n+              </button>\n+            )}\n+          </div>\n+        );\n+      },\n+      onToolCall: ({ toolCall, addToolResult }) => {\n+        addToolResult({\n+          tool: toolCall.toolName,\n+          toolCallId: toolCall.toolCallId,\n+          output: '',\n+        });\n+      },\n+    },\n+  ];\n+}\n+\n+const createRenderer = <THit extends NonNullable<object> = BaseHit>({\n+  renderState,\n+  cssClasses,\n+  containerNode,\n+  templates,\n+  tools: userTools = [],\n+}: {\n+  containerNode: HTMLElement;\n+  cssClasses: ChatCSSClasses;\n+  renderState: {\n+    templateProps?: PreparedTemplateProps<Required<ChatTemplates<THit>>>;\n+  };\n+  templates: ChatTemplates<THit>;\n+  tools?: Tools;\n+}): Renderer<ChatRenderState, Partial<ChatWidgetParams>> => {\n+  const state = createLocalState();\n+  return (props, isFirstRendering) => {\n+    const {\n+      indexUiState,\n+      insights,\n+      input,\n+      instantSearchInstance,\n+      messages,\n+      open,\n+      sendEvent,\n+      sendMessage,\n+      setIndexUiState,\n+      setInput,\n+      setMessages,\n+      setOpen,\n+      status,\n+    } = props;\n+\n+    if (isFirstRendering) {\n+      renderState.templateProps = prepareTemplateProps({\n+        defaultTemplates,\n+        templatesConfig: instantSearchInstance.templatesConfig,\n+        templates,\n+      });\n+      return;\n+    }\n+\n+    const handleInsightsClick = createInsightsEventHandler({\n+      insights,\n+      sendEvent,\n+    });\n+\n+    const itemComponent: ItemComponent<THit> = ({ item, ...rootProps }) => (\n+      <TemplateComponent\n+        {...renderState.templateProps}\n+        templateKey=\"item\"\n+        rootTagName=\"div\"\n+        rootProps={{\n+          ...rootProps,\n+          onClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onClick?.();\n+          },\n+          onAuxClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onAuxClick?.();\n+          },\n+        }}\n+        data={item}\n+        sendEvent={sendEvent}\n+      />\n+    );\n+\n+    const hasSearchIndexTool = userTools.some(\n+      (tool) => tool.type === 'tool-algolia_search_index'\n+    );\n+\n+    const tools = hasSearchIndexTool\n+      ? userTools\n+      : [...createDefaultTools<THit>(itemComponent), ...userTools];\n+\n+    state.subscribe(rerender);\n+\n+    function rerender() {\n+      state.init();\n+\n+      const [isClearing, setIsClearing] = state.use(false);\n+      const [maximized, setMaximized] = state.use(false);\n+\n+      const onClear = () => setIsClearing(true);\n+      const onClearTransitionEnd = () => {\n+        setMessages([]);\n+        setIsClearing(false);\n+      };\n+      render(\n+        <Chat\n+          classNames={cssClasses}\n+          open={open}\n+          maximized={maximized}\n+          headerProps={{\n+            onClose: () => setOpen(false),\n+            onToggleMaximize: () => setMaximized(!maximized),\n+            onClear,\n+            canClear: messages.length > 0 && isClearing !== true,\n+          }}\n+          messagesProps={{\n+            messages,\n+            indexUiState,\n+            isClearing,\n+            onClearTransitionEnd,\n+            // temporary until we have a good solution in js\n+            // or move logic in ui-component\n+            hideScrollToBottom: true,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2362926267",
+    "id": 2362926267,
+    "in_reply_to_id": 2362879298,
+    "line": 203,
+    "node_id": "PRRC_kwDOAlnbOs6M12S7",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 203,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 203,
+    "pull_request_review_id": 3244916167,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362926267/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-19T13:38:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2362926267",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2363043695"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2363043695"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I reimplemented the basics of it, a ResizeObserver and a listener on the container scroll. The lock kept jumping (which might be because rendering of the carousel is problematic I think). We can try having a Preact-compatible fork, it might handle this better.",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-19T14:18:05Z",
+    "diff_hunk": "@@ -0,0 +1,342 @@\n+/** @jsx h */\n+\n+import { createChatComponent } from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+\n+import TemplateComponent from '../../components/Template/Template';\n+import connectChat from '../../connectors/chat/connectChat';\n+import { createInsightsEventHandler } from '../../lib/insights/listener';\n+import { prepareTemplateProps } from '../../lib/templating';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { carousel } from '../../templates';\n+\n+import defaultTemplates from './defaultTemplates';\n+\n+import type {\n+  ChatRenderState,\n+  ChatConnectorParams,\n+  ChatWidgetDescription,\n+} from '../../connectors/chat/connectChat';\n+import type { PreparedTemplateProps } from '../../lib/templating';\n+import type {\n+  WidgetFactory,\n+  Renderer,\n+  Hit,\n+  TemplateWithBindEvent,\n+  BaseHit,\n+} from '../../types';\n+import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+\n+type ItemComponent<THit> = (props: {\n+  item: THit;\n+  onClick: () => void;\n+  onAuxClick: () => void;\n+}) => VNode | VNode[];\n+\n+const withUsage = createDocumentationMessageGenerator({ name: 'chat' });\n+\n+const Chat = createChatComponent({ createElement: h, Fragment });\n+\n+function createDefaultTools<THit extends NonNullable<object> = BaseHit>(\n+  itemComponent?: ItemComponent<THit>\n+): Tools {\n+  return [\n+    {\n+      type: 'tool-algolia_search_index',\n+      component: ({ message, indexUiState, setIndexUiState }) => {\n+        const items =\n+          (\n+            message.output as {\n+              hits?: Array<Hit<THit>>;\n+            }\n+          )?.hits || [];\n+\n+        const input = message.input as { query: string };\n+\n+        return (\n+          <div>\n+            {carousel()({\n+              items,\n+              templates: { item: itemComponent },\n+              sendEvent: () => {},\n+            })}\n+\n+            {input?.query && (\n+              <button\n+                className=\"ais-ChatToolSearchIndexRefineButton\"\n+                onClick={() => {\n+                  if (input?.query) {\n+                    setIndexUiState({\n+                      ...indexUiState,\n+                      query: input.query,\n+                    });\n+                  }\n+                }}\n+              >\n+                Refine on this query\n+              </button>\n+            )}\n+          </div>\n+        );\n+      },\n+      onToolCall: ({ toolCall, addToolResult }) => {\n+        addToolResult({\n+          tool: toolCall.toolName,\n+          toolCallId: toolCall.toolCallId,\n+          output: '',\n+        });\n+      },\n+    },\n+  ];\n+}\n+\n+const createRenderer = <THit extends NonNullable<object> = BaseHit>({\n+  renderState,\n+  cssClasses,\n+  containerNode,\n+  templates,\n+  tools: userTools = [],\n+}: {\n+  containerNode: HTMLElement;\n+  cssClasses: ChatCSSClasses;\n+  renderState: {\n+    templateProps?: PreparedTemplateProps<Required<ChatTemplates<THit>>>;\n+  };\n+  templates: ChatTemplates<THit>;\n+  tools?: Tools;\n+}): Renderer<ChatRenderState, Partial<ChatWidgetParams>> => {\n+  const state = createLocalState();\n+  return (props, isFirstRendering) => {\n+    const {\n+      indexUiState,\n+      insights,\n+      input,\n+      instantSearchInstance,\n+      messages,\n+      open,\n+      sendEvent,\n+      sendMessage,\n+      setIndexUiState,\n+      setInput,\n+      setMessages,\n+      setOpen,\n+      status,\n+    } = props;\n+\n+    if (isFirstRendering) {\n+      renderState.templateProps = prepareTemplateProps({\n+        defaultTemplates,\n+        templatesConfig: instantSearchInstance.templatesConfig,\n+        templates,\n+      });\n+      return;\n+    }\n+\n+    const handleInsightsClick = createInsightsEventHandler({\n+      insights,\n+      sendEvent,\n+    });\n+\n+    const itemComponent: ItemComponent<THit> = ({ item, ...rootProps }) => (\n+      <TemplateComponent\n+        {...renderState.templateProps}\n+        templateKey=\"item\"\n+        rootTagName=\"div\"\n+        rootProps={{\n+          ...rootProps,\n+          onClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onClick?.();\n+          },\n+          onAuxClick: (event: MouseEvent) => {\n+            handleInsightsClick(event);\n+            rootProps.onAuxClick?.();\n+          },\n+        }}\n+        data={item}\n+        sendEvent={sendEvent}\n+      />\n+    );\n+\n+    const hasSearchIndexTool = userTools.some(\n+      (tool) => tool.type === 'tool-algolia_search_index'\n+    );\n+\n+    const tools = hasSearchIndexTool\n+      ? userTools\n+      : [...createDefaultTools<THit>(itemComponent), ...userTools];\n+\n+    state.subscribe(rerender);\n+\n+    function rerender() {\n+      state.init();\n+\n+      const [isClearing, setIsClearing] = state.use(false);\n+      const [maximized, setMaximized] = state.use(false);\n+\n+      const onClear = () => setIsClearing(true);\n+      const onClearTransitionEnd = () => {\n+        setMessages([]);\n+        setIsClearing(false);\n+      };\n+      render(\n+        <Chat\n+          classNames={cssClasses}\n+          open={open}\n+          maximized={maximized}\n+          headerProps={{\n+            onClose: () => setOpen(false),\n+            onToggleMaximize: () => setMaximized(!maximized),\n+            onClear,\n+            canClear: messages.length > 0 && isClearing !== true,\n+          }}\n+          messagesProps={{\n+            messages,\n+            indexUiState,\n+            isClearing,\n+            onClearTransitionEnd,\n+            // temporary until we have a good solution in js\n+            // or move logic in ui-component\n+            hideScrollToBottom: true,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2363043695",
+    "id": 2363043695,
+    "in_reply_to_id": 2362879298,
+    "line": 203,
+    "node_id": "PRRC_kwDOAlnbOs6M2S9v",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 203,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 203,
+    "pull_request_review_id": 3245101598,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2363043695/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-19T14:18:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2363043695",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2369173941"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369173941"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "should this not be Hit or AlgoliaHit? or do you want to explicitly make it available for recommend / item without __position too?",
+    "commit_id": "b9443a41deab2874624d6558db05c699690fe978",
+    "created_at": "2025-09-22T16:01:34Z",
+    "diff_hunk": "@@ -28,12 +28,17 @@ import type {\n   TemplateWithBindEvent,\n   BaseHit,\n } from '../../types';\n-import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+import type {\n+  ChatClassNames,\n+  RecordWithObjectID,\n+  Tools,\n+  VNode,\n+} from 'instantsearch-ui-components';\n \n type ItemComponent<THit> = (props: {\n-  item: THit;\n-  onClick: () => void;\n-  onAuxClick: () => void;\n+  item: RecordWithObjectID<THit>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2369173941",
+    "id": 2369173941,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NNrm1",
+    "original_commit_id": "b9443a41deab2874624d6558db05c699690fe978",
+    "original_line": 39,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 1,
+    "pull_request_review_id": 3253745952,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369173941/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-22T16:01:34Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369173941",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2369214909"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369214909"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Not there yet 😅, I just want to match the item with what the carousel expects to make eslint pass. Then I'll see how to make it not Recommend-specific. For some reason this issue does not appear locally, so I'm pushing incremental changes.",
+    "commit_id": "b9443a41deab2874624d6558db05c699690fe978",
+    "created_at": "2025-09-22T16:10:06Z",
+    "diff_hunk": "@@ -28,12 +28,17 @@ import type {\n   TemplateWithBindEvent,\n   BaseHit,\n } from '../../types';\n-import type { ChatClassNames, Tools, VNode } from 'instantsearch-ui-components';\n+import type {\n+  ChatClassNames,\n+  RecordWithObjectID,\n+  Tools,\n+  VNode,\n+} from 'instantsearch-ui-components';\n \n type ItemComponent<THit> = (props: {\n-  item: THit;\n-  onClick: () => void;\n-  onAuxClick: () => void;\n+  item: RecordWithObjectID<THit>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2369214909",
+    "id": 2369214909,
+    "in_reply_to_id": 2369173941,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NN1m9",
+    "original_commit_id": "b9443a41deab2874624d6558db05c699690fe978",
+    "original_line": 39,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/chat.tsx",
+    "position": 1,
+    "pull_request_review_id": 3253796898,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369214909/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-22T16:10:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2369214909",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371647698"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371647698"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "looks like this isn't the same as was merged in fabien's branch",
+    "commit_id": "8b3770168d0d5fbe75d1c5df108f87b2c5c5cc16",
+    "created_at": "2025-09-23T09:03:31Z",
+    "diff_hunk": "@@ -0,0 +1,341 @@\n+* {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371647698",
+    "id": 2371647698,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NXHjS",
+    "original_commit_id": "3ca11dac8104af8b1ef3611061488a4789b3a244",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "examples/react/e-commerce-with-chat/App.css",
+    "position": 1,
+    "pull_request_review_id": 3256959985,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371647698/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T09:03:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371647698",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371679106"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371679106"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Just merged master, and for some reason this (examples/react/e-commerce-with-chat) and instantsearch.css/src/themes/chat should not be here anymore. I'll git rm those.",
+    "commit_id": "8b3770168d0d5fbe75d1c5df108f87b2c5c5cc16",
+    "created_at": "2025-09-23T09:16:55Z",
+    "diff_hunk": "@@ -0,0 +1,341 @@\n+* {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371679106",
+    "id": 2371679106,
+    "in_reply_to_id": 2371647698,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NXPOC",
+    "original_commit_id": "3ca11dac8104af8b1ef3611061488a4789b3a244",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "examples/react/e-commerce-with-chat/App.css",
+    "position": 1,
+    "pull_request_review_id": 3257004588,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371679106/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T09:16:55Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371679106",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371706513"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371706513"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "For now I'll leave it as is, I don't have a proper solution and all widgets it's at least in line with how other widgets render default hits.",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-23T09:27:23Z",
+    "diff_hunk": "@@ -0,0 +1,9 @@\n+import { ChatTemplates } from './chat';\n+\n+const defaultTemplates = {\n+  item(data) {\n+    return JSON.stringify(data, null, 2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371706513",
+    "id": 2371706513,
+    "in_reply_to_id": 2362883963,
+    "line": 5,
+    "node_id": "PRRC_kwDOAlnbOs6NXV6R",
+    "original_commit_id": "1b0e11a17fcd94dd1f111b41bf11b10c08cc5f10",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/chat/defaultTemplates.ts",
+    "position": 5,
+    "pull_request_review_id": 3257048542,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371706513/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T09:27:23Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371706513",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371828011"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371828011"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why did this increase if we excluded chat from the umd?",
+    "commit_id": "894af6caf2d4298753a3e46452b337be9dc2d784",
+    "created_at": "2025-09-23T10:18:09Z",
+    "diff_hunk": "@@ -10,19 +10,19 @@\n     },\n     {\n       \"path\": \"./packages/instantsearch.js/dist/instantsearch.production.min.js\",\n-      \"maxSize\": \"84.75 kB\"\n+      \"maxSize\": \"100 kB\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2371828011",
+    "id": 2371828011,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NXzkr",
+    "original_commit_id": "894af6caf2d4298753a3e46452b337be9dc2d784",
+    "original_line": 13,
+    "original_position": 5,
+    "original_start_line": 13,
+    "path": "bundlesize.config.json",
+    "position": 1,
+    "pull_request_review_id": 3257238809,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371828011/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "LEFT",
+    "subject_type": "line",
+    "updated_at": "2025-09-23T10:18:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2371828011",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372075373"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372075373"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Good call. I left the bumped values that were needed when chat was part of it. Just pushed readjusted values now.",
+    "commit_id": "894af6caf2d4298753a3e46452b337be9dc2d784",
+    "created_at": "2025-09-23T12:00:26Z",
+    "diff_hunk": "@@ -10,19 +10,19 @@\n     },\n     {\n       \"path\": \"./packages/instantsearch.js/dist/instantsearch.production.min.js\",\n-      \"maxSize\": \"84.75 kB\"\n+      \"maxSize\": \"100 kB\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372075373",
+    "id": 2372075373,
+    "in_reply_to_id": 2371828011,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NYv9t",
+    "original_commit_id": "894af6caf2d4298753a3e46452b337be9dc2d784",
+    "original_line": 13,
+    "original_position": 5,
+    "original_start_line": 13,
+    "path": "bundlesize.config.json",
+    "position": 1,
+    "pull_request_review_id": 3257627985,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372075373/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "LEFT",
+    "subject_type": "line",
+    "updated_at": "2025-09-23T12:00:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372075373",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372282788"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372282788"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "shouldn't be needed anymore now",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:10:43Z",
+    "diff_hunk": "@@ -56,6 +56,7 @@ const createConfiguration = ({ mode, filename }) => ({\n     banner: license,\n     sourcemap: true,\n   },\n+  external: ['ai', 'zod'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372282788",
+    "id": 2372282788,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZimk",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 59,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/algolia-experiences/rollup.config.js",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372282788/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372282788",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372283157"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372283157"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "shouldn't be needed anymore now",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:10:52Z",
+    "diff_hunk": "@@ -36,6 +36,7 @@ const plugins = [\n \n const createConfiguration = ({ mode, filename }) => ({\n   input: 'src/index.ts',\n+  external: ['ai', 'zod'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372283157",
+    "id": 2372283157,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZisV",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 39,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/scripts/rollup/rollup.config.js",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372283157/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372283157",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372285566"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372285566"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you have the widget test that checks umd and non-umd are the same, but I don't think for connectors",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-23T13:11:49Z",
+    "diff_hunk": "@@ -0,0 +1,65 @@\n+import { deprecate } from '../lib/utils';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372285566",
+    "id": 2372285566,
+    "line": 1,
+    "node_id": "PRRC_kwDOAlnbOs6NZjR-",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/index.umd.ts",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372285566/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372285566",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372290518"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372290518"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "should this maybe be a regular error? not sure it matters but the use case is slightly different (this variable isn't missing)",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:13:39Z",
+    "diff_hunk": "@@ -0,0 +1,69 @@\n+import { deprecate } from '../lib/utils';\n+\n+import answers from './answers/answers';\n+import configureRelatedItems from './configure-related-items/configure-related-items';\n+import dynamicWidgets from './dynamic-widgets/dynamic-widgets';\n+\n+/** @deprecated answers is no longer supported */\n+export const EXPERIMENTAL_answers = deprecate(\n+  answers,\n+  'answers is no longer supported'\n+);\n+\n+/** @deprecated use relatedItems instead */\n+export const EXPERIMENTAL_configureRelatedItems = deprecate(\n+  configureRelatedItems,\n+  'EXPERIMENTAL_configureRelatedItems is deprecated and will be removed in a next minor version of InstantSearch. Please use relatedItems instead.'\n+);\n+\n+/** @deprecated use dynamicWidgets */\n+export const EXPERIMENTAL_dynamicWidgets = deprecate(\n+  dynamicWidgets,\n+  'use dynamicWidgets'\n+);\n+export { dynamicWidgets };\n+\n+export { default as analytics } from './analytics/analytics';\n+export { default as breadcrumb } from './breadcrumb/breadcrumb';\n+export { default as clearRefinements } from './clear-refinements/clear-refinements';\n+export { default as configure } from './configure/configure';\n+export { default as currentRefinements } from './current-refinements/current-refinements';\n+export { default as geoSearch } from './geo-search/geo-search';\n+export { default as hierarchicalMenu } from './hierarchical-menu/hierarchical-menu';\n+export { default as hits } from './hits/hits';\n+export { default as hitsPerPage } from './hits-per-page/hits-per-page';\n+export { default as index } from './index/index';\n+export type { IndexWidget } from './index/index';\n+export { default as infiniteHits } from './infinite-hits/infinite-hits';\n+export { default as menu } from './menu/menu';\n+export { default as menuSelect } from './menu-select/menu-select';\n+export { default as numericMenu } from './numeric-menu/numeric-menu';\n+export { default as pagination } from './pagination/pagination';\n+export { default as panel } from './panel/panel';\n+export { default as places } from './places/places';\n+export { default as poweredBy } from './powered-by/powered-by';\n+export { default as queryRuleContext } from './query-rule-context/query-rule-context';\n+export { default as queryRuleCustomData } from './query-rule-custom-data/query-rule-custom-data';\n+export { default as relatedProducts } from './related-products/related-products';\n+export { default as rangeInput } from './range-input/range-input';\n+export { default as rangeSlider } from './range-slider/range-slider';\n+export { default as ratingMenu } from './rating-menu/rating-menu';\n+export { default as refinementList } from './refinement-list/refinement-list';\n+export { default as relevantSort } from './relevant-sort/relevant-sort';\n+export { default as searchBox } from './search-box/search-box';\n+export { default as sortBy } from './sort-by/sort-by';\n+export { default as stats } from './stats/stats';\n+export { default as toggleRefinement } from './toggle-refinement/toggle-refinement';\n+export { default as trendingItems } from './trending-items/trending-items';\n+export { default as voiceSearch } from './voice-search/voice-search';\n+export { default as frequentlyBoughtTogether } from './frequently-bought-together/frequently-bought-together';\n+export { default as lookingSimilar } from './looking-similar/looking-similar';\n+\n+export const chat = () => {\n+  throw new ReferenceError(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372290518",
+    "id": 2372290518,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZkfW",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 63,
+    "original_position": 63,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/index.umd.ts",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372290518/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372290518",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372291325"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372291325"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n    external: ['vue'],\n```",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:13:53Z",
+    "diff_hunk": "@@ -143,7 +145,7 @@ export * from './src/instantsearch.js';`\n \n   const umd = {\n     input: 'src/instantsearch.umd.js',\n-    external: ['vue'],\n+    external: ['vue', 'ai', 'zod'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372291325",
+    "id": 2372291325,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZkr9",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 148,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/vue-instantsearch/rollup.config.js",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372291325/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372291325",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372293066"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293066"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n```",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:14:28Z",
+    "diff_hunk": "@@ -56,6 +56,7 @@ const createConfiguration = ({ mode, filename }) => ({\n     banner: license,\n     sourcemap: true,\n   },\n+  external: ['ai', 'zod'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372293066",
+    "id": 2372293066,
+    "in_reply_to_id": 2372282788,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZlHK",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 59,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/algolia-experiences/rollup.config.js",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293066/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293066",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372293623"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293623"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n```",
+    "commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "created_at": "2025-09-23T13:14:40Z",
+    "diff_hunk": "@@ -36,6 +36,7 @@ const plugins = [\n \n const createConfiguration = ({ mode, filename }) => ({\n   input: 'src/index.ts',\n+  external: ['ai', 'zod'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2372293623",
+    "id": 2372293623,
+    "in_reply_to_id": 2372283157,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6NZlP3",
+    "original_commit_id": "85fae59f30b7157cdf540f9112e33d3ef83cfebe",
+    "original_line": 39,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/scripts/rollup/rollup.config.js",
+    "position": 1,
+    "pull_request_review_id": 3257945818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293623/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-23T13:15:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2372293623",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2375152890"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375152890"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "hmm, pretty annoying this is needed, but no way around for now as we still want regular esm users to have access to chat",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-24T09:22:39Z",
+    "diff_hunk": "@@ -20,7 +20,7 @@\n </template>\n \n <script>\n-import { connectAutocomplete } from 'instantsearch.js/es/connectors';\n+import { connectAutocomplete } from 'instantsearch.js/es/connectors/index.umd';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2375152890",
+    "id": 2375152890,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs6NkfT6",
+    "original_commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "original_line": 23,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/vue-instantsearch/src/components/Autocomplete.vue",
+    "position": 5,
+    "pull_request_review_id": 3261995433,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375152890/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-24T09:23:27Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375152890",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2375217215"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6705"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375217215"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes, UMD has no relation with this but it technically is helpful. Wondering if we should have a barrel file \"index.noAi.ts\" or something, don't know if it's better 🤷. In any case we have tests to ensure both barrel files have the same connectors / widgets, so I'm not afraid of drift.",
+    "commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "created_at": "2025-09-24T09:47:55Z",
+    "diff_hunk": "@@ -20,7 +20,7 @@\n </template>\n \n <script>\n-import { connectAutocomplete } from 'instantsearch.js/es/connectors';\n+import { connectAutocomplete } from 'instantsearch.js/es/connectors/index.umd';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6705#discussion_r2375217215",
+    "id": 2375217215,
+    "in_reply_to_id": 2375152890,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs6NkvA_",
+    "original_commit_id": "3c25444034099c62d2ac5558f722b982c26cacb5",
+    "original_line": 23,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/vue-instantsearch/src/components/Autocomplete.vue",
+    "position": 5,
+    "pull_request_review_id": 3262081643,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6705",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375217215/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-09-24T09:47:55Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2375217215",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

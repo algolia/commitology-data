@@ -1,0 +1,490 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r317999147"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/317999147"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "With those changes we provide a new function on each render which was not the case before. It can lead to issues when we the render function have a branch for the first render. This problem arises because the `scopedResults` is not provided at the `init` step. A solution might be to provide it, even empty it doesn't matter.\r\n\r\nWith an empty state for `scopedResults` we can create the function at the `init` step like before. It will have the same behavior than the proposed implementation the call to `refine`/`createURL` will be a noop.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-27T10:07:47Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r317999147",
+    "id": 317999147,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxNzk5OTE0Nw==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 127,
+    "original_position": 98,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280075020,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/317999147/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/317999147",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318002862"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318002862"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The implementation doesn't behave like expected. Only the URL of the current index will be computed but this is not what we want. We want to compute the URL for the current index + siblings + children. With the current implementation of `createURL` I don't think it's possible to implement the expected behavior. \r\n\r\nThe idea would be to provide a list of \"patch\" to the `createURL` function. Those \"patches\" describe which indices have to be updated with their next `SearchParameters`. We're then able to compute the `uiState` of each of the index. By default, the `createURL` would be called with one patch for the current index, when we have a widget that alters multiple indices we can provide multiple patches. This is the raw idea we can see how it would fit with the current architecture.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-27T10:16:28Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {\n+              attributesToClear.forEach(({ helper: indexHelper, items }) => {\n+                indexHelper\n+                  .setState(\n+                    clearRefinements({\n+                      helper: indexHelper,\n+                      attributesToClear: items,\n+                    })\n+                  )\n+                  .search();\n+              });\n+            },\n+            createURL: () =>\n+              createURL(\n+                mergeSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318002862",
+    "id": 318002862,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODAwMjg2Mg==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 141,
+    "original_position": 112,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280075020,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318002862/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318002862",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318030637"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318030637"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's right, I fixed that in 07a010772b1c3fc3c6c5e3a715dd703bb0fa5e4f. I went for storing this in the connector state and assigning noops like this implementation.\r\n\r\nWhat do you mean by this though?\r\n\r\n> It can lead to issues when we the render function have a branch for the first render.\r\n\r\nOn a side note, it would be nice to have the same signature for both `init` and `render` at some point.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-27T11:34:53Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318030637",
+    "id": 318030637,
+    "in_reply_to_id": 317999147,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODAzMDYzNw==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 127,
+    "original_position": 98,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280130359,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318030637/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318030637",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318044246"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318044246"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> What do you mean by this though?\r\n\r\nThe ref change between render which means that if we have a render function that branch on `isFirstRender` to register events, the function created at the render step will never be called.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-27T12:11:42Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318044246",
+    "id": 318044246,
+    "in_reply_to_id": 317999147,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODA0NDI0Ng==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 127,
+    "original_position": 98,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280147822,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318044246/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318044246",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318045769"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318045769"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The fix made inside https://github.com/algolia/instantsearch.js/commit/07a010772b1c3fc3c6c5e3a715dd703bb0fa5e4f does not solve the problem. The reference is different since the function gets re-assigned. You can take a look at [`refinementList`](https://github.com/algolia/instantsearch.js/blob/a23c301f1909d67516664108ff8e015cdea21516/src/connectors/refinement-list/connectRefinementList.js#L285-L290) or [`geoSearch`](https://github.com/algolia/instantsearch.js/blob/a23c301f1909d67516664108ff8e015cdea21516/src/connectors/geo-search/connectGeoSearch.js#L220-L226), both connectors use different strategies to keep the reference.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-27T12:15:45Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318045769",
+    "id": 318045769,
+    "in_reply_to_id": 317999147,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODA0NTc2OQ==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 127,
+    "original_position": 98,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280149902,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318045769/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318045769",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318554380"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554380"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I get it now. This is addressed in 72a39a6fb7f293c512ef3974d492e8a4ec514470.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-28T12:36:17Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318554380",
+    "id": 318554380,
+    "in_reply_to_id": 317999147,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODU1NDM4MA==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 127,
+    "original_position": 98,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280795534,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554380/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554380",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318554681"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4036"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554681"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This will be addressed in another PR because some prior work needs to be done to support `createURL` in a multi-index context.",
+    "commit_id": "19cbeffcdebb828ab160939941b205c0860dd549",
+    "created_at": "2019-08-28T12:36:58Z",
+    "diff_hunk": "@@ -89,70 +91,62 @@ export default function connectClearRefinements(renderFn, unmountFn = noop) {\n     return {\n       $$type: 'ais.clearRefinements',\n \n-      init({ helper, instantSearchInstance, createURL }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n-\n-        this._refine = () => {\n-          helper\n-            .setState(\n-              clearRefinements({\n-                helper,\n-                attributesToClear: getAttributesToClear({\n-                  helper,\n-                  includedAttributes,\n-                  excludedAttributes,\n-                  transformItems,\n-                }),\n-              })\n-            )\n-            .search();\n-        };\n-\n-        this._createURL = () =>\n-          createURL(\n-            clearRefinements({\n-              helper,\n-              attributesToClear: getAttributesToClear({\n-                helper,\n-                includedAttributes,\n-                excludedAttributes,\n-                transformItems,\n-              }),\n-            })\n-          );\n-\n+      init({ instantSearchInstance }) {\n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: false,\n+            refine: noop,\n+            createURL: noop,\n             instantSearchInstance,\n             widgetParams,\n           },\n           true\n         );\n       },\n \n-      render({ helper, instantSearchInstance }) {\n-        const attributesToClear = getAttributesToClear({\n-          helper,\n-          includedAttributes,\n-          excludedAttributes,\n-          transformItems,\n-        });\n-        const hasRefinements = attributesToClear.length > 0;\n+      render({ scopedResults, createURL, instantSearchInstance }) {\n+        const attributesToClear = scopedResults.reduce(\n+          (results, scopedResult) => {\n+            return results.concat(\n+              getAttributesToClear({\n+                scopedResult,\n+                includedAttributes,\n+                excludedAttributes,\n+                transformItems,\n+              })\n+            );\n+          },\n+          []\n+        );\n \n         renderFn(\n           {\n-            hasRefinements,\n-            refine: this._refine,\n-            createURL: this._createURL,\n+            hasRefinements: attributesToClear.some(\n+              attributeToClear => attributeToClear.items.length > 0\n+            ),\n+            refine: () => {\n+              attributesToClear.forEach(({ helper: indexHelper, items }) => {\n+                indexHelper\n+                  .setState(\n+                    clearRefinements({\n+                      helper: indexHelper,\n+                      attributesToClear: items,\n+                    })\n+                  )\n+                  .search();\n+              });\n+            },\n+            createURL: () =>\n+              createURL(\n+                mergeSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4036#discussion_r318554681",
+    "id": 318554681,
+    "in_reply_to_id": 318002862,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxODU1NDY4MQ==",
+    "original_commit_id": "bb21726a8b155c360bcf7224731990a49ee8982e",
+    "original_line": 141,
+    "original_position": 112,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 1,
+    "pull_request_review_id": 280795906,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4036",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554681/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-30T12:20:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/318554681",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

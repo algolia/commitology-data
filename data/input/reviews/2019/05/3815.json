@@ -1,0 +1,71 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3815#discussion_r287826850"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3815"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/287826850"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    it('does not remove the TAG_PLACEHOLDER from the `SearchParameters` with `escapeHTML`', () => {\r\n```\r\n\r\nI had trouble understanding the test because of the name.",
+    "commit_id": "e398307a538d72d00a5e43fc0facfa9bab40ed23",
+    "created_at": "2019-05-27T15:18:46Z",
+    "diff_hunk": "@@ -167,4 +167,155 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/autocomplet\n \n     expect(rendering.indices[0].hits).toEqual(hits);\n   });\n+\n+  describe('dispose', () => {\n+    it('calls the unmount function', () => {\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex');\n+\n+      const renderFn = () => {};\n+      const unmountFn = jest.fn();\n+      const makeWidget = connectAutocomplete(renderFn, unmountFn);\n+      const widget = makeWidget();\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      expect(unmountFn).toHaveBeenCalledTimes(0);\n+\n+      widget.dispose({ helper, state: helper.state });\n+\n+      expect(unmountFn).toHaveBeenCalledTimes(1);\n+    });\n+\n+    it('does not throw without the unmount function', () => {\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex');\n+\n+      const renderFn = () => {};\n+      const makeWidget = connectAutocomplete(renderFn);\n+      const widget = makeWidget();\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      expect(() =>\n+        widget.dispose({ helper, state: helper.state })\n+      ).not.toThrow();\n+    });\n+\n+    it('removes the created DerivedHelper', () => {\n+      const detachDerivedHelper = jest.fn();\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex');\n+      helper.detachDerivedHelper = detachDerivedHelper;\n+\n+      const renderFn = () => {};\n+      const makeWidget = connectAutocomplete(renderFn);\n+      const widget = makeWidget({\n+        indices: [\n+          { label: 'Second', value: 'secondIndex' },\n+          { label: 'Third', value: 'thirdIndex' },\n+        ],\n+      });\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      expect(detachDerivedHelper).toHaveBeenCalledTimes(0);\n+\n+      widget.dispose({ helper, state: helper.state });\n+\n+      expect(detachDerivedHelper).toHaveBeenCalledTimes(2);\n+    });\n+\n+    it('removes only the DerivedHelper created by autocomplete', () => {\n+      const detachDerivedHelper = jest.fn();\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex');\n+      helper.detachDerivedHelper = detachDerivedHelper;\n+\n+      const renderFn = () => {};\n+      const makeWidget = connectAutocomplete(renderFn);\n+      const widget = makeWidget({\n+        indices: [\n+          { label: 'Second', value: 'secondIndex' },\n+          { label: 'Third', value: 'thirdIndex' },\n+        ],\n+      });\n+\n+      const derivedHelperOne = helper.derive(state => state);\n+      const derivedHelperTwo = helper.derive(state => state);\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      expect(detachDerivedHelper).toHaveBeenCalledTimes(0);\n+\n+      widget.dispose({ helper, state: helper.state });\n+\n+      expect(detachDerivedHelper).toHaveBeenCalledTimes(2);\n+      expect(helper.derivedHelpers).toEqual(\n+        expect.arrayContaining([derivedHelperOne, derivedHelperTwo])\n+      );\n+    });\n+\n+    it('removes the `query` from the `SearchParameters`', () => {\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex', {\n+        query: 'Apple',\n+      });\n+\n+      const renderFn = () => {};\n+      const makeWidget = connectAutocomplete(renderFn);\n+      const widget = makeWidget();\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      expect(helper.state.query).toBe('Apple');\n+\n+      const nextState = widget.dispose({ helper, state: helper.state });\n+\n+      expect(nextState.query).toBeUndefined();\n+    });\n+\n+    it('removes the TAG_PLACEHOLDER from the `SearchParameters`', () => {\n+      const helper = algoliasearchHelper(fakeClient, 'firstIndex', {\n+        ...TAG_PLACEHOLDER,\n+      });\n+\n+      const renderFn = () => {};\n+      const makeWidget = connectAutocomplete(renderFn);\n+      const widget = makeWidget();\n+\n+      expect(helper.state.highlightPreTag).toBe(\n+        TAG_PLACEHOLDER.highlightPreTag\n+      );\n+\n+      expect(helper.state.highlightPostTag).toBe(\n+        TAG_PLACEHOLDER.highlightPostTag\n+      );\n+\n+      widget.init({ helper, instantSearchInstance: {} });\n+\n+      const nextState = widget.dispose({ helper, state: helper.state });\n+\n+      expect(nextState.highlightPreTag).toBeUndefined();\n+      expect(nextState.highlightPostTag).toBeUndefined();\n+    });\n+\n+    it('removes the TAG_PLACEHOLDER from the `SearchParameters` only with `\u001cescapeHTML`', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3815#discussion_r287826850",
+    "id": 287826850,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI4NzgyNjg1MA==",
+    "original_commit_id": "e0e4c9abf450a558c3aa2ebfc2110d20dd603304",
+    "original_line": 298,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "src/connectors/autocomplete/__tests__/connectAutocomplete-test.js",
+    "position": 1,
+    "pull_request_review_id": 242323082,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3815",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/287826850/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-05-28T07:37:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/287826850",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

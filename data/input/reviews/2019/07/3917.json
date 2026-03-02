@@ -1,0 +1,1595 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300007881"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300007881"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Could worth it to make a generic merge function to reduce duplication and save on bundle size. WDYT?\r\n```js\r\ntype GenericMerger = (\r\n  key: keyof SearchParameters,\r\n  right: SearchParameters\r\n) => Merge;\r\n\r\nconst mergeGeneric: GenericMerger = (key, right) => left =>\r\n  left.setQueryParameters({\r\n    [key]: {\r\n      ...left[key],\r\n      ...right[key],\r\n    },\r\n  });\r\n\r\n// ...\r\n\r\ncompose(\r\n  mergeGeneric('hierarchicalFacetsRefinements', right),\r\n  mergeGeneric('numericRefinements', right),\r\n  // ...\r\n)(left)\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-03T15:03:44Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (\n+  initial: TValue\n+) => fns.reduceRight((_, fn) => fn(_), initial);\n+\n+const mergeWithRest: Merger = right => left => {\n+  const {\n+    facets,\n+    disjunctiveFacets,\n+    facetsRefinements,\n+    facetsExcludes,\n+    disjunctiveFacetsRefinements,\n+    numericRefinements,\n+    tagRefinements,\n+    hierarchicalFacets,\n+    hierarchicalFacetsRefinements,\n+    ...rest\n+  } = right;\n+\n+  return left.setQueryParameters(rest);\n+};\n+\n+// Merge facets\n+const mergeFacets: Merger = right => left =>\n+  right.facets!.reduce((_, name) => _.addFacet(name), left);\n+\n+const mergeDisjunctiveFacets: Merger = right => left =>\n+  right.disjunctiveFacets!.reduce(\n+    (_, name) => _.addDisjunctiveFacet(name),\n+    left\n+  );\n+\n+const mergeTagRefinements: Merger = right => left =>\n+  right.tagRefinements!.reduce((_, value) => _.addTagRefinement(value), left);\n+\n+type HierarchicalFacet = {\n+  name: string;\n+  attributes: string[];\n+  separator: string;\n+};\n+\n+const mergeHierarchicalFacets: Merger = right => left =>\n+  left.setQueryParameters({\n+    // @TODO: remove this cast when typings in helper are merged\n+    hierarchicalFacets: (right.hierarchicalFacets as HierarchicalFacet[]).reduce(\n+      (facets, facet) => {\n+        const index = facets.findIndex(_ => _.name === facet.name);\n+\n+        if (index === -1) {\n+          return facets.concat(facet);\n+        }\n+\n+        const nextFacets = facets.slice();\n+        nextFacets.splice(index, 1, facet);\n+\n+        return nextFacets;\n+      },\n+      left.hierarchicalFacets as HierarchicalFacet[]\n+    ),\n+  });\n+\n+// Merge facets refinements\n+const mergeFacetRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    facetsRefinements: {\n+      ...left.facetsRefinements,\n+      ...right.facetsRefinements,\n+    },\n+  });\n+\n+const mergeFacetsExcludes: Merger = right => left =>\n+  left.setQueryParameters({\n+    facetsExcludes: {\n+      ...left.facetsExcludes,\n+      ...right.facetsExcludes,\n+    },\n+  });\n+\n+const mergeDisjunctiveFacetsRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    disjunctiveFacetsRefinements: {\n+      ...left.disjunctiveFacetsRefinements,\n+      ...right.disjunctiveFacetsRefinements,\n+    },\n+  });\n+\n+const mergeNumericRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    numericRefinements: {\n+      ...left.numericRefinements,\n+      ...right.numericRefinements,\n+    },\n+  });\n+\n+const mergeHierarchicalFacetsRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    hierarchicalFacetsRefinements: {\n+      ...left.hierarchicalFacetsRefinements,\n+      ...right.hierarchicalFacetsRefinements,\n+    },\n+  });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300007881",
+    "id": 300007881,
+    "line": 104,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMDAwNzg4MQ==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 106,
+    "original_position": 106,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 104,
+    "pull_request_review_id": 257552490,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300007881/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300007881",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300015075"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300015075"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yep I did it at first but revert it afterwards because it wasn't worth it IMO. ",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-03T15:17:13Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (\n+  initial: TValue\n+) => fns.reduceRight((_, fn) => fn(_), initial);\n+\n+const mergeWithRest: Merger = right => left => {\n+  const {\n+    facets,\n+    disjunctiveFacets,\n+    facetsRefinements,\n+    facetsExcludes,\n+    disjunctiveFacetsRefinements,\n+    numericRefinements,\n+    tagRefinements,\n+    hierarchicalFacets,\n+    hierarchicalFacetsRefinements,\n+    ...rest\n+  } = right;\n+\n+  return left.setQueryParameters(rest);\n+};\n+\n+// Merge facets\n+const mergeFacets: Merger = right => left =>\n+  right.facets!.reduce((_, name) => _.addFacet(name), left);\n+\n+const mergeDisjunctiveFacets: Merger = right => left =>\n+  right.disjunctiveFacets!.reduce(\n+    (_, name) => _.addDisjunctiveFacet(name),\n+    left\n+  );\n+\n+const mergeTagRefinements: Merger = right => left =>\n+  right.tagRefinements!.reduce((_, value) => _.addTagRefinement(value), left);\n+\n+type HierarchicalFacet = {\n+  name: string;\n+  attributes: string[];\n+  separator: string;\n+};\n+\n+const mergeHierarchicalFacets: Merger = right => left =>\n+  left.setQueryParameters({\n+    // @TODO: remove this cast when typings in helper are merged\n+    hierarchicalFacets: (right.hierarchicalFacets as HierarchicalFacet[]).reduce(\n+      (facets, facet) => {\n+        const index = facets.findIndex(_ => _.name === facet.name);\n+\n+        if (index === -1) {\n+          return facets.concat(facet);\n+        }\n+\n+        const nextFacets = facets.slice();\n+        nextFacets.splice(index, 1, facet);\n+\n+        return nextFacets;\n+      },\n+      left.hierarchicalFacets as HierarchicalFacet[]\n+    ),\n+  });\n+\n+// Merge facets refinements\n+const mergeFacetRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    facetsRefinements: {\n+      ...left.facetsRefinements,\n+      ...right.facetsRefinements,\n+    },\n+  });\n+\n+const mergeFacetsExcludes: Merger = right => left =>\n+  left.setQueryParameters({\n+    facetsExcludes: {\n+      ...left.facetsExcludes,\n+      ...right.facetsExcludes,\n+    },\n+  });\n+\n+const mergeDisjunctiveFacetsRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    disjunctiveFacetsRefinements: {\n+      ...left.disjunctiveFacetsRefinements,\n+      ...right.disjunctiveFacetsRefinements,\n+    },\n+  });\n+\n+const mergeNumericRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    numericRefinements: {\n+      ...left.numericRefinements,\n+      ...right.numericRefinements,\n+    },\n+  });\n+\n+const mergeHierarchicalFacetsRefinements: Merger = right => left =>\n+  left.setQueryParameters({\n+    hierarchicalFacetsRefinements: {\n+      ...left.hierarchicalFacetsRefinements,\n+      ...right.hierarchicalFacetsRefinements,\n+    },\n+  });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300015075",
+    "id": 300015075,
+    "in_reply_to_id": 300007881,
+    "line": 104,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMDAxNTA3NQ==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 106,
+    "original_position": 106,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 104,
+    "pull_request_review_id": 257561514,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300015075/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300015075",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300969701"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300969701"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Are there any cases where we wouldn't want `Samsung` to be overridden by `Apple` but rather appended? (same question for other objects containing arrays)",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T08:11:49Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300969701",
+    "id": 300969701,
+    "line": 108,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMDk2OTcwMQ==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 108,
+    "original_position": 108,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 108,
+    "pull_request_review_id": 257491341,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300969701/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300969701",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300975634"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300975634"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('overrides non-managed parameters', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T08:27:34Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300975634",
+    "id": 300975634,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMDk3NTYzNA==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 258754020,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300975634/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300975634",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300976217"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300976217"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `facetsRefinements` parameters, overrides conflicts', () => {\r\n```\r\n\r\nI think a title like this would explain more the behaviour we want. It could also be split up into separate tests",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T08:28:55Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r300976217",
+    "id": 300976217,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMDk3NjIxNw==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 81,
+    "original_position": 81,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 258754020,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300976217/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/300976217",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301032624"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301032624"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I've used this mostly for \"fun\", I wasn't my intent to merge it as is. If nobody has issues with it we can keep it but since it's the only place in the codebase where we use such pattern it might be wise to use a simpler form of composition. Thoughts @algolia/instantsearch-for-websites ?",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T10:50:43Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301032624",
+    "id": 301032624,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTAzMjYyNA==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 7,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 1,
+    "pull_request_review_id": 258825786,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301032624/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301032624",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301033659"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301033659"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We don't mention `findIndex` inside the \"Browser support\" section in the [doc](https://www.algolia.com/doc/guides/building-search-ui/installation/js/). We should then avoid its usage for a custom implementation or a different strategy for the `hierarchicalFacets`.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T10:53:15Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (\n+  initial: TValue\n+) => fns.reduceRight((_, fn) => fn(_), initial);\n+\n+const mergeWithRest: Merger = right => left => {\n+  const {\n+    facets,\n+    disjunctiveFacets,\n+    facetsRefinements,\n+    facetsExcludes,\n+    disjunctiveFacetsRefinements,\n+    numericRefinements,\n+    tagRefinements,\n+    hierarchicalFacets,\n+    hierarchicalFacetsRefinements,\n+    ...rest\n+  } = right;\n+\n+  return left.setQueryParameters(rest);\n+};\n+\n+// Merge facets\n+const mergeFacets: Merger = right => left =>\n+  right.facets!.reduce((_, name) => _.addFacet(name), left);\n+\n+const mergeDisjunctiveFacets: Merger = right => left =>\n+  right.disjunctiveFacets!.reduce(\n+    (_, name) => _.addDisjunctiveFacet(name),\n+    left\n+  );\n+\n+const mergeTagRefinements: Merger = right => left =>\n+  right.tagRefinements!.reduce((_, value) => _.addTagRefinement(value), left);\n+\n+type HierarchicalFacet = {\n+  name: string;\n+  attributes: string[];\n+  separator: string;\n+};\n+\n+const mergeHierarchicalFacets: Merger = right => left =>\n+  left.setQueryParameters({\n+    // @TODO: remove this cast when typings in helper are merged\n+    hierarchicalFacets: (right.hierarchicalFacets as HierarchicalFacet[]).reduce(\n+      (facets, facet) => {\n+        const index = facets.findIndex(_ => _.name === facet.name);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301033659",
+    "id": 301033659,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTAzMzY1OQ==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 1,
+    "pull_request_review_id": 258825786,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301033659/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301033659",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301042327"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301042327"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@Haroenv had the same question. The reasoning behind this implementation is to keep the behavior consistent between primitives and managed parameters. Applied to widgets it helps to understand:\r\n\r\n```js\r\nsearch.addWidgets([\r\n  index({ indexName: \"topLevel\" }).addWidgets([\r\n    // Top level searchBox\r\n    searchBox(),\r\n    index({ indexName: \"subLevel\" }).addWidgets([\r\n      // Sub level searchBox\r\n      searchBox()\r\n    ])\r\n  ])\r\n]);\r\n```\r\n\r\nThe two widgets `search box` are independent from each other. Each widget **controls** its part of the state where it is mounted. The sub-level `searchBox` does not inherit from the top-level one, it overrides it. We apply the same rule to the managed parameters that are on the **same attribute**. Note that this rule only applies to managed parameters shared across multiple indices. Within the same index both widgets can read/write on the internal state.\r\n\r\nWith React InstantSearch I've never seen a use case where multiple widgets inherit from each other within a multi-index context. The behavior of React InstantSeach is the same as the one described above. I agree that it's a tradeoff but to it's the behavior that makes sense (IMO) with the idea of controlled/uncontrolled widgets.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T11:18:18Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301042327",
+    "id": 301042327,
+    "in_reply_to_id": 300969701,
+    "line": 108,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTA0MjMyNw==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 108,
+    "original_position": 108,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 108,
+    "pull_request_review_id": 258825786,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301042327/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301042327",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301083756"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301083756"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "If you have other pieces of code in mind where to apply this pattern, we can extract it as a util. Otherwise, we can rewrite the code without this.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T13:12:37Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301083756",
+    "id": 301083756,
+    "in_reply_to_id": 301032624,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTA4Mzc1Ng==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 7,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 1,
+    "pull_request_review_id": 258890667,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301083756/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301083756",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301110882"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301110882"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Nope I don't.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-08T14:04:15Z",
+    "diff_hunk": "@@ -0,0 +1,125 @@\n+import { SearchParameters } from '../../types';\n+\n+type Merge = (value: SearchParameters) => SearchParameters;\n+\n+type Merger = (right: SearchParameters) => Merge;\n+\n+const compose = <TValue>(...fns: Array<(x: TValue) => TValue>) => (",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301110882",
+    "id": 301110882,
+    "in_reply_to_id": 301032624,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTExMDg4Mg==",
+    "original_commit_id": "e2031ddc262ca89749b78831c561874014b998f0",
+    "original_line": 7,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 1,
+    "pull_request_review_id": 258924274,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301110882/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301110882",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667470"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667470"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `facetsExcludes` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:03Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667470",
+    "id": 301667470,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2NzQ3MA==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 116,
+    "original_position": 116,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667470/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667470",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667599"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667599"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `disjunctiveFacetsRefinements` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:14Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667599",
+    "id": 301667599,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2NzU5OQ==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 151,
+    "original_position": 151,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667599/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667599",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667717"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667717"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `numericRefinements` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:28Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+        disjunctiveFacetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `numericRefinements` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667717",
+    "id": 301667717,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2NzcxNw==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 186,
+    "original_position": 186,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667717/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667717",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667804"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667804"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `tagRefinements` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:39Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+        disjunctiveFacetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `numericRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>=': [10],\n+            '<=': [100],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          rating: {\n+            '>=': [3],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          rating: {\n+            '>=': [3],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `tagRefinements` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667804",
+    "id": 301667804,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2NzgwNA==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 232,
+    "original_position": 232,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667804/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667804",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667874"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667874"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `hierarchicalFacets` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:48Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+        disjunctiveFacetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `numericRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>=': [10],\n+            '<=': [100],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          rating: {\n+            '>=': [3],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          rating: {\n+            '>=': [3],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `tagRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `hierarchicalFacets` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667874",
+    "id": 301667874,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2Nzg3NA==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 252,
+    "original_position": 252,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667874/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667874",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667960"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667960"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  it('merges `hierarchicalFacetsRefinements` parameters, overrides conflicts', () => {\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-09T16:00:59Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('merges non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+        disjunctiveFacetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `numericRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>=': [10],\n+            '<=': [100],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          rating: {\n+            '>=': [3],\n+          },\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        numericRefinements: {\n+          price: {\n+            '>': [100],\n+          },\n+          rating: {\n+            '>=': [3],\n+          },\n+          vote: {\n+            '>=': [50],\n+          },\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `tagRefinements` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        tagRefinements: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `hierarchicalFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        hierarchicalFacets: [\n+          {\n+            name: 'categories',\n+            attributes: ['categories.lvl0', 'categories.lvl1'],\n+          },\n+        ],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        hierarchicalFacets: [\n+          {\n+            name: 'department',\n+            attributes: ['department.lvl0', 'department.lvl1'],\n+          },\n+        ],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        hierarchicalFacets: [\n+          {\n+            name: 'categories',\n+            attributes: ['topLevelCategories', 'subLevelCategories'],\n+          },\n+          {\n+            name: 'folders',\n+            attributes: ['folders.lvl0', 'folders.lvl1'],\n+          },\n+        ],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hierarchicalFacets: [\n+          {\n+            name: 'categories',\n+            attributes: ['topLevelCategories', 'subLevelCategories'],\n+          },\n+          {\n+            name: 'department',\n+            attributes: ['department.lvl0', 'department.lvl1'],\n+          },\n+          {\n+            name: 'folders',\n+            attributes: ['folders.lvl0', 'folders.lvl1'],\n+          },\n+        ],\n+      })\n+    );\n+  });\n+\n+  it('merges `hierarchicalFacetsRefinements` parameters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r301667960",
+    "id": 301667960,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMTY2Nzk2MA==",
+    "original_commit_id": "9c254ed12c79797071563573fc3d14d9d5e04476",
+    "original_line": 304,
+    "original_position": 304,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 1,
+    "pull_request_review_id": 259603603,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667960/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/301667960",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302071784"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302071784"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The case with another type than array is not covered while it's implemented.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T13:43:12Z",
+    "diff_hunk": "@@ -0,0 +1,33 @@\n+import findIndex from '../findIndex';\n+\n+describe('findIndex', () => {\n+  describe('with polyfill', () => {\n+    test('with empty array', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302071784",
+    "id": 302071784,
+    "line": 5,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA3MTc4NA==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/findIndex-test.ts",
+    "position": 5,
+    "pull_request_review_id": 260101093,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302071784/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302071784",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302072916"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302072916"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Since we now consider default `disjunctivefacetsRefinements` to be empty arrays (e.g. algolia/algoliasearch-helper-js#725), we should add empty arrays in our test cases (valid for all array refinements).",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T13:45:10Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('overrides non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302072916",
+    "id": 302072916,
+    "line": 156,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA3MjkxNg==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 156,
+    "original_position": 156,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 156,
+    "pull_request_review_id": 260101093,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302072916/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302072916",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302074208"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074208"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This should be grouped with the \"Merge facets refinements\".",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T13:47:46Z",
+    "diff_hunk": "@@ -0,0 +1,145 @@\n+import { SearchParameters } from '../../types';\n+import findIndex from './findIndex';\n+\n+type Merger = (\n+  left: SearchParameters,\n+  right: SearchParameters\n+) => SearchParameters;\n+\n+const mergeWithRest: Merger = (left, right) => {\n+  const {\n+    facets,\n+    disjunctiveFacets,\n+    facetsRefinements,\n+    facetsExcludes,\n+    disjunctiveFacetsRefinements,\n+    numericRefinements,\n+    tagRefinements,\n+    hierarchicalFacets,\n+    hierarchicalFacetsRefinements,\n+    ...rest\n+  } = right;\n+\n+  return left.setQueryParameters(rest);\n+};\n+\n+// Merge facets\n+const mergeFacets: Merger = (left, right) =>\n+  right.facets!.reduce((_, name) => _.addFacet(name), left);\n+\n+const mergeDisjunctiveFacets: Merger = (left, right) =>\n+  right.disjunctiveFacets!.reduce(\n+    (_, name) => _.addDisjunctiveFacet(name),\n+    left\n+  );\n+\n+const mergeTagRefinements: Merger = (left, right) =>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302074208",
+    "id": 302074208,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA3NDIwOA==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 36,
+    "original_position": 36,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 1,
+    "pull_request_review_id": 260104174,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074208/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074208",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302074729"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074729"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The previous order was more understandable IMO, even though in the end it doesn't matter.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T13:48:49Z",
+    "diff_hunk": "@@ -0,0 +1,145 @@\n+import { SearchParameters } from '../../types';\n+import findIndex from './findIndex';\n+\n+type Merger = (\n+  left: SearchParameters,\n+  right: SearchParameters\n+) => SearchParameters;\n+\n+const mergeWithRest: Merger = (left, right) => {\n+  const {\n+    facets,\n+    disjunctiveFacets,\n+    facetsRefinements,\n+    facetsExcludes,\n+    disjunctiveFacetsRefinements,\n+    numericRefinements,\n+    tagRefinements,\n+    hierarchicalFacets,\n+    hierarchicalFacetsRefinements,\n+    ...rest\n+  } = right;\n+\n+  return left.setQueryParameters(rest);\n+};\n+\n+// Merge facets\n+const mergeFacets: Merger = (left, right) =>\n+  right.facets!.reduce((_, name) => _.addFacet(name), left);\n+\n+const mergeDisjunctiveFacets: Merger = (left, right) =>\n+  right.disjunctiveFacets!.reduce(\n+    (_, name) => _.addDisjunctiveFacet(name),\n+    left\n+  );\n+\n+const mergeTagRefinements: Merger = (left, right) =>\n+  right.tagRefinements!.reduce((_, value) => _.addTagRefinement(value), left);\n+\n+type HierarchicalFacet = {\n+  name: string;\n+  attributes: string[];\n+  separator: string;\n+};\n+\n+const mergeHierarchicalFacets: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    // @TODO: remove this cast when typings in helper are merged\n+    hierarchicalFacets: (right.hierarchicalFacets as HierarchicalFacet[]).reduce(\n+      (facets, facet) => {\n+        const index = findIndex(facets, _ => _.name === facet.name);\n+\n+        if (index === -1) {\n+          return facets.concat(facet);\n+        }\n+\n+        const nextFacets = facets.slice();\n+        nextFacets.splice(index, 1, facet);\n+\n+        return nextFacets;\n+      },\n+      left.hierarchicalFacets as HierarchicalFacet[]\n+    ),\n+  });\n+\n+// Merge facets refinements\n+const mergeFacetRefinements: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    facetsRefinements: {\n+      ...left.facetsRefinements,\n+      ...right.facetsRefinements,\n+    },\n+  });\n+\n+const mergeFacetsExcludes: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    facetsExcludes: {\n+      ...left.facetsExcludes,\n+      ...right.facetsExcludes,\n+    },\n+  });\n+\n+const mergeDisjunctiveFacetsRefinements: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    disjunctiveFacetsRefinements: {\n+      ...left.disjunctiveFacetsRefinements,\n+      ...right.disjunctiveFacetsRefinements,\n+    },\n+  });\n+\n+const mergeNumericRefinements: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    numericRefinements: {\n+      ...left.numericRefinements,\n+      ...right.numericRefinements,\n+    },\n+  });\n+\n+const mergeHierarchicalFacetsRefinements: Merger = (left, right) =>\n+  left.setQueryParameters({\n+    hierarchicalFacetsRefinements: {\n+      ...left.hierarchicalFacetsRefinements,\n+      ...right.hierarchicalFacetsRefinements,\n+    },\n+  });\n+\n+const merge = (...parameters: SearchParameters[]): SearchParameters =>\n+  parameters.reduce((left, right) => {\n+    const hierarchicalFacetsRefinementsMerged = mergeHierarchicalFacetsRefinements(\n+      left,\n+      right\n+    );\n+    const hierarchicalFacetsMerged = mergeHierarchicalFacets(\n+      hierarchicalFacetsRefinementsMerged,\n+      right\n+    );\n+    const tagRefinementsMerged = mergeTagRefinements(\n+      hierarchicalFacetsMerged,\n+      right\n+    );\n+    const numericRefinementsMerged = mergeNumericRefinements(\n+      tagRefinementsMerged,\n+      right\n+    );\n+    const disjunctiveFacetsRefinementsMerged = mergeDisjunctiveFacetsRefinements(\n+      numericRefinementsMerged,\n+      right\n+    );\n+    const facetsExcludesMerged = mergeFacetsExcludes(\n+      disjunctiveFacetsRefinementsMerged,\n+      right\n+    );\n+    const facetRefinementsMerged = mergeFacetRefinements(\n+      facetsExcludesMerged,\n+      right\n+    );\n+    const disjunctiveFacetsMerged = mergeDisjunctiveFacets(\n+      facetRefinementsMerged,\n+      right\n+    );\n+    const facetsMerged = mergeFacets(disjunctiveFacetsMerged, right);\n+\n+    return mergeWithRest(facetsMerged, right);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302074729",
+    "id": 302074729,
+    "line": 142,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA3NDcyOQ==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 142,
+    "original_position": 142,
+    "original_start_line": null,
+    "path": "src/lib/utils/mergeSearchParameters.ts",
+    "position": 142,
+    "pull_request_review_id": 260104174,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074729/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302074729",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302081234"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302081234"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The change you've pointed at does not impact the function. The default value is only returned by the getter, it's not stored like this on the `SearchParameters`. We don't use the getter in this situation we use the \"raw\" attributes of the `SearchParameters` which don't contain default value for each attributes.",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T14:01:17Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('overrides non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302081234",
+    "id": 302081234,
+    "in_reply_to_id": 302072916,
+    "line": 156,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA4MTIzNA==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 156,
+    "original_position": 156,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 156,
+    "pull_request_review_id": 260113492,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302081234/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302081234",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302082919"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302082919"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ah, right!",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-10T14:04:33Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+import algoliasearchHelper from 'algoliasearch-helper';\n+import merge from '../mergeSearchParameters';\n+\n+describe('mergeSearchParameters', () => {\n+  it('overrides non-managed parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        // Inherit\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        // Overridden\n+        query: 'Samsung',\n+        attributesToHighlight: ['name'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        query: 'Apple',\n+        attributesToHighlight: ['name', 'author'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        // hitsPerPage: 2,\n+        // attributesToSnippet: ['description'],\n+        // attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        hitsPerPage: 2,\n+        attributesToSnippet: ['description'],\n+        attributesToHighlight: ['name', 'author'],\n+        query: 'Apple iPhone',\n+        distinct: true,\n+      })\n+    );\n+  });\n+\n+  it('merges `facets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacets` parameters', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['categories'],\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'colors'],\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand', 'categories', 'colors'],\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsRefinements: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsRefinements: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsRefinements: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `facetsExcludes` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand'],\n+        facetsExcludes: {\n+          brand: ['Samsung'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['categories'],\n+        facetsExcludes: {\n+          categories: ['TVs'],\n+        },\n+      }),\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+\n+    expect(actual).toEqual(\n+      algoliasearchHelper.SearchParameters.make({\n+        facets: ['brand', 'categories', 'colors'],\n+        facetsExcludes: {\n+          brand: ['Apple'],\n+          categories: ['TVs'],\n+          colors: ['Red'],\n+        },\n+      })\n+    );\n+  });\n+\n+  it('merges `disjunctiveFacetsRefinements` parameters, overrides conflicts', () => {\n+    const actual = merge(\n+      algoliasearchHelper.SearchParameters.make({\n+        disjunctiveFacets: ['brand'],\n+        disjunctiveFacetsRefinements: {\n+          brand: ['Samsung'],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r302082919",
+    "id": 302082919,
+    "in_reply_to_id": 302072916,
+    "line": 156,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMjA4MjkxOQ==",
+    "original_commit_id": "37cff4b5997c15ba71f4bfe5d77112a8478c9c8c",
+    "original_line": 156,
+    "original_position": 156,
+    "original_start_line": null,
+    "path": "src/lib/utils/__tests__/mergeSearchParameters-test.ts",
+    "position": 156,
+    "pull_request_review_id": 260115695,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302082919/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/302082919",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3917#discussion_r303347432"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3917"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/303347432"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      derivedHelper = mainHelper.derive(() =>\r\n```",
+    "commit_id": "febb4f82e1452201fdc31b29e23d5e8660288c39",
+    "created_at": "2019-07-15T09:18:33Z",
+    "diff_hunk": "@@ -205,17 +206,9 @@ const index = (props: IndexProps): Index => {\n         );\n       };\n \n-      derivedHelper = mainHelper.derive(() => {\n-        const parameters = resolveSearchParameters(this);\n-\n-        // @TODO: replace this dummy merge with the correct function\n-        return parameters.reduce((previous, current) =>\n-          algoliasearchHelper.SearchParameters.make({\n-            ...previous,\n-            ...current,\n-          })\n-        );\n-      });\n+      derivedHelper = mainHelper.derive(() => ",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3917#discussion_r303347432",
+    "id": 303347432,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwMzM0NzQzMg==",
+    "original_commit_id": "3e3083e0150115e696b6ab728c330f7b72eff702",
+    "original_line": 209,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/widgets/index/index.ts",
+    "position": 1,
+    "pull_request_review_id": 261706953,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3917",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/303347432/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-07-15T09:18:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/303347432",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

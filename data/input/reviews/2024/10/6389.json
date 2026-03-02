@@ -1,0 +1,209 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1795591384"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6389"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1795591384"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "wonder if this breaks something. Ideally composition API supports withinQueryParams so that it's a SimpleRequest",
+    "commit_id": "99b4a0d3f85a24b3d14e2f752b65ec2f9370d3af",
+    "created_at": "2024-10-10T14:37:51Z",
+    "diff_hunk": "@@ -1,25 +1,26 @@\n import { liteClient as algoliasearch } from 'algoliasearch/lite';\n import instantsearch from 'instantsearch.js';\n-import { carousel } from 'instantsearch.js/es/templates';\n import {\n   configure,\n   hits,\n   pagination,\n   panel,\n   refinementList,\n   searchBox,\n-  trendingItems,\n } from 'instantsearch.js/es/widgets';\n \n import 'instantsearch.css/themes/satellite.css';\n \n const searchClient = algoliasearch(\n-  'latency',\n-  '6be0576ff61c053d5f9a3225e2a90f76'\n+  'DIYPADIATS',\n+  'c96176e1b36590680fb3d36bc480d592',\n+  { authMode: 'WithinHeaders' }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1795591384",
+    "id": 1795591384,
+    "line": 17,
+    "node_id": "PRRC_kwDOAlnbOs5rBozY",
+    "original_commit_id": "14a941c6e8f3e7a64cee386472ca230cd5f31b30",
+    "original_line": 17,
+    "original_position": 21,
+    "original_start_line": null,
+    "path": "examples/js/getting-started/src/app.js",
+    "position": 21,
+    "pull_request_review_id": 2360593982,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6389",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1795591384/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-10T14:37:51Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1795591384",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1799036381"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6389"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799036381"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n        path: '/1/compositions/' + query.indexName '/run',\r\n```",
+    "commit_id": "99b4a0d3f85a24b3d14e2f752b65ec2f9370d3af",
+    "created_at": "2024-10-14T09:05:42Z",
+    "diff_hunk": "@@ -1669,6 +1674,68 @@ AlgoliaSearchHelper.prototype._recommend = function () {\n   return;\n };\n \n+AlgoliaSearchHelper.prototype._searchWithComposition = function () {\n+  var state = this.state;\n+  var states = [];\n+  var mainQueries = [];\n+\n+  var derivedQueries = this.derivedHelpers.map(function (derivedHelper) {\n+    var derivedState = derivedHelper.getModifiedState(state);\n+    var derivedStateQueries = derivedState.index\n+      ? requestBuilder._getCompositionQueries(derivedState.index, derivedState)\n+      : [];\n+\n+    states.push({\n+      state: derivedState,\n+      queriesCount: derivedStateQueries.length,\n+      helper: derivedHelper,\n+    });\n+\n+    derivedHelper.emit('search', {\n+      state: derivedState,\n+      results: derivedHelper.lastResults,\n+    });\n+\n+    return derivedStateQueries;\n+  });\n+\n+  var queries = Array.prototype.concat.apply(mainQueries, derivedQueries);\n+\n+  var queryId = this._queryId++;\n+  this._currentNbQueries++;\n+\n+  if (!queries.length) {\n+    return Promise.resolve({ results: [] }).then(\n+      this._dispatchAlgoliaResponse.bind(this, states, queryId)\n+    );\n+  }\n+\n+  if (queries.length > 1) {\n+    throw new Error(\n+      'Only one query is allowed when using a composition. Please use the regular search method.'\n+    );\n+  }\n+  var query = queries[0];\n+\n+  try {\n+    this.client.transporter\n+      .request({\n+        method: 'POST',\n+        path: `/1/compositions/${query.indexName}/run`,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1799036381",
+    "id": 1799036381,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5rOx3d",
+    "original_commit_id": "14a941c6e8f3e7a64cee386472ca230cd5f31b30",
+    "original_line": 1724,
+    "original_position": 63,
+    "original_start_line": null,
+    "path": "packages/algoliasearch-helper/src/algoliasearch.helper.js",
+    "position": 1,
+    "pull_request_review_id": 2365864264,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6389",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799036381/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-14T09:05:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799036381",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1799050259"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6389"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799050259"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n        path: '/1/compositions/' + query.indexName + '/run',\r\n```",
+    "commit_id": "99b4a0d3f85a24b3d14e2f752b65ec2f9370d3af",
+    "created_at": "2024-10-14T09:15:20Z",
+    "diff_hunk": "@@ -1669,6 +1674,68 @@ AlgoliaSearchHelper.prototype._recommend = function () {\n   return;\n };\n \n+AlgoliaSearchHelper.prototype._searchWithComposition = function () {\n+  var state = this.state;\n+  var states = [];\n+  var mainQueries = [];\n+\n+  var derivedQueries = this.derivedHelpers.map(function (derivedHelper) {\n+    var derivedState = derivedHelper.getModifiedState(state);\n+    var derivedStateQueries = derivedState.index\n+      ? requestBuilder._getCompositionQueries(derivedState.index, derivedState)\n+      : [];\n+\n+    states.push({\n+      state: derivedState,\n+      queriesCount: derivedStateQueries.length,\n+      helper: derivedHelper,\n+    });\n+\n+    derivedHelper.emit('search', {\n+      state: derivedState,\n+      results: derivedHelper.lastResults,\n+    });\n+\n+    return derivedStateQueries;\n+  });\n+\n+  var queries = Array.prototype.concat.apply(mainQueries, derivedQueries);\n+\n+  var queryId = this._queryId++;\n+  this._currentNbQueries++;\n+\n+  if (!queries.length) {\n+    return Promise.resolve({ results: [] }).then(\n+      this._dispatchAlgoliaResponse.bind(this, states, queryId)\n+    );\n+  }\n+\n+  if (queries.length > 1) {\n+    throw new Error(\n+      'Only one query is allowed when using a composition. Please use the regular search method.'\n+    );\n+  }\n+  var query = queries[0];\n+\n+  try {\n+    this.client.transporter\n+      .request({\n+        method: 'POST',\n+        path: '/1/compositions/' + query.indexName '/run',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6389#discussion_r1799050259",
+    "id": 1799050259,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5rO1QT",
+    "original_commit_id": "db3a9786f1c52bba8aa0ce10b1c83c31b47dca20",
+    "original_line": 1724,
+    "original_position": 63,
+    "original_start_line": null,
+    "path": "packages/algoliasearch-helper/src/algoliasearch.helper.js",
+    "position": 1,
+    "pull_request_review_id": 2365887583,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6389",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799050259/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-10-14T09:15:21Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1799050259",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

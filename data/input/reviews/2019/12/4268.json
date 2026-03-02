@@ -1,0 +1,419 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359341595"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359341595"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "If I understand correctly,\r\nwhenever either `bodyRef` or `props.bodyElement` changes, this effect runs.\r\n`bodyRef` itself is not going to change, but what if `props.bodyElement` changes?\r\nWill it append it again? or it won't happen by design?",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:27:35Z",
+    "diff_hunk": "@@ -0,0 +1,101 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import { useState, useEffect, useRef } from 'preact/hooks';\n+import cx from 'classnames';\n+import Template from '../Template/Template';\n+import { PanelCSSClasses, PanelTemplates } from '../../widgets/panel/panel';\n+import { RenderOptions } from '../../types';\n+\n+type PanelComponentCSSClasses = Omit<\n+  {\n+    [TKey in keyof PanelCSSClasses]: string;\n+  },\n+  // `collapseIcon` is only used in the default templates of the widget\n+  'collapseIcon'\n+>;\n+\n+interface PanelProps {\n+  hidden: boolean;\n+  collapsible: boolean;\n+  isCollapsed: boolean;\n+  data: RenderOptions;\n+  cssClasses: PanelComponentCSSClasses;\n+  templates: PanelTemplates;\n+  bodyElement: HTMLElement;\n+}\n+\n+function Panel(props: PanelProps) {\n+  const [isCollapsed, setIsCollapsed] = useState<boolean>(props.isCollapsed);\n+  const [isControlled, setIsControlled] = useState<boolean>(false);\n+  const bodyRef = useRef<HTMLElement | null>(null);\n+\n+  useEffect(() => {\n+    if (!bodyRef.current) {\n+      return;\n+    }\n+\n+    bodyRef.current.appendChild(props.bodyElement);\n+  }, [bodyRef, props.bodyElement]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359341595",
+    "id": 359341595,
+    "line": 43,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM0MTU5NQ==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 39,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "src/components/Panel/Panel.tsx",
+    "position": 43,
+    "pull_request_review_id": 333966756,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359341595/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359341595",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359345328"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359345328"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n * It also reacts, indicates and sets CSS classes when widgets are no longer relevant for refining.\r\n```",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:35:51Z",
+    "diff_hunk": "@@ -19,76 +80,44 @@ const renderer = ({\n   containerNode,\n   bodyContainerNode,\n   cssClasses,\n-  templateProps,\n+  templates,\n }) => ({ options, hidden, collapsible, collapsed }) => {\n   render(\n     <Panel\n       cssClasses={cssClasses}\n       hidden={hidden}\n       collapsible={collapsible}\n-      collapsed={collapsed}\n-      templateProps={templateProps}\n+      isCollapsed={collapsed}\n+      templates={templates}\n       data={options}\n       bodyElement={bodyContainerNode}\n     />,\n     containerNode\n   );\n };\n \n-/**\n- * @typedef {Object} PanelWidgetCSSClasses\n- * @property  {string|string[]} [root] CSS classes added to the root element of the widget.\n- * @property  {string|string[]} [noRefinementRoot] CSS classes added to the root element of the widget when there's no refinements.\n- * @property  {string|string[]} [collapsibleRoot] CSS classes added to the root element when collapsible.\n- * @property  {string|string[]} [collapsedRoot] CSS classes added to the root element when collapsed.\n- * @property  {string|string[]} [collapseButton] CSS classes added to the collapse button element.\n- * @property  {string|string[]} [collapseIcon] CSS classes added to the collapse icon of the button.\n- * @property  {string|string[]} [header] CSS class to add to the header.\n- * @property  {string|string[]} [footer] CSS class to add to the SVG footer.\n- */\n-\n-/**\n- * @typedef {Object} PanelTemplates\n- * @property {string|function} [header = ''] Template to use for the header.\n- * @property {string|function} [footer = ''] Template to use for the footer.\n- * @property {string|function} [collapseButtonText] Template to use for collapse button. It is given the collapsed state.\n- */\n+type NestedWidgetOptions = {\n+  container: HTMLElement | string;\n+  [key: string]: any;\n+};\n+type PanelWidget = (\n+  params?: PanelWidgetParams\n+) => (\n+  widgetFactory: WidgetFactory<NestedWidgetOptions>\n+) => (widgetOptions: NestedWidgetOptions) => Widget;\n \n /**\n- * @typedef {Object} PanelWidgetOptions\n- * @property {function} [hidden] This function is called on each render to determine from the render options if the panel have to be hidden or not. If the value is `true` the CSS class `noRefinementRoot` is applied and the wrapper is hidden.\n- * @property {PanelTemplates} [templates] Templates to use for the widgets.\n- * @property {PanelWidgetCSSClasses} [cssClasses] CSS classes to add.\n+ * The panel widget wraps other widgets in a consistent panel design.\n+ * It also reacts, indicates and sets CSS classes when widgets are no more relevant for refining.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359345328",
+    "id": 359345328,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM0NTMyOA==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 111,
+    "original_position": 136,
+    "original_start_line": null,
+    "path": "src/widgets/panel/panel.tsx",
+    "position": 1,
+    "pull_request_review_id": 333971718,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359345328/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359345328",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359346557"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359346557"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It won't by design but you're right, we should probably clean the effect:\r\n\r\n```ts\r\nreturn () => {\r\n  bodyRef.current.removeChild(props.bodyElement);\r\n};\r\n```",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:38:32Z",
+    "diff_hunk": "@@ -0,0 +1,101 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import { useState, useEffect, useRef } from 'preact/hooks';\n+import cx from 'classnames';\n+import Template from '../Template/Template';\n+import { PanelCSSClasses, PanelTemplates } from '../../widgets/panel/panel';\n+import { RenderOptions } from '../../types';\n+\n+type PanelComponentCSSClasses = Omit<\n+  {\n+    [TKey in keyof PanelCSSClasses]: string;\n+  },\n+  // `collapseIcon` is only used in the default templates of the widget\n+  'collapseIcon'\n+>;\n+\n+interface PanelProps {\n+  hidden: boolean;\n+  collapsible: boolean;\n+  isCollapsed: boolean;\n+  data: RenderOptions;\n+  cssClasses: PanelComponentCSSClasses;\n+  templates: PanelTemplates;\n+  bodyElement: HTMLElement;\n+}\n+\n+function Panel(props: PanelProps) {\n+  const [isCollapsed, setIsCollapsed] = useState<boolean>(props.isCollapsed);\n+  const [isControlled, setIsControlled] = useState<boolean>(false);\n+  const bodyRef = useRef<HTMLElement | null>(null);\n+\n+  useEffect(() => {\n+    if (!bodyRef.current) {\n+      return;\n+    }\n+\n+    bodyRef.current.appendChild(props.bodyElement);\n+  }, [bodyRef, props.bodyElement]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359346557",
+    "id": 359346557,
+    "in_reply_to_id": 359341595,
+    "line": 43,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM0NjU1Nw==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 39,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "src/components/Panel/Panel.tsx",
+    "position": 43,
+    "pull_request_review_id": 333973411,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359346557/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359346557",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359349603"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359349603"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure if simply appending is correct here, do you not need to clear the DOM inside the body before adding a new bodyElement? Seems like we didn't handle that before either though",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:44:58Z",
+    "diff_hunk": "@@ -0,0 +1,101 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import { useState, useEffect, useRef } from 'preact/hooks';\n+import cx from 'classnames';\n+import Template from '../Template/Template';\n+import { PanelCSSClasses, PanelTemplates } from '../../widgets/panel/panel';\n+import { RenderOptions } from '../../types';\n+\n+type PanelComponentCSSClasses = Omit<\n+  {\n+    [TKey in keyof PanelCSSClasses]: string;\n+  },\n+  // `collapseIcon` is only used in the default templates of the widget\n+  'collapseIcon'\n+>;\n+\n+interface PanelProps {\n+  hidden: boolean;\n+  collapsible: boolean;\n+  isCollapsed: boolean;\n+  data: RenderOptions;\n+  cssClasses: PanelComponentCSSClasses;\n+  templates: PanelTemplates;\n+  bodyElement: HTMLElement;\n+}\n+\n+function Panel(props: PanelProps) {\n+  const [isCollapsed, setIsCollapsed] = useState<boolean>(props.isCollapsed);\n+  const [isControlled, setIsControlled] = useState<boolean>(false);\n+  const bodyRef = useRef<HTMLElement | null>(null);\n+\n+  useEffect(() => {\n+    if (!bodyRef.current) {\n+      return;\n+    }\n+\n+    bodyRef.current.appendChild(props.bodyElement);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359349603",
+    "id": 359349603,
+    "line": 38,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM0OTYwMw==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 38,
+    "original_position": 38,
+    "original_start_line": null,
+    "path": "src/components/Panel/Panel.tsx",
+    "position": 38,
+    "pull_request_review_id": 333971718,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359349603/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359349603",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359350348"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359350348"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Addressed in e983babb853b56e5ff47f7622d13afa2287392a8.",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:46:35Z",
+    "diff_hunk": "@@ -0,0 +1,101 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import { useState, useEffect, useRef } from 'preact/hooks';\n+import cx from 'classnames';\n+import Template from '../Template/Template';\n+import { PanelCSSClasses, PanelTemplates } from '../../widgets/panel/panel';\n+import { RenderOptions } from '../../types';\n+\n+type PanelComponentCSSClasses = Omit<\n+  {\n+    [TKey in keyof PanelCSSClasses]: string;\n+  },\n+  // `collapseIcon` is only used in the default templates of the widget\n+  'collapseIcon'\n+>;\n+\n+interface PanelProps {\n+  hidden: boolean;\n+  collapsible: boolean;\n+  isCollapsed: boolean;\n+  data: RenderOptions;\n+  cssClasses: PanelComponentCSSClasses;\n+  templates: PanelTemplates;\n+  bodyElement: HTMLElement;\n+}\n+\n+function Panel(props: PanelProps) {\n+  const [isCollapsed, setIsCollapsed] = useState<boolean>(props.isCollapsed);\n+  const [isControlled, setIsControlled] = useState<boolean>(false);\n+  const bodyRef = useRef<HTMLElement | null>(null);\n+\n+  useEffect(() => {\n+    if (!bodyRef.current) {\n+      return;\n+    }\n+\n+    bodyRef.current.appendChild(props.bodyElement);\n+  }, [bodyRef, props.bodyElement]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359350348",
+    "id": 359350348,
+    "in_reply_to_id": 359341595,
+    "line": 43,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM1MDM0OA==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 39,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "src/components/Panel/Panel.tsx",
+    "position": 43,
+    "pull_request_review_id": 333978550,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359350348/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359350348",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359351032"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4268"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359351032"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "dealt with before I could submit my review 🐭 👒",
+    "commit_id": "57cc86b2985bef2ece6509fb8cd9196d78488ce2",
+    "created_at": "2019-12-18T13:47:59Z",
+    "diff_hunk": "@@ -0,0 +1,101 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import { useState, useEffect, useRef } from 'preact/hooks';\n+import cx from 'classnames';\n+import Template from '../Template/Template';\n+import { PanelCSSClasses, PanelTemplates } from '../../widgets/panel/panel';\n+import { RenderOptions } from '../../types';\n+\n+type PanelComponentCSSClasses = Omit<\n+  {\n+    [TKey in keyof PanelCSSClasses]: string;\n+  },\n+  // `collapseIcon` is only used in the default templates of the widget\n+  'collapseIcon'\n+>;\n+\n+interface PanelProps {\n+  hidden: boolean;\n+  collapsible: boolean;\n+  isCollapsed: boolean;\n+  data: RenderOptions;\n+  cssClasses: PanelComponentCSSClasses;\n+  templates: PanelTemplates;\n+  bodyElement: HTMLElement;\n+}\n+\n+function Panel(props: PanelProps) {\n+  const [isCollapsed, setIsCollapsed] = useState<boolean>(props.isCollapsed);\n+  const [isControlled, setIsControlled] = useState<boolean>(false);\n+  const bodyRef = useRef<HTMLElement | null>(null);\n+\n+  useEffect(() => {\n+    if (!bodyRef.current) {\n+      return;\n+    }\n+\n+    bodyRef.current.appendChild(props.bodyElement);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4268#discussion_r359351032",
+    "id": 359351032,
+    "in_reply_to_id": 359349603,
+    "line": 38,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1OTM1MTAzMg==",
+    "original_commit_id": "823ca81c435f90acc6f63de6066acf637c036ed2",
+    "original_line": 38,
+    "original_position": 38,
+    "original_start_line": null,
+    "path": "src/components/Panel/Panel.tsx",
+    "position": 38,
+    "pull_request_review_id": 333979425,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4268",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359351032/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-18T13:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/359351032",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

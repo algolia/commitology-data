@@ -1,0 +1,629 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616197001"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197001"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "isn't there float logic in the rating menu too? do you want to test those cases here or in other tests?",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T15:36:26Z",
+    "diff_hunk": "@@ -0,0 +1,447 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+\n+import type { RatingMenuWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  return (\n+    commonNormalizeSnapshot(html)\n+      // Vue renders `xlink:href` instead of `href` for <use> elements\n+      .replace(/xlink:/g, '')\n+      // Vue InstantSearch doesn't format facet count\n+      .replace(\n+        /(<span class=\"ais-RatingMenu-count\">)(.+?)(<\\/span>)/g,\n+        (_, open, content, close) =>\n+          `${open}${content.replace(/[^\\d]/g, '')}${close}`\n+      )\n+      // Vue renders extra whitespace between symbol elements\n+      .replace(/<\\/symbol> <symbol/g, '</symbol><symbol')\n+      // Vue renders extra whitespace between closing svg and other elements\n+      .replace(/<\\/svg> </g, '</svg><')\n+  );\n+}\n+\n+export function createOptionsTests(\n+  setup: RatingMenuWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RatingMenu')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RatingMenu\"\n+        >\n+          <svg\n+            style=\"display: none;\"\n+            xmlns=\"http://www.w3.org/2000/svg\"\n+          >\n+            <symbol\n+              id=\"ais-RatingMenu-starSymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 .288l2.833 8.718h9.167l-7.417 5.389 2.833 8.718-7.416-5.388-7.417 5.388 2.833-8.718-7.416-5.389h9.167z\"\n+              />\n+            </symbol>\n+            <symbol\n+              id=\"ais-RatingMenu-starEmptySymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 6.76l1.379 4.246h4.465l-3.612 2.625 1.379 4.246-3.611-2.625-3.612 2.625 1.379-4.246-3.612-2.625h4.465l1.38-4.246zm0-6.472l-2.833 8.718h-9.167l7.416 5.389-2.833 8.718 7.417-5.388 7.416 5.388-2.833-8.718 7.417-5.389h-9.167l-2.833-8.718z\"\n+              />\n+            </symbol>\n+          </svg>\n+          <ul\n+            class=\"ais-RatingMenu-list\"\n+          >\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"4 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    16075\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"3 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17697\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"2 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17891\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"1 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    18047\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+          </ul>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('limits the number of stars to display', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+          max: 3,\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      const items = document.querySelectorAll('.ais-RatingMenu-item');\n+\n+      // `max` is exclusive, the number of items is max - 1\n+      expect(items).toHaveLength(2);\n+\n+      items.forEach((item) =>\n+        expect(item.querySelectorAll('.ais-RatingMenu-starIcon')).toHaveLength(\n+          3\n+        )\n+      );\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    search: jest.fn((requests) => {\n+      return Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map(() =>\n+            createSingleSearchResponse({\n+              facets: {\n+                rating: {\n+                  0: 3422,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616197001",
+    "id": 1616197001,
+    "line": 424,
+    "node_id": "PRRC_kwDOAlnbOs5gVTWJ",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 425,
+    "original_position": 425,
+    "original_start_line": null,
+    "path": "tests/common/widgets/rating-menu/options.ts",
+    "position": 424,
+    "pull_request_review_id": 2081167680,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197001/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T15:38:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197001",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616197489"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197489"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "could break people's style, but that's probably ok",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T15:37:06Z",
+    "diff_hunk": "@@ -26,41 +26,43 @@\n           :key=\"key\"\n           :class=\"[suit('item'), item.isRefined && suit('item', 'selected')]\"\n         >\n-          <a\n-            :href=\"state.createURL(item.value)\"\n-            :aria-label=\"`${item.value} & Up`\"\n-            :class=\"suit('link')\"\n-            @click.prevent=\"state.refine(item.value)\"\n-          >\n-            <template v-for=\"(full, n) in item.stars\">\n-              <svg\n-                v-if=\"full\"\n-                aria-hidden=\"true\"\n-                width=\"24\"\n-                height=\"24\"\n-                :class=\"[suit('starIcon'), suit('starIcon--full')]\"\n-                :key=\"n + '-full'\"\n-              >\n-                <use xlink:href=\"#ais-RatingMenu-starSymbol\" />\n-              </svg>\n+          <div>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616197489",
+    "id": 1616197489,
+    "line": 29,
+    "node_id": "PRRC_kwDOAlnbOs5gVTdx",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 29,
+    "original_position": 21,
+    "original_start_line": null,
+    "path": "packages/vue-instantsearch/src/components/RatingMenu.vue",
+    "position": 30,
+    "pull_request_review_id": 2081167680,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197489/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T15:38:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616197489",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616199102"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616199102"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "is this actually needed?",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T15:38:25Z",
+    "diff_hunk": "@@ -168,7 +168,7 @@ const renderer =\n         templateProps={renderState.templateProps!}\n         toggleRefinement={refine}\n       >\n-        <svg style=\"display:none;\">\n+        <svg xmlns=\"http://www.w3.org/2000/svg\" style=\"display:none;\">",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616199102",
+    "id": 1616199102,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5gVT2-",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 171,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/rating-menu/rating-menu.tsx",
+    "position": 1,
+    "pull_request_review_id": 2081167680,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616199102/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T15:38:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616199102",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616213965"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616213965"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I'd say no except for maybe really old browser versions, but I prefered to harmonize changes by adding instead of removing when possible.",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T15:47:11Z",
+    "diff_hunk": "@@ -168,7 +168,7 @@ const renderer =\n         templateProps={renderState.templateProps!}\n         toggleRefinement={refine}\n       >\n-        <svg style=\"display:none;\">\n+        <svg xmlns=\"http://www.w3.org/2000/svg\" style=\"display:none;\">",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616213965",
+    "id": 1616213965,
+    "in_reply_to_id": 1616199102,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5gVXfN",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 171,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/rating-menu/rating-menu.tsx",
+    "position": 1,
+    "pull_request_review_id": 2081196066,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616213965/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T15:47:11Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616213965",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616218858"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616218858"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I see some logic in the connector but no tests all around. The doc also mentions that attribute values should be integers. Is it still relevant?",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T15:52:01Z",
+    "diff_hunk": "@@ -0,0 +1,447 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+\n+import type { RatingMenuWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  return (\n+    commonNormalizeSnapshot(html)\n+      // Vue renders `xlink:href` instead of `href` for <use> elements\n+      .replace(/xlink:/g, '')\n+      // Vue InstantSearch doesn't format facet count\n+      .replace(\n+        /(<span class=\"ais-RatingMenu-count\">)(.+?)(<\\/span>)/g,\n+        (_, open, content, close) =>\n+          `${open}${content.replace(/[^\\d]/g, '')}${close}`\n+      )\n+      // Vue renders extra whitespace between symbol elements\n+      .replace(/<\\/symbol> <symbol/g, '</symbol><symbol')\n+      // Vue renders extra whitespace between closing svg and other elements\n+      .replace(/<\\/svg> </g, '</svg><')\n+  );\n+}\n+\n+export function createOptionsTests(\n+  setup: RatingMenuWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RatingMenu')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RatingMenu\"\n+        >\n+          <svg\n+            style=\"display: none;\"\n+            xmlns=\"http://www.w3.org/2000/svg\"\n+          >\n+            <symbol\n+              id=\"ais-RatingMenu-starSymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 .288l2.833 8.718h9.167l-7.417 5.389 2.833 8.718-7.416-5.388-7.417 5.388 2.833-8.718-7.416-5.389h9.167z\"\n+              />\n+            </symbol>\n+            <symbol\n+              id=\"ais-RatingMenu-starEmptySymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 6.76l1.379 4.246h4.465l-3.612 2.625 1.379 4.246-3.611-2.625-3.612 2.625 1.379-4.246-3.612-2.625h4.465l1.38-4.246zm0-6.472l-2.833 8.718h-9.167l7.416 5.389-2.833 8.718 7.417-5.388 7.416 5.388-2.833-8.718 7.417-5.389h-9.167l-2.833-8.718z\"\n+              />\n+            </symbol>\n+          </svg>\n+          <ul\n+            class=\"ais-RatingMenu-list\"\n+          >\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"4 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    16075\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"3 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17697\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"2 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17891\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"1 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    18047\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+          </ul>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('limits the number of stars to display', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+          max: 3,\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      const items = document.querySelectorAll('.ais-RatingMenu-item');\n+\n+      // `max` is exclusive, the number of items is max - 1\n+      expect(items).toHaveLength(2);\n+\n+      items.forEach((item) =>\n+        expect(item.querySelectorAll('.ais-RatingMenu-starIcon')).toHaveLength(\n+          3\n+        )\n+      );\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    search: jest.fn((requests) => {\n+      return Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map(() =>\n+            createSingleSearchResponse({\n+              facets: {\n+                rating: {\n+                  0: 3422,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616218858",
+    "id": 1616218858,
+    "in_reply_to_id": 1616197001,
+    "line": 424,
+    "node_id": "PRRC_kwDOAlnbOs5gVYrq",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 425,
+    "original_position": 425,
+    "original_start_line": null,
+    "path": "tests/common/widgets/rating-menu/options.ts",
+    "position": 424,
+    "pull_request_review_id": 2081204247,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616218858/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T15:52:01Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616218858",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616262015"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262015"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it's not required since html5, so I'm happy to leave them out everywhere",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T16:46:19Z",
+    "diff_hunk": "@@ -168,7 +168,7 @@ const renderer =\n         templateProps={renderState.templateProps!}\n         toggleRefinement={refine}\n       >\n-        <svg style=\"display:none;\">\n+        <svg xmlns=\"http://www.w3.org/2000/svg\" style=\"display:none;\">",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616262015",
+    "id": 1616262015,
+    "in_reply_to_id": 1616199102,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5gVjN_",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 171,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/rating-menu/rating-menu.tsx",
+    "position": 1,
+    "pull_request_review_id": 2081268402,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262015/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T16:46:20Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262015",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616262372"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262372"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "if I remember it correctly it was added as a highly requested feature to have floats. At least we should have a test somewhere, but maybe the connector is indeed sufficient",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-27T16:46:59Z",
+    "diff_hunk": "@@ -0,0 +1,447 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+\n+import type { RatingMenuWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  return (\n+    commonNormalizeSnapshot(html)\n+      // Vue renders `xlink:href` instead of `href` for <use> elements\n+      .replace(/xlink:/g, '')\n+      // Vue InstantSearch doesn't format facet count\n+      .replace(\n+        /(<span class=\"ais-RatingMenu-count\">)(.+?)(<\\/span>)/g,\n+        (_, open, content, close) =>\n+          `${open}${content.replace(/[^\\d]/g, '')}${close}`\n+      )\n+      // Vue renders extra whitespace between symbol elements\n+      .replace(/<\\/symbol> <symbol/g, '</symbol><symbol')\n+      // Vue renders extra whitespace between closing svg and other elements\n+      .replace(/<\\/svg> </g, '</svg><')\n+  );\n+}\n+\n+export function createOptionsTests(\n+  setup: RatingMenuWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RatingMenu')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RatingMenu\"\n+        >\n+          <svg\n+            style=\"display: none;\"\n+            xmlns=\"http://www.w3.org/2000/svg\"\n+          >\n+            <symbol\n+              id=\"ais-RatingMenu-starSymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 .288l2.833 8.718h9.167l-7.417 5.389 2.833 8.718-7.416-5.388-7.417 5.388 2.833-8.718-7.416-5.389h9.167z\"\n+              />\n+            </symbol>\n+            <symbol\n+              id=\"ais-RatingMenu-starEmptySymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 6.76l1.379 4.246h4.465l-3.612 2.625 1.379 4.246-3.611-2.625-3.612 2.625 1.379-4.246-3.612-2.625h4.465l1.38-4.246zm0-6.472l-2.833 8.718h-9.167l7.416 5.389-2.833 8.718 7.417-5.388 7.416 5.388-2.833-8.718 7.417-5.389h-9.167l-2.833-8.718z\"\n+              />\n+            </symbol>\n+          </svg>\n+          <ul\n+            class=\"ais-RatingMenu-list\"\n+          >\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"4 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    16075\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"3 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17697\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"2 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17891\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"1 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    18047\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+          </ul>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('limits the number of stars to display', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+          max: 3,\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      const items = document.querySelectorAll('.ais-RatingMenu-item');\n+\n+      // `max` is exclusive, the number of items is max - 1\n+      expect(items).toHaveLength(2);\n+\n+      items.forEach((item) =>\n+        expect(item.querySelectorAll('.ais-RatingMenu-starIcon')).toHaveLength(\n+          3\n+        )\n+      );\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    search: jest.fn((requests) => {\n+      return Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map(() =>\n+            createSingleSearchResponse({\n+              facets: {\n+                rating: {\n+                  0: 3422,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616262372",
+    "id": 1616262372,
+    "in_reply_to_id": 1616197001,
+    "line": 424,
+    "node_id": "PRRC_kwDOAlnbOs5gVjTk",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 425,
+    "original_position": 425,
+    "original_start_line": null,
+    "path": "tests/common/widgets/rating-menu/options.ts",
+    "position": 424,
+    "pull_request_review_id": 2081268976,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262372/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-27T16:46:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616262372",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616850128"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616850128"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I looked more but still can't find the use case for floats in rating menu: we don't have fragments of stars to render 2.5/5 stars for example, and the count reflects the number of items in the dataset so it can only be an integer.\r\n\r\nIs there something else I'm missing?",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-28T08:52:34Z",
+    "diff_hunk": "@@ -0,0 +1,447 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+\n+import type { RatingMenuWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  return (\n+    commonNormalizeSnapshot(html)\n+      // Vue renders `xlink:href` instead of `href` for <use> elements\n+      .replace(/xlink:/g, '')\n+      // Vue InstantSearch doesn't format facet count\n+      .replace(\n+        /(<span class=\"ais-RatingMenu-count\">)(.+?)(<\\/span>)/g,\n+        (_, open, content, close) =>\n+          `${open}${content.replace(/[^\\d]/g, '')}${close}`\n+      )\n+      // Vue renders extra whitespace between symbol elements\n+      .replace(/<\\/symbol> <symbol/g, '</symbol><symbol')\n+      // Vue renders extra whitespace between closing svg and other elements\n+      .replace(/<\\/svg> </g, '</svg><')\n+  );\n+}\n+\n+export function createOptionsTests(\n+  setup: RatingMenuWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RatingMenu')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RatingMenu\"\n+        >\n+          <svg\n+            style=\"display: none;\"\n+            xmlns=\"http://www.w3.org/2000/svg\"\n+          >\n+            <symbol\n+              id=\"ais-RatingMenu-starSymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 .288l2.833 8.718h9.167l-7.417 5.389 2.833 8.718-7.416-5.388-7.417 5.388 2.833-8.718-7.416-5.389h9.167z\"\n+              />\n+            </symbol>\n+            <symbol\n+              id=\"ais-RatingMenu-starEmptySymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 6.76l1.379 4.246h4.465l-3.612 2.625 1.379 4.246-3.611-2.625-3.612 2.625 1.379-4.246-3.612-2.625h4.465l1.38-4.246zm0-6.472l-2.833 8.718h-9.167l7.416 5.389-2.833 8.718 7.417-5.388 7.416 5.388-2.833-8.718 7.417-5.389h-9.167l-2.833-8.718z\"\n+              />\n+            </symbol>\n+          </svg>\n+          <ul\n+            class=\"ais-RatingMenu-list\"\n+          >\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"4 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    16075\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"3 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17697\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"2 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17891\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"1 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    18047\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+          </ul>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('limits the number of stars to display', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+          max: 3,\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      const items = document.querySelectorAll('.ais-RatingMenu-item');\n+\n+      // `max` is exclusive, the number of items is max - 1\n+      expect(items).toHaveLength(2);\n+\n+      items.forEach((item) =>\n+        expect(item.querySelectorAll('.ais-RatingMenu-starIcon')).toHaveLength(\n+          3\n+        )\n+      );\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    search: jest.fn((requests) => {\n+      return Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map(() =>\n+            createSingleSearchResponse({\n+              facets: {\n+                rating: {\n+                  0: 3422,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1616850128",
+    "id": 1616850128,
+    "in_reply_to_id": 1616197001,
+    "line": 424,
+    "node_id": "PRRC_kwDOAlnbOs5gXyzQ",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 425,
+    "original_position": 425,
+    "original_start_line": null,
+    "path": "tests/common/widgets/rating-menu/options.ts",
+    "position": 424,
+    "pull_request_review_id": 2082162383,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616850128/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-28T08:52:34Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1616850128",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1617122980"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6217"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1617122980"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think it's rounded, or maybe that was in numeric menu or range. ",
+    "commit_id": "46dd16ff1b9da329d9474b444f29deaa6fff2623",
+    "created_at": "2024-05-28T12:04:02Z",
+    "diff_hunk": "@@ -0,0 +1,447 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+\n+import type { RatingMenuWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  return (\n+    commonNormalizeSnapshot(html)\n+      // Vue renders `xlink:href` instead of `href` for <use> elements\n+      .replace(/xlink:/g, '')\n+      // Vue InstantSearch doesn't format facet count\n+      .replace(\n+        /(<span class=\"ais-RatingMenu-count\">)(.+?)(<\\/span>)/g,\n+        (_, open, content, close) =>\n+          `${open}${content.replace(/[^\\d]/g, '')}${close}`\n+      )\n+      // Vue renders extra whitespace between symbol elements\n+      .replace(/<\\/symbol> <symbol/g, '</symbol><symbol')\n+      // Vue renders extra whitespace between closing svg and other elements\n+      .replace(/<\\/svg> </g, '</svg><')\n+  );\n+}\n+\n+export function createOptionsTests(\n+  setup: RatingMenuWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RatingMenu')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RatingMenu\"\n+        >\n+          <svg\n+            style=\"display: none;\"\n+            xmlns=\"http://www.w3.org/2000/svg\"\n+          >\n+            <symbol\n+              id=\"ais-RatingMenu-starSymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 .288l2.833 8.718h9.167l-7.417 5.389 2.833 8.718-7.416-5.388-7.417 5.388 2.833-8.718-7.416-5.389h9.167z\"\n+              />\n+            </symbol>\n+            <symbol\n+              id=\"ais-RatingMenu-starEmptySymbol\"\n+              viewBox=\"0 0 24 24\"\n+            >\n+              <path\n+                d=\"M12 6.76l1.379 4.246h4.465l-3.612 2.625 1.379 4.246-3.611-2.625-3.612 2.625 1.379-4.246-3.612-2.625h4.465l1.38-4.246zm0-6.472l-2.833 8.718h-9.167l7.416 5.389-2.833 8.718 7.417-5.388 7.416 5.388-2.833-8.718 7.417-5.389h-9.167l-2.833-8.718z\"\n+              />\n+            </symbol>\n+          </svg>\n+          <ul\n+            class=\"ais-RatingMenu-list\"\n+          >\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"4 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    16075\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"3 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17697\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"2 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    17891\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+            <li\n+              class=\"ais-RatingMenu-item\"\n+            >\n+              <div>\n+                <a\n+                  aria-label=\"1 & up\"\n+                  class=\"ais-RatingMenu-link\"\n+                  href=\"#\"\n+                >\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--full\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starSymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <svg\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-starIcon ais-RatingMenu-starIcon--empty\"\n+                    height=\"24\"\n+                    width=\"24\"\n+                  >\n+                    <use\n+                      href=\"#ais-RatingMenu-starEmptySymbol\"\n+                    />\n+                  </svg>\n+                  <span\n+                    aria-hidden=\"true\"\n+                    class=\"ais-RatingMenu-label\"\n+                  >\n+                    & Up\n+                  </span>\n+                  <span\n+                    class=\"ais-RatingMenu-count\"\n+                  >\n+                    18047\n+                  </span>\n+                </a>\n+              </div>\n+            </li>\n+          </ul>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('limits the number of stars to display', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          searchClient,\n+          indexName: 'indexName',\n+        },\n+        widgetParams: {\n+          attribute: 'rating',\n+          max: 3,\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      const items = document.querySelectorAll('.ais-RatingMenu-item');\n+\n+      // `max` is exclusive, the number of items is max - 1\n+      expect(items).toHaveLength(2);\n+\n+      items.forEach((item) =>\n+        expect(item.querySelectorAll('.ais-RatingMenu-starIcon')).toHaveLength(\n+          3\n+        )\n+      );\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    search: jest.fn((requests) => {\n+      return Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map(() =>\n+            createSingleSearchResponse({\n+              facets: {\n+                rating: {\n+                  0: 3422,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6217#discussion_r1617122980",
+    "id": 1617122980,
+    "in_reply_to_id": 1616197001,
+    "line": 424,
+    "node_id": "PRRC_kwDOAlnbOs5gY1ak",
+    "original_commit_id": "42577bdf5170abe78d4c42a8bbaac59c3f6a570d",
+    "original_line": 425,
+    "original_position": 425,
+    "original_start_line": null,
+    "path": "tests/common/widgets/rating-menu/options.ts",
+    "position": 424,
+    "pull_request_review_id": 2082594233,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6217",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1617122980/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-05-28T12:04:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1617122980",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

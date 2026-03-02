@@ -1,0 +1,833 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89498753"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89498753"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually the merge is needed if you have several refinements on each instances. \r\nIf you only plan to display the hits of another index (without the ability to add refinements on them), you actually just need to store the state of the first instance and pass it directly to the second.\r\n\r\nI go with the merge because I didn't want to confuse people, by detailing each micro-use-case. What do you think? ",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-24T13:37:06Z",
+    "diff_hunk": "@@ -0,0 +1,89 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 4\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of each instances and create a unique one from them.\n+Then, this state will be passed back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: \n+ \n+```jsx\n+import React, {Component} from 'react';\n+import { InstantSearch, Hits, SearchBox } from 'react-instantsearch/dom';\n+import {connectSearchBox} from 'react-instantsearch/connectors'\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}};\n+  }\n+\n+  onStateChange = (nextState) => {\n+    //we merge both InstantSearch search state in one\n+    this.setState({searchState: {...this.state.searchState, ...nextState}});",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89498753",
+    "id": 89498753,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NDk4NzUz",
+    "original_commit_id": "f48585751131d83471a0e9eff27ac0d0e5b0c545",
+    "original_line": null,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "docgen/src/guides/synchronize-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10043604,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89498753/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89498753",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89505000"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505000"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think the main usecase is to show hits from a different index, so there's no need to READ the state of the second instance since there's no clear usecase on why we would like to read the changes of an instance that we use only to display, not allowing refinements.\r\n\r\nI would take the opportunity to remove the constraint of passing both `state=` and `onStateChange`.\r\n\r\nWhat do you think?",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-24T14:19:54Z",
+    "diff_hunk": "@@ -0,0 +1,89 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 4\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of each instances and create a unique one from them.\n+Then, this state will be passed back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: \n+ \n+```jsx\n+import React, {Component} from 'react';\n+import { InstantSearch, Hits, SearchBox } from 'react-instantsearch/dom';\n+import {connectSearchBox} from 'react-instantsearch/connectors'\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}};\n+  }\n+\n+  onStateChange = (nextState) => {\n+    //we merge both InstantSearch search state in one\n+    this.setState({searchState: {...this.state.searchState, ...nextState}});",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89505000",
+    "id": 89505000,
+    "in_reply_to_id": 89498753,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NTA1MDAw",
+    "original_commit_id": "f48585751131d83471a0e9eff27ac0d0e5b0c545",
+    "original_line": null,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "docgen/src/guides/synchronize-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10050156,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505000/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505000",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89505332"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505332"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "wfm. let's do that. ",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-24T14:21:55Z",
+    "diff_hunk": "@@ -0,0 +1,89 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 4\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of each instances and create a unique one from them.\n+Then, this state will be passed back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: \n+ \n+```jsx\n+import React, {Component} from 'react';\n+import { InstantSearch, Hits, SearchBox } from 'react-instantsearch/dom';\n+import {connectSearchBox} from 'react-instantsearch/connectors'\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}};\n+  }\n+\n+  onStateChange = (nextState) => {\n+    //we merge both InstantSearch search state in one\n+    this.setState({searchState: {...this.state.searchState, ...nextState}});",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89505332",
+    "id": 89505332,
+    "in_reply_to_id": 89498753,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NTA1MzMy",
+    "original_commit_id": "f48585751131d83471a0e9eff27ac0d0e5b0c545",
+    "original_line": null,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "docgen/src/guides/synchronize-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10050505,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505332/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89505332",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89591780"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89591780"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is the optimization to avoid making a new search if new props are the same as the old props. ",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T10:05:02Z",
+    "diff_hunk": "@@ -105,7 +105,7 @@ export default function createConnector(connectorDesc) {\n         props: this.getProps(nextProps),\n       });\n \n-      if (isWidget) {\n+      if (isWidget && !isEqual(nextProps, this.props)) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89591780",
+    "id": 89591780,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NTkxNzgw",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 12,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 1,
+    "pull_request_review_id": 10136405,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89591780/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89591780",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89638824"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638824"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "\"Having several instances of `InstantSearch` can be useful\" => \"You want to synchronize multiple `InstantSearch` instances\" is not easy to understand.\r\n\r\nI would rather say: \"\r\nYou can use multiple `<InstantSearch/>` instances for cases like:\r\n- displaying hits from different indices,\r\n- while sharing a single SearchBox,\r\n- or any use case involving synchronizing widgets between different `<InstantSearch>` instances\r\n\"",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:20:40Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89638824",
+    "id": 89638824,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM4ODI0",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 11,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638824/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638824",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89638895"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638895"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Multiple InstantSearch could be sufficient as a title",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:21:28Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89638895",
+    "id": 89638895,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM4ODk1",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 2,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638895/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89638895",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639060"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639060"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Would not use \"be aware\" since the user does not know it first.\r\n\r\n\"Refinements and parameters of an `InstantSearch` state needs to have corresponding widgets, or VirtualWidgets, added to be effectively applied\".",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:23:25Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of the first instance and then pass it back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. ",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639060",
+    "id": 89639060,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5MDYw",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 20,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639060/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639060",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639093"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639093"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Here's an example displaying hits from two different indices",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:23:51Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of the first instance and then pass it back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: ",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639093",
+    "id": 89639093,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5MDkz",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639093/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639093",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639160"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639160"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Two props can be used to inject state or be notified of state changes:",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:24:30Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639160",
+    "id": 89639160,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5MTYw",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639160/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639160",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639220"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639220"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "comment no more needed",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:24:58Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of the first instance and then pass it back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: \n+ \n+```jsx\n+import React, {Component} from 'react';\n+import { InstantSearch, Hits, SearchBox } from 'react-instantsearch/dom';\n+import {connectSearchBox} from 'react-instantsearch/connectors'\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}};\n+  }\n+\n+  onStateChange = searchState => {\n+    // we merge both InstantSearch search state in one",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639220",
+    "id": 89639220,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5MjIw",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639220/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639220",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639284"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639284"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You can also nest `<InstantSearch>` components, as long..",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:25:38Z",
+    "diff_hunk": "@@ -0,0 +1,87 @@\n+---\n+title: Using multiple InstantSearch instances\n+layout: guide.pug\n+category: guide\n+navWeight: 0\n+---\n+\n+Having several instances of `InstantSearch` can be useful when: \n+\n+* You want to make a search on multiple indices \n+* You want to synchronize multiple `InstantSearch` instances\n+\n+To be able to do that, we are going to take advantage of two props on the [InstantSearch root component](/component/InstantSearch.html).\n+\n+* onStateChange(nextState): a function being called every time the `InstantSearch` state is updated. \n+* state: an object that is the current state of InstantSearch\n+\n+The idea is to have a main component that will receive every new state of the first instance and then pass it back to each `InstantSearch` instances.  \n+\n+Be aware that just having a refinement inside the `InstantSearch` state doesn't apply it automatically to the search. \n+To apply the refinement, you will need to use a [virtual widget](/guides/advanced-topics.html#how-to-preselect-values-using-virtual-widgets). \n+\n+Here's an example showing you how to make the same search on two different indices: \n+ \n+```jsx\n+import React, {Component} from 'react';\n+import { InstantSearch, Hits, SearchBox } from 'react-instantsearch/dom';\n+import {connectSearchBox} from 'react-instantsearch/connectors'\n+\n+class App extends Component {\n+  constructor(props) {\n+    super(props);\n+    this.state = {searchState: {}};\n+  }\n+\n+  onStateChange = searchState => {\n+    // we merge both InstantSearch search state in one\n+    this.setState({searchState});\n+  };\n+\n+  render() {\n+    return (\n+    <div>\n+      {/* Those two `InstantSearch` instances could also have been nested in each other,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639284",
+    "id": 89639284,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5Mjg0",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "docgen/src/guides/using-multiple-instantsearch.md",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639284/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639284",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639576"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1598"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639576"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Are we fixing a bug here? Do you think we can add a test that checks the number of times search is called? I would rather try to fix that in another PR also because this one can be focused only on InstantSearch multi guide + removing the constraint",
+    "commit_id": "8886a5a4695e59eaaef26572342ed2b89e2f5ae5",
+    "created_at": "2016-11-25T16:28:06Z",
+    "diff_hunk": "@@ -105,7 +105,7 @@ export default function createConnector(connectorDesc) {\n         props: this.getProps(nextProps),\n       });\n \n-      if (isWidget) {\n+      if (isWidget && !isEqual(nextProps, this.props)) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1598#discussion_r89639576",
+    "id": 89639576,
+    "in_reply_to_id": 89591780,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg5NjM5NTc2",
+    "original_commit_id": "c7cbfaf0f16b41661073fd832c8772717b287aba",
+    "original_line": null,
+    "original_position": 12,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/core/createConnector.js",
+    "position": 1,
+    "pull_request_review_id": 10184205,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1598",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639576/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-28T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/89639576",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,2024 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733753323"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733753323"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this only sets the url, it doesn't navigate (that would be `location.href =`). Should this be called `setURL` or `pushHistory` instead? Maybe just `pushState`?",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T14:40:47Z",
+    "diff_hunk": "@@ -189,11 +220,17 @@ export default function historyRouter<TRouteState = UiState>({\n   },\n   writeDelay = 400,\n   windowTitle,\n+  navigate = ({ state, title, url }) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733753323",
+    "id": 733753323,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rvC_r",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 223,
+    "original_position": 134,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 785802360,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733753323/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T14:40:48Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733753323",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733759576"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733759576"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this older test to make sure intermediary states aren't called + the calls are done in-order is gone now",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T14:47:10Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n     });\n \n-    router.write({ some: 'state' });\n-    router.write({ some: 'second' });\n-    router.write({ some: 'third' });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733759576",
+    "id": 733759576,
+    "line": 19,
+    "node_id": "PRRC_kwDOAlnbOs4rvEhY",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 19,
+    "original_position": 92,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 45,
+    "pull_request_review_id": 785811200,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733759576/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T14:47:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733759576",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733763931"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763931"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ah right, probably just `push`? (name used in the Next.js router for example)",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T14:51:34Z",
+    "diff_hunk": "@@ -189,11 +220,17 @@ export default function historyRouter<TRouteState = UiState>({\n   },\n   writeDelay = 400,\n   windowTitle,\n+  navigate = ({ state, title, url }) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733763931",
+    "id": 733763931,
+    "in_reply_to_id": 733753323,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rvFlb",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 223,
+    "original_position": 134,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 785817409,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763931/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T14:51:34Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763931",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733763974"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763974"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's still here: https://github.com/algolia/instantsearch.js/pull/4940/files#diff-39b554771711c32e25b253169e0959bf26a312555ef369f70cac637e4edbddcdR50-R69",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T14:51:37Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n     });\n \n-    router.write({ some: 'state' });\n-    router.write({ some: 'second' });\n-    router.write({ some: 'third' });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733763974",
+    "id": 733763974,
+    "in_reply_to_id": 733759576,
+    "line": 19,
+    "node_id": "PRRC_kwDOAlnbOs4rvFmG",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 19,
+    "original_position": 92,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 45,
+    "pull_request_review_id": 785817473,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763974/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T14:51:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733763974",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733782304"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782304"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "ah, I missed it in the diff, thanks!",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T15:10:05Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n     });\n \n-    router.write({ some: 'state' });\n-    router.write({ some: 'second' });\n-    router.write({ some: 'third' });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733782304",
+    "id": 733782304,
+    "in_reply_to_id": 733759576,
+    "line": 19,
+    "node_id": "PRRC_kwDOAlnbOs4rvKEg",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 19,
+    "original_position": 92,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 45,
+    "pull_request_review_id": 785843304,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782304/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T15:10:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782304",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733782521"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782521"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "push sounds good to me",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-21T15:10:19Z",
+    "diff_hunk": "@@ -189,11 +220,17 @@ export default function historyRouter<TRouteState = UiState>({\n   },\n   writeDelay = 400,\n   windowTitle,\n+  navigate = ({ state, title, url }) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r733782521",
+    "id": 733782521,
+    "in_reply_to_id": 733753323,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rvKH5",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 223,
+    "original_position": 134,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 785843582,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782521/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-21T15:10:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/733782521",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734125075"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734125075"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "+1 for push",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T00:08:09Z",
+    "diff_hunk": "@@ -189,11 +220,17 @@ export default function historyRouter<TRouteState = UiState>({\n   },\n   writeDelay = 400,\n   windowTitle,\n+  navigate = ({ state, title, url }) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734125075",
+    "id": 734125075,
+    "in_reply_to_id": 733753323,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rwdwT",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 223,
+    "original_position": 134,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786300813,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734125075/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T00:10:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734125075",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734127456"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734127456"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "If `navigate` was only called once then you should be able to replace those two assertions with just one using `toHaveBeenNthCalledWith`, no?\r\n\r\nApplies to other similar assertions in your tests.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T00:15:29Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734127456",
+    "id": 734127456,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rweVg",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 30,
+    "original_position": 32,
+    "original_start_line": 25,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786303512,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734127456/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T00:23:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734127456",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734128680"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734128680"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Not sure this assertion is necessary given that `getLocation` doesn't take any parameters.\r\n\r\nApplies to other similar assertions in your tests.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T00:19:06Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734128680",
+    "id": 734128680,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rweoo",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 83,
+    "original_position": 87,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786303512,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734128680/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T00:23:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734128680",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734129910"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734129910"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Wouldn't it make sense to wrap it with:\r\n\r\n```js\r\nexpect(() => {\r\n  // ...\r\n}).not.toThrow();\r\n```\r\n\r\n?",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T00:22:47Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n     });\n \n-    router.write({ some: 'state' });\n-    router.write({ some: 'second' });\n-    router.write({ some: 'third' });\n-    await wait(0);\n-\n-    expect(pushState).toHaveBeenCalledTimes(1);\n-    expect(pushState.mock.calls).toMatchInlineSnapshot(`\n-      [\n-        [\n-          {\n-            \"some\": \"third\",\n-          },\n-          \"\",\n-          \"http://localhost/?some=third\",\n-        ],\n-      ]\n-    `);\n+    test('calls getLocation on read', async () => {\n+      const getLocation = jest.fn(() => window.location);\n+      const router = historyRouter<UiState>({\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(0);\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      await wait(0);\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+\n+      router.read();\n+\n+      expect(getLocation).toHaveBeenCalledTimes(2);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n+    });\n+\n+    test('calls getLocation on createURL', () => {\n+      const getLocation = jest.fn(() => window.location);\n+      const router = historyRouter<UiState>({\n+        getLocation,\n+      });\n+\n+      router.createURL({ indexName: { query: 'query1' } });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenCalledWith();\n+    });\n+  });\n+\n+  describe('environment', () => {\n+    // We don't need to `expect` in this test because it fails as expected when\n+    // `window` is accessed.\n+    // eslint-disable-next-line jest/expect-expect",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734129910",
+    "id": 734129910,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rwe72",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 121,
+    "original_position": 142,
+    "original_start_line": 119,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786303512,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734129910/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T00:23:01Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734129910",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734293049"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734293049"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "that way you make sure it's not called twice",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T07:20:11Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734293049",
+    "id": 734293049,
+    "in_reply_to_id": 734127456,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxGw5",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 30,
+    "original_position": 32,
+    "original_start_line": 25,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786504810,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734293049/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T07:20:11Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734293049",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330463"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330463"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is an async callback and I could not tell Jest a proper way to \"expect this async callback not to throw\" (as opposed to \"expect this async callback to throw\").\r\n\r\nThis test fails properly when `window` is accessed, but it throws internal Jest errors when we try to assert that it async-throws and that it does.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T08:16:12Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n     });\n \n-    router.write({ some: 'state' });\n-    router.write({ some: 'second' });\n-    router.write({ some: 'third' });\n-    await wait(0);\n-\n-    expect(pushState).toHaveBeenCalledTimes(1);\n-    expect(pushState.mock.calls).toMatchInlineSnapshot(`\n-      [\n-        [\n-          {\n-            \"some\": \"third\",\n-          },\n-          \"\",\n-          \"http://localhost/?some=third\",\n-        ],\n-      ]\n-    `);\n+    test('calls getLocation on read', async () => {\n+      const getLocation = jest.fn(() => window.location);\n+      const router = historyRouter<UiState>({\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(0);\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      await wait(0);\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+\n+      router.read();\n+\n+      expect(getLocation).toHaveBeenCalledTimes(2);\n+      expect(getLocation).toHaveBeenLastCalledWith();\n+    });\n+\n+    test('calls getLocation on createURL', () => {\n+      const getLocation = jest.fn(() => window.location);\n+      const router = historyRouter<UiState>({\n+        getLocation,\n+      });\n+\n+      router.createURL({ indexName: { query: 'query1' } });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenCalledWith();\n+    });\n+  });\n+\n+  describe('environment', () => {\n+    // We don't need to `expect` in this test because it fails as expected when\n+    // `window` is accessed.\n+    // eslint-disable-next-line jest/expect-expect",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330463",
+    "id": 734330463,
+    "in_reply_to_id": 734129910,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxP5f",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 121,
+    "original_position": 142,
+    "original_start_line": 119,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786555721,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330463/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T08:17:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330463",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330477"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330477"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can assume that type checking covers this, indeed. See 05f94d872988b9df3af43344d6f754aae2bdde08.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T08:16:13Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });\n+    });\n+\n+    test('defaults to window.history.pushState', async () => {\n+      const windowPushState = jest.spyOn(window.history, 'pushState');\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(windowPushState).toHaveBeenCalledTimes(1);\n+      expect(windowPushState).toHaveBeenLastCalledWith(\n+        { indexName: { query: 'query' } },\n+        '',\n+        'http://localhost/?indexName%5Bquery%5D=query'\n+      );\n+    });\n+\n+    test('debounces navigate calls', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query1' } });\n+      router.write({ indexName: { query: 'query2' } });\n+      router.write({ indexName: { query: 'query3' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query3' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query3',\n+      });\n+    });\n+  });\n+\n+  describe('getLocation', () => {\n+    test('calls getLocation on windowTitle', () => {\n+      const getLocation = jest.fn(() => window.location);\n \n-    const router = historyRouter<{ some: string }>({\n-      writeDelay: 0,\n+      historyRouter<UiState>({\n+        windowTitle() {\n+          return 'Search';\n+        },\n+        getLocation,\n+      });\n+\n+      expect(getLocation).toHaveBeenCalledTimes(1);\n+      expect(getLocation).toHaveBeenLastCalledWith();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330477",
+    "id": 734330477,
+    "in_reply_to_id": 734128680,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxP5t",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 83,
+    "original_position": 87,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786555742,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330477/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T08:16:45Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330477",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330540"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330540"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Addressed in 904403d550854ccf3e6b06c75d4430908110f166.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T08:16:19Z",
+    "diff_hunk": "@@ -189,11 +220,17 @@ export default function historyRouter<TRouteState = UiState>({\n   },\n   writeDelay = 400,\n   windowTitle,\n+  navigate = ({ state, title, url }) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734330540",
+    "id": 734330540,
+    "in_reply_to_id": 733753323,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxP6s",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 223,
+    "original_position": 134,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786555839,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330540/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T08:16:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734330540",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734343206"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343206"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm still thinking if we could use `getURL` alone, pass that to createURL (no location), as someone who would getLocation would need to change code already anyway. We can make the createURL argument conditional based on if getURL is passed (with an overload or union of parameters)?\r\n\r\nIt does sound fairly hard, so I'm not sure if it's worth it though.\r\n\r\nMy suggested type:\r\n\r\n\r\n```ts\r\nhistory({ createURL({ url }): string, getURL(): URL } | { createURL({ location }): string })\r\n```",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T08:34:01Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734343206",
+    "id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rxTAm",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786573037,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343206/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T08:34:02Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343206",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734343828"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343828"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "(in a later major we can make getURL required and it would remove the `location` code completely)",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T08:34:53Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734343828",
+    "id": 734343828,
+    "in_reply_to_id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rxTKU",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786573873,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343828/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T08:35:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734343828",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734408957"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734408957"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Hmm gotcha. Then `toHaveBeenCalledWith` could replace `toHaveBeenLastCalledWith` since we've already asserted a single call was made.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T10:06:32Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734408957",
+    "id": 734408957,
+    "in_reply_to_id": 734127456,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxjD9",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 30,
+    "original_position": 32,
+    "original_start_line": 25,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786663260,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734408957/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T10:06:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734408957",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734434544"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734434544"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I find `toHaveBeenLastCalledWith` to be what you need most of the time, it's a good default. It makes sure that if the assertion is used elsewhere, it's still relevant. Otherwise you can get false positives because a previous call received the passed arguments. You want to check the last call most times you use it, so it's fine as a default.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T10:48:26Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734434544",
+    "id": 734434544,
+    "in_reply_to_id": 734127456,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxpTw",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 30,
+    "original_position": 32,
+    "original_start_line": 25,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786698883,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734434544/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T10:48:26Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734434544",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734439937"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734439937"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I agree that the APIs overlap slightly now, because the output of `getLocation` is used in `createURL`. I'm not sure if it's a big deal though since we'll rework these APIs soon. It's an enabler for SSR.\r\n\r\nUltimately, we shouldn't need `getLocation` and we shouldn't pass `location` in `createURL` and `parseURL`, this is why we need to provide this SSR-safe layer.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T10:57:51Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734439937",
+    "id": 734439937,
+    "in_reply_to_id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rxqoB",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786706509,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734439937/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T10:57:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734439937",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734459461"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734459461"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "\r\n> Ultimately, we shouldn't need getLocation and we shouldn't pass location in createURL and parseURL, this is why we need to provide this SSR-safe layer.\r\n\r\nI agree  💯 but just FYI: we'll have to delay the rework of server-side APIs this quarter.\r\n\r\nOther point: isn't this a breaking change? `BrowserHistory` is just a helper, the router object is the API, and with this change, we require a new prop to it. ",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T11:30:46Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734459461",
+    "id": 734459461,
+    "in_reply_to_id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rxvZF",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786733463,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734459461/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T11:34:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734459461",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734461136"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734461136"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Essentially here we renounce to have a title set server-side, correct? \r\nHow are we going to allow to override this when used with React InstantSearch Hooks, and can it be handled user land via helmet?",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T11:33:31Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;\n };\n \n const setWindowTitle = (title?: string): void => {\n+  if (typeof window === 'undefined') {\n+    return;\n+  }\n+\n   if (title) {\n     window.document.title = title;\n   }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734461136",
+    "id": 734461136,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxvzQ",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 34,
+    "original_position": 18,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786735724,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734461136/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T11:33:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734461136",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734476774"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734476774"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "In this case specifically it's not needed, but I honestly don't mind if we go with that, the result is the same and it works 🙂",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T11:58:55Z",
+    "diff_hunk": "@@ -1,35 +1,155 @@\n import historyRouter from '../history';\n import { wait } from '../../../../test/utils/wait';\n+import type { UiState } from '../../../types';\n+import { noop } from '../../utils';\n \n describe('life cycle', () => {\n+  const originalWindow = (global as any).window;\n+\n   beforeEach(() => {\n     window.history.pushState(null, '-- divider --', 'http://localhost/');\n     jest.restoreAllMocks();\n   });\n \n-  it('writes after timeout is done', async () => {\n-    const pushState = jest.spyOn(window.history, 'pushState');\n+  describe('navigate', () => {\n+    test('calls navigate on write', async () => {\n+      const navigate = jest.fn();\n+      const router = historyRouter<UiState>({\n+        writeDelay: 0,\n+        navigate,\n+      });\n+\n+      router.write({ indexName: { query: 'query' } });\n+      await wait(0);\n+\n+      expect(navigate).toHaveBeenCalledTimes(1);\n+      expect(navigate).toHaveBeenLastCalledWith({\n+        state: { indexName: { query: 'query' } },\n+        title: '',\n+        url: 'http://localhost/?indexName%5Bquery%5D=query',\n+      });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734476774",
+    "id": 734476774,
+    "in_reply_to_id": 734127456,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rxznm",
+    "original_commit_id": "a66c28cee119cc7ed80fbf5dc7dc16f2747f5935",
+    "original_line": 30,
+    "original_position": 32,
+    "original_start_line": 25,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 1,
+    "pull_request_review_id": 786757110,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734476774/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-10-22T11:58:55Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734476774",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734502961"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734502961"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the prop isn't required @tkrugg ",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T12:38:41Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734502961",
+    "id": 734502961,
+    "in_reply_to_id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rx6Ax",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786793704,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734502961/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T12:38:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734502961",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734503718"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734503718"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "in the end, the title isn't really the responsibility of a router, and it would fall back to the title set some other way (eg. helmet) ",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T12:39:45Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;\n };\n \n const setWindowTitle = (title?: string): void => {\n+  if (typeof window === 'undefined') {\n+    return;\n+  }\n+\n   if (title) {\n     window.document.title = title;\n   }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734503718",
+    "id": 734503718,
+    "in_reply_to_id": 734461136,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rx6Mm",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 34,
+    "original_position": 18,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786794804,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734503718/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T12:39:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734503718",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734517885"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517885"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> I agree 💯 but just FYI: we'll have to delay the rework of server-side APIs this quarter.\r\n\r\nRight, but this change is also required to support default routing in React SSR, which is still planned for next quarter.\r\n\r\n> Other point: isn't this a breaking change? `BrowserHistory` is just a helper, the router object is the API, and with this change, we require a new prop to it.\r\n\r\nWe don't require a new prop because both props are optional. To support SSR though users will have to provide `push` and `getLocation`.\r\n\r\n_Edit:_ `push` doesn't need to exist anymore.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T12:58:33Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734517885",
+    "id": 734517885,
+    "in_reply_to_id": 734343206,
+    "line": 23,
+    "node_id": "PRRC_kwDOAlnbOs4rx9p9",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 24,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 7,
+    "pull_request_review_id": 786813896,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517885/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-25T09:27:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517885",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734517926"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517926"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's correct. Note that only the first document title computed on the server will not be from the router, each subsequent routing change on the frontend will update the document title.\r\n\r\nWe would need another abstraction layer (something like `setTitle`) to support this.\r\n\r\nAgain, I think that's a fair tradeoff to keep that for the proper rework of our routing. If that's a problem until then, we can still introduce `setTitle` in another update. Wdyt?\r\n\r\n_Edit: renamed `getTitle` to `setTitle`_",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T12:58:36Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;\n };\n \n const setWindowTitle = (title?: string): void => {\n+  if (typeof window === 'undefined') {\n+    return;\n+  }\n+\n   if (title) {\n     window.document.title = title;\n   }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734517926",
+    "id": 734517926,
+    "in_reply_to_id": 734461136,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4rx9qm",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 34,
+    "original_position": 18,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786813960,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517926/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T13:29:07Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734517926",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734540456"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734540456"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you meant `setTitle`, but I agree",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T13:27:18Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;\n };\n \n const setWindowTitle = (title?: string): void => {\n+  if (typeof window === 'undefined') {\n+    return;\n+  }\n+\n   if (title) {\n     window.document.title = title;\n   }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734540456",
+    "id": 734540456,
+    "in_reply_to_id": 734461136,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4ryDKo",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 34,
+    "original_position": 18,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786845921,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734540456/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T13:27:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734540456",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734570194"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734570194"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> Again, I think that's a fair tradeoff to keep that for the proper rework of our routing. If that's a problem until then, we can still introduce setTitle in another update. Wdyt?\r\n\r\nAbsolutely. Sounds good!",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-22T14:01:58Z",
+    "diff_hunk": "@@ -17,9 +17,18 @@ type BrowserHistoryArgs<TRouteState> = {\n   writeDelay: number;\n   createURL: CreateURL<TRouteState>;\n   parseURL: ParseURL<TRouteState>;\n+  push(params: { state: TRouteState; title: string; url: string }): void;\n+  // @MAJOR: The `Location` type is hard to simulate in non-browser environments\n+  // so we should accept a subset of it that is easier to work with in any\n+  // environments.\n+  getLocation(): Location;\n };\n \n const setWindowTitle = (title?: string): void => {\n+  if (typeof window === 'undefined') {\n+    return;\n+  }\n+\n   if (title) {\n     window.document.title = title;\n   }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r734570194",
+    "id": 734570194,
+    "in_reply_to_id": 734461136,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4ryKbS",
+    "original_commit_id": "05f94d872988b9df3af43344d6f754aae2bdde08",
+    "original_line": 34,
+    "original_position": 18,
+    "original_start_line": null,
+    "path": "src/lib/routers/history.ts",
+    "position": 1,
+    "pull_request_review_id": 786887554,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734570194/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-22T14:02:04Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/734570194",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4940#discussion_r735472525"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4940"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/735472525"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It might be worth pulling down the afterEach clean up closer, inside this describe block, since it isn't really useful outside.",
+    "commit_id": "433686c80d8c3bb7d6fbe9e8030218cce85e7beb",
+    "created_at": "2021-10-25T10:37:32Z",
+    "diff_hunk": "@@ -99,52 +99,76 @@ describe('life cycle', () => {\n       delete global.window;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4940#discussion_r735472525",
+    "id": 735472525,
+    "line": 99,
+    "node_id": "PRRC_kwDOAlnbOs4r1muN",
+    "original_commit_id": "f5081cd6e0b87e4e37b3e66f12d0fde93ae114f6",
+    "original_line": 99,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/lib/routers/__tests__/history.test.ts",
+    "position": 114,
+    "pull_request_review_id": 787944081,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4940",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/735472525/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-10-25T10:37:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/735472525",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  }
+]

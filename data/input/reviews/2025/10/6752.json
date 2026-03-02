@@ -1,0 +1,488 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435430432"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435430432"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think the minimize icon component doesn't actually get used to render anything. If that is the case, we might want to remove/refactor/rename the max and/or min components.",
+    "commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "created_at": "2025-10-16T10:46:21Z",
+    "diff_hunk": "@@ -97,162 +112,895 @@ export function createOptionsTests<T extends SupportedFlavor>(\n         }[flavor],\n       });\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n-\n-      userEvent.click(document.querySelector('.ais-ChatToggleButton')!);\n+      await openChat(act);\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n+      userEvent.click(document.querySelector('.ais-ChatHeader-close')!);\n \n-      expect(document.querySelector('.ais-Carousel')).toBeInTheDocument();\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--open'\n+      );\n     });\n \n-    test('renders with client side tools', async () => {\n+    test('maximizes and minimizes chat when button is clicked', async () => {\n       const searchClient = createSearchClient();\n \n-      const chat = new Chat({\n-        messages: [\n-          {\n-            id: '1',\n-            role: 'assistant',\n-            parts: [\n-              {\n-                type: 'tool-hello',\n-                toolCallId: '1',\n-                input: { text: 'hello' },\n-                state: 'output-available',\n-                output: 'hello',\n-              },\n-            ],\n-          },\n-        ],\n-        id: 'chat-id',\n-      });\n-\n-      const commonWidgetParams = {\n-        agentId: 'agentId',\n-        chat: chat as any,\n-      };\n-\n+      const commonWidgetParams = createDefaultWidgetParams();\n       await setup({\n         instantSearchOptions: {\n           indexName: 'indexName',\n           searchClient,\n         },\n         widgetParams: {\n-          javascript: {\n+          javascript: commonWidgetParams,\n+          react: commonWidgetParams,\n+          vue: {},\n+        }[flavor],\n+      });\n+\n+      await openChat(act);\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).not.toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+    });\n+\n+    describe('templates', () => {\n+      describe('header', () => {\n+        test('renders with custom header template', async () => {\n+          const searchClient = createSearchClient();\n+\n+          const commonWidgetParams = createDefaultWidgetParams();\n+          const jsWidgetParams: JSChatWidgetParams = {\n             ...commonWidgetParams,\n-            tools: {\n-              hello: {\n-                templates: {\n-                  layout:\n-                    '<div id=\"tool-content\">The message said hello!</div>',\n-                },\n+            templates: {\n+              header: {\n+                layout: '<div class=\"custom-header\">Custom header</div>',\n               },\n             },\n-          },\n-          react: {\n+          };\n+          const reactWidgetParams: ReactChatWidgetParams = {\n             ...commonWidgetParams,\n-            tools: {\n-              hello: {\n-                layoutComponent: () => (\n-                  <div id=\"tool-content\">The message said hello!</div>\n-                ),\n+            headerLayoutComponent: () => (\n+              <div className=\"custom-header\">Custom header</div>\n+            ),\n+          };\n+\n+          await setup({\n+            instantSearchOptions: {\n+              indexName: 'indexName',\n+              searchClient,\n+            },\n+            widgetParams: {\n+              javascript: jsWidgetParams,\n+              react: reactWidgetParams,\n+              vue: {},\n+            }[flavor],\n+          });\n+\n+          await openChat(act);\n+\n+          expect(document.querySelector('.custom-header')!.textContent).toBe(\n+            'Custom header'\n+          );\n+        });\n+\n+        test('renders with custom sub components', async () => {\n+          const searchClient = createSearchClient();\n+\n+          const commonWidgetParams = createDefaultWidgetParams();\n+          const jsWidgetParams: JSChatWidgetParams = {\n+            ...commonWidgetParams,\n+            templates: {\n+              header: {\n+                titleIcon:\n+                  '<span class=\"custom-title-icon\">Custom title icon</span>',\n+                closeIcon:\n+                  '<span class=\"custom-close-icon\">Custom close icon</span>',\n+                minimizeIcon:\n+                  '<span class=\"custom-minimize-icon\">Custom minimize icon</span>',\n+                maximizeIcon:\n+                  '<span class=\"custom-maximize-icon\">Custom maximize icon</span>',\n               },\n             },\n-          },\n-          vue: {},\n-        }[flavor],\n+          };\n+          const reactWidgetParams: ReactChatWidgetParams = {\n+            ...commonWidgetParams,\n+            headerTitleIconComponent: () => (\n+              <span className=\"custom-title-icon\">Custom title icon</span>\n+            ),\n+            headerCloseIconComponent: () => (\n+              <span className=\"custom-close-icon\">Custom close icon</span>\n+            ),\n+            headerMinimizeIconComponent: () => (\n+              <span className=\"custom-minimize-icon\">Custom minimize icon</span>\n+            ),\n+            headerMaximizeIconComponent: () => (\n+              <span className=\"custom-maximize-icon\">Custom maximize icon</span>\n+            ),\n+          };\n+\n+          await setup({\n+            instantSearchOptions: {\n+              indexName: 'indexName',\n+              searchClient,\n+            },\n+            widgetParams: {\n+              javascript: jsWidgetParams,\n+              react: reactWidgetParams,\n+              vue: {},\n+            }[flavor],\n+          });\n+\n+          await openChat(act);\n+\n+          expect(\n+            document.querySelector('.custom-title-icon')!.textContent\n+          ).toBe('Custom title icon');\n+          expect(\n+            document.querySelector('.custom-close-icon')!.textContent\n+          ).toBe('Custom close icon');\n+          expect(\n+            document.querySelector('.custom-maximize-icon')!.textContent\n+          ).toBe('Custom maximize icon');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435430432",
+    "id": 2435430432,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RKbgg",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 258,
+    "original_position": 316,
+    "original_start_line": 250,
+    "path": "tests/common/widgets/chat/options.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344170136,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435430432/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T10:49:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435430432",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435433748"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435433748"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Templates, translations and maybe the tool tests can also be move to their own separate test files if that makes sense. This test file is getting too long I think.",
+    "commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "created_at": "2025-10-16T10:47:44Z",
+    "diff_hunk": "@@ -97,162 +112,895 @@ export function createOptionsTests<T extends SupportedFlavor>(\n         }[flavor],\n       });\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n-\n-      userEvent.click(document.querySelector('.ais-ChatToggleButton')!);\n+      await openChat(act);\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n+      userEvent.click(document.querySelector('.ais-ChatHeader-close')!);\n \n-      expect(document.querySelector('.ais-Carousel')).toBeInTheDocument();\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--open'\n+      );\n     });\n \n-    test('renders with client side tools', async () => {\n+    test('maximizes and minimizes chat when button is clicked', async () => {\n       const searchClient = createSearchClient();\n \n-      const chat = new Chat({\n-        messages: [\n-          {\n-            id: '1',\n-            role: 'assistant',\n-            parts: [\n-              {\n-                type: 'tool-hello',\n-                toolCallId: '1',\n-                input: { text: 'hello' },\n-                state: 'output-available',\n-                output: 'hello',\n-              },\n-            ],\n-          },\n-        ],\n-        id: 'chat-id',\n-      });\n-\n-      const commonWidgetParams = {\n-        agentId: 'agentId',\n-        chat: chat as any,\n-      };\n-\n+      const commonWidgetParams = createDefaultWidgetParams();\n       await setup({\n         instantSearchOptions: {\n           indexName: 'indexName',\n           searchClient,\n         },\n         widgetParams: {\n-          javascript: {\n+          javascript: commonWidgetParams,\n+          react: commonWidgetParams,\n+          vue: {},\n+        }[flavor],\n+      });\n+\n+      await openChat(act);\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).not.toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+    });\n+\n+    describe('templates', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435433748",
+    "id": 2435433748,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RKcUU",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 161,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "tests/common/widgets/chat/options.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344170136,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435433748/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T10:49:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435433748",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435437977"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435437977"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure if there are any react specific tests that we want to keep here.",
+    "commit_id": "d05dd231c29dc110f745f369007e3cb67b14fb2f",
+    "created_at": "2025-10-16T10:48:56Z",
+    "diff_hunk": "",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435437977",
+    "id": 2435437977,
+    "line": 1,
+    "node_id": "PRRC_kwDOAlnbOs6RKdWZ",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/widgets/__tests__/Chat.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344170136,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435437977/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "file",
+    "updated_at": "2025-10-16T10:49:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435437977",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435487542"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435487542"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "yes, let's put templates and translations in their own relative files",
+    "commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "created_at": "2025-10-16T11:04:21Z",
+    "diff_hunk": "@@ -97,162 +112,895 @@ export function createOptionsTests<T extends SupportedFlavor>(\n         }[flavor],\n       });\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n-\n-      userEvent.click(document.querySelector('.ais-ChatToggleButton')!);\n+      await openChat(act);\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n+      userEvent.click(document.querySelector('.ais-ChatHeader-close')!);\n \n-      expect(document.querySelector('.ais-Carousel')).toBeInTheDocument();\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--open'\n+      );\n     });\n \n-    test('renders with client side tools', async () => {\n+    test('maximizes and minimizes chat when button is clicked', async () => {\n       const searchClient = createSearchClient();\n \n-      const chat = new Chat({\n-        messages: [\n-          {\n-            id: '1',\n-            role: 'assistant',\n-            parts: [\n-              {\n-                type: 'tool-hello',\n-                toolCallId: '1',\n-                input: { text: 'hello' },\n-                state: 'output-available',\n-                output: 'hello',\n-              },\n-            ],\n-          },\n-        ],\n-        id: 'chat-id',\n-      });\n-\n-      const commonWidgetParams = {\n-        agentId: 'agentId',\n-        chat: chat as any,\n-      };\n-\n+      const commonWidgetParams = createDefaultWidgetParams();\n       await setup({\n         instantSearchOptions: {\n           indexName: 'indexName',\n           searchClient,\n         },\n         widgetParams: {\n-          javascript: {\n+          javascript: commonWidgetParams,\n+          react: commonWidgetParams,\n+          vue: {},\n+        }[flavor],\n+      });\n+\n+      await openChat(act);\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).not.toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+    });\n+\n+    describe('templates', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435487542",
+    "id": 2435487542,
+    "in_reply_to_id": 2435433748,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RKpc2",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 161,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "tests/common/widgets/chat/options.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344254514,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435487542/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T11:04:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435487542",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435488729"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435488729"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "seems like they're all covered",
+    "commit_id": "d05dd231c29dc110f745f369007e3cb67b14fb2f",
+    "created_at": "2025-10-16T11:04:54Z",
+    "diff_hunk": "",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435488729",
+    "id": 2435488729,
+    "in_reply_to_id": 2435437977,
+    "line": 1,
+    "node_id": "PRRC_kwDOAlnbOs6RKpvZ",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 1,
+    "original_position": 1,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/widgets/__tests__/Chat.test.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344256662,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435488729/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "file",
+    "updated_at": "2025-10-16T11:04:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435488729",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435806753"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435806753"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\nexport const createDefaultWidgetParams = (chat?: Chat) => ({\r\n```",
+    "commit_id": "b807a1c5569710cbed2b64d6fd3e203fe40551dd",
+    "created_at": "2025-10-16T12:54:41Z",
+    "diff_hunk": "@@ -0,0 +1,22 @@\n+import { wait } from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+import { Chat } from 'instantsearch.js/es/lib/chat';\n+\n+import type { Act } from '../../common';\n+\n+export const createDefaultWidgetParams = (chat?: any) => ({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435806753",
+    "id": 2435806753,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RL3Yh",
+    "original_commit_id": "b807a1c5569710cbed2b64d6fd3e203fe40551dd",
+    "original_line": 7,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "tests/common/widgets/chat/utils.ts",
+    "position": 1,
+    "pull_request_review_id": 3344701821,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435806753/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-16T12:54:42Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435806753",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435809441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6752"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435809441"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@FabienMotte ",
+    "commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "created_at": "2025-10-16T12:55:34Z",
+    "diff_hunk": "@@ -97,162 +112,895 @@ export function createOptionsTests<T extends SupportedFlavor>(\n         }[flavor],\n       });\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n-\n-      userEvent.click(document.querySelector('.ais-ChatToggleButton')!);\n+      await openChat(act);\n \n-      await act(async () => {\n-        await wait(0);\n-      });\n+      userEvent.click(document.querySelector('.ais-ChatHeader-close')!);\n \n-      expect(document.querySelector('.ais-Carousel')).toBeInTheDocument();\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--open'\n+      );\n     });\n \n-    test('renders with client side tools', async () => {\n+    test('maximizes and minimizes chat when button is clicked', async () => {\n       const searchClient = createSearchClient();\n \n-      const chat = new Chat({\n-        messages: [\n-          {\n-            id: '1',\n-            role: 'assistant',\n-            parts: [\n-              {\n-                type: 'tool-hello',\n-                toolCallId: '1',\n-                input: { text: 'hello' },\n-                state: 'output-available',\n-                output: 'hello',\n-              },\n-            ],\n-          },\n-        ],\n-        id: 'chat-id',\n-      });\n-\n-      const commonWidgetParams = {\n-        agentId: 'agentId',\n-        chat: chat as any,\n-      };\n-\n+      const commonWidgetParams = createDefaultWidgetParams();\n       await setup({\n         instantSearchOptions: {\n           indexName: 'indexName',\n           searchClient,\n         },\n         widgetParams: {\n-          javascript: {\n+          javascript: commonWidgetParams,\n+          react: commonWidgetParams,\n+          vue: {},\n+        }[flavor],\n+      });\n+\n+      await openChat(act);\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+\n+      userEvent.click(document.querySelector('.ais-ChatHeader-maximize')!);\n+\n+      expect(document.querySelector('.ais-Chat')).not.toHaveClass(\n+        'ais-Chat--maximized'\n+      );\n+      expect(document.querySelector('.ais-Chat-container')).not.toHaveClass(\n+        'ais-Chat-container--maximized'\n+      );\n+    });\n+\n+    describe('templates', () => {\n+      describe('header', () => {\n+        test('renders with custom header template', async () => {\n+          const searchClient = createSearchClient();\n+\n+          const commonWidgetParams = createDefaultWidgetParams();\n+          const jsWidgetParams: JSChatWidgetParams = {\n             ...commonWidgetParams,\n-            tools: {\n-              hello: {\n-                templates: {\n-                  layout:\n-                    '<div id=\"tool-content\">The message said hello!</div>',\n-                },\n+            templates: {\n+              header: {\n+                layout: '<div class=\"custom-header\">Custom header</div>',\n               },\n             },\n-          },\n-          react: {\n+          };\n+          const reactWidgetParams: ReactChatWidgetParams = {\n             ...commonWidgetParams,\n-            tools: {\n-              hello: {\n-                layoutComponent: () => (\n-                  <div id=\"tool-content\">The message said hello!</div>\n-                ),\n+            headerLayoutComponent: () => (\n+              <div className=\"custom-header\">Custom header</div>\n+            ),\n+          };\n+\n+          await setup({\n+            instantSearchOptions: {\n+              indexName: 'indexName',\n+              searchClient,\n+            },\n+            widgetParams: {\n+              javascript: jsWidgetParams,\n+              react: reactWidgetParams,\n+              vue: {},\n+            }[flavor],\n+          });\n+\n+          await openChat(act);\n+\n+          expect(document.querySelector('.custom-header')!.textContent).toBe(\n+            'Custom header'\n+          );\n+        });\n+\n+        test('renders with custom sub components', async () => {\n+          const searchClient = createSearchClient();\n+\n+          const commonWidgetParams = createDefaultWidgetParams();\n+          const jsWidgetParams: JSChatWidgetParams = {\n+            ...commonWidgetParams,\n+            templates: {\n+              header: {\n+                titleIcon:\n+                  '<span class=\"custom-title-icon\">Custom title icon</span>',\n+                closeIcon:\n+                  '<span class=\"custom-close-icon\">Custom close icon</span>',\n+                minimizeIcon:\n+                  '<span class=\"custom-minimize-icon\">Custom minimize icon</span>',\n+                maximizeIcon:\n+                  '<span class=\"custom-maximize-icon\">Custom maximize icon</span>',\n               },\n             },\n-          },\n-          vue: {},\n-        }[flavor],\n+          };\n+          const reactWidgetParams: ReactChatWidgetParams = {\n+            ...commonWidgetParams,\n+            headerTitleIconComponent: () => (\n+              <span className=\"custom-title-icon\">Custom title icon</span>\n+            ),\n+            headerCloseIconComponent: () => (\n+              <span className=\"custom-close-icon\">Custom close icon</span>\n+            ),\n+            headerMinimizeIconComponent: () => (\n+              <span className=\"custom-minimize-icon\">Custom minimize icon</span>\n+            ),\n+            headerMaximizeIconComponent: () => (\n+              <span className=\"custom-maximize-icon\">Custom maximize icon</span>\n+            ),\n+          };\n+\n+          await setup({\n+            instantSearchOptions: {\n+              indexName: 'indexName',\n+              searchClient,\n+            },\n+            widgetParams: {\n+              javascript: jsWidgetParams,\n+              react: reactWidgetParams,\n+              vue: {},\n+            }[flavor],\n+          });\n+\n+          await openChat(act);\n+\n+          expect(\n+            document.querySelector('.custom-title-icon')!.textContent\n+          ).toBe('Custom title icon');\n+          expect(\n+            document.querySelector('.custom-close-icon')!.textContent\n+          ).toBe('Custom close icon');\n+          expect(\n+            document.querySelector('.custom-maximize-icon')!.textContent\n+          ).toBe('Custom maximize icon');",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6752#discussion_r2435809441",
+    "id": 2435809441,
+    "in_reply_to_id": 2435430432,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6RL4Ch",
+    "original_commit_id": "0618b919c743bb8c97a9be8ff2a8d78decb2d301",
+    "original_line": 258,
+    "original_position": 316,
+    "original_start_line": 250,
+    "path": "tests/common/widgets/chat/options.tsx",
+    "position": 1,
+    "pull_request_review_id": 3344705218,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6752",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435809441/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-16T12:55:35Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2435809441",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,1184 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2672628778"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2672628778"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why should the cache be skipped? ",
+    "commit_id": "8980161da427b2bbc57c0d02af6a04dc03d5a70b",
+    "created_at": "2026-01-08T14:41:52Z",
+    "diff_hunk": "@@ -346,6 +346,7 @@ export default (function connectChat<TWidgetParams extends UnknownWidgetParams>(\n \n           return Promise.resolve();\n         },\n+        skipCache: type !== 'chat',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2672628778",
+    "id": 2672628778,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6fTRQq",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 349,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/chat/connectChat.ts",
+    "position": 1,
+    "pull_request_review_id": 3639738305,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2672628778/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T08:18:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2672628778",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675261482"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675261482"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we're overriding the getRenderState now anyway, that means that the `type` option in chat isn't really needed anymore, no?",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-09T08:16:54Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;\n+  };\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const chatWidget = connectChat(\n+      noop,\n+      unmountFn\n+    )({\n+      ...widgetParams,\n+      type: 'promptSuggestions',\n+    });\n+\n+    return {\n+      ...chatWidget,\n+      $$type: 'ais.promptSuggestions',\n+\n+      init(initOptions) {\n+        chatWidget.init(initOptions);\n+\n+        const render = () => {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        };\n+\n+        chatWidget.chatInstance['~registerMessagesCallback'](render);\n+        chatWidget.chatInstance['~registerStatusCallback'](render);\n+        chatWidget.chatInstance['~registerErrorCallback'](render);\n+\n+        const renderState = chatWidget.getWidgetRenderState(initOptions);\n+        renderState.sendMessage({ text: JSON.stringify(widgetParams.context) });\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675261482",
+    "id": 2675261482,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6fdUAq",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3639738305,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675261482/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T08:18:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675261482",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675264055"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675264055"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "is init the correct place for this message to be sent? does that trigger at the right time for react for example?",
+    "commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "created_at": "2026-01-09T08:18:00Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;\n+  };\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const chatWidget = connectChat(\n+      noop,\n+      unmountFn\n+    )({\n+      ...widgetParams,\n+      type: 'promptSuggestions',\n+    });\n+\n+    return {\n+      ...chatWidget,\n+      $$type: 'ais.promptSuggestions',\n+\n+      init(initOptions) {\n+        chatWidget.init(initOptions);\n+\n+        const render = () => {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        };\n+\n+        chatWidget.chatInstance['~registerMessagesCallback'](render);\n+        chatWidget.chatInstance['~registerStatusCallback'](render);\n+        chatWidget.chatInstance['~registerErrorCallback'](render);\n+\n+        const renderState = chatWidget.getWidgetRenderState(initOptions);\n+        renderState.sendMessage({ text: JSON.stringify(widgetParams.context) });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675264055",
+    "id": 2675264055,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6fdUo3",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3639738305,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675264055/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T08:18:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675264055",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675732088"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675732088"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Else it writes what the PromptSuggestions widget requested to the chat widget as they're using the same agentId.\r\nAlso no point in using a frontend cache for this",
+    "commit_id": "8980161da427b2bbc57c0d02af6a04dc03d5a70b",
+    "created_at": "2026-01-09T10:52:48Z",
+    "diff_hunk": "@@ -346,6 +346,7 @@ export default (function connectChat<TWidgetParams extends UnknownWidgetParams>(\n \n           return Promise.resolve();\n         },\n+        skipCache: type !== 'chat',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675732088",
+    "id": 2675732088,
+    "in_reply_to_id": 2672628778,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6ffG54",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 349,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/chat/connectChat.ts",
+    "position": 1,
+    "pull_request_review_id": 3643417231,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675732088/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T10:53:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675732088",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675738271"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675738271"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "It does trigger at the right time yes, tested it in react",
+    "commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "created_at": "2026-01-09T10:54:54Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;\n+  };\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const chatWidget = connectChat(\n+      noop,\n+      unmountFn\n+    )({\n+      ...widgetParams,\n+      type: 'promptSuggestions',\n+    });\n+\n+    return {\n+      ...chatWidget,\n+      $$type: 'ais.promptSuggestions',\n+\n+      init(initOptions) {\n+        chatWidget.init(initOptions);\n+\n+        const render = () => {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        };\n+\n+        chatWidget.chatInstance['~registerMessagesCallback'](render);\n+        chatWidget.chatInstance['~registerStatusCallback'](render);\n+        chatWidget.chatInstance['~registerErrorCallback'](render);\n+\n+        const renderState = chatWidget.getWidgetRenderState(initOptions);\n+        renderState.sendMessage({ text: JSON.stringify(widgetParams.context) });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2675738271",
+    "id": 2675738271,
+    "in_reply_to_id": 2675264055,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6ffIaf",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 117,
+    "original_position": 117,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3643423537,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675738271/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T10:55:07Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2675738271",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676326590"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676326590"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "so skipCache skips writing, but not reading? ",
+    "commit_id": "8980161da427b2bbc57c0d02af6a04dc03d5a70b",
+    "created_at": "2026-01-09T14:09:10Z",
+    "diff_hunk": "@@ -346,6 +346,7 @@ export default (function connectChat<TWidgetParams extends UnknownWidgetParams>(\n \n           return Promise.resolve();\n         },\n+        skipCache: type !== 'chat',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676326590",
+    "id": 2676326590,
+    "in_reply_to_id": 2672628778,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6fhYC-",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 349,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/chat/connectChat.ts",
+    "position": 1,
+    "pull_request_review_id": 3644080280,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676326590/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T14:09:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676326590",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676557808"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676557808"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Don't think it would be a problem but i'll skip reading as well",
+    "commit_id": "8980161da427b2bbc57c0d02af6a04dc03d5a70b",
+    "created_at": "2026-01-09T15:11:46Z",
+    "diff_hunk": "@@ -346,6 +346,7 @@ export default (function connectChat<TWidgetParams extends UnknownWidgetParams>(\n \n           return Promise.resolve();\n         },\n+        skipCache: type !== 'chat',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676557808",
+    "id": 2676557808,
+    "in_reply_to_id": 2672628778,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6fiQfw",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 349,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/chat/connectChat.ts",
+    "position": 1,
+    "pull_request_review_id": 3644349564,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676557808/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T15:11:47Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676557808",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676847871"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676847871"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Should this be just `unknown`? Is there a chance that they have an agent setup in way that only requires the object id for example?",
+    "commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "created_at": "2026-01-09T16:33:45Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676847871",
+    "id": 2676847871,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6fjXT_",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 37,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3644702698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676847871/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T17:05:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676847871",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676925975"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676925975"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It seems like it's all getting overridden. I might be misunderstanding it, but what is the need to use `connectChat` here in that case? Maybe just using the chat init function here would be enough.\n\nCould this approach also cause a clash in the index render state (due to there also being another chat widget/connector)?",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-09T16:58:36Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;\n+  };\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const chatWidget = connectChat(\n+      noop,\n+      unmountFn\n+    )({\n+      ...widgetParams,\n+      type: 'promptSuggestions',\n+    });\n+\n+    return {\n+      ...chatWidget,\n+      $$type: 'ais.promptSuggestions',\n+\n+      init(initOptions) {\n+        chatWidget.init(initOptions);\n+\n+        const render = () => {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        };\n+\n+        chatWidget.chatInstance['~registerMessagesCallback'](render);\n+        chatWidget.chatInstance['~registerStatusCallback'](render);\n+        chatWidget.chatInstance['~registerErrorCallback'](render);\n+\n+        const renderState = chatWidget.getWidgetRenderState(initOptions);\n+        renderState.sendMessage({ text: JSON.stringify(widgetParams.context) });\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2676925975",
+    "id": 2676925975,
+    "in_reply_to_id": 2675261482,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6fjqYX",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3644702698,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676925975/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-09T17:05:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2676925975",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2681620580"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2681620580"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the key is promptSuggestions, not chat anymore with this connector",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-12T10:15:16Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;\n+  };\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const chatWidget = connectChat(\n+      noop,\n+      unmountFn\n+    )({\n+      ...widgetParams,\n+      type: 'promptSuggestions',\n+    });\n+\n+    return {\n+      ...chatWidget,\n+      $$type: 'ais.promptSuggestions',\n+\n+      init(initOptions) {\n+        chatWidget.init(initOptions);\n+\n+        const render = () => {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        };\n+\n+        chatWidget.chatInstance['~registerMessagesCallback'](render);\n+        chatWidget.chatInstance['~registerStatusCallback'](render);\n+        chatWidget.chatInstance['~registerErrorCallback'](render);\n+\n+        const renderState = chatWidget.getWidgetRenderState(initOptions);\n+        renderState.sendMessage({ text: JSON.stringify(widgetParams.context) });\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance: initOptions.instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2681620580",
+    "id": 2681620580,
+    "in_reply_to_id": 2675261482,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6f1khk",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3650027394,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2681620580/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-12T10:15:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2681620580",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2713331500"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2713331500"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "We may need to be able to compare it if it changed, would be easier with an object idk. Could be `{ objectID: '' }` too in this case anyway",
+    "commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "created_at": "2026-01-21T16:21:46Z",
+    "diff_hunk": "@@ -0,0 +1,196 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import connectChat from '../chat/connectChat';\n+\n+import type { Chat } from '../../lib/chat';\n+import type {\n+  Connector,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+import type { DefaultChatTransport, UIMessage } from 'ai';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  agentId?: string;\n+  transport?: ConstructorParameters<typeof DefaultChatTransport>[0];\n+};\n+\n+export type PromptSuggestionsConnectorParams<\n+  TUiMessage extends UIMessage = UIMessage\n+> = { chat?: Chat<TUiMessage> } & PromptSuggestionsTransport & {\n+    /**\n+     * Context object to send to the agent (e.g., product data for a PDP).\n+     */\n+    context: Record<string, unknown>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2713331500",
+    "id": 2713331500,
+    "in_reply_to_id": 2676847871,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6huics",
+    "original_commit_id": "d97c1994346a4c5774bc58b44c99a4ec4879c6c5",
+    "original_line": 37,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3688154456,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2713331500/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-21T16:21:47Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2713331500",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2718026868"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718026868"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "because we use a different widget, do you mind reverting the `type` change in chat widget? ",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-22T18:04:24Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });\n+        },\n+        widgetParams,\n+      };\n+    };\n+\n+    const fetchSuggestions = (initOptions: InitOptions) => {\n+      const { instantSearchInstance } = initOptions;\n+\n+      status = 'loading';\n+      renderFn(\n+        {\n+          ...getWidgetRenderState(initOptions),\n+          instantSearchInstance,\n+        },\n+        false\n+      );\n+\n+      const payload: Record<string, unknown> = {\n+        messages: [\n+          {\n+            role: 'user',\n+            content: JSON.stringify(context),\n+          },\n+        ],\n+      };\n+\n+      const finalPayload = transport?.prepareSendMessagesRequest\n+        ? transport.prepareSendMessagesRequest(payload).body\n+        : payload;\n+\n+      fetch(endpoint, {\n+        method: 'POST',\n+        headers: { ...headers, 'Content-Type': 'application/json' },\n+        body: JSON.stringify(finalPayload),\n+      })\n+        .then((response) => {\n+          if (!response.ok) {\n+            throw new Error(`HTTP error ${response.status}`);\n+          }\n+          return response.json();\n+        })\n+        .then((data) => {\n+          const assistantMessage = data.messages?.find(\n+            (msg: { role: string }) => msg.role === 'assistant'\n+          );\n+\n+          if (assistantMessage?.parts) {\n+            const suggestionsPart = assistantMessage.parts.find(\n+              (part: { type: string }) => part.type === 'data-suggestions'\n+            );\n+            if (suggestionsPart?.data?.suggestions) {\n+              suggestions = suggestionsPart.data.suggestions;\n+            }\n+          }\n+\n+          status = 'ready';\n+        })\n+        .catch((e) => {\n+          status = 'error';\n+          error = e;\n+        })\n+        .finally(() => {\n+          renderFn(\n+            {\n+              ...getWidgetRenderState(initOptions),\n+              instantSearchInstance,\n+            },\n+            false\n+          );\n+        });\n+    };\n+\n+    return {\n+      $$type: 'ais.promptSuggestions' as const,\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        if (transport) {\n+          endpoint = transport.api;\n+          headers = transport.headers || {};\n+        } else {\n+          const [appId, apiKey] = getAppIdAndApiKey(\n+            instantSearchInstance.client\n+          );\n+\n+          if (!appId || !apiKey) {\n+            throw new Error(\n+              withUsage(\n+                'Could not extract Algolia credentials from the search client.'\n+              )\n+            );\n+          }\n+\n+          endpoint = `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5&stream=false`;\n+          headers = {\n+            'x-algolia-application-id': appId,\n+            'x-algolia-api-key': apiKey,\n+            'x-algolia-agent': getAlgoliaAgent(instantSearchInstance.client),\n+          };\n+        }\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+\n+        fetchSuggestions(initOptions);\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2718026868",
+    "id": 2718026868,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6iAcx0",
+    "original_commit_id": "b4d91ff760d4b098a7b3d6cd1d9d022cda0a0ad0",
+    "original_line": 281,
+    "original_position": 281,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3693835972,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718026868/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-22T18:04:44Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718026868",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2718027311"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718027311"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "can be in a different PR",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-22T18:04:32Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });\n+        },\n+        widgetParams,\n+      };\n+    };\n+\n+    const fetchSuggestions = (initOptions: InitOptions) => {\n+      const { instantSearchInstance } = initOptions;\n+\n+      status = 'loading';\n+      renderFn(\n+        {\n+          ...getWidgetRenderState(initOptions),\n+          instantSearchInstance,\n+        },\n+        false\n+      );\n+\n+      const payload: Record<string, unknown> = {\n+        messages: [\n+          {\n+            role: 'user',\n+            content: JSON.stringify(context),\n+          },\n+        ],\n+      };\n+\n+      const finalPayload = transport?.prepareSendMessagesRequest\n+        ? transport.prepareSendMessagesRequest(payload).body\n+        : payload;\n+\n+      fetch(endpoint, {\n+        method: 'POST',\n+        headers: { ...headers, 'Content-Type': 'application/json' },\n+        body: JSON.stringify(finalPayload),\n+      })\n+        .then((response) => {\n+          if (!response.ok) {\n+            throw new Error(`HTTP error ${response.status}`);\n+          }\n+          return response.json();\n+        })\n+        .then((data) => {\n+          const assistantMessage = data.messages?.find(\n+            (msg: { role: string }) => msg.role === 'assistant'\n+          );\n+\n+          if (assistantMessage?.parts) {\n+            const suggestionsPart = assistantMessage.parts.find(\n+              (part: { type: string }) => part.type === 'data-suggestions'\n+            );\n+            if (suggestionsPart?.data?.suggestions) {\n+              suggestions = suggestionsPart.data.suggestions;\n+            }\n+          }\n+\n+          status = 'ready';\n+        })\n+        .catch((e) => {\n+          status = 'error';\n+          error = e;\n+        })\n+        .finally(() => {\n+          renderFn(\n+            {\n+              ...getWidgetRenderState(initOptions),\n+              instantSearchInstance,\n+            },\n+            false\n+          );\n+        });\n+    };\n+\n+    return {\n+      $$type: 'ais.promptSuggestions' as const,\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        if (transport) {\n+          endpoint = transport.api;\n+          headers = transport.headers || {};\n+        } else {\n+          const [appId, apiKey] = getAppIdAndApiKey(\n+            instantSearchInstance.client\n+          );\n+\n+          if (!appId || !apiKey) {\n+            throw new Error(\n+              withUsage(\n+                'Could not extract Algolia credentials from the search client.'\n+              )\n+            );\n+          }\n+\n+          endpoint = `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5&stream=false`;\n+          headers = {\n+            'x-algolia-application-id': appId,\n+            'x-algolia-api-key': apiKey,\n+            'x-algolia-agent': getAlgoliaAgent(instantSearchInstance.client),\n+          };\n+        }\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+\n+        fetchSuggestions(initOptions);\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2718027311",
+    "id": 2718027311,
+    "in_reply_to_id": 2718026868,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6iAc4v",
+    "original_commit_id": "b4d91ff760d4b098a7b3d6cd1d9d022cda0a0ad0",
+    "original_line": 281,
+    "original_position": 281,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3693835972,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718027311/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-22T18:04:44Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2718027311",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720627931"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720627931"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Will make a different PR yeah",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-23T10:26:38Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });\n+        },\n+        widgetParams,\n+      };\n+    };\n+\n+    const fetchSuggestions = (initOptions: InitOptions) => {\n+      const { instantSearchInstance } = initOptions;\n+\n+      status = 'loading';\n+      renderFn(\n+        {\n+          ...getWidgetRenderState(initOptions),\n+          instantSearchInstance,\n+        },\n+        false\n+      );\n+\n+      const payload: Record<string, unknown> = {\n+        messages: [\n+          {\n+            role: 'user',\n+            content: JSON.stringify(context),\n+          },\n+        ],\n+      };\n+\n+      const finalPayload = transport?.prepareSendMessagesRequest\n+        ? transport.prepareSendMessagesRequest(payload).body\n+        : payload;\n+\n+      fetch(endpoint, {\n+        method: 'POST',\n+        headers: { ...headers, 'Content-Type': 'application/json' },\n+        body: JSON.stringify(finalPayload),\n+      })\n+        .then((response) => {\n+          if (!response.ok) {\n+            throw new Error(`HTTP error ${response.status}`);\n+          }\n+          return response.json();\n+        })\n+        .then((data) => {\n+          const assistantMessage = data.messages?.find(\n+            (msg: { role: string }) => msg.role === 'assistant'\n+          );\n+\n+          if (assistantMessage?.parts) {\n+            const suggestionsPart = assistantMessage.parts.find(\n+              (part: { type: string }) => part.type === 'data-suggestions'\n+            );\n+            if (suggestionsPart?.data?.suggestions) {\n+              suggestions = suggestionsPart.data.suggestions;\n+            }\n+          }\n+\n+          status = 'ready';\n+        })\n+        .catch((e) => {\n+          status = 'error';\n+          error = e;\n+        })\n+        .finally(() => {\n+          renderFn(\n+            {\n+              ...getWidgetRenderState(initOptions),\n+              instantSearchInstance,\n+            },\n+            false\n+          );\n+        });\n+    };\n+\n+    return {\n+      $$type: 'ais.promptSuggestions' as const,\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        if (transport) {\n+          endpoint = transport.api;\n+          headers = transport.headers || {};\n+        } else {\n+          const [appId, apiKey] = getAppIdAndApiKey(\n+            instantSearchInstance.client\n+          );\n+\n+          if (!appId || !apiKey) {\n+            throw new Error(\n+              withUsage(\n+                'Could not extract Algolia credentials from the search client.'\n+              )\n+            );\n+          }\n+\n+          endpoint = `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5&stream=false`;\n+          headers = {\n+            'x-algolia-application-id': appId,\n+            'x-algolia-api-key': apiKey,\n+            'x-algolia-agent': getAlgoliaAgent(instantSearchInstance.client),\n+          };\n+        }\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+\n+        fetchSuggestions(initOptions);\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      getRenderState(\n+        renderState,\n+        renderOptions\n+      ): IndexRenderState &\n+        PromptSuggestionsWidgetDescription['indexRenderState'] {\n+        return {\n+          ...renderState,\n+          promptSuggestions: this.getWidgetRenderState(renderOptions),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720627931",
+    "id": 2720627931,
+    "in_reply_to_id": 2718026868,
+    "line": 284,
+    "node_id": "PRRC_kwDOAlnbOs6iKXzb",
+    "original_commit_id": "b4d91ff760d4b098a7b3d6cd1d9d022cda0a0ad0",
+    "original_line": 281,
+    "original_position": 281,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 284,
+    "pull_request_review_id": 3696839443,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720627931/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-23T10:26:39Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720627931",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720705488"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720705488"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n          const messageWithContext = context\n            ? `<!--ais-context:${JSON.stringify(context)}-->${suggestion}`\n            : suggestion;\n\n          mainChat.sendMessage({ text: messageWithContext });\n```",
+    "commit_id": "dbbc9e0eb91fa02809d3b2206a00b19a1230c48b",
+    "created_at": "2026-01-23T10:48:42Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720705488",
+    "id": 2720705488,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6iKqvQ",
+    "original_commit_id": "dbbc9e0eb91fa02809d3b2206a00b19a1230c48b",
+    "original_line": 148,
+    "original_position": 148,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3696924050,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720705488/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-23T10:53:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720705488",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720710055"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720710055"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think this payload is compatible with AI SDK v4, do we want to use v5 instead?\n\n\n```suggestion\n      const payload: Record<string, unknown> = {\n        messages: [\n          {\n            role: 'user',\n            parts: [\n              {\n                type: 'text',\n                text: JSON.stringify(context),\n              },\n            ],\n          },\n        ],\n      };\n```",
+    "commit_id": "0b2dcf27d3e95d86a4f4b8c62e430911fd88183e",
+    "created_at": "2026-01-23T10:50:06Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });\n+        },\n+        widgetParams,\n+      };\n+    };\n+\n+    const fetchSuggestions = (initOptions: InitOptions) => {\n+      const { instantSearchInstance } = initOptions;\n+\n+      status = 'loading';\n+      renderFn(\n+        {\n+          ...getWidgetRenderState(initOptions),\n+          instantSearchInstance,\n+        },\n+        false\n+      );\n+\n+      const payload: Record<string, unknown> = {\n+        messages: [\n+          {\n+            role: 'user',\n+            content: JSON.stringify(context),\n+          },\n+        ],\n+      };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720710055",
+    "id": 2720710055,
+    "line": 182,
+    "node_id": "PRRC_kwDOAlnbOs6iKr2n",
+    "original_commit_id": "dbbc9e0eb91fa02809d3b2206a00b19a1230c48b",
+    "original_line": 173,
+    "original_position": 173,
+    "original_start_line": 166,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 182,
+    "pull_request_review_id": 3696924050,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720710055/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 170,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2026-01-23T10:53:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720710055",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720716765"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6855"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720716765"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think `data` is already the message when I tested it yesterday\n\n```suggestion\n          if (data.role !== 'assistant') {\n            return;\n          }\n          suggestions = data.parts?.find(\n            (part: { type: string }) => part.type === 'data-suggestions'\n          )?.data?.suggestions;\n```",
+    "commit_id": "dbbc9e0eb91fa02809d3b2206a00b19a1230c48b",
+    "created_at": "2026-01-23T10:52:18Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getAlgoliaAgent,\n+  getAppIdAndApiKey,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type {\n+  Connector,\n+  InitOptions,\n+  RenderOptions,\n+  Renderer,\n+  Unmounter,\n+  UnknownWidgetParams,\n+  WidgetRenderState,\n+  IndexRenderState,\n+} from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'prompt-suggestions',\n+  connector: true,\n+});\n+\n+export type PromptSuggestionsStatus = 'idle' | 'loading' | 'ready' | 'error';\n+\n+export type PromptSuggestionsTransport = {\n+  /**\n+   * The custom API endpoint URL.\n+   */\n+  api: string;\n+  /**\n+   * Custom headers to send with the request.\n+   */\n+  headers?: Record<string, string>;\n+  /**\n+   * Function to prepare the request body before sending.\n+   * Receives the default body and returns the modified request options.\n+   */\n+  prepareSendMessagesRequest?: (body: Record<string, unknown>) => {\n+    body: Record<string, unknown>;\n+  };\n+};\n+\n+export type PromptSuggestionsConnectorParams = {\n+  /**\n+   * The ID of the agent configured in the Algolia dashboard.\n+   * Required unless a custom `transport` is provided.\n+   */\n+  agentId?: string;\n+  /**\n+   * Context object to send to the agent (e.g., product data for a PDP).\n+   */\n+  context: Record<string, unknown>;\n+  /**\n+   * Custom transport configuration for the API requests.\n+   * When provided, allows using a custom endpoint, headers, and request body.\n+   */\n+  transport?: PromptSuggestionsTransport;\n+};\n+\n+export type PromptSuggestionsRenderState = {\n+  /**\n+   * Suggestions received from the AI model.\n+   */\n+  suggestions?: string[];\n+  /**\n+   * The status of the prompt suggestions request.\n+   */\n+  status: PromptSuggestionsStatus;\n+  /**\n+   * Error that occurred during the request.\n+   */\n+  error?: Error;\n+  /**\n+   * Sends a suggestion to the main chat. Opens the chat if not already open.\n+   */\n+  sendSuggestion: (suggestion: string) => void;\n+};\n+\n+export type PromptSuggestionsWidgetDescription = {\n+  $$type: 'ais.promptSuggestions';\n+  renderState: PromptSuggestionsRenderState;\n+  indexRenderState: {\n+    promptSuggestions: WidgetRenderState<\n+      PromptSuggestionsRenderState,\n+      PromptSuggestionsConnectorParams\n+    >;\n+  };\n+};\n+\n+export type PromptSuggestionsConnector = Connector<\n+  PromptSuggestionsWidgetDescription,\n+  PromptSuggestionsConnectorParams\n+>;\n+\n+export default (function connectPromptSuggestions<\n+  TWidgetParams extends UnknownWidgetParams\n+>(\n+  renderFn: Renderer<\n+    PromptSuggestionsRenderState,\n+    TWidgetParams & PromptSuggestionsConnectorParams\n+  >,\n+  unmountFn: Unmounter = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return (widgetParams: TWidgetParams & PromptSuggestionsConnectorParams) => {\n+    const { agentId, context, transport } = widgetParams;\n+\n+    if (!agentId && !transport) {\n+      throw new Error(\n+        withUsage(\n+          'The `agentId` option is required unless a custom `transport` is provided.'\n+        )\n+      );\n+    }\n+\n+    let endpoint: string;\n+    let headers: Record<string, string>;\n+    let status: PromptSuggestionsStatus = 'idle';\n+    let suggestions: string[] | undefined;\n+    let error: Error | undefined;\n+\n+    const getWidgetRenderState = (\n+      renderOptions: InitOptions | RenderOptions\n+    ) => {\n+      return {\n+        suggestions,\n+        status,\n+        error,\n+        sendSuggestion: (suggestion: string) => {\n+          const indexId = renderOptions.parent.getIndexId();\n+          const mainChat = renderOptions.instantSearchInstance.renderState[\n+            indexId\n+          ]?.chat as WidgetRenderState<any, any> | undefined;\n+\n+          if (!mainChat) {\n+            throw new Error(\n+              'PromptSuggestions: Chat widget not found. Make sure you have a Chat widget in your InstantSearch instance.'\n+            );\n+          }\n+\n+          if (!mainChat.open) {\n+            mainChat.setOpen(true);\n+          }\n+\n+          mainChat.sendMessage({ text: suggestion });\n+        },\n+        widgetParams,\n+      };\n+    };\n+\n+    const fetchSuggestions = (initOptions: InitOptions) => {\n+      const { instantSearchInstance } = initOptions;\n+\n+      status = 'loading';\n+      renderFn(\n+        {\n+          ...getWidgetRenderState(initOptions),\n+          instantSearchInstance,\n+        },\n+        false\n+      );\n+\n+      const payload: Record<string, unknown> = {\n+        messages: [\n+          {\n+            role: 'user',\n+            content: JSON.stringify(context),\n+          },\n+        ],\n+      };\n+\n+      const finalPayload = transport?.prepareSendMessagesRequest\n+        ? transport.prepareSendMessagesRequest(payload).body\n+        : payload;\n+\n+      fetch(endpoint, {\n+        method: 'POST',\n+        headers: { ...headers, 'Content-Type': 'application/json' },\n+        body: JSON.stringify(finalPayload),\n+      })\n+        .then((response) => {\n+          if (!response.ok) {\n+            throw new Error(`HTTP error ${response.status}`);\n+          }\n+          return response.json();\n+        })\n+        .then((data) => {\n+          const assistantMessage = data.messages?.find(\n+            (msg: { role: string }) => msg.role === 'assistant'\n+          );\n+\n+          if (assistantMessage?.parts) {\n+            const suggestionsPart = assistantMessage.parts.find(\n+              (part: { type: string }) => part.type === 'data-suggestions'\n+            );\n+            if (suggestionsPart?.data?.suggestions) {\n+              suggestions = suggestionsPart.data.suggestions;\n+            }\n+          }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6855#discussion_r2720716765",
+    "id": 2720716765,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6iKtfd",
+    "original_commit_id": "dbbc9e0eb91fa02809d3b2206a00b19a1230c48b",
+    "original_line": 202,
+    "original_position": 202,
+    "original_start_line": 191,
+    "path": "packages/instantsearch.js/src/connectors/prompt-suggestions/connectPromptSuggestions.ts",
+    "position": 1,
+    "pull_request_review_id": 3696924050,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6855",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720716765/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2026-01-23T10:53:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2720716765",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  }
+]

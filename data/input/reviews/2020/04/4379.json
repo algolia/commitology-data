@@ -1,0 +1,2086 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405628897"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405628897"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Seems that `canRefine` property exists somewhere, but is not public. Do you know where it comes from? And why is used?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:50:51Z",
+    "diff_hunk": "@@ -32,6 +32,10 @@ export type BreadcrumbProps = {\n   };\n   createURL(value: string | undefined): string;\n   refine(value: string | undefined): void;\n+  /**\n+   * @internal\n+   */\n+  canRefine?: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405628897",
+    "id": 405628897,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYyODg5Nw==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 35,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/components/Breadcrumb/Breadcrumb.tsx",
+    "position": 4,
+    "pull_request_review_id": 390105408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405628897/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405628897",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629504"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629504"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Seems that canRefine property exists somewhere, but is not public. Do you know where it comes from? And why is used?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:51:45Z",
+    "diff_hunk": "@@ -5,54 +5,97 @@ import {\n   isEqual,\n   noop,\n } from '../../lib/utils';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { Connector, TransformItems, CreateURL } from '../../types';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'breadcrumb',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} BreadcrumbItem\n- * @property {string} label Label of the category or subcategory.\n- * @property {string} value Value of breadcrumb item.\n- */\n-\n-/**\n- * @typedef {Object} CustomBreadcrumbWidgetOptions\n- * @property {string[]} attributes Attributes to use to generate the hierarchy of the breadcrumb.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- *\n- * You can also use a sort function that behaves like the standard Javascript [compareFunction](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#Syntax).\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbRenderingOptions\n- * @property {function(item.value): string} createURL Creates an url for the next state for a clicked item. The special value `null` is used for the `Home` (or root) item of the breadcrumb and will return an empty array.\n- * @property {BreadcrumbItem[]} items Values to be rendered.\n- * @property {function(item.value)} refine Sets the path of the hierarchical filter and triggers a new search.\n- * @property {Object} widgetParams All original `CustomBreadcrumbWidgetOptions` forwarded to the `renderFn`.\n- */\n-\n-/**\n- * **Breadcrumb** connector provides the logic to build a custom widget\n- * that will give the user the ability to see the current path in a hierarchical facet.\n- *\n- * This is commonly used in websites that have a large amount of content organized in a hierarchical manner (usually e-commerce websites).\n- * @type {Connector}\n- * @param {function(BreadcrumbRenderingOptions, boolean)} renderFn Rendering function for the custom **Breadcrumb* widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(CustomBreadcrumbWidgetOptions)} Re-usable widget factory for a custom **Breadcrumb** widget.\n- */\n-export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n+export type BreadcrumbConnectorParamsItem = {\n+  /**\n+   * Label of the category or subcategory.\n+   */\n+  label: string;\n+\n+  /**\n+   * Value of breadcrumb item.\n+   */\n+  value: string;\n+};\n+\n+export type BreadcrumbConnectorParams = {\n+  /**\n+   * Attributes to use to generate the hierarchy of the breadcrumb.\n+   */\n+  attributes: string[];\n+\n+  /**\n+   * Prefix path to use if the first level is not the root level.\n+   */\n+  rootPath?: string;\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<BreadcrumbConnectorParamsItem>;\n+\n+  /**\n+   * The level separator used in the records.\n+   *\n+   * @default '>'\n+   */\n+  separator?: string;\n+};\n+\n+export type BreadcrumbRendererOptions = {\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: CreateURL<BreadcrumbConnectorParamsItem['value']>;\n+\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: BreadcrumbConnectorParamsItem[];\n+\n+  /**\n+   * Sets the path of the hierarchical filter and triggers a new search.\n+   */\n+  refine: (value: BreadcrumbConnectorParamsItem['value']) => void;\n+\n+  /**\n+   * @internal\n+   */\n+  canRefine: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629504",
+    "id": 405629504,
+    "line": 71,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYyOTUwNA==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 71,
+    "original_position": 101,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 101,
+    "pull_request_review_id": 390106166,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629504/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629504",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629697"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629697"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "As usual, we also remove `this` references on the migration.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:52:01Z",
+    "diff_hunk": "@@ -5,54 +5,97 @@ import {\n   isEqual,\n   noop,\n } from '../../lib/utils';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { Connector, TransformItems, CreateURL } from '../../types';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'breadcrumb',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} BreadcrumbItem\n- * @property {string} label Label of the category or subcategory.\n- * @property {string} value Value of breadcrumb item.\n- */\n-\n-/**\n- * @typedef {Object} CustomBreadcrumbWidgetOptions\n- * @property {string[]} attributes Attributes to use to generate the hierarchy of the breadcrumb.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- *\n- * You can also use a sort function that behaves like the standard Javascript [compareFunction](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#Syntax).\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbRenderingOptions\n- * @property {function(item.value): string} createURL Creates an url for the next state for a clicked item. The special value `null` is used for the `Home` (or root) item of the breadcrumb and will return an empty array.\n- * @property {BreadcrumbItem[]} items Values to be rendered.\n- * @property {function(item.value)} refine Sets the path of the hierarchical filter and triggers a new search.\n- * @property {Object} widgetParams All original `CustomBreadcrumbWidgetOptions` forwarded to the `renderFn`.\n- */\n-\n-/**\n- * **Breadcrumb** connector provides the logic to build a custom widget\n- * that will give the user the ability to see the current path in a hierarchical facet.\n- *\n- * This is commonly used in websites that have a large amount of content organized in a hierarchical manner (usually e-commerce websites).\n- * @type {Connector}\n- * @param {function(BreadcrumbRenderingOptions, boolean)} renderFn Rendering function for the custom **Breadcrumb* widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(CustomBreadcrumbWidgetOptions)} Re-usable widget factory for a custom **Breadcrumb** widget.\n- */\n-export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n+export type BreadcrumbConnectorParamsItem = {\n+  /**\n+   * Label of the category or subcategory.\n+   */\n+  label: string;\n+\n+  /**\n+   * Value of breadcrumb item.\n+   */\n+  value: string;\n+};\n+\n+export type BreadcrumbConnectorParams = {\n+  /**\n+   * Attributes to use to generate the hierarchy of the breadcrumb.\n+   */\n+  attributes: string[];\n+\n+  /**\n+   * Prefix path to use if the first level is not the root level.\n+   */\n+  rootPath?: string;\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<BreadcrumbConnectorParamsItem>;\n+\n+  /**\n+   * The level separator used in the records.\n+   *\n+   * @default '>'\n+   */\n+  separator?: string;\n+};\n+\n+export type BreadcrumbRendererOptions = {\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: CreateURL<BreadcrumbConnectorParamsItem['value']>;\n+\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: BreadcrumbConnectorParamsItem[];\n+\n+  /**\n+   * Sets the path of the hierarchical filter and triggers a new search.\n+   */\n+  refine: (value: BreadcrumbConnectorParamsItem['value']) => void;\n+\n+  /**\n+   * @internal\n+   */\n+  canRefine: boolean;\n+};\n+\n+export type BreadcrumbConnector = Connector<\n+  BreadcrumbRendererOptions,\n+  BreadcrumbConnectorParams\n+>;\n+\n+const connectBreadcrumb: BreadcrumbConnector = function connectBreadcrumb(\n+  renderFn,\n+  unmountFn = noop\n+) {\n   checkRendering(renderFn, withUsage());\n-  return (widgetParams = {}) => {\n+\n+  type ConnectorState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629697",
+    "id": 405629697,
+    "line": 85,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYyOTY5Nw==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 85,
+    "original_position": 116,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 116,
+    "pull_request_review_id": 390106402,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629697/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629697",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629936"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629936"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can you confirm that this also accepts a function? ",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:52:22Z",
+    "diff_hunk": "@@ -42,97 +45,88 @@ const renderer = ({ containerNode, cssClasses, renderState, templates }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} BreadcrumbCSSClasses\n- * @property {string|string[]} [root] CSS class to add to the root element of the widget.\n- * @property {string|string[]} [noRefinementRoot] CSS class to add to the root element of the widget if there are no refinements.\n- * @property {string|string[]} [list] CSS class to add to the list element.\n- * @property {string|string[]} [item] CSS class to add to the items of the list. The items contains the link and the separator.\n- * @property {string|string[]} [selectedItem] CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n- * @property {string|string[]} [separator] CSS class to add to the separator.\n- * @property {string|string[]} [link] CSS class to add to the links in the items.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbTemplates\n- * @property {string|function(object):string} [home = 'Home'] Label of the breadcrumb's first element.\n- * @property {string|function(object):string} [separator = '>'] Symbol used to separate the elements of the breadcrumb.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {string[]} attributes Array of attributes to use to generate the breadcrumb.\n- * @property {string} [separator = ' > '] The level separator used in the records.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {BreadcrumbTemplates} [templates] Templates to use for the widget.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- * @property {BreadcrumbCSSClasses} [cssClasses] CSS classes to add to the wrapping elements.\n- */\n-\n-/**\n- * The breadcrumb widget is a secondary navigation scheme that allows the user to see where the current page is in relation to the facet's hierarchy.\n- *\n- * It reduces the number of actions a user needs to take in order to get to a higher-level page and improve the discoverability of the app or website's sections and pages.\n- * It is commonly used for websites with a large amount of data organized into categories with subcategories.\n- *\n- * All attributes (lvl0, lvl1 in this case) must be declared as [attributes for faceting](https://www.algolia.com/doc/guides/searching/faceting/#declaring-attributes-for-faceting) in your\n- * Algolia settings.\n- *\n- * @requirements\n- * Your objects must be formatted in a specific way to be\n- * able to display a breadcrumb. Here's an example:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": \"fruits\",\n- *     \"lvl1\": \"fruits > citrus\"\n- *   }\n- * }\n- * ```\n- *\n- * Each level must be specified entirely.\n- * It's also possible to have multiple values per level, for instance:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": [\"fruits\", \"vitamins\"],\n- *     \"lvl1\": [\"fruits > citrus\", \"vitamins > C\"]\n- *   }\n- * }\n- * ```\n- * @type {WidgetFactory}\n- * @devNovel Breadcrumb\n- * @category navigation\n- * @param {BreadcrumbWidgetOptions} $0 The Breadcrumb widget options.\n- * @return {Widget} A new Breadcrumb widget instance.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.breadcrumb({\n- *     container: '#breadcrumb',\n- *     attributes: ['hierarchicalCategories.lvl0', 'hierarchicalCategories.lvl1', 'hierarchicalCategories.lvl2'],\n- *     templates: { home: 'Home Page' },\n- *     separator: ' / ',\n- *     rootPath: 'Cameras & Camcorders > Digital Cameras',\n- *   })\n- * ]);\n- */\n-\n-export default function breadcrumb({\n-  container,\n-  attributes,\n-  separator,\n-  rootPath = null,\n-  transformItems,\n-  templates = defaultTemplates,\n-  cssClasses: userCssClasses = {},\n-} = {}) {\n+export type BreadcrumbCSSClasses = {\n+  /**\n+   * CSS class to add to the root element of the widget.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS class to add to the root element of the widget if there are no refinements.\n+   */\n+  noRefinementRoot?: string | string[];\n+\n+  /**\n+   * CSS class to add to the list element.\n+   */\n+  list?: string | string[];\n+\n+  /**\n+   * CSS class to add to the items of the list. The items contains the link and the separator.\n+   */\n+  item?: string | string[];\n+\n+  /**\n+   * CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n+   */\n+  selectedItem?: string | string[];\n+\n+  /**\n+   * CSS class to add to the separator.\n+   */\n+  separator?: string | string[];\n+\n+  /**\n+   * CSS class to add to the links in the items.\n+   */\n+  link?: string | string[];\n+};\n+\n+export type BreadcrumbTemplates = {\n+  /**\n+   * Label of the breadcrumb's first element.\n+   */\n+  home?: string | ((value: any) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629936",
+    "id": 405629936,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYyOTkzNg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 89,
+    "original_position": 155,
+    "original_start_line": null,
+    "path": "src/widgets/breadcrumb/breadcrumb.tsx",
+    "position": 1,
+    "pull_request_review_id": 390106746,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629936/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629936",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629962"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629962"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can you confirm that this also accepts a function? ",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:52:24Z",
+    "diff_hunk": "@@ -42,97 +45,88 @@ const renderer = ({ containerNode, cssClasses, renderState, templates }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} BreadcrumbCSSClasses\n- * @property {string|string[]} [root] CSS class to add to the root element of the widget.\n- * @property {string|string[]} [noRefinementRoot] CSS class to add to the root element of the widget if there are no refinements.\n- * @property {string|string[]} [list] CSS class to add to the list element.\n- * @property {string|string[]} [item] CSS class to add to the items of the list. The items contains the link and the separator.\n- * @property {string|string[]} [selectedItem] CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n- * @property {string|string[]} [separator] CSS class to add to the separator.\n- * @property {string|string[]} [link] CSS class to add to the links in the items.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbTemplates\n- * @property {string|function(object):string} [home = 'Home'] Label of the breadcrumb's first element.\n- * @property {string|function(object):string} [separator = '>'] Symbol used to separate the elements of the breadcrumb.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {string[]} attributes Array of attributes to use to generate the breadcrumb.\n- * @property {string} [separator = ' > '] The level separator used in the records.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {BreadcrumbTemplates} [templates] Templates to use for the widget.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- * @property {BreadcrumbCSSClasses} [cssClasses] CSS classes to add to the wrapping elements.\n- */\n-\n-/**\n- * The breadcrumb widget is a secondary navigation scheme that allows the user to see where the current page is in relation to the facet's hierarchy.\n- *\n- * It reduces the number of actions a user needs to take in order to get to a higher-level page and improve the discoverability of the app or website's sections and pages.\n- * It is commonly used for websites with a large amount of data organized into categories with subcategories.\n- *\n- * All attributes (lvl0, lvl1 in this case) must be declared as [attributes for faceting](https://www.algolia.com/doc/guides/searching/faceting/#declaring-attributes-for-faceting) in your\n- * Algolia settings.\n- *\n- * @requirements\n- * Your objects must be formatted in a specific way to be\n- * able to display a breadcrumb. Here's an example:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": \"fruits\",\n- *     \"lvl1\": \"fruits > citrus\"\n- *   }\n- * }\n- * ```\n- *\n- * Each level must be specified entirely.\n- * It's also possible to have multiple values per level, for instance:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": [\"fruits\", \"vitamins\"],\n- *     \"lvl1\": [\"fruits > citrus\", \"vitamins > C\"]\n- *   }\n- * }\n- * ```\n- * @type {WidgetFactory}\n- * @devNovel Breadcrumb\n- * @category navigation\n- * @param {BreadcrumbWidgetOptions} $0 The Breadcrumb widget options.\n- * @return {Widget} A new Breadcrumb widget instance.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.breadcrumb({\n- *     container: '#breadcrumb',\n- *     attributes: ['hierarchicalCategories.lvl0', 'hierarchicalCategories.lvl1', 'hierarchicalCategories.lvl2'],\n- *     templates: { home: 'Home Page' },\n- *     separator: ' / ',\n- *     rootPath: 'Cameras & Camcorders > Digital Cameras',\n- *   })\n- * ]);\n- */\n-\n-export default function breadcrumb({\n-  container,\n-  attributes,\n-  separator,\n-  rootPath = null,\n-  transformItems,\n-  templates = defaultTemplates,\n-  cssClasses: userCssClasses = {},\n-} = {}) {\n+export type BreadcrumbCSSClasses = {\n+  /**\n+   * CSS class to add to the root element of the widget.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS class to add to the root element of the widget if there are no refinements.\n+   */\n+  noRefinementRoot?: string | string[];\n+\n+  /**\n+   * CSS class to add to the list element.\n+   */\n+  list?: string | string[];\n+\n+  /**\n+   * CSS class to add to the items of the list. The items contains the link and the separator.\n+   */\n+  item?: string | string[];\n+\n+  /**\n+   * CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n+   */\n+  selectedItem?: string | string[];\n+\n+  /**\n+   * CSS class to add to the separator.\n+   */\n+  separator?: string | string[];\n+\n+  /**\n+   * CSS class to add to the links in the items.\n+   */\n+  link?: string | string[];\n+};\n+\n+export type BreadcrumbTemplates = {\n+  /**\n+   * Label of the breadcrumb's first element.\n+   */\n+  home?: string | ((value: any) => string);\n+\n+  /**\n+   * Symbol used to separate the elements of the breadcrumb.\n+   */\n+  separator?: string | ((value: any) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405629962",
+    "id": 405629962,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYyOTk2Mg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 94,
+    "original_position": 160,
+    "original_start_line": null,
+    "path": "src/widgets/breadcrumb/breadcrumb.tsx",
+    "position": 1,
+    "pull_request_review_id": 390106778,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629962/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405629962",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405630692"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630692"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Is everyone ok with this name? I can also make it ItemsTransformer or something.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:53:14Z",
+    "diff_hunk": "@@ -71,3 +71,13 @@ export type Connector<TRendererOptions, TConnectorParams> = <TWidgetParams>(\n    */\n   unmountFn?: Unmounter\n ) => WidgetFactory<TConnectorParams, TWidgetParams>;\n+\n+/**\n+ * Transforms the given items.\n+ */\n+export type TransformItems<TItem> = (objects: TItem[]) => TItem[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405630692",
+    "id": 405630692,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYzMDY5Mg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 78,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 1,
+    "pull_request_review_id": 390107549,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630692/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630692",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405630768"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630768"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Is everyone ok with this name? I can also make it URLCreator or something.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:53:21Z",
+    "diff_hunk": "@@ -71,3 +71,13 @@ export type Connector<TRendererOptions, TConnectorParams> = <TWidgetParams>(\n    */\n   unmountFn?: Unmounter\n ) => WidgetFactory<TConnectorParams, TWidgetParams>;\n+\n+/**\n+ * Transforms the given items.\n+ */\n+export type TransformItems<TItem> = (objects: TItem[]) => TItem[];\n+\n+/**\n+ * Creates the URL for the given value.\n+ */\n+export type CreateURL<TValue> = (value: TValue) => string;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405630768",
+    "id": 405630768,
+    "line": 83,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYzMDc2OA==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 83,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 13,
+    "pull_request_review_id": 390107654,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630768/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405630768",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405634380"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405634380"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Missing default value right?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:58:22Z",
+    "diff_hunk": "@@ -116,17 +162,20 @@ export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n       render({ instantSearchInstance, results, state }) {\n         const [{ name: facetName }] = state.hierarchicalFacets;\n \n-        const facetValues = results.getFacetValues(facetName);\n+        const facetValues = results.getFacetValues(\n+          facetName,\n+          {}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405634380",
+    "id": 405634380,
+    "line": 167,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYzNDM4MA==",
+    "original_commit_id": "535f8a60878422a84aca4cc21b8d1bb9b9155442",
+    "original_line": 167,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 189,
+    "pull_request_review_id": 390112179,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405634380/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405634380",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405635370"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405635370"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "helper.state.toggleRefinement got renamed to helper.state.toggleFacetRefinement",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-08T15:59:45Z",
+    "diff_hunk": "@@ -66,26 +109,29 @@ export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n       $$type: 'ais.breadcrumb',\n \n       init({ createURL, helper, instantSearchInstance }) {\n-        this._createURL = facetValue => {\n+        connectorState.createURL = facetValue => {\n           if (!facetValue) {\n             const breadcrumb = helper.getHierarchicalFacetBreadcrumb(\n               hierarchicalFacetName\n             );\n             if (breadcrumb.length > 0) {\n               return createURL(\n-                helper.state.toggleRefinement(\n+                helper.state.toggleFacetRefinement(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r405635370",
+    "id": 405635370,
+    "line": 119,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNTYzNTM3MA==",
+    "original_commit_id": "535f8a60878422a84aca4cc21b8d1bb9b9155442",
+    "original_line": 119,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 147,
+    "pull_request_review_id": 390113420,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405635370/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/405635370",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406053629"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406053629"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you can use the `Template` or `TemplateData` type we have. Since no value is given to those you can use a string too (for any template), but there won't be any value given, so it should be `() => string`",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:50:22Z",
+    "diff_hunk": "@@ -42,97 +45,88 @@ const renderer = ({ containerNode, cssClasses, renderState, templates }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} BreadcrumbCSSClasses\n- * @property {string|string[]} [root] CSS class to add to the root element of the widget.\n- * @property {string|string[]} [noRefinementRoot] CSS class to add to the root element of the widget if there are no refinements.\n- * @property {string|string[]} [list] CSS class to add to the list element.\n- * @property {string|string[]} [item] CSS class to add to the items of the list. The items contains the link and the separator.\n- * @property {string|string[]} [selectedItem] CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n- * @property {string|string[]} [separator] CSS class to add to the separator.\n- * @property {string|string[]} [link] CSS class to add to the links in the items.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbTemplates\n- * @property {string|function(object):string} [home = 'Home'] Label of the breadcrumb's first element.\n- * @property {string|function(object):string} [separator = '>'] Symbol used to separate the elements of the breadcrumb.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {string[]} attributes Array of attributes to use to generate the breadcrumb.\n- * @property {string} [separator = ' > '] The level separator used in the records.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {BreadcrumbTemplates} [templates] Templates to use for the widget.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- * @property {BreadcrumbCSSClasses} [cssClasses] CSS classes to add to the wrapping elements.\n- */\n-\n-/**\n- * The breadcrumb widget is a secondary navigation scheme that allows the user to see where the current page is in relation to the facet's hierarchy.\n- *\n- * It reduces the number of actions a user needs to take in order to get to a higher-level page and improve the discoverability of the app or website's sections and pages.\n- * It is commonly used for websites with a large amount of data organized into categories with subcategories.\n- *\n- * All attributes (lvl0, lvl1 in this case) must be declared as [attributes for faceting](https://www.algolia.com/doc/guides/searching/faceting/#declaring-attributes-for-faceting) in your\n- * Algolia settings.\n- *\n- * @requirements\n- * Your objects must be formatted in a specific way to be\n- * able to display a breadcrumb. Here's an example:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": \"fruits\",\n- *     \"lvl1\": \"fruits > citrus\"\n- *   }\n- * }\n- * ```\n- *\n- * Each level must be specified entirely.\n- * It's also possible to have multiple values per level, for instance:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": [\"fruits\", \"vitamins\"],\n- *     \"lvl1\": [\"fruits > citrus\", \"vitamins > C\"]\n- *   }\n- * }\n- * ```\n- * @type {WidgetFactory}\n- * @devNovel Breadcrumb\n- * @category navigation\n- * @param {BreadcrumbWidgetOptions} $0 The Breadcrumb widget options.\n- * @return {Widget} A new Breadcrumb widget instance.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.breadcrumb({\n- *     container: '#breadcrumb',\n- *     attributes: ['hierarchicalCategories.lvl0', 'hierarchicalCategories.lvl1', 'hierarchicalCategories.lvl2'],\n- *     templates: { home: 'Home Page' },\n- *     separator: ' / ',\n- *     rootPath: 'Cameras & Camcorders > Digital Cameras',\n- *   })\n- * ]);\n- */\n-\n-export default function breadcrumb({\n-  container,\n-  attributes,\n-  separator,\n-  rootPath = null,\n-  transformItems,\n-  templates = defaultTemplates,\n-  cssClasses: userCssClasses = {},\n-} = {}) {\n+export type BreadcrumbCSSClasses = {\n+  /**\n+   * CSS class to add to the root element of the widget.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS class to add to the root element of the widget if there are no refinements.\n+   */\n+  noRefinementRoot?: string | string[];\n+\n+  /**\n+   * CSS class to add to the list element.\n+   */\n+  list?: string | string[];\n+\n+  /**\n+   * CSS class to add to the items of the list. The items contains the link and the separator.\n+   */\n+  item?: string | string[];\n+\n+  /**\n+   * CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n+   */\n+  selectedItem?: string | string[];\n+\n+  /**\n+   * CSS class to add to the separator.\n+   */\n+  separator?: string | string[];\n+\n+  /**\n+   * CSS class to add to the links in the items.\n+   */\n+  link?: string | string[];\n+};\n+\n+export type BreadcrumbTemplates = {\n+  /**\n+   * Label of the breadcrumb's first element.\n+   */\n+  home?: string | ((value: any) => string);\n+\n+  /**\n+   * Symbol used to separate the elements of the breadcrumb.\n+   */\n+  separator?: string | ((value: any) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406053629",
+    "id": 406053629,
+    "in_reply_to_id": 405629962,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1MzYyOQ==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 94,
+    "original_position": 160,
+    "original_start_line": null,
+    "path": "src/widgets/breadcrumb/breadcrumb.tsx",
+    "position": 1,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406053629/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406053629",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406054092"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406054092"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's [given from the connector](https://github.com/algolia/instantsearch.js/blob/bae6ed2875b03a8a43c576085a19f2ceb43ba1f2/src/connectors/breadcrumb/connectBreadcrumb.js#L106) to build different UIs when no refinements are possible. It appears that we don't use it in the component, but that doesn't mean that it should be marked as `internal` because it's still a public API, and we don't export components.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:51:12Z",
+    "diff_hunk": "@@ -32,6 +32,10 @@ export type BreadcrumbProps = {\n   };\n   createURL(value: string | undefined): string;\n   refine(value: string | undefined): void;\n+  /**\n+   * @internal\n+   */\n+  canRefine?: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406054092",
+    "id": 406054092,
+    "in_reply_to_id": 405628897,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NDA5Mg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 35,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/components/Breadcrumb/Breadcrumb.tsx",
+    "position": 4,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406054092/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406054092",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406055013"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055013"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this now no longer allows the user to pass another type which has more values since it's no longer generic. I don't think that's a big deal, but something to keep in mind.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:52:50Z",
+    "diff_hunk": "@@ -58,9 +58,7 @@ export type HitsPerPageConnectorParams = {\n   /**\n    * Function to transform the items passed to the templates.\n    */\n-  transformItems?: <TItem extends HitsPerPageConnectorParamsItem>(\n-    objects: TItem[]\n-  ) => TItem[];\n+  transformItems?: TransformItems<HitsPerPageConnectorParamsItem>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406055013",
+    "id": 406055013,
+    "line": 61,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NTAxMw==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 61,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/connectors/hits-per-page/connectHitsPerPage.ts",
+    "position": 16,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055013/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055013",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406055208"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055208"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "See above reply.\r\n\r\nKeep in mind that widgets (and components) are our take at implementing the API given by the connectors, which means that sometimes, we don't use all of their features—but users might if they implement their own widgets based on these connectors!",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:53:09Z",
+    "diff_hunk": "@@ -5,54 +5,97 @@ import {\n   isEqual,\n   noop,\n } from '../../lib/utils';\n+import { SearchResults } from 'algoliasearch-helper';\n+import { Connector, TransformItems, CreateURL } from '../../types';\n \n const withUsage = createDocumentationMessageGenerator({\n   name: 'breadcrumb',\n   connector: true,\n });\n \n-/**\n- * @typedef {Object} BreadcrumbItem\n- * @property {string} label Label of the category or subcategory.\n- * @property {string} value Value of breadcrumb item.\n- */\n-\n-/**\n- * @typedef {Object} CustomBreadcrumbWidgetOptions\n- * @property {string[]} attributes Attributes to use to generate the hierarchy of the breadcrumb.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- *\n- * You can also use a sort function that behaves like the standard Javascript [compareFunction](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#Syntax).\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbRenderingOptions\n- * @property {function(item.value): string} createURL Creates an url for the next state for a clicked item. The special value `null` is used for the `Home` (or root) item of the breadcrumb and will return an empty array.\n- * @property {BreadcrumbItem[]} items Values to be rendered.\n- * @property {function(item.value)} refine Sets the path of the hierarchical filter and triggers a new search.\n- * @property {Object} widgetParams All original `CustomBreadcrumbWidgetOptions` forwarded to the `renderFn`.\n- */\n-\n-/**\n- * **Breadcrumb** connector provides the logic to build a custom widget\n- * that will give the user the ability to see the current path in a hierarchical facet.\n- *\n- * This is commonly used in websites that have a large amount of content organized in a hierarchical manner (usually e-commerce websites).\n- * @type {Connector}\n- * @param {function(BreadcrumbRenderingOptions, boolean)} renderFn Rendering function for the custom **Breadcrumb* widget.\n- * @param {function} unmountFn Unmount function called when the widget is disposed.\n- * @return {function(CustomBreadcrumbWidgetOptions)} Re-usable widget factory for a custom **Breadcrumb** widget.\n- */\n-export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n+export type BreadcrumbConnectorParamsItem = {\n+  /**\n+   * Label of the category or subcategory.\n+   */\n+  label: string;\n+\n+  /**\n+   * Value of breadcrumb item.\n+   */\n+  value: string;\n+};\n+\n+export type BreadcrumbConnectorParams = {\n+  /**\n+   * Attributes to use to generate the hierarchy of the breadcrumb.\n+   */\n+  attributes: string[];\n+\n+  /**\n+   * Prefix path to use if the first level is not the root level.\n+   */\n+  rootPath?: string;\n+\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<BreadcrumbConnectorParamsItem>;\n+\n+  /**\n+   * The level separator used in the records.\n+   *\n+   * @default '>'\n+   */\n+  separator?: string;\n+};\n+\n+export type BreadcrumbRendererOptions = {\n+  /**\n+   * Creates the URL for a single item name in the list.\n+   */\n+  createURL: CreateURL<BreadcrumbConnectorParamsItem['value']>;\n+\n+  /**\n+   * Array of objects defining the different values and labels.\n+   */\n+  items: BreadcrumbConnectorParamsItem[];\n+\n+  /**\n+   * Sets the path of the hierarchical filter and triggers a new search.\n+   */\n+  refine: (value: BreadcrumbConnectorParamsItem['value']) => void;\n+\n+  /**\n+   * @internal\n+   */\n+  canRefine: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406055208",
+    "id": 406055208,
+    "in_reply_to_id": 405629504,
+    "line": 71,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NTIwOA==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 71,
+    "original_position": 101,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 101,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055208/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406055208",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056001"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056001"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "here's & in render where canRefine comes from",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:54:28Z",
+    "diff_hunk": "@@ -102,11 +148,11 @@ export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n \n         renderFn(\n           {\n-            createURL: this._createURL,\n+            createURL: connectorState.createURL,\n             canRefine: false,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056001",
+    "id": 406056001,
+    "line": 152,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NjAwMQ==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 152,
+    "original_position": 174,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 174,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056001/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056001",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056487"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056487"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "can be @ts-expect-error now, right?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:55:16Z",
+    "diff_hunk": "@@ -4,11 +4,18 @@ import jsHelper, {\n } from 'algoliasearch-helper';\n import { warning } from '../../../lib/utils';\n import connectBreadcrumb from '../connectBreadcrumb';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n \n describe('connectBreadcrumb', () => {\n   describe('Usage', () => {\n     it('throws without render function', () => {\n       expect(() => {\n+        // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056487",
+    "id": 406056487,
+    "line": 18,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NjQ4Nw==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 18,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 15,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056487/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056487",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056796"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056796"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why did this one need to be ignored? value seems valid to me.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:55:53Z",
+    "diff_hunk": "@@ -135,12 +143,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/breadcrumb/\n     it('returns the `SearchParameters` with another `hierarchicalFacets` already defined', () => {\n       const render = () => {};\n       const makeWidget = connectBreadcrumb(render);\n-      const helper = jsHelper({}, '', {\n+      const helper = jsHelper(createSearchClient(), '', {\n         hierarchicalFacets: [\n           {\n             name: 'country',\n             attributes: ['country', 'sub_country'],\n             separator: ' > ',\n+            // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406056796",
+    "id": 406056796,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1Njc5Ng==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 152,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 1,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056796/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406056796",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406057456"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406057456"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yeah, those are options. See [`getFacetValues` reference](https://community.algolia.com/algoliasearch-helper-js/reference.html#SearchResults#getFacetValues). We should have marked it as optional in our typings.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:56:55Z",
+    "diff_hunk": "@@ -116,17 +162,20 @@ export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n       render({ instantSearchInstance, results, state }) {\n         const [{ name: facetName }] = state.hierarchicalFacets;\n \n-        const facetValues = results.getFacetValues(facetName);\n+        const facetValues = results.getFacetValues(\n+          facetName,\n+          {}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406057456",
+    "id": 406057456,
+    "in_reply_to_id": 405634380,
+    "line": 167,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1NzQ1Ng==",
+    "original_commit_id": "535f8a60878422a84aca4cc21b8d1bb9b9155442",
+    "original_line": 167,
+    "original_position": 189,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 189,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406057456/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406057456",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406058533"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406058533"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "here's the other canRefine. Why would you say it's internal?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:58:37Z",
+    "diff_hunk": "@@ -116,17 +162,20 @@ export default function connectBreadcrumb(renderFn, unmountFn = noop) {\n       render({ instantSearchInstance, results, state }) {\n         const [{ name: facetName }] = state.hierarchicalFacets;\n \n-        const facetValues = results.getFacetValues(facetName);\n+        const facetValues = results.getFacetValues(\n+          facetName,\n+          {}\n+        ) as SearchResults.HierarchicalFacet;\n         const data = Array.isArray(facetValues.data) ? facetValues.data : [];\n         const items = transformItems(shiftItemsValues(prepareItems(data)));\n \n         renderFn(\n           {\n             canRefine: items.length > 0,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406058533",
+    "id": 406058533,
+    "line": 174,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1ODUzMw==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 174,
+    "original_position": 196,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/connectBreadcrumb.ts",
+    "position": 196,
+    "pull_request_review_id": 390606338,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406058533/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406058533",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059091"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059091"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Good for me.\r\n\r\nAlthough I believe the returned type might not always be `TItem[]`, but rather an objects extending `TItem`. We can tackle that once we're sure of that.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:59:32Z",
+    "diff_hunk": "@@ -71,3 +71,13 @@ export type Connector<TRendererOptions, TConnectorParams> = <TWidgetParams>(\n    */\n   unmountFn?: Unmounter\n ) => WidgetFactory<TConnectorParams, TWidgetParams>;\n+\n+/**\n+ * Transforms the given items.\n+ */\n+export type TransformItems<TItem> = (objects: TItem[]) => TItem[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059091",
+    "id": 406059091,
+    "in_reply_to_id": 405630692,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1OTA5MQ==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 78,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 1,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059091/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059091",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059295"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059295"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "For naming consistency.\r\n\r\n```suggestion\r\nexport type TransformItems<TItem> = (items: TItem[]) => TItem[];\r\n```",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T08:59:54Z",
+    "diff_hunk": "@@ -71,3 +71,13 @@ export type Connector<TRendererOptions, TConnectorParams> = <TWidgetParams>(\n    */\n   unmountFn?: Unmounter\n ) => WidgetFactory<TConnectorParams, TWidgetParams>;\n+\n+/**\n+ * Transforms the given items.\n+ */\n+export type TransformItems<TItem> = (objects: TItem[]) => TItem[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059295",
+    "id": 406059295,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1OTI5NQ==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 78,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 1,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059295/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059295",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059906"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059906"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes—we've got a [type for templates](https://github.com/algolia/instantsearch.js/blob/bae6ed2875b03a8a43c576085a19f2ceb43ba1f2/src/types/widget.ts#L199-L201).",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T09:01:02Z",
+    "diff_hunk": "@@ -42,97 +45,88 @@ const renderer = ({ containerNode, cssClasses, renderState, templates }) => (\n   );\n };\n \n-/**\n- * @typedef {Object} BreadcrumbCSSClasses\n- * @property {string|string[]} [root] CSS class to add to the root element of the widget.\n- * @property {string|string[]} [noRefinementRoot] CSS class to add to the root element of the widget if there are no refinements.\n- * @property {string|string[]} [list] CSS class to add to the list element.\n- * @property {string|string[]} [item] CSS class to add to the items of the list. The items contains the link and the separator.\n- * @property {string|string[]} [selectedItem] CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n- * @property {string|string[]} [separator] CSS class to add to the separator.\n- * @property {string|string[]} [link] CSS class to add to the links in the items.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbTemplates\n- * @property {string|function(object):string} [home = 'Home'] Label of the breadcrumb's first element.\n- * @property {string|function(object):string} [separator = '>'] Symbol used to separate the elements of the breadcrumb.\n- */\n-\n-/**\n- * @typedef {Object} BreadcrumbWidgetOptions\n- * @property {string|HTMLElement} container CSS Selector or HTMLElement to insert the widget.\n- * @property {string[]} attributes Array of attributes to use to generate the breadcrumb.\n- * @property {string} [separator = ' > '] The level separator used in the records.\n- * @property {string} [rootPath = null] Prefix path to use if the first level is not the root level.\n- * @property {BreadcrumbTemplates} [templates] Templates to use for the widget.\n- * @property {function(object[]):object[]} [transformItems] Function to transform the items passed to the templates.\n- * @property {BreadcrumbCSSClasses} [cssClasses] CSS classes to add to the wrapping elements.\n- */\n-\n-/**\n- * The breadcrumb widget is a secondary navigation scheme that allows the user to see where the current page is in relation to the facet's hierarchy.\n- *\n- * It reduces the number of actions a user needs to take in order to get to a higher-level page and improve the discoverability of the app or website's sections and pages.\n- * It is commonly used for websites with a large amount of data organized into categories with subcategories.\n- *\n- * All attributes (lvl0, lvl1 in this case) must be declared as [attributes for faceting](https://www.algolia.com/doc/guides/searching/faceting/#declaring-attributes-for-faceting) in your\n- * Algolia settings.\n- *\n- * @requirements\n- * Your objects must be formatted in a specific way to be\n- * able to display a breadcrumb. Here's an example:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": \"fruits\",\n- *     \"lvl1\": \"fruits > citrus\"\n- *   }\n- * }\n- * ```\n- *\n- * Each level must be specified entirely.\n- * It's also possible to have multiple values per level, for instance:\n- *\n- * ```javascript\n- * {\n- *   \"objectID\": \"123\",\n- *   \"name\": \"orange\",\n- *   \"categories\": {\n- *     \"lvl0\": [\"fruits\", \"vitamins\"],\n- *     \"lvl1\": [\"fruits > citrus\", \"vitamins > C\"]\n- *   }\n- * }\n- * ```\n- * @type {WidgetFactory}\n- * @devNovel Breadcrumb\n- * @category navigation\n- * @param {BreadcrumbWidgetOptions} $0 The Breadcrumb widget options.\n- * @return {Widget} A new Breadcrumb widget instance.\n- * @example\n- * search.addWidgets([\n- *   instantsearch.widgets.breadcrumb({\n- *     container: '#breadcrumb',\n- *     attributes: ['hierarchicalCategories.lvl0', 'hierarchicalCategories.lvl1', 'hierarchicalCategories.lvl2'],\n- *     templates: { home: 'Home Page' },\n- *     separator: ' / ',\n- *     rootPath: 'Cameras & Camcorders > Digital Cameras',\n- *   })\n- * ]);\n- */\n-\n-export default function breadcrumb({\n-  container,\n-  attributes,\n-  separator,\n-  rootPath = null,\n-  transformItems,\n-  templates = defaultTemplates,\n-  cssClasses: userCssClasses = {},\n-} = {}) {\n+export type BreadcrumbCSSClasses = {\n+  /**\n+   * CSS class to add to the root element of the widget.\n+   */\n+  root?: string | string[];\n+\n+  /**\n+   * CSS class to add to the root element of the widget if there are no refinements.\n+   */\n+  noRefinementRoot?: string | string[];\n+\n+  /**\n+   * CSS class to add to the list element.\n+   */\n+  list?: string | string[];\n+\n+  /**\n+   * CSS class to add to the items of the list. The items contains the link and the separator.\n+   */\n+  item?: string | string[];\n+\n+  /**\n+   * CSS class to add to the selected item in the list: the last one or the home if there are no refinements.\n+   */\n+  selectedItem?: string | string[];\n+\n+  /**\n+   * CSS class to add to the separator.\n+   */\n+  separator?: string | string[];\n+\n+  /**\n+   * CSS class to add to the links in the items.\n+   */\n+  link?: string | string[];\n+};\n+\n+export type BreadcrumbTemplates = {\n+  /**\n+   * Label of the breadcrumb's first element.\n+   */\n+  home?: string | ((value: any) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406059906",
+    "id": 406059906,
+    "in_reply_to_id": 405629936,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA1OTkwNg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 89,
+    "original_position": 155,
+    "original_start_line": null,
+    "path": "src/widgets/breadcrumb/breadcrumb.tsx",
+    "position": 1,
+    "pull_request_review_id": 390606910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 1,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059906/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406059906",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406062328"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062328"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@francoischalifour Actually, if you return a item that has the shape ( extends ) it will work too.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T09:05:13Z",
+    "diff_hunk": "@@ -71,3 +71,13 @@ export type Connector<TRendererOptions, TConnectorParams> = <TWidgetParams>(\n    */\n   unmountFn?: Unmounter\n ) => WidgetFactory<TConnectorParams, TWidgetParams>;\n+\n+/**\n+ * Transforms the given items.\n+ */\n+export type TransformItems<TItem> = (objects: TItem[]) => TItem[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406062328",
+    "id": 406062328,
+    "in_reply_to_id": 405630692,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA2MjMyOA==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 78,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/types/connector.ts",
+    "position": 1,
+    "pull_request_review_id": 390616975,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062328/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062328",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406062945"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062945"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We are not in TS 3.9 yet. 👍 ",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T09:06:20Z",
+    "diff_hunk": "@@ -4,11 +4,18 @@ import jsHelper, {\n } from 'algoliasearch-helper';\n import { warning } from '../../../lib/utils';\n import connectBreadcrumb from '../connectBreadcrumb';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n \n describe('connectBreadcrumb', () => {\n   describe('Usage', () => {\n     it('throws without render function', () => {\n       expect(() => {\n+        // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406062945",
+    "id": 406062945,
+    "in_reply_to_id": 406056487,
+    "line": 18,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjA2Mjk0NQ==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 18,
+    "original_position": 15,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 15,
+    "pull_request_review_id": 390617715,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062945/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406062945",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406124875"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406124875"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@francoischalifour Component props are always equal to: WidgetOptions + ComponentSpecificProps?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T10:59:21Z",
+    "diff_hunk": "@@ -32,6 +32,10 @@ export type BreadcrumbProps = {\n   };\n   createURL(value: string | undefined): string;\n   refine(value: string | undefined): void;\n+  /**\n+   * @internal\n+   */\n+  canRefine?: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406124875",
+    "id": 406124875,
+    "in_reply_to_id": 405628897,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjEyNDg3NQ==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 35,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/components/Breadcrumb/Breadcrumb.tsx",
+    "position": 4,
+    "pull_request_review_id": 390692639,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406124875/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406124875",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406130206"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406130206"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually, `rootPath`, as specified on the helper, can't be null. `null !== undefined`. Any ideas?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T11:10:47Z",
+    "diff_hunk": "@@ -135,12 +143,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/breadcrumb/\n     it('returns the `SearchParameters` with another `hierarchicalFacets` already defined', () => {\n       const render = () => {};\n       const makeWidget = connectBreadcrumb(render);\n-      const helper = jsHelper({}, '', {\n+      const helper = jsHelper(createSearchClient(), '', {\n         hierarchicalFacets: [\n           {\n             name: 'country',\n             attributes: ['country', 'sub_country'],\n             separator: ' > ',\n+            // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406130206",
+    "id": 406130206,
+    "in_reply_to_id": 406056796,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjEzMDIwNg==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 152,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 1,
+    "pull_request_review_id": 390699158,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406130206/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406130206",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406135323"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406135323"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we should probably use `undefined` instead of `null` OR update the types then",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T11:21:36Z",
+    "diff_hunk": "@@ -135,12 +143,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/breadcrumb/\n     it('returns the `SearchParameters` with another `hierarchicalFacets` already defined', () => {\n       const render = () => {};\n       const makeWidget = connectBreadcrumb(render);\n-      const helper = jsHelper({}, '', {\n+      const helper = jsHelper(createSearchClient(), '', {\n         hierarchicalFacets: [\n           {\n             name: 'country',\n             attributes: ['country', 'sub_country'],\n             separator: ' > ',\n+            // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406135323",
+    "id": 406135323,
+    "in_reply_to_id": 406056796,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjEzNTMyMw==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 152,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 1,
+    "pull_request_review_id": 390705330,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406135323/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406135323",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406137325"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406137325"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "On top of my mind I don't know if it's always the case—but component props are for internal use anyway, so no need to over-abstract them.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T11:25:37Z",
+    "diff_hunk": "@@ -32,6 +32,10 @@ export type BreadcrumbProps = {\n   };\n   createURL(value: string | undefined): string;\n   refine(value: string | undefined): void;\n+  /**\n+   * @internal\n+   */\n+  canRefine?: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406137325",
+    "id": 406137325,
+    "in_reply_to_id": 405628897,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjEzNzMyNQ==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 35,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/components/Breadcrumb/Breadcrumb.tsx",
+    "position": 4,
+    "pull_request_review_id": 390707683,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406137325/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406137325",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406139716"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406139716"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok, adding just the can refine.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T11:30:32Z",
+    "diff_hunk": "@@ -32,6 +32,10 @@ export type BreadcrumbProps = {\n   };\n   createURL(value: string | undefined): string;\n   refine(value: string | undefined): void;\n+  /**\n+   * @internal\n+   */\n+  canRefine?: boolean;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406139716",
+    "id": 406139716,
+    "in_reply_to_id": 405628897,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjEzOTcxNg==",
+    "original_commit_id": "724c2dd6ce32b06e282ad5ecea7445ae3ead77df",
+    "original_line": 35,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/components/Breadcrumb/Breadcrumb.tsx",
+    "position": 4,
+    "pull_request_review_id": 390710844,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406139716/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406139716",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406168858"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406168858"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Done.",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T12:29:10Z",
+    "diff_hunk": "@@ -135,12 +143,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/breadcrumb/\n     it('returns the `SearchParameters` with another `hierarchicalFacets` already defined', () => {\n       const render = () => {};\n       const makeWidget = connectBreadcrumb(render);\n-      const helper = jsHelper({}, '', {\n+      const helper = jsHelper(createSearchClient(), '', {\n         hierarchicalFacets: [\n           {\n             name: 'country',\n             attributes: ['country', 'sub_country'],\n             separator: ' > ',\n+            // @ts-ignore",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406168858",
+    "id": 406168858,
+    "in_reply_to_id": 406056796,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjE2ODg1OA==",
+    "original_commit_id": "a0a81e243ff6b624cc442f09d3103e79d5cb846f",
+    "original_line": 152,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 1,
+    "pull_request_review_id": 390746963,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406168858/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406168858",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5457236?v=4",
+      "events_url": "https://api.github.com/users/nunomaduro/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nunomaduro/followers",
+      "following_url": "https://api.github.com/users/nunomaduro/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nunomaduro/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nunomaduro",
+      "id": 5457236,
+      "login": "nunomaduro",
+      "node_id": "MDQ6VXNlcjU0NTcyMzY=",
+      "organizations_url": "https://api.github.com/users/nunomaduro/orgs",
+      "received_events_url": "https://api.github.com/users/nunomaduro/received_events",
+      "repos_url": "https://api.github.com/users/nunomaduro/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nunomaduro/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nunomaduro/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nunomaduro",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406241158"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4379"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406241158"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can this be changed to `undefined`?",
+    "commit_id": "1463f6d93c0a39b0dd82e1c2226789fef7d5e351",
+    "created_at": "2020-04-09T14:22:36Z",
+    "diff_hunk": "@@ -173,12 +179,13 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/breadcrumb/\n     it('returns the `SearchParameters` with the same `hierarchicalFacets` already defined', () => {\n       const render = () => {};\n       const makeWidget = connectBreadcrumb(render);\n-      const helper = jsHelper({}, '', {\n+      const helper = jsHelper(createSearchClient(), '', {\n         hierarchicalFacets: [\n           {\n             name: 'category',\n             attributes: ['category', 'sub_category'],\n             separator: ' > ',\n+            // @ts-ignore\n             rootPath: null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4379#discussion_r406241158",
+    "id": 406241158,
+    "line": 190,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQwNjI0MTE1OA==",
+    "original_commit_id": "88728a12dd65342ebc063c74bd28f8a50a9706fb",
+    "original_line": 189,
+    "original_position": 118,
+    "original_start_line": null,
+    "path": "src/connectors/breadcrumb/__tests__/connectBreadcrumb-test.ts",
+    "position": 119,
+    "pull_request_review_id": 390839195,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4379",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406241158/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-04-10T12:23:52Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/406241158",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

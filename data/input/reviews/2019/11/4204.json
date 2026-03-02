@@ -1,0 +1,1465 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350140046"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140046"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "since the helper formatValues already slices the list, why not call getCurrentLimit inside the function?\r\n\r\nOtherwise I feel like the mapping and slicing still should be two steps.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T11:54:23Z",
+    "diff_hunk": "@@ -135,38 +125,29 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n             refine: this._refine,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: false,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore: false,\n           },\n           true\n         );\n       },\n \n-      _prepareFacetValues(facetValues, state) {\n-        return facetValues\n-          .slice(0, this.getLimit())\n-          .map(({ name: label, path: value, ...subValue }) => {\n-            if (Array.isArray(subValue.data)) {\n-              subValue.data = this._prepareFacetValues(subValue.data, state);\n-            }\n-            return { ...subValue, label, value };\n-          });\n-      },\n-\n       render(renderOptions) {\n+        setToggleShowMore(this.render.bind(this, renderOptions));\n+\n         const {\n           results,\n           state,\n           createURL,\n           instantSearchInstance,\n         } = renderOptions;\n \n+        const currentLimit = getCurrentLimit();\n         const facetValues =\n           results.getFacetValues(hierarchicalFacetName, { sortBy }).data || [];\n         const items = transformItems(\n-          this._prepareFacetValues(facetValues),\n-          state\n+          formatFacetValues(facetValues, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350140046",
+    "id": 350140046,
+    "line": 153,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDE0MDA0Ng==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 150,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 91,
+    "pull_request_review_id": 322223599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140046/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140046",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350140375"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140375"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this should also go in the helper IMO",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T11:55:15Z",
+    "diff_hunk": "@@ -177,31 +158,28 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n         }\n \n         const maxValuesPerFacetConfig = state.maxValuesPerFacet;\n-        const currentLimit = this.getLimit();\n         // If the limit is the max number of facet retrieved it is impossible to know\n         // if the facets are exhaustive. The only moment we are sure it is exhaustive\n         // is when it is strictly under the number requested unless we know that another\n-        // widget has requested more values (maxValuesPerFacet > getLimit()).\n+        // widget has requested more values (maxValuesPerFacet > getCurrentLimit()).\n         // Because this is used for making the search of facets unable or not, it is important\n         // to be conservative here.\n         const hasExhaustiveItems =\n           maxValuesPerFacetConfig > currentLimit\n             ? facetValues.length <= currentLimit\n             : facetValues.length < currentLimit;\n \n-        this.toggleShowMore = this.createToggleShowMore(renderOptions);\n-\n         renderFn(\n           {\n             items,\n             refine: this._refine,\n             createURL: _createURL,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: this.isShowingMore,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore:\n-              showMore && (this.isShowingMore || !hasExhaustiveItems),\n+              showMore && (isShowingMore() || !hasExhaustiveItems),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350140375",
+    "id": 350140375,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDE0MDM3NQ==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 182,
+    "original_position": 124,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 1,
+    "pull_request_review_id": 322223599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140375/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350140375",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350142226"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142226"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the slicing can be part of the enhancer",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T11:59:45Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+\n+function formatFacetValues(facetValues, currentLimit) {\n+  return facetValues\n+    .slice(0, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350142226",
+    "id": 350142226,
+    "line": 283,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDE0MjIyNg==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 280,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 147,
+    "pull_request_review_id": 322223599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142226/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142226",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350142734"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142734"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "what's meant by this test name?",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T12:01:08Z",
+    "diff_hunk": "@@ -0,0 +1,54 @@\n+import { createShowMore } from '../createShowMore';\n+\n+describe('createShowMore', () => {\n+  test('goes through the lifecycle', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350142734",
+    "id": 350142734,
+    "line": 4,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDE0MjczNA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 4,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/lib/enhancers/__tests__/createShowMore-test.ts",
+    "position": 4,
+    "pull_request_review_id": 322223599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142734/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350142734",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350143057"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350143057"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "where is onToggle used?",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T12:01:55Z",
+    "diff_hunk": "@@ -0,0 +1,69 @@\n+interface ShowMoreState {\n+  isShowingMore: boolean;\n+  limit: number | null;\n+  showMoreLimit: number | null;\n+}\n+\n+interface ShowMore {\n+  /**\n+   * Toggles the widget to show more or less values.\n+   */\n+  toggleShowMore(): void;\n+  /**\n+   * Sets the listener function to call whenever `toggleShowMore` is called.\n+   * It returns a function to unsubscribe the listener.\n+   */\n+  setToggleShowMore(listener: Listener): () => void;\n+  /**\n+   * Returns whether the widget is currently showing more values.\n+   */\n+  isShowingMore(): boolean;\n+  /**\n+   * Returns the current facets limit (`limit` or `showMoreLimit`)\n+   */\n+  getCurrentLimit(): number | null;\n+}\n+\n+type CreateShowMore = (initialState?: Partial<ShowMoreState>) => ShowMore;\n+type Listener = () => void;\n+\n+export const createShowMore: CreateShowMore = initialState => {\n+  let onToggle: Listener | null = null;\n+\n+  const state: ShowMoreState = {\n+    isShowingMore: false,\n+    limit: null,\n+    showMoreLimit: null,\n+    ...initialState,\n+  };\n+\n+  function toggleShowMore() {\n+    state.isShowingMore = !state.isShowingMore;\n+\n+    if (onToggle) {\n+      onToggle();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350143057",
+    "id": 350143057,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDE0MzA1Nw==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 44,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "src/lib/enhancers/createShowMore.ts",
+    "position": 50,
+    "pull_request_review_id": 322223599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350143057/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350143057",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350225274"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350225274"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure to follow. WDYM?",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T14:47:03Z",
+    "diff_hunk": "@@ -135,38 +125,29 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n             refine: this._refine,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: false,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore: false,\n           },\n           true\n         );\n       },\n \n-      _prepareFacetValues(facetValues, state) {\n-        return facetValues\n-          .slice(0, this.getLimit())\n-          .map(({ name: label, path: value, ...subValue }) => {\n-            if (Array.isArray(subValue.data)) {\n-              subValue.data = this._prepareFacetValues(subValue.data, state);\n-            }\n-            return { ...subValue, label, value };\n-          });\n-      },\n-\n       render(renderOptions) {\n+        setToggleShowMore(this.render.bind(this, renderOptions));\n+\n         const {\n           results,\n           state,\n           createURL,\n           instantSearchInstance,\n         } = renderOptions;\n \n+        const currentLimit = getCurrentLimit();\n         const facetValues =\n           results.getFacetValues(hierarchicalFacetName, { sortBy }).data || [];\n         const items = transformItems(\n-          this._prepareFacetValues(facetValues),\n-          state\n+          formatFacetValues(facetValues, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350225274",
+    "id": 350225274,
+    "in_reply_to_id": 350140046,
+    "line": 153,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDIyNTI3NA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 150,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 91,
+    "pull_request_review_id": 322330408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350225274/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350225274",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350227854"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350227854"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, we could pass the information like this:\r\n\r\n```js\r\n// 1.\r\nconst {\r\n  toggleShowMore,\r\n  setToggleShowMore,\r\n  isShowingMore,\r\n  getCurrentLimit,\r\n  canToggleShowMore,\r\n} = createShowMore({\r\n  limit,\r\n  showMoreLimit,\r\n  showMore,\r\n});\r\n\r\n// 2. \r\nrenderFn(\r\n  {\r\n    canToggleShowMore: canToggleShowMore({ state }), // `state` is the helper state\r\n  }\r\n)\r\n```",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T14:51:07Z",
+    "diff_hunk": "@@ -177,31 +158,28 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n         }\n \n         const maxValuesPerFacetConfig = state.maxValuesPerFacet;\n-        const currentLimit = this.getLimit();\n         // If the limit is the max number of facet retrieved it is impossible to know\n         // if the facets are exhaustive. The only moment we are sure it is exhaustive\n         // is when it is strictly under the number requested unless we know that another\n-        // widget has requested more values (maxValuesPerFacet > getLimit()).\n+        // widget has requested more values (maxValuesPerFacet > getCurrentLimit()).\n         // Because this is used for making the search of facets unable or not, it is important\n         // to be conservative here.\n         const hasExhaustiveItems =\n           maxValuesPerFacetConfig > currentLimit\n             ? facetValues.length <= currentLimit\n             : facetValues.length < currentLimit;\n \n-        this.toggleShowMore = this.createToggleShowMore(renderOptions);\n-\n         renderFn(\n           {\n             items,\n             refine: this._refine,\n             createURL: _createURL,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: this.isShowingMore,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore:\n-              showMore && (this.isShowingMore || !hasExhaustiveItems),\n+              showMore && (isShowingMore() || !hasExhaustiveItems),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350227854",
+    "id": 350227854,
+    "in_reply_to_id": 350140375,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDIyNzg1NA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 182,
+    "original_position": 124,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 1,
+    "pull_request_review_id": 322330408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350227854/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350227854",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350229484"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350229484"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It tests that it goes through the subscription lifecycle of the enhancer as expected. We can split this test once we determine the final API.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T14:53:27Z",
+    "diff_hunk": "@@ -0,0 +1,54 @@\n+import { createShowMore } from '../createShowMore';\n+\n+describe('createShowMore', () => {\n+  test('goes through the lifecycle', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350229484",
+    "id": 350229484,
+    "in_reply_to_id": 350142734,
+    "line": 4,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDIyOTQ4NA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 4,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/lib/enhancers/__tests__/createShowMore-test.ts",
+    "position": 4,
+    "pull_request_review_id": 322330408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350229484/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350229484",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350230061"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230061"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's the subscriber of the enhancer. It's the render method bound to its render params in the widgets.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T14:54:20Z",
+    "diff_hunk": "@@ -0,0 +1,69 @@\n+interface ShowMoreState {\n+  isShowingMore: boolean;\n+  limit: number | null;\n+  showMoreLimit: number | null;\n+}\n+\n+interface ShowMore {\n+  /**\n+   * Toggles the widget to show more or less values.\n+   */\n+  toggleShowMore(): void;\n+  /**\n+   * Sets the listener function to call whenever `toggleShowMore` is called.\n+   * It returns a function to unsubscribe the listener.\n+   */\n+  setToggleShowMore(listener: Listener): () => void;\n+  /**\n+   * Returns whether the widget is currently showing more values.\n+   */\n+  isShowingMore(): boolean;\n+  /**\n+   * Returns the current facets limit (`limit` or `showMoreLimit`)\n+   */\n+  getCurrentLimit(): number | null;\n+}\n+\n+type CreateShowMore = (initialState?: Partial<ShowMoreState>) => ShowMore;\n+type Listener = () => void;\n+\n+export const createShowMore: CreateShowMore = initialState => {\n+  let onToggle: Listener | null = null;\n+\n+  const state: ShowMoreState = {\n+    isShowingMore: false,\n+    limit: null,\n+    showMoreLimit: null,\n+    ...initialState,\n+  };\n+\n+  function toggleShowMore() {\n+    state.isShowingMore = !state.isShowingMore;\n+\n+    if (onToggle) {\n+      onToggle();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350230061",
+    "id": 350230061,
+    "in_reply_to_id": 350143057,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDIzMDA2MQ==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 44,
+    "original_position": 44,
+    "original_start_line": null,
+    "path": "src/lib/enhancers/createShowMore.ts",
+    "position": 50,
+    "pull_request_review_id": 322330408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230061/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230061",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350230332"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230332"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That'd be optimal. What API would you see?",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T14:54:46Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+\n+function formatFacetValues(facetValues, currentLimit) {\n+  return facetValues\n+    .slice(0, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350230332",
+    "id": 350230332,
+    "in_reply_to_id": 350142226,
+    "line": 283,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDIzMDMzMg==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 280,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 147,
+    "pull_request_review_id": 322330408,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230332/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350230332",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350292437"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350292437"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the one function both maps & slices, which I feel should be two tasks.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T16:34:18Z",
+    "diff_hunk": "@@ -135,38 +125,29 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n             refine: this._refine,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: false,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore: false,\n           },\n           true\n         );\n       },\n \n-      _prepareFacetValues(facetValues, state) {\n-        return facetValues\n-          .slice(0, this.getLimit())\n-          .map(({ name: label, path: value, ...subValue }) => {\n-            if (Array.isArray(subValue.data)) {\n-              subValue.data = this._prepareFacetValues(subValue.data, state);\n-            }\n-            return { ...subValue, label, value };\n-          });\n-      },\n-\n       render(renderOptions) {\n+        setToggleShowMore(this.render.bind(this, renderOptions));\n+\n         const {\n           results,\n           state,\n           createURL,\n           instantSearchInstance,\n         } = renderOptions;\n \n+        const currentLimit = getCurrentLimit();\n         const facetValues =\n           results.getFacetValues(hierarchicalFacetName, { sortBy }).data || [];\n         const items = transformItems(\n-          this._prepareFacetValues(facetValues),\n-          state\n+          formatFacetValues(facetValues, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350292437",
+    "id": 350292437,
+    "in_reply_to_id": 350140046,
+    "line": 153,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDI5MjQzNw==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 150,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 91,
+    "pull_request_review_id": 322416128,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350292437/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350292437",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350413570"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350413570"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It does it recursively though, so that's tricky.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-25T20:46:05Z",
+    "diff_hunk": "@@ -135,38 +125,29 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n             refine: this._refine,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: false,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore: false,\n           },\n           true\n         );\n       },\n \n-      _prepareFacetValues(facetValues, state) {\n-        return facetValues\n-          .slice(0, this.getLimit())\n-          .map(({ name: label, path: value, ...subValue }) => {\n-            if (Array.isArray(subValue.data)) {\n-              subValue.data = this._prepareFacetValues(subValue.data, state);\n-            }\n-            return { ...subValue, label, value };\n-          });\n-      },\n-\n       render(renderOptions) {\n+        setToggleShowMore(this.render.bind(this, renderOptions));\n+\n         const {\n           results,\n           state,\n           createURL,\n           instantSearchInstance,\n         } = renderOptions;\n \n+        const currentLimit = getCurrentLimit();\n         const facetValues =\n           results.getFacetValues(hierarchicalFacetName, { sortBy }).data || [];\n         const items = transformItems(\n-          this._prepareFacetValues(facetValues),\n-          state\n+          formatFacetValues(facetValues, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350413570",
+    "id": 350413570,
+    "in_reply_to_id": 350140046,
+    "line": 153,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDQxMzU3MA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 150,
+    "original_position": 88,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 91,
+    "pull_request_review_id": 322566249,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350413570/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350413570",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350610545"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350610545"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "hmm, the recursiveness in hierarchical indeed poses a problem. That means that you can not really do much more than wrap the slice? Maybe someone else has an idea ",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-26T09:02:57Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+\n+function formatFacetValues(facetValues, currentLimit) {\n+  return facetValues\n+    .slice(0, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350610545",
+    "id": 350610545,
+    "in_reply_to_id": 350142226,
+    "line": 283,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDYxMDU0NQ==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 280,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 147,
+    "pull_request_review_id": 322816989,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350610545/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350610545",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350634209"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350634209"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "should https://github.com/algolia/instantsearch.js/pull/4204/files#diff-6ea8d65722bc8ade374d1b33d23d90caR252 not use `getCurrentLimit()` too? 🤔 ",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-26T09:46:19Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350634209",
+    "id": 350634209,
+    "line": 280,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDYzNDIwOQ==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 277,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 144,
+    "pull_request_review_id": 322845345,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350634209/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350634209",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350654366"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350654366"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "No because `showMore` is not passed to the enhancer. It can be used if we address https://github.com/algolia/instantsearch.js/pull/4204#discussion_r350227854 and that we add `getFacetsLimit()` on top of `getCurrentLimit()`.\r\n\r\n- `getCurrentLimit()` would get the UI limit\r\n- `getFacetsLimit()` would get the search parameter computed based on whether `showMore` is provided",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-26T10:24:25Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350654366",
+    "id": 350654366,
+    "in_reply_to_id": 350634209,
+    "line": 280,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDY1NDM2Ng==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 277,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 144,
+    "pull_request_review_id": 322870967,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350654366/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350654366",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350797224"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350797224"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> hmm, the recursiveness in hierarchical indeed poses a problem. That means that you can not really do much more than wrap the slice? Maybe someone else has an idea\r\n\r\ncan you elaborate the problem? I don't understand how it can be a problem.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-26T15:08:23Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+\n+function formatFacetValues(facetValues, currentLimit) {\n+  return facetValues\n+    .slice(0, currentLimit)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350797224",
+    "id": 350797224,
+    "in_reply_to_id": 350142226,
+    "line": 283,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDc5NzIyNA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 280,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 147,
+    "pull_request_review_id": 323052210,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350797224/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350797224",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350801630"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350801630"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That seems to be ideal to me",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-11-26T15:15:21Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r350801630",
+    "id": 350801630,
+    "in_reply_to_id": 350634209,
+    "line": 280,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MDgwMTYzMA==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 277,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 144,
+    "pull_request_review_id": 323057825,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350801630/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/350801630",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r352674026"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674026"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually the logic is quite different in each connector for now, so we might not want to extract that yet.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-12-02T15:53:42Z",
+    "diff_hunk": "@@ -177,31 +158,28 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n         }\n \n         const maxValuesPerFacetConfig = state.maxValuesPerFacet;\n-        const currentLimit = this.getLimit();\n         // If the limit is the max number of facet retrieved it is impossible to know\n         // if the facets are exhaustive. The only moment we are sure it is exhaustive\n         // is when it is strictly under the number requested unless we know that another\n-        // widget has requested more values (maxValuesPerFacet > getLimit()).\n+        // widget has requested more values (maxValuesPerFacet > getCurrentLimit()).\n         // Because this is used for making the search of facets unable or not, it is important\n         // to be conservative here.\n         const hasExhaustiveItems =\n           maxValuesPerFacetConfig > currentLimit\n             ? facetValues.length <= currentLimit\n             : facetValues.length < currentLimit;\n \n-        this.toggleShowMore = this.createToggleShowMore(renderOptions);\n-\n         renderFn(\n           {\n             items,\n             refine: this._refine,\n             createURL: _createURL,\n             instantSearchInstance,\n             widgetParams,\n-            isShowingMore: this.isShowingMore,\n-            toggleShowMore: this.cachedToggleShowMore,\n+            isShowingMore: isShowingMore(),\n+            toggleShowMore,\n             canToggleShowMore:\n-              showMore && (this.isShowingMore || !hasExhaustiveItems),\n+              showMore && (isShowingMore() || !hasExhaustiveItems),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r352674026",
+    "id": 352674026,
+    "in_reply_to_id": 350140375,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjY3NDAyNg==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 182,
+    "original_position": 124,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 1,
+    "pull_request_review_id": 325338961,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674026/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:53:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674026",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r352674212"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674212"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Done in a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-12-02T15:53:59Z",
+    "diff_hunk": "@@ -296,3 +274,19 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     };\n   };\n }\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r352674212",
+    "id": 352674212,
+    "in_reply_to_id": 350634209,
+    "line": 280,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjY3NDIxMg==",
+    "original_commit_id": "0cd7d2a61da84b6136aaef58da44a52c9877dc4b",
+    "original_line": 277,
+    "original_position": 132,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 144,
+    "pull_request_review_id": 325339186,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674212/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T15:54:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352674212",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r353152034"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353152034"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What do you think of `checkIsShowingMore`?\r\nI always struggle with naming boolean variable and function returning boolean.\r\nNot sure what's the best.",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-12-03T12:33:07Z",
+    "diff_hunk": "@@ -96,7 +96,7 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     const {\n       toggleShowMore,\n       setToggleShowMore,\n-      isShowingMore,\n+      getIsShowingMore,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r353152034",
+    "id": 353152034,
+    "line": 99,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MzE1MjAzNA==",
+    "original_commit_id": "695128014fd2bc695cc87fe63416ff8a052a35b9",
+    "original_line": 99,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 12,
+    "pull_request_review_id": 326104470,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353152034/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-03T12:33:07Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353152034",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4204#discussion_r353154469"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4204"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353154469"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it could maybe also be a getter on the helper, so it can stay `isShowingMore` instead of a function",
+    "commit_id": "a4ccbb2ba43233b08b0b126a8ae4d51377e83b8e",
+    "created_at": "2019-12-03T12:38:59Z",
+    "diff_hunk": "@@ -96,7 +96,7 @@ export default function connectHierarchicalMenu(renderFn, unmountFn = noop) {\n     const {\n       toggleShowMore,\n       setToggleShowMore,\n-      isShowingMore,\n+      getIsShowingMore,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4204#discussion_r353154469",
+    "id": 353154469,
+    "in_reply_to_id": 353152034,
+    "line": 99,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MzE1NDQ2OQ==",
+    "original_commit_id": "695128014fd2bc695cc87fe63416ff8a052a35b9",
+    "original_line": 99,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/hierarchical-menu/connectHierarchicalMenu.js",
+    "position": 12,
+    "pull_request_review_id": 326107639,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4204",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353154469/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-03T12:38:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/353154469",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,420 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633611808"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633611808"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "@e-krebs does this type of validation make sense? Or is it ok if the `strategy` property is the same as a `value` property? Is there any restriction on composition sorting strategy names or does it matter if they are the same as a replica index name?",
+    "commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "created_at": "2025-12-19T04:53:16Z",
+    "diff_hunk": "@@ -112,17 +168,74 @@ const connectSortBy: SortByConnector = function connectSortBy(\n       );\n     }\n \n+    const itemsMap = new Map<string, SortByItem>();\n+\n+    items.forEach((item, index) => {\n+      const hasValue = 'value' in item && item.value !== undefined;\n+      const hasStrategy = 'strategy' in item && item.strategy !== undefined;\n+\n+      // Validate mutual exclusivity\n+      if (hasValue && hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} cannot have both \"value\" and \"strategy\" properties.`\n+          )\n+        );\n+      }\n+\n+      if (!hasValue && !hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} must have either a \"value\" or \"strategy\" property.`\n+          )\n+        );\n+      }\n+\n+      const itemValue = getItemValue(item);\n+\n+      // Check for cross-type collision (strategy name matching an index value)\n+      if (itemsMap.has(itemValue)) {\n+        const existing = itemsMap.get(itemValue)!;\n+        // Only throw if it's a cross-type collision\n+        if (isStrategyItem(item) !== isStrategyItem(existing)) {\n+          throw new Error(\n+            withUsage(\n+              `Strategy \"${item.strategy}\" conflicts with an existing index value. Index values and strategy names must be unique.`\n+            )\n+          );\n+        }\n+        // Same-type duplicates: silent overwrite (existing behavior)\n+      }\n+\n+      itemsMap.set(itemValue, item);\n+    });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633611808",
+    "id": 2633611808,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6c-bog",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 211,
+    "original_position": 171,
+    "original_start_line": 196,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/connectSortBy.ts",
+    "position": 1,
+    "pull_request_review_id": 3596808101,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633611808/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-12-19T04:53:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633611808",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/10552296?v=4",
+      "events_url": "https://api.github.com/users/taylorcjohnson/events{/privacy}",
+      "followers_url": "https://api.github.com/users/taylorcjohnson/followers",
+      "following_url": "https://api.github.com/users/taylorcjohnson/following{/other_user}",
+      "gists_url": "https://api.github.com/users/taylorcjohnson/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/taylorcjohnson",
+      "id": 10552296,
+      "login": "taylorcjohnson",
+      "node_id": "MDQ6VXNlcjEwNTUyMjk2",
+      "organizations_url": "https://api.github.com/users/taylorcjohnson/orgs",
+      "received_events_url": "https://api.github.com/users/taylorcjohnson/received_events",
+      "repos_url": "https://api.github.com/users/taylorcjohnson/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/taylorcjohnson/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/taylorcjohnson/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/taylorcjohnson",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633625022"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633625022"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I tried using `.toThrowErrorMatchingInlineSnapshot` (like what is used above in this file) in a previous commit, but the tests were failing. I'm not sure if it was a whitespace issue with the snapshot. \r\n\r\nI'm happy to switch it back if that is preferred and then we can troubleshoot from there.",
+    "commit_id": "30ee6f99afdb3befb1cd929cf22b9f36af3ccfd9",
+    "created_at": "2025-12-19T04:59:52Z",
+    "diff_hunk": "@@ -850,4 +850,590 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/sort-by/js/\n       });\n     });\n   });\n+\n+  describe('Sorting Strategies (Composition Mode)', () => {\n+    describe('Validation', () => {\n+      it('throws when item has both value and strategy', () => {\n+        expect(() => {\n+          connectSortBy(() => {})({\n+            items: [\n+              { value: 'index1', strategy: 'strategy1', label: 'Test' } as any,\n+            ],\n+          });\n+        }).toThrow(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633625022",
+    "id": 2633625022,
+    "line": 863,
+    "node_id": "PRRC_kwDOAlnbOs6c-e2-",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 863,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/__tests__/connectSortBy-test.ts",
+    "position": 14,
+    "pull_request_review_id": 3596824158,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633625022/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-12-19T04:59:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633625022",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/10552296?v=4",
+      "events_url": "https://api.github.com/users/taylorcjohnson/events{/privacy}",
+      "followers_url": "https://api.github.com/users/taylorcjohnson/followers",
+      "following_url": "https://api.github.com/users/taylorcjohnson/following{/other_user}",
+      "gists_url": "https://api.github.com/users/taylorcjohnson/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/taylorcjohnson",
+      "id": 10552296,
+      "login": "taylorcjohnson",
+      "node_id": "MDQ6VXNlcjEwNTUyMjk2",
+      "organizations_url": "https://api.github.com/users/taylorcjohnson/orgs",
+      "received_events_url": "https://api.github.com/users/taylorcjohnson/received_events",
+      "repos_url": "https://api.github.com/users/taylorcjohnson/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/taylorcjohnson/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/taylorcjohnson/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/taylorcjohnson",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633970951"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633970951"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it's completely OK to have strategy and value with the same name",
+    "commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "created_at": "2025-12-19T07:11:13Z",
+    "diff_hunk": "@@ -112,17 +168,74 @@ const connectSortBy: SortByConnector = function connectSortBy(\n       );\n     }\n \n+    const itemsMap = new Map<string, SortByItem>();\n+\n+    items.forEach((item, index) => {\n+      const hasValue = 'value' in item && item.value !== undefined;\n+      const hasStrategy = 'strategy' in item && item.strategy !== undefined;\n+\n+      // Validate mutual exclusivity\n+      if (hasValue && hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} cannot have both \"value\" and \"strategy\" properties.`\n+          )\n+        );\n+      }\n+\n+      if (!hasValue && !hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} must have either a \"value\" or \"strategy\" property.`\n+          )\n+        );\n+      }\n+\n+      const itemValue = getItemValue(item);\n+\n+      // Check for cross-type collision (strategy name matching an index value)\n+      if (itemsMap.has(itemValue)) {\n+        const existing = itemsMap.get(itemValue)!;\n+        // Only throw if it's a cross-type collision\n+        if (isStrategyItem(item) !== isStrategyItem(existing)) {\n+          throw new Error(\n+            withUsage(\n+              `Strategy \"${item.strategy}\" conflicts with an existing index value. Index values and strategy names must be unique.`\n+            )\n+          );\n+        }\n+        // Same-type duplicates: silent overwrite (existing behavior)\n+      }\n+\n+      itemsMap.set(itemValue, item);\n+    });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2633970951",
+    "id": 2633970951,
+    "in_reply_to_id": 2633611808,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6c_zUH",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 211,
+    "original_position": 171,
+    "original_start_line": 196,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/connectSortBy.ts",
+    "position": 1,
+    "pull_request_review_id": 3597259348,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633970951/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-12-19T07:11:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2633970951",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/7290398?v=4",
+      "events_url": "https://api.github.com/users/e-krebs/events{/privacy}",
+      "followers_url": "https://api.github.com/users/e-krebs/followers",
+      "following_url": "https://api.github.com/users/e-krebs/following{/other_user}",
+      "gists_url": "https://api.github.com/users/e-krebs/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/e-krebs",
+      "id": 7290398,
+      "login": "e-krebs",
+      "node_id": "MDQ6VXNlcjcyOTAzOTg=",
+      "organizations_url": "https://api.github.com/users/e-krebs/orgs",
+      "received_events_url": "https://api.github.com/users/e-krebs/received_events",
+      "repos_url": "https://api.github.com/users/e-krebs/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/e-krebs/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/e-krebs/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/e-krebs",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2634171715"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2634171715"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Thanks - I'll drop this then!",
+    "commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "created_at": "2025-12-19T08:27:58Z",
+    "diff_hunk": "@@ -112,17 +168,74 @@ const connectSortBy: SortByConnector = function connectSortBy(\n       );\n     }\n \n+    const itemsMap = new Map<string, SortByItem>();\n+\n+    items.forEach((item, index) => {\n+      const hasValue = 'value' in item && item.value !== undefined;\n+      const hasStrategy = 'strategy' in item && item.strategy !== undefined;\n+\n+      // Validate mutual exclusivity\n+      if (hasValue && hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} cannot have both \"value\" and \"strategy\" properties.`\n+          )\n+        );\n+      }\n+\n+      if (!hasValue && !hasStrategy) {\n+        throw new Error(\n+          withUsage(\n+            `Item at index ${index} must have either a \"value\" or \"strategy\" property.`\n+          )\n+        );\n+      }\n+\n+      const itemValue = getItemValue(item);\n+\n+      // Check for cross-type collision (strategy name matching an index value)\n+      if (itemsMap.has(itemValue)) {\n+        const existing = itemsMap.get(itemValue)!;\n+        // Only throw if it's a cross-type collision\n+        if (isStrategyItem(item) !== isStrategyItem(existing)) {\n+          throw new Error(\n+            withUsage(\n+              `Strategy \"${item.strategy}\" conflicts with an existing index value. Index values and strategy names must be unique.`\n+            )\n+          );\n+        }\n+        // Same-type duplicates: silent overwrite (existing behavior)\n+      }\n+\n+      itemsMap.set(itemValue, item);\n+    });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2634171715",
+    "id": 2634171715,
+    "in_reply_to_id": 2633611808,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6dAkVD",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 211,
+    "original_position": 171,
+    "original_start_line": 196,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/connectSortBy.ts",
+    "position": 1,
+    "pull_request_review_id": 3597517017,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2634171715/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-12-19T08:27:58Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2634171715",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/10552296?v=4",
+      "events_url": "https://api.github.com/users/taylorcjohnson/events{/privacy}",
+      "followers_url": "https://api.github.com/users/taylorcjohnson/followers",
+      "following_url": "https://api.github.com/users/taylorcjohnson/following{/other_user}",
+      "gists_url": "https://api.github.com/users/taylorcjohnson/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/taylorcjohnson",
+      "id": 10552296,
+      "login": "taylorcjohnson",
+      "node_id": "MDQ6VXNlcjEwNTUyMjk2",
+      "organizations_url": "https://api.github.com/users/taylorcjohnson/orgs",
+      "received_events_url": "https://api.github.com/users/taylorcjohnson/received_events",
+      "repos_url": "https://api.github.com/users/taylorcjohnson/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/taylorcjohnson/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/taylorcjohnson/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/taylorcjohnson",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2642931915"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2642931915"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it's fine either way, inline snapshot is just usually easier to write.",
+    "commit_id": "30ee6f99afdb3befb1cd929cf22b9f36af3ccfd9",
+    "created_at": "2025-12-23T11:45:24Z",
+    "diff_hunk": "@@ -850,4 +850,590 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/sort-by/js/\n       });\n     });\n   });\n+\n+  describe('Sorting Strategies (Composition Mode)', () => {\n+    describe('Validation', () => {\n+      it('throws when item has both value and strategy', () => {\n+        expect(() => {\n+          connectSortBy(() => {})({\n+            items: [\n+              { value: 'index1', strategy: 'strategy1', label: 'Test' } as any,\n+            ],\n+          });\n+        }).toThrow(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2642931915",
+    "id": 2642931915,
+    "in_reply_to_id": 2633625022,
+    "line": 863,
+    "node_id": "PRRC_kwDOAlnbOs6dh_DL",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 863,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/__tests__/connectSortBy-test.ts",
+    "position": 14,
+    "pull_request_review_id": 3607738585,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2642931915/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-12-23T11:50:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2642931915",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2643774344"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6841"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2643774344"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok, I'll leave it for now. Happy to revisit in the future, if needed, though.",
+    "commit_id": "30ee6f99afdb3befb1cd929cf22b9f36af3ccfd9",
+    "created_at": "2025-12-23T16:53:37Z",
+    "diff_hunk": "@@ -850,4 +850,590 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/sort-by/js/\n       });\n     });\n   });\n+\n+  describe('Sorting Strategies (Composition Mode)', () => {\n+    describe('Validation', () => {\n+      it('throws when item has both value and strategy', () => {\n+        expect(() => {\n+          connectSortBy(() => {})({\n+            items: [\n+              { value: 'index1', strategy: 'strategy1', label: 'Test' } as any,\n+            ],\n+          });\n+        }).toThrow(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6841#discussion_r2643774344",
+    "id": 2643774344,
+    "in_reply_to_id": 2633625022,
+    "line": 863,
+    "node_id": "PRRC_kwDOAlnbOs6dlMuI",
+    "original_commit_id": "b418c69464b856211a980dcb3c34a10c016affb5",
+    "original_line": 863,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/sort-by/__tests__/connectSortBy-test.ts",
+    "position": 14,
+    "pull_request_review_id": 3608709477,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6841",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2643774344/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-12-23T16:53:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2643774344",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/10552296?v=4",
+      "events_url": "https://api.github.com/users/taylorcjohnson/events{/privacy}",
+      "followers_url": "https://api.github.com/users/taylorcjohnson/followers",
+      "following_url": "https://api.github.com/users/taylorcjohnson/following{/other_user}",
+      "gists_url": "https://api.github.com/users/taylorcjohnson/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/taylorcjohnson",
+      "id": 10552296,
+      "login": "taylorcjohnson",
+      "node_id": "MDQ6VXNlcjEwNTUyMjk2",
+      "organizations_url": "https://api.github.com/users/taylorcjohnson/orgs",
+      "received_events_url": "https://api.github.com/users/taylorcjohnson/received_events",
+      "repos_url": "https://api.github.com/users/taylorcjohnson/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/taylorcjohnson/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/taylorcjohnson/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/taylorcjohnson",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,1186 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351861604"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351861604"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we still have a reasonable amount of people who go from InstantSearch v1 -> v4, can we keep this, but as a development warning?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:13:16Z",
+    "diff_hunk": "@@ -159,14 +156,6 @@ class InstantSearch extends EventEmitter {\n       throw new Error(withUsage('The `searchClient` option is required.'));\n     }\n \n-    if (typeof (options as any).urlSync !== 'undefined') {\n-      throw new Error(\n-        withUsage(\n-          'The `urlSync` option was removed in InstantSearch.js 3. You may want to use the `routing` option.'",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351861604",
+    "id": 351861604,
+    "line": 165,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg2MTYwNA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 165,
+    "original_position": 40,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 66,
+    "pull_request_review_id": 324380600,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351861604/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351861604",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351862443"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351862443"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "does the middleware not have an unsubscribe possibility? (could be returned from the subscribe call, not sure if useful)",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:15:21Z",
+    "diff_hunk": "@@ -234,33 +223,29 @@ See ${createDocumentationLink({\n       this._searchFunction = searchFunction;\n     }\n \n-    const defaultRoutingOptions = {\n-      stateMapping: simpleStateMapping(),\n-      router: historyRouter(),\n-    };\n-\n-    let routingOptions: Routing | null = null;\n-    if (routing === true) {\n-      routingOptions = defaultRoutingOptions;\n-    } else if (isPlainObject(routing)) {\n-      routingOptions = {\n-        ...defaultRoutingOptions,\n-        ...routing,\n-      };\n+    if (routing) {\n+      const routerOptions = typeof routing === 'boolean' ? undefined : routing;\n+      this.use(createRouter(routerOptions));\n     }\n+  }\n \n-    if (routingOptions) {\n-      this._routingManager = new RoutingManager({\n-        ...routingOptions,\n-        instantSearchInstance: this,\n-      });\n+  public use(...middleware: Middleware[]): this {\n+    const newMiddlewareList = middleware.map(fn => {\n+      const newMiddleware = fn({ instantSearchInstance: this });\n+      this.middleware.push(newMiddleware);\n \n-      this._createURL = this._routingManager.createURL;\n-      this._initialUiState = {\n-        ...initialUiState,\n-        ...this._routingManager.read(),\n-      };\n+      return newMiddleware;\n+    });\n+\n+    // If the instance has already started, we directly subscribe the\n+    // middleware so they're notified of changes.\n+    if (this.started) {\n+      newMiddlewareList.forEach(m => {\n+        m.subscribe();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351862443",
+    "id": 351862443,
+    "line": 244,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg2MjQ0Mw==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 244,
+    "original_position": 93,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 125,
+    "pull_request_review_id": 324380600,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351862443/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351862443",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351866137"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866137"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      this.middlewares.push(newMiddleware);\r\n```\r\n\r\n(also needs to be updated in more places if this is chosen",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:23:53Z",
+    "diff_hunk": "@@ -234,33 +223,29 @@ See ${createDocumentationLink({\n       this._searchFunction = searchFunction;\n     }\n \n-    const defaultRoutingOptions = {\n-      stateMapping: simpleStateMapping(),\n-      router: historyRouter(),\n-    };\n-\n-    let routingOptions: Routing | null = null;\n-    if (routing === true) {\n-      routingOptions = defaultRoutingOptions;\n-    } else if (isPlainObject(routing)) {\n-      routingOptions = {\n-        ...defaultRoutingOptions,\n-        ...routing,\n-      };\n+    if (routing) {\n+      const routerOptions = typeof routing === 'boolean' ? undefined : routing;\n+      this.use(createRouter(routerOptions));\n     }\n+  }\n \n-    if (routingOptions) {\n-      this._routingManager = new RoutingManager({\n-        ...routingOptions,\n-        instantSearchInstance: this,\n-      });\n+  public use(...middleware: Middleware[]): this {\n+    const newMiddlewareList = middleware.map(fn => {\n+      const newMiddleware = fn({ instantSearchInstance: this });\n+      this.middleware.push(newMiddleware);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351866137",
+    "id": 351866137,
+    "line": 235,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg2NjEzNw==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 235,
+    "original_position": 79,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 111,
+    "pull_request_review_id": 324380600,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866137/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866137",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351866304"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866304"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ah no, I see it's separate, makes sense!",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:24:22Z",
+    "diff_hunk": "@@ -234,33 +223,29 @@ See ${createDocumentationLink({\n       this._searchFunction = searchFunction;\n     }\n \n-    const defaultRoutingOptions = {\n-      stateMapping: simpleStateMapping(),\n-      router: historyRouter(),\n-    };\n-\n-    let routingOptions: Routing | null = null;\n-    if (routing === true) {\n-      routingOptions = defaultRoutingOptions;\n-    } else if (isPlainObject(routing)) {\n-      routingOptions = {\n-        ...defaultRoutingOptions,\n-        ...routing,\n-      };\n+    if (routing) {\n+      const routerOptions = typeof routing === 'boolean' ? undefined : routing;\n+      this.use(createRouter(routerOptions));\n     }\n+  }\n \n-    if (routingOptions) {\n-      this._routingManager = new RoutingManager({\n-        ...routingOptions,\n-        instantSearchInstance: this,\n-      });\n+  public use(...middleware: Middleware[]): this {\n+    const newMiddlewareList = middleware.map(fn => {\n+      const newMiddleware = fn({ instantSearchInstance: this });\n+      this.middleware.push(newMiddleware);\n \n-      this._createURL = this._routingManager.createURL;\n-      this._initialUiState = {\n-        ...initialUiState,\n-        ...this._routingManager.read(),\n-      };\n+      return newMiddleware;\n+    });\n+\n+    // If the instance has already started, we directly subscribe the\n+    // middleware so they're notified of changes.\n+    if (this.started) {\n+      newMiddlewareList.forEach(m => {\n+        m.subscribe();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351866304",
+    "id": 351866304,
+    "in_reply_to_id": 351862443,
+    "line": 244,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg2NjMwNA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 244,
+    "original_position": 93,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 125,
+    "pull_request_review_id": 324380600,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866304/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351866304",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351869319"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351869319"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this makes sense, but I don't see it in the previous implementation, what am I missing?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:31:39Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351869319",
+    "id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg2OTMxOQ==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 324380600,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351869319/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351869319",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351872451"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872451"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We already removed this error in #4119. I was surprised it was still here. We might have messed up the history.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:39:46Z",
+    "diff_hunk": "@@ -159,14 +156,6 @@ class InstantSearch extends EventEmitter {\n       throw new Error(withUsage('The `searchClient` option is required.'));\n     }\n \n-    if (typeof (options as any).urlSync !== 'undefined') {\n-      throw new Error(\n-        withUsage(\n-          'The `urlSync` option was removed in InstantSearch.js 3. You may want to use the `routing` option.'",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351872451",
+    "id": 351872451,
+    "in_reply_to_id": 351861604,
+    "line": 165,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg3MjQ1MQ==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 165,
+    "original_position": 40,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 66,
+    "pull_request_review_id": 324392832,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872451/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872451",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351872561"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872561"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "\"Middlewares\" is not correct english though.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:40:04Z",
+    "diff_hunk": "@@ -234,33 +223,29 @@ See ${createDocumentationLink({\n       this._searchFunction = searchFunction;\n     }\n \n-    const defaultRoutingOptions = {\n-      stateMapping: simpleStateMapping(),\n-      router: historyRouter(),\n-    };\n-\n-    let routingOptions: Routing | null = null;\n-    if (routing === true) {\n-      routingOptions = defaultRoutingOptions;\n-    } else if (isPlainObject(routing)) {\n-      routingOptions = {\n-        ...defaultRoutingOptions,\n-        ...routing,\n-      };\n+    if (routing) {\n+      const routerOptions = typeof routing === 'boolean' ? undefined : routing;\n+      this.use(createRouter(routerOptions));\n     }\n+  }\n \n-    if (routingOptions) {\n-      this._routingManager = new RoutingManager({\n-        ...routingOptions,\n-        instantSearchInstance: this,\n-      });\n+  public use(...middleware: Middleware[]): this {\n+    const newMiddlewareList = middleware.map(fn => {\n+      const newMiddleware = fn({ instantSearchInstance: this });\n+      this.middleware.push(newMiddleware);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351872561",
+    "id": 351872561,
+    "in_reply_to_id": 351866137,
+    "line": 235,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg3MjU2MQ==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 235,
+    "original_position": 79,
+    "original_start_line": null,
+    "path": "src/lib/InstantSearch.ts",
+    "position": 111,
+    "pull_request_review_id": 324392832,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872561/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351872561",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351873208"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351873208"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It used to be here:\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/49ffca2d781d2125250bdcb111d2f1dc0c43e740/src/lib/InstantSearch.ts#L258-L262\r\n\r\nIt's now part of the middleware. Note that this is a side effect though, so not that great.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-28T16:41:56Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r351873208",
+    "id": 351873208,
+    "in_reply_to_id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MTg3MzIwOA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 324392832,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351873208/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/351873208",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352199353"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352199353"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The `Routing` type defined in `InstantSearch.ts` could be merged with this interface, no?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-29T16:34:51Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352199353",
+    "id": 352199353,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjE5OTM1Mw==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 19,
+    "original_position": 19,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 1,
+    "pull_request_review_id": 324799453,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352199353/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352199353",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352200776"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352200776"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Could work for now but like you said this is not great. Maybe we could introduce more handlers to address these cases later?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-29T16:39:57Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352200776",
+    "id": 352200776,
+    "in_reply_to_id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjIwMDc3Ng==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 324799453,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352200776/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352200776",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352202069"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352202069"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Would have gone with simply `router` instead of `createRouter` here. I found this more natural when using it with `this.use()`: `this.use(router(options))`\r\n\r\nWDYT?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-29T16:44:03Z",
+    "diff_hunk": "@@ -0,0 +1,13 @@\n+import { UiState } from '../types';\n+\n+export interface MiddlewareDefinition {\n+  onStateChange(options: { state: UiState }): void;\n+  subscribe(): void;\n+  unsubscribe(): void;\n+}\n+\n+export type Middleware = ({\n+  instantSearchInstance: InstantSearch,\n+}) => MiddlewareDefinition;\n+\n+export { createRouter } from './createRouter';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352202069",
+    "id": 352202069,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjIwMjA2OQ==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 13,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/middleware/index.ts",
+    "position": 1,
+    "pull_request_review_id": 324799453,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352202069/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352202069",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352256982"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352256982"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, I'll think it through. What do you mean by \"handlers\"?\r\n\r\nWe could still replicate the logic in the original `InstantSearch.ts` but I was reluctant to it at first because I didn't want this entry to be dependant on the router. The technical solution would be to mutate those in the constructor by importing the basic `stateMapping` and reading it from here. But I wanted it completely detached so that we don't need to import this package if we don't use it. What I'm aiming here is to make the package more easily modular so people load only the parts of the code they need. Do you think this side effect is an OK tradeoff?",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-29T23:49:45Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352256982",
+    "id": 352256982,
+    "in_reply_to_id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjI1Njk4Mg==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 324868704,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352256982/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352256982",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352257516"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352257516"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Sure! I didn't know if there were any naming convention for middleware.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-11-29T23:59:30Z",
+    "diff_hunk": "@@ -0,0 +1,13 @@\n+import { UiState } from '../types';\n+\n+export interface MiddlewareDefinition {\n+  onStateChange(options: { state: UiState }): void;\n+  subscribe(): void;\n+  unsubscribe(): void;\n+}\n+\n+export type Middleware = ({\n+  instantSearchInstance: InstantSearch,\n+}) => MiddlewareDefinition;\n+\n+export { createRouter } from './createRouter';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352257516",
+    "id": 352257516,
+    "in_reply_to_id": 352202069,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjI1NzUxNg==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 13,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/middleware/index.ts",
+    "position": 1,
+    "pull_request_review_id": 324869244,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352257516/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352257516",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352557310"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557310"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Note that the word `router` will be repeated:\r\n\r\n```js\r\nrouter({ router, stateMapping })\r\n```\r\n\r\nNot too sure then. The name is internal for now so I think it's fine.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-12-02T11:57:40Z",
+    "diff_hunk": "@@ -0,0 +1,13 @@\n+import { UiState } from '../types';\n+\n+export interface MiddlewareDefinition {\n+  onStateChange(options: { state: UiState }): void;\n+  subscribe(): void;\n+  unsubscribe(): void;\n+}\n+\n+export type Middleware = ({\n+  instantSearchInstance: InstantSearch,\n+}) => MiddlewareDefinition;\n+\n+export { createRouter } from './createRouter';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352557310",
+    "id": 352557310,
+    "in_reply_to_id": 352202069,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjU1NzMxMA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 13,
+    "original_position": 13,
+    "original_start_line": null,
+    "path": "src/middleware/index.ts",
+    "position": 1,
+    "pull_request_review_id": 325188925,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557310/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557310",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352557335"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557335"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Indeed.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-12-02T11:57:47Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352557335",
+    "id": 352557335,
+    "in_reply_to_id": 352199353,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjU1NzMzNQ==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 19,
+    "original_position": 19,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 1,
+    "pull_request_review_id": 325188965,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557335/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352557335",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352558314"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352558314"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Sorry if I wasn't clear, I was thinking about some additional methods on the object returned by the middleware. Something like this (not tested, just for the idea):\r\n\r\n```js\r\nfunction router({ instantSearchInstance }) {\r\n  return {\r\n    onStateChange() {},\r\n    subscribe() {},\r\n    unsubscribe() {},\r\n    getInitialUiState() {},\r\n  };\r\n}\r\n```\r\n\r\n```js\r\nthis._initialUiState = this.middleware.reduce((initialUiState, m) => {\r\n  return m.getInitialUiState(initialUiState);\r\n}, {});\r\n```",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-12-02T12:00:30Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352558314",
+    "id": 352558314,
+    "in_reply_to_id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjU1ODMxNA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 325190293,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352558314/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352558314",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/13209?v=4",
+      "events_url": "https://api.github.com/users/yannickcr/events{/privacy}",
+      "followers_url": "https://api.github.com/users/yannickcr/followers",
+      "following_url": "https://api.github.com/users/yannickcr/following{/other_user}",
+      "gists_url": "https://api.github.com/users/yannickcr/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/yannickcr",
+      "id": 13209,
+      "login": "yannickcr",
+      "node_id": "MDQ6VXNlcjEzMjA5",
+      "organizations_url": "https://api.github.com/users/yannickcr/orgs",
+      "received_events_url": "https://api.github.com/users/yannickcr/received_events",
+      "repos_url": "https://api.github.com/users/yannickcr/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/yannickcr/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/yannickcr/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/yannickcr",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352565988"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4224"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352565988"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I see. Ideally I think we shouldn't give the capability of setting the initial UI state in the middleware though.\r\n\r\nI renamed the method `EXEPRIMENTAL_use` for now. We can reiterate on this once we roll it out and find more use cases.",
+    "commit_id": "9d186d0bf3a1f6c66d11b1d32c49c2013b2fa60b",
+    "created_at": "2019-12-02T12:20:31Z",
+    "diff_hunk": "@@ -0,0 +1,92 @@\n+import simpleStateMapping from '../lib/stateMappings/simple';\n+import historyRouter from '../lib/routers/history';\n+import { Index } from '../widgets/index/index';\n+import { Middleware } from '.';\n+import { Router, StateMapping, UiState } from '../types';\n+\n+const walk = (current: Index, callback: (index: Index) => void) => {\n+  callback(current);\n+  current\n+    .getWidgets()\n+    .filter(function(widget): widget is Index {\n+      return widget.$$type === 'ais.index';\n+    })\n+    .forEach(innerIndex => {\n+      walk(innerIndex, callback);\n+    });\n+};\n+\n+interface RouterProps {\n+  router?: Router;\n+  stateMapping?: StateMapping;\n+}\n+\n+export type RoutingManager = (props?: RouterProps) => Middleware;\n+\n+export const createRouter: RoutingManager = (props = {}) => {\n+  const {\n+    router = historyRouter(),\n+    stateMapping = simpleStateMapping(),\n+  } = props;\n+\n+  return ({ instantSearchInstance }) => {\n+    function topLevelCreateURL(nextState: UiState) {\n+      const uiState = Object.keys(nextState).reduce(\n+        (acc, indexId) => ({\n+          ...acc,\n+          [indexId]: nextState[indexId],\n+        }),\n+        instantSearchInstance.mainIndex.getWidgetState({})\n+      );\n+\n+      const route = stateMapping.stateToRoute(uiState);\n+\n+      return router.createURL(route);\n+    }\n+\n+    instantSearchInstance._createURL = topLevelCreateURL;\n+    instantSearchInstance._initialUiState = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4224#discussion_r352565988",
+    "id": 352565988,
+    "in_reply_to_id": 351869319,
+    "line": 50,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDM1MjU2NTk4OA==",
+    "original_commit_id": "e4e1d66e8ab884f75237a46bf30dda746230bf5c",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/middleware/createRouter.ts",
+    "position": 50,
+    "pull_request_review_id": 325199985,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4224",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352565988/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-12-02T12:38:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/352565988",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

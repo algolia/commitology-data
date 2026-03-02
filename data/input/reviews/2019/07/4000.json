@@ -1,0 +1,1462 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309114380"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114380"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This was already not completely accurate. We'll need to reiterate on the final types once the helper is fully typed anyway (wrong types are coming from `getRefinement.ts`).",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-07-31T09:08:42Z",
+    "diff_hunk": "@@ -0,0 +1,320 @@\n+import {\n+  AlgoliaSearchHelper,\n+  SearchParameters,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import {\n+  getRefinements,\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import {\n+  Unmounter,\n+  WidgetFactory,\n+  Renderer,\n+  RendererOptions,\n+} from '../../types';\n+\n+export type Refinement = {\n+  attribute: string;\n+  type: string;\n+  value: string | number;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+export type Item = {\n+  attribute: string;\n+  label: string;\n+  refine: (refinement: ItemRefinement) => void;\n+  refinements: ItemRefinement[];\n+};\n+\n+export type ItemRefinement = {\n+  type:\n+    | 'facet'\n+    | 'exclude'\n+    | 'disjunctive'\n+    | 'hierarchical'\n+    | 'numeric'\n+    | 'query'\n+    | 'tag';\n+  attribute: string;\n+  value: string;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface CurrentRefinementsConnectorParams {\n+  /**\n+   * The attributes to include in the widget (all by default).\n+   * Cannot be used with `excludedAttributes`.\n+   *\n+   * @default `[]`\n+   */\n+  includedAttributes?: string[];\n+  /**\n+   * The attributes to exclude from the widget.\n+   * Cannot be used with `includedAttributes`.\n+   *\n+   * @default `['query']`\n+   */\n+  excludedAttributes?: string[];\n+  /**\n+   * Receives the items, and is called before displaying them.\n+   * Should return a new array with the same shape as the original array.\n+   * Useful for mapping over the items to transform, and remove or reorder them.\n+   */\n+  transformItems?: (items: Item[]) => any;\n+}\n+\n+export interface CurrentRefinementsRendererOptions<\n+  TCurrentRefinementsWidgetParams\n+> extends RendererOptions<TCurrentRefinementsWidgetParams> {\n+  items: Item[];\n+  refine: (refinement: ItemRefinement) => void;\n+  createURL: (refinement: ItemRefinement) => string;\n+}\n+\n+export type CurrentRefinementsRenderer<\n+  TCurrentRefinementsWidgetParams\n+> = Renderer<\n+  CurrentRefinementsRendererOptions<\n+    CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+  >\n+>;\n+\n+export type CurrentRefinementsWidgetFactory<\n+  TCurrentRefinementsWidgetParams\n+> = WidgetFactory<\n+  CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+>;\n+\n+export type CurrentRefinementsConnector = <TCurrentRefinementsWidgetParams>(\n+  render: CurrentRefinementsRenderer<TCurrentRefinementsWidgetParams>,\n+  unmount?: Unmounter\n+) => CurrentRefinementsWidgetFactory<TCurrentRefinementsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'current-refinements',\n+  connector: true,\n+});\n+\n+const connectCurrentRefinements: CurrentRefinementsConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    if (\n+      (widgetParams || ({} as any)).includedAttributes &&\n+      (widgetParams || ({} as any)).excludedAttributes\n+    ) {\n+      throw new Error(\n+        withUsage(\n+          'The options `includedAttributes` and `excludedAttributes` cannot be used together.'\n+        )\n+      );\n+    }\n+\n+    const {\n+      includedAttributes,\n+      excludedAttributes = ['query'],\n+      transformItems = (items: Refinement[]) => items,\n+    } = widgetParams || ({} as CurrentRefinementsConnectorParams);\n+\n+    return {\n+      $$type: 'ais.currentRefinements',\n+\n+      init({ helper, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getFilteredRefinements({\n+            results: {},\n+            state: helper.state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ results, helper, state, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getFilteredRefinements({\n+            results,\n+            state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose() {\n+        unmountFn();\n+      },\n+    };\n+  };\n+};\n+\n+function getFilteredRefinements({\n+  results,\n+  state,\n+  helper,\n+  includedAttributes,\n+  excludedAttributes,\n+}) {\n+  const clearsQuery =\n+    (includedAttributes || []).indexOf('query') !== -1 ||\n+    (excludedAttributes || []).indexOf('query') === -1;\n+\n+  const filterFunction = includedAttributes\n+    ? item => includedAttributes.indexOf(item.attributeName) !== -1\n+    : item => excludedAttributes.indexOf(item.attributeName) === -1;\n+\n+  const items = getRefinements(results, state, clearsQuery)\n+    .filter(filterFunction)\n+    // @ts-ignore: @TODO the types don't match exactly, this will need to get refactored.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309114380",
+    "id": 309114380,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwOTExNDM4MA==",
+    "original_commit_id": "ff03bbe413da4ce9253045e5d4eb08ceddc5b57a",
+    "original_line": 207,
+    "original_position": 207,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/connectCurrentRefinements.ts",
+    "position": 1,
+    "pull_request_review_id": 268878827,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114380/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114380",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309114643"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114643"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "These tests were useless because we don't support any `templates` option.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-07-31T09:09:17Z",
+    "diff_hunk": "@@ -64,39 +73,6 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n       });\n     });\n \n-    describe('options.templates', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309114643",
+    "id": 309114643,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwOTExNDY0Mw==",
+    "original_commit_id": "ff03bbe413da4ce9253045e5d4eb08ceddc5b57a",
+    "original_line": 67,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/current-refinements-test.ts",
+    "position": 1,
+    "pull_request_review_id": 268878827,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114643/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309114643",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309115051"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309115051"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I am missing something with the `SearchResults` constructor. How do we pass the counts for the facets? (you can see that they're missing in the snapshots, but not in the stories)",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-07-31T09:10:10Z",
+    "diff_hunk": "@@ -158,31 +132,32 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n \n       helper.addFacetRefinement('facet', 'facet-val1');\n \n-      widget.init({\n-        helper,\n-        createURL: () => '#cleared',\n-        instantSearchInstance: {},\n-      });\n+      widget.init!(\n+        createInitOptions({\n+          helper,\n+        })\n+      );\n \n       const renderParameters = {\n-        results: {\n-          facets: [\n-            {\n-              name: 'facet',\n-              data: {\n-                'facet-val1': 1,\n+        results: new SearchResults(helper.state, [",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309115051",
+    "id": 309115051,
+    "line": 125,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwOTExNTA1MQ==",
+    "original_commit_id": "ff03bbe413da4ce9253045e5d4eb08ceddc5b57a",
+    "original_line": 142,
+    "original_position": 103,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/current-refinements-test.ts",
+    "position": 125,
+    "pull_request_review_id": 268878827,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309115051/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309115051",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309712827"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309712827"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Fixed in 92d44525461948622e91bafac6b8b9b69666c74b.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-01T14:01:43Z",
+    "diff_hunk": "@@ -0,0 +1,320 @@\n+import {\n+  AlgoliaSearchHelper,\n+  SearchParameters,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import {\n+  getRefinements,\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import {\n+  Unmounter,\n+  WidgetFactory,\n+  Renderer,\n+  RendererOptions,\n+} from '../../types';\n+\n+export type Refinement = {\n+  attribute: string;\n+  type: string;\n+  value: string | number;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+export type Item = {\n+  attribute: string;\n+  label: string;\n+  refine: (refinement: ItemRefinement) => void;\n+  refinements: ItemRefinement[];\n+};\n+\n+export type ItemRefinement = {\n+  type:\n+    | 'facet'\n+    | 'exclude'\n+    | 'disjunctive'\n+    | 'hierarchical'\n+    | 'numeric'\n+    | 'query'\n+    | 'tag';\n+  attribute: string;\n+  value: string;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface CurrentRefinementsConnectorParams {\n+  /**\n+   * The attributes to include in the widget (all by default).\n+   * Cannot be used with `excludedAttributes`.\n+   *\n+   * @default `[]`\n+   */\n+  includedAttributes?: string[];\n+  /**\n+   * The attributes to exclude from the widget.\n+   * Cannot be used with `includedAttributes`.\n+   *\n+   * @default `['query']`\n+   */\n+  excludedAttributes?: string[];\n+  /**\n+   * Receives the items, and is called before displaying them.\n+   * Should return a new array with the same shape as the original array.\n+   * Useful for mapping over the items to transform, and remove or reorder them.\n+   */\n+  transformItems?: (items: Item[]) => any;\n+}\n+\n+export interface CurrentRefinementsRendererOptions<\n+  TCurrentRefinementsWidgetParams\n+> extends RendererOptions<TCurrentRefinementsWidgetParams> {\n+  items: Item[];\n+  refine: (refinement: ItemRefinement) => void;\n+  createURL: (refinement: ItemRefinement) => string;\n+}\n+\n+export type CurrentRefinementsRenderer<\n+  TCurrentRefinementsWidgetParams\n+> = Renderer<\n+  CurrentRefinementsRendererOptions<\n+    CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+  >\n+>;\n+\n+export type CurrentRefinementsWidgetFactory<\n+  TCurrentRefinementsWidgetParams\n+> = WidgetFactory<\n+  CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+>;\n+\n+export type CurrentRefinementsConnector = <TCurrentRefinementsWidgetParams>(\n+  render: CurrentRefinementsRenderer<TCurrentRefinementsWidgetParams>,\n+  unmount?: Unmounter\n+) => CurrentRefinementsWidgetFactory<TCurrentRefinementsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'current-refinements',\n+  connector: true,\n+});\n+\n+const connectCurrentRefinements: CurrentRefinementsConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    if (\n+      (widgetParams || ({} as any)).includedAttributes &&\n+      (widgetParams || ({} as any)).excludedAttributes\n+    ) {\n+      throw new Error(\n+        withUsage(\n+          'The options `includedAttributes` and `excludedAttributes` cannot be used together.'\n+        )\n+      );\n+    }\n+\n+    const {\n+      includedAttributes,\n+      excludedAttributes = ['query'],\n+      transformItems = (items: Refinement[]) => items,\n+    } = widgetParams || ({} as CurrentRefinementsConnectorParams);\n+\n+    return {\n+      $$type: 'ais.currentRefinements',\n+\n+      init({ helper, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getFilteredRefinements({\n+            results: {},\n+            state: helper.state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ results, helper, state, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getFilteredRefinements({\n+            results,\n+            state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose() {\n+        unmountFn();\n+      },\n+    };\n+  };\n+};\n+\n+function getFilteredRefinements({\n+  results,\n+  state,\n+  helper,\n+  includedAttributes,\n+  excludedAttributes,\n+}) {\n+  const clearsQuery =\n+    (includedAttributes || []).indexOf('query') !== -1 ||\n+    (excludedAttributes || []).indexOf('query') === -1;\n+\n+  const filterFunction = includedAttributes\n+    ? item => includedAttributes.indexOf(item.attributeName) !== -1\n+    : item => excludedAttributes.indexOf(item.attributeName) === -1;\n+\n+  const items = getRefinements(results, state, clearsQuery)\n+    .filter(filterFunction)\n+    // @ts-ignore: @TODO the types don't match exactly, this will need to get refactored.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r309712827",
+    "id": 309712827,
+    "in_reply_to_id": 309114380,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMwOTcxMjgyNw==",
+    "original_commit_id": "ff03bbe413da4ce9253045e5d4eb08ceddc5b57a",
+    "original_line": 207,
+    "original_position": 207,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/connectCurrentRefinements.ts",
+    "position": 1,
+    "pull_request_review_id": 269639788,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309712827/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/309712827",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311450592"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311450592"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we might be able to inline this, instead of this HOF",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:17:10Z",
+    "diff_hunk": "@@ -1,14 +1,30 @@\n import React from 'preact-compat';\n-import PropTypes from 'prop-types';\n import { isSpecialClick, capitalize } from '../../lib/utils';\n+import { Item } from '../../connectors/current-refinements/connectCurrentRefinements';\n+import { CurrentRefinementsComponentCSSClasses } from '../../widgets/current-refinements/current-refinements';\n \n-const createItemKey = ({ attribute, value, type, operator }) =>\n+type CurrentRefinementsProps = {\n+  items: Item[];\n+  cssClasses: CurrentRefinementsComponentCSSClasses;\n+};\n+\n+const createItemKey = ({\n+  attribute,\n+  value,\n+  type,\n+  operator,\n+}: {\n+  attribute: string;\n+  value: string;\n+  type: string;\n+  operator?: string;\n+}): string =>\n   [attribute, type, value, operator]\n     .map(key => key)\n     .filter(Boolean)\n     .join(':');\n \n-const handleClick = callback => event => {\n+const handleClick = (callback: () => void) => (event: any) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311450592",
+    "id": 311450592,
+    "line": 27,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1MDU5Mg==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 27,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/components/CurrentRefinements/CurrentRefinements.tsx",
+    "position": 30,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311450592/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311450592",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311451191"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311451191"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "great catch! How long was this broken then?",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:18:27Z",
+    "diff_hunk": "@@ -179,7 +179,7 @@ function getAttributesToClear({\n \n   return transformItems(\n     getRefinements(helper.lastResults || {}, helper.state, clearsQuery)\n-      .map(refinement => refinement.attributeName)\n+      .map(refinement => refinement.attribute)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311451191",
+    "id": 311451191,
+    "line": 182,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1MTE5MQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 182,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 5,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311451191/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311451191",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311454237"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311454237"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "type here was wrong indeed, but could be useful to test with non-null arguments",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:25:10Z",
+    "diff_hunk": "@@ -41,25 +51,25 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n \n   describe('Lifecycle', () => {\n     it('renders during init and render', () => {\n-      const helper = jsHelper({});\n-      helper.search = () => {};\n+      const helper = algoliasearchHelper(createSearchClient(), '', {});\n+      helper.search = jest.fn();\n       // test that the dummyRendering is called with the isFirstRendering\n       // flag set accordingly\n       const rendering = jest.fn();\n       const customCurrentRefinements = connectCurrentRefinements(rendering);\n-      const widget = customCurrentRefinements({\n-        foo: 'bar', // dummy param to test `widgetParams`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311454237",
+    "id": 311454237,
+    "line": 51,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1NDIzNw==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 51,
+    "original_position": 31,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/__tests__/connectCurrentRefinements-test.ts",
+    "position": 31,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311454237/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311454237",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311455002"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311455002"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this is because you first removed the root refine function right? ",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:26:53Z",
+    "diff_hunk": "@@ -394,118 +439,112 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n   });\n \n   describe('Rendering options', () => {\n-    let helper;\n+    let helper: AlgoliaSearchHelper;\n \n     beforeEach(() => {\n-      helper = jsHelper({}, '', {\n+      helper = algoliasearchHelper(createSearchClient(), '', {\n         facets: ['facet1', 'facet2', 'facet3'],\n       });\n-      helper.search = () => {};\n+      helper.search = jest.fn();\n     });\n \n-    it('provides a `refine` function', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311455002",
+    "id": 311455002,
+    "line": 406,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1NTAwMg==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 406,
+    "original_position": 382,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/__tests__/connectCurrentRefinements-test.ts",
+    "position": 380,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311455002/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311455002",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457169"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457169"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "https://github.com/algolia/algoliasearch-helper-js/pull/742",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:31:41Z",
+    "diff_hunk": "@@ -0,0 +1,340 @@\n+import {\n+  AlgoliaSearchHelper,\n+  SearchParameters,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import {\n+  getRefinements,\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  Refinement,\n+  FacetRefinement,\n+  NumericRefinement,\n+} from '../../lib/utils/getRefinements';\n+import {\n+  Unmounter,\n+  WidgetFactory,\n+  Renderer,\n+  RendererOptions,\n+} from '../../types';\n+\n+export type ConnectorRefinement = {\n+  attribute: string;\n+  type: string;\n+  value: string | number;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface ConnectorNumericRefinement extends ConnectorRefinement {\n+  value: number;\n+}\n+\n+export type Item = {\n+  attribute: string;\n+  label: string;\n+  refinements: ItemRefinement[];\n+  refine(refinement: ItemRefinement): void;\n+};\n+\n+export type ItemRefinement = {\n+  type:\n+    | 'facet'\n+    | 'exclude'\n+    | 'disjunctive'\n+    | 'hierarchical'\n+    | 'numeric'\n+    | 'query'\n+    | 'tag';\n+  attribute: string;\n+  value: string;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface CurrentRefinementsConnectorParams {\n+  /**\n+   * The attributes to include in the widget (all by default).\n+   * Cannot be used with `excludedAttributes`.\n+   *\n+   * @default `[]`\n+   */\n+  includedAttributes?: string[];\n+  /**\n+   * The attributes to exclude from the widget.\n+   * Cannot be used with `includedAttributes`.\n+   *\n+   * @default `['query']`\n+   */\n+  excludedAttributes?: string[];\n+  /**\n+   * Receives the items, and is called before displaying them.\n+   * Should return a new array with the same shape as the original array.\n+   * Useful for mapping over the items to transform, and remove or reorder them.\n+   */\n+  transformItems?: (items: Item[]) => any;\n+}\n+\n+export interface CurrentRefinementsRendererOptions<\n+  TCurrentRefinementsWidgetParams\n+> extends RendererOptions<TCurrentRefinementsWidgetParams> {\n+  items: Item[];\n+  refine(refinement: ItemRefinement): void;\n+  createURL(state: ItemRefinement): string;\n+}\n+\n+export type CurrentRefinementsRenderer<\n+  TCurrentRefinementsWidgetParams\n+> = Renderer<\n+  CurrentRefinementsRendererOptions<\n+    CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+  >\n+>;\n+\n+export type CurrentRefinementsWidgetFactory<\n+  TCurrentRefinementsWidgetParams\n+> = WidgetFactory<\n+  CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+>;\n+\n+export type CurrentRefinementsConnector = <TCurrentRefinementsWidgetParams>(\n+  render: CurrentRefinementsRenderer<TCurrentRefinementsWidgetParams>,\n+  unmount?: Unmounter\n+) => CurrentRefinementsWidgetFactory<TCurrentRefinementsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'current-refinements',\n+  connector: true,\n+});\n+\n+const connectCurrentRefinements: CurrentRefinementsConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    if (\n+      (widgetParams || ({} as any)).includedAttributes &&\n+      (widgetParams || ({} as any)).excludedAttributes\n+    ) {\n+      throw new Error(\n+        withUsage(\n+          'The options `includedAttributes` and `excludedAttributes` cannot be used together.'\n+        )\n+      );\n+    }\n+\n+    const {\n+      includedAttributes,\n+      excludedAttributes = ['query'],\n+      transformItems = (items: Item[]) => items,\n+    } = widgetParams || ({} as CurrentRefinementsConnectorParams);\n+\n+    return {\n+      $$type: 'ais.currentRefinements',\n+\n+      init({ helper, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results: {} as SearchResults,\n+            state: helper.state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ results, helper, state, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results,\n+            state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose() {\n+        unmountFn();\n+      },\n+    };\n+  };\n+};\n+\n+function getItems({\n+  results,\n+  state,\n+  helper,\n+  includedAttributes,\n+  excludedAttributes,\n+}: {\n+  results: SearchResults;\n+  state: SearchParameters;\n+  helper: AlgoliaSearchHelper;\n+  includedAttributes: CurrentRefinementsConnectorParams['includedAttributes'];\n+  excludedAttributes: CurrentRefinementsConnectorParams['excludedAttributes'];\n+}): Item[] {\n+  const clearsQuery =\n+    (includedAttributes || []).indexOf('query') !== -1 ||\n+    (excludedAttributes || []).indexOf('query') === -1;\n+\n+  const filterFunction = includedAttributes\n+    ? (item: ConnectorRefinement) =>\n+        includedAttributes.indexOf(item.attribute) !== -1\n+    : (item: ConnectorRefinement) =>\n+        excludedAttributes!.indexOf(item.attribute) === -1;\n+\n+  const items = getRefinements(results, state, clearsQuery)\n+    .map(normalizeRefinement)\n+    .filter(filterFunction);\n+\n+  return items.reduce<any[]>(\n+    (allItems, currentItem) => [\n+      ...allItems.filter(\n+        (item: Item) => item.attribute !== currentItem.attribute\n+      ),\n+      {\n+        attribute: currentItem.attribute,\n+        label: currentItem.attribute,\n+        refinements: items\n+          .filter(result => result.attribute === currentItem.attribute)\n+          // We want to keep the order of refinements except the numeric ones.\n+          .sort((a, b) =>\n+            a.type === 'numeric'\n+              ? (a as ConnectorNumericRefinement).value -\n+                (b as ConnectorNumericRefinement).value\n+              : 0\n+          ),\n+        refine: (refinement: ItemRefinement) =>\n+          clearRefinement(helper, refinement),\n+      },\n+    ],\n+    []\n+  );\n+}\n+\n+function clearRefinementFromState(\n+  state: SearchParameters,\n+  refinement: ItemRefinement\n+): SearchParameters {\n+  switch (refinement.type) {\n+    case 'facet':\n+      return state.removeFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'disjunctive':\n+      return state.removeDisjunctiveFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'hierarchical':\n+      return state.removeHierarchicalFacetRefinement(refinement.attribute);\n+    case 'exclude':\n+      return state.removeExcludeRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'numeric':\n+      // @ts-ignore @TODO: fix non-existant `removeNumericRefinement` type in the helper typings",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457169",
+    "id": 311457169,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1NzE2OQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 275,
+    "original_position": 275,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/connectCurrentRefinements.ts",
+    "position": 1,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457169/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457169",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457529"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457529"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "what caused these changes?",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:32:40Z",
+    "diff_hunk": "@@ -22,16 +22,12 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"facet\",\n-            \"count\": 1,\n-            \"exhaustive\": true,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457529",
+    "id": 311457529,
+    "line": 26,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1NzUyOQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 26,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 5,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457529/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457529",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457689"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457689"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "doesn't look correct either TBH",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-07T09:33:01Z",
+    "diff_hunk": "@@ -102,8 +92,8 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"hierarchicalFacet\",\n-            \"count\": 6,\n-            \"exhaustive\": true,\n+            \"count\": null,\n+            \"exhaustive\": null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311457689",
+    "id": 311457689,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTQ1NzY4OQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 96,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 1,
+    "pull_request_review_id": 271830930,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457689/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311457689",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311951334"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311951334"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That wasn't broken. The internal implementation created a key called `attributeName`. I changed it to `attribute` to type this data structure more easily. I think it's less confusing this way.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-08T09:54:05Z",
+    "diff_hunk": "@@ -179,7 +179,7 @@ function getAttributesToClear({\n \n   return transformItems(\n     getRefinements(helper.lastResults || {}, helper.state, clearsQuery)\n-      .map(refinement => refinement.attributeName)\n+      .map(refinement => refinement.attribute)",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311951334",
+    "id": 311951334,
+    "in_reply_to_id": 311451191,
+    "line": 182,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTk1MTMzNA==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 182,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/clear-refinements/connectClearRefinements.js",
+    "position": 5,
+    "pull_request_review_id": 272463201,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311951334/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311951334",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952257"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952257"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "See https://github.com/algolia/instantsearch.js/pull/4000#discussion_r309115051. I think that the `SearchResults` constructor is misused in the tests but I'm not sure how. Do you know what I'm missing?",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-08T09:56:10Z",
+    "diff_hunk": "@@ -22,16 +22,12 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"facet\",\n-            \"count\": 1,\n-            \"exhaustive\": true,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952257",
+    "id": 311952257,
+    "in_reply_to_id": 311457529,
+    "line": 26,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTk1MjI1Nw==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 26,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 5,
+    "pull_request_review_id": 272464356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952257/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952257",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952324"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952324"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "See https://github.com/algolia/instantsearch.js/pull/4000#discussion_r309115051.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-08T09:56:21Z",
+    "diff_hunk": "@@ -102,8 +92,8 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"hierarchicalFacet\",\n-            \"count\": 6,\n-            \"exhaustive\": true,\n+            \"count\": null,\n+            \"exhaustive\": null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952324",
+    "id": 311952324,
+    "in_reply_to_id": 311457689,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTk1MjMyNA==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 96,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 1,
+    "pull_request_review_id": 272464461,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952324/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952324",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952972"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952972"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I tested it here: https://github.com/algolia/instantsearch.js/blob/db681a241507c5f9caab63fb45c63f605e817080/src/connectors/current-refinements/__tests__/connectCurrentRefinements-test.ts#L81-L82",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-08T09:57:41Z",
+    "diff_hunk": "@@ -394,118 +439,112 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n   });\n \n   describe('Rendering options', () => {\n-    let helper;\n+    let helper: AlgoliaSearchHelper;\n \n     beforeEach(() => {\n-      helper = jsHelper({}, '', {\n+      helper = algoliasearchHelper(createSearchClient(), '', {\n         facets: ['facet1', 'facet2', 'facet3'],\n       });\n-      helper.search = () => {};\n+      helper.search = jest.fn();\n     });\n \n-    it('provides a `refine` function', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311952972",
+    "id": 311952972,
+    "in_reply_to_id": 311455002,
+    "line": 406,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTk1Mjk3Mg==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 406,
+    "original_position": 382,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/__tests__/connectCurrentRefinements-test.ts",
+    "position": 380,
+    "pull_request_review_id": 272465284,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952972/reactions"
+    },
+    "side": "LEFT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311952972",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311953583"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311953583"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the counts are taken from the second response, bu there you are only having one, and seems to be a wrong facets interface\r\n\r\n`[ { facets: { xxx: 5 }}, { facets: { xxxTaken: 5000 }}]`",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-08T09:59:02Z",
+    "diff_hunk": "@@ -158,31 +132,32 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/current-ref\n \n       helper.addFacetRefinement('facet', 'facet-val1');\n \n-      widget.init({\n-        helper,\n-        createURL: () => '#cleared',\n-        instantSearchInstance: {},\n-      });\n+      widget.init!(\n+        createInitOptions({\n+          helper,\n+        })\n+      );\n \n       const renderParameters = {\n-        results: {\n-          facets: [\n-            {\n-              name: 'facet',\n-              data: {\n-                'facet-val1': 1,\n+        results: new SearchResults(helper.state, [",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r311953583",
+    "id": 311953583,
+    "in_reply_to_id": 309115051,
+    "line": 125,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMTk1MzU4Mw==",
+    "original_commit_id": "ff03bbe413da4ce9253045e5d4eb08ceddc5b57a",
+    "original_line": 142,
+    "original_position": 103,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/current-refinements-test.ts",
+    "position": 125,
+    "pull_request_review_id": 272466030,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311953583/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/311953583",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312888587"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312888587"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's a pattern we use [elsewhere](https://github.com/algolia/instantsearch.js/blob/bc0f9e245f28fe7ee6f9578c86ae833607d36145/src/components/Pagination/Pagination.js#L102-L110). We can refactor this later.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-12T11:59:39Z",
+    "diff_hunk": "@@ -1,14 +1,30 @@\n import React from 'preact-compat';\n-import PropTypes from 'prop-types';\n import { isSpecialClick, capitalize } from '../../lib/utils';\n+import { Item } from '../../connectors/current-refinements/connectCurrentRefinements';\n+import { CurrentRefinementsComponentCSSClasses } from '../../widgets/current-refinements/current-refinements';\n \n-const createItemKey = ({ attribute, value, type, operator }) =>\n+type CurrentRefinementsProps = {\n+  items: Item[];\n+  cssClasses: CurrentRefinementsComponentCSSClasses;\n+};\n+\n+const createItemKey = ({\n+  attribute,\n+  value,\n+  type,\n+  operator,\n+}: {\n+  attribute: string;\n+  value: string;\n+  type: string;\n+  operator?: string;\n+}): string =>\n   [attribute, type, value, operator]\n     .map(key => key)\n     .filter(Boolean)\n     .join(':');\n \n-const handleClick = callback => event => {\n+const handleClick = (callback: () => void) => (event: any) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312888587",
+    "id": 312888587,
+    "in_reply_to_id": 311450592,
+    "line": 27,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMjg4ODU4Nw==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 27,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "src/components/CurrentRefinements/CurrentRefinements.tsx",
+    "position": 30,
+    "pull_request_review_id": 273646450,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312888587/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312888587",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312889295"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312889295"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I fixed it for other facets than hierarchical. I'm not sure what syntax is missing for this one.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-12T12:02:04Z",
+    "diff_hunk": "@@ -102,8 +92,8 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"hierarchicalFacet\",\n-            \"count\": 6,\n-            \"exhaustive\": true,\n+            \"count\": null,\n+            \"exhaustive\": null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312889295",
+    "id": 312889295,
+    "in_reply_to_id": 311457689,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMjg4OTI5NQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 96,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 1,
+    "pull_request_review_id": 273647334,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312889295/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312889295",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312913475"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312913475"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "https://github.com/algolia/instantsearch.js/pull/4034",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-12T13:04:26Z",
+    "diff_hunk": "@@ -0,0 +1,340 @@\n+import {\n+  AlgoliaSearchHelper,\n+  SearchParameters,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import {\n+  getRefinements,\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  Refinement,\n+  FacetRefinement,\n+  NumericRefinement,\n+} from '../../lib/utils/getRefinements';\n+import {\n+  Unmounter,\n+  WidgetFactory,\n+  Renderer,\n+  RendererOptions,\n+} from '../../types';\n+\n+export type ConnectorRefinement = {\n+  attribute: string;\n+  type: string;\n+  value: string | number;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface ConnectorNumericRefinement extends ConnectorRefinement {\n+  value: number;\n+}\n+\n+export type Item = {\n+  attribute: string;\n+  label: string;\n+  refinements: ItemRefinement[];\n+  refine(refinement: ItemRefinement): void;\n+};\n+\n+export type ItemRefinement = {\n+  type:\n+    | 'facet'\n+    | 'exclude'\n+    | 'disjunctive'\n+    | 'hierarchical'\n+    | 'numeric'\n+    | 'query'\n+    | 'tag';\n+  attribute: string;\n+  value: string;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface CurrentRefinementsConnectorParams {\n+  /**\n+   * The attributes to include in the widget (all by default).\n+   * Cannot be used with `excludedAttributes`.\n+   *\n+   * @default `[]`\n+   */\n+  includedAttributes?: string[];\n+  /**\n+   * The attributes to exclude from the widget.\n+   * Cannot be used with `includedAttributes`.\n+   *\n+   * @default `['query']`\n+   */\n+  excludedAttributes?: string[];\n+  /**\n+   * Receives the items, and is called before displaying them.\n+   * Should return a new array with the same shape as the original array.\n+   * Useful for mapping over the items to transform, and remove or reorder them.\n+   */\n+  transformItems?: (items: Item[]) => any;\n+}\n+\n+export interface CurrentRefinementsRendererOptions<\n+  TCurrentRefinementsWidgetParams\n+> extends RendererOptions<TCurrentRefinementsWidgetParams> {\n+  items: Item[];\n+  refine(refinement: ItemRefinement): void;\n+  createURL(state: ItemRefinement): string;\n+}\n+\n+export type CurrentRefinementsRenderer<\n+  TCurrentRefinementsWidgetParams\n+> = Renderer<\n+  CurrentRefinementsRendererOptions<\n+    CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+  >\n+>;\n+\n+export type CurrentRefinementsWidgetFactory<\n+  TCurrentRefinementsWidgetParams\n+> = WidgetFactory<\n+  CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+>;\n+\n+export type CurrentRefinementsConnector = <TCurrentRefinementsWidgetParams>(\n+  render: CurrentRefinementsRenderer<TCurrentRefinementsWidgetParams>,\n+  unmount?: Unmounter\n+) => CurrentRefinementsWidgetFactory<TCurrentRefinementsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'current-refinements',\n+  connector: true,\n+});\n+\n+const connectCurrentRefinements: CurrentRefinementsConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    if (\n+      (widgetParams || ({} as any)).includedAttributes &&\n+      (widgetParams || ({} as any)).excludedAttributes\n+    ) {\n+      throw new Error(\n+        withUsage(\n+          'The options `includedAttributes` and `excludedAttributes` cannot be used together.'\n+        )\n+      );\n+    }\n+\n+    const {\n+      includedAttributes,\n+      excludedAttributes = ['query'],\n+      transformItems = (items: Item[]) => items,\n+    } = widgetParams || ({} as CurrentRefinementsConnectorParams);\n+\n+    return {\n+      $$type: 'ais.currentRefinements',\n+\n+      init({ helper, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results: {} as SearchResults,\n+            state: helper.state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ results, helper, state, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results,\n+            state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose() {\n+        unmountFn();\n+      },\n+    };\n+  };\n+};\n+\n+function getItems({\n+  results,\n+  state,\n+  helper,\n+  includedAttributes,\n+  excludedAttributes,\n+}: {\n+  results: SearchResults;\n+  state: SearchParameters;\n+  helper: AlgoliaSearchHelper;\n+  includedAttributes: CurrentRefinementsConnectorParams['includedAttributes'];\n+  excludedAttributes: CurrentRefinementsConnectorParams['excludedAttributes'];\n+}): Item[] {\n+  const clearsQuery =\n+    (includedAttributes || []).indexOf('query') !== -1 ||\n+    (excludedAttributes || []).indexOf('query') === -1;\n+\n+  const filterFunction = includedAttributes\n+    ? (item: ConnectorRefinement) =>\n+        includedAttributes.indexOf(item.attribute) !== -1\n+    : (item: ConnectorRefinement) =>\n+        excludedAttributes!.indexOf(item.attribute) === -1;\n+\n+  const items = getRefinements(results, state, clearsQuery)\n+    .map(normalizeRefinement)\n+    .filter(filterFunction);\n+\n+  return items.reduce<any[]>(\n+    (allItems, currentItem) => [\n+      ...allItems.filter(\n+        (item: Item) => item.attribute !== currentItem.attribute\n+      ),\n+      {\n+        attribute: currentItem.attribute,\n+        label: currentItem.attribute,\n+        refinements: items\n+          .filter(result => result.attribute === currentItem.attribute)\n+          // We want to keep the order of refinements except the numeric ones.\n+          .sort((a, b) =>\n+            a.type === 'numeric'\n+              ? (a as ConnectorNumericRefinement).value -\n+                (b as ConnectorNumericRefinement).value\n+              : 0\n+          ),\n+        refine: (refinement: ItemRefinement) =>\n+          clearRefinement(helper, refinement),\n+      },\n+    ],\n+    []\n+  );\n+}\n+\n+function clearRefinementFromState(\n+  state: SearchParameters,\n+  refinement: ItemRefinement\n+): SearchParameters {\n+  switch (refinement.type) {\n+    case 'facet':\n+      return state.removeFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'disjunctive':\n+      return state.removeDisjunctiveFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'hierarchical':\n+      return state.removeHierarchicalFacetRefinement(refinement.attribute);\n+    case 'exclude':\n+      return state.removeExcludeRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'numeric':\n+      // @ts-ignore @TODO: fix non-existant `removeNumericRefinement` type in the helper typings",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r312913475",
+    "id": 312913475,
+    "in_reply_to_id": 311457169,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMjkxMzQ3NQ==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 275,
+    "original_position": 275,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/connectCurrentRefinements.ts",
+    "position": 1,
+    "pull_request_review_id": 273677769,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312913475/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/312913475",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r313348623"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313348623"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Fixed in 132015b9b4869fdc42fe53ec03cd065142099429.",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-13T11:34:47Z",
+    "diff_hunk": "@@ -102,8 +92,8 @@ exports[`currentRefinements() render() DOM output renders correctly 1`] = `\n         \"refinements\": Array [\n           Object {\n             \"attribute\": \"hierarchicalFacet\",\n-            \"count\": 6,\n-            \"exhaustive\": true,\n+            \"count\": null,\n+            \"exhaustive\": null,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r313348623",
+    "id": 313348623,
+    "in_reply_to_id": 311457689,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMzM0ODYyMw==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 96,
+    "original_position": 50,
+    "original_start_line": null,
+    "path": "src/widgets/current-refinements/__tests__/__snapshots__/current-refinements-test.ts.snap",
+    "position": 1,
+    "pull_request_review_id": 274221370,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313348623/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313348623",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4000#discussion_r313349202"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4000"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313349202"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n```\r\n\r\nthis should work now that the branch is updated",
+    "commit_id": "45e5400d605722fcd4da8e2a875d4375d8b27a1a",
+    "created_at": "2019-08-13T11:36:32Z",
+    "diff_hunk": "@@ -0,0 +1,340 @@\n+import {\n+  AlgoliaSearchHelper,\n+  SearchParameters,\n+  SearchResults,\n+} from 'algoliasearch-helper';\n+import {\n+  getRefinements,\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+  warning,\n+} from '../../lib/utils';\n+import {\n+  Refinement,\n+  FacetRefinement,\n+  NumericRefinement,\n+} from '../../lib/utils/getRefinements';\n+import {\n+  Unmounter,\n+  WidgetFactory,\n+  Renderer,\n+  RendererOptions,\n+} from '../../types';\n+\n+export type ConnectorRefinement = {\n+  attribute: string;\n+  type: string;\n+  value: string | number;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface ConnectorNumericRefinement extends ConnectorRefinement {\n+  value: number;\n+}\n+\n+export type Item = {\n+  attribute: string;\n+  label: string;\n+  refinements: ItemRefinement[];\n+  refine(refinement: ItemRefinement): void;\n+};\n+\n+export type ItemRefinement = {\n+  type:\n+    | 'facet'\n+    | 'exclude'\n+    | 'disjunctive'\n+    | 'hierarchical'\n+    | 'numeric'\n+    | 'query'\n+    | 'tag';\n+  attribute: string;\n+  value: string;\n+  label: string;\n+  operator?: string;\n+  count?: number;\n+  exhaustive?: boolean;\n+};\n+\n+interface CurrentRefinementsConnectorParams {\n+  /**\n+   * The attributes to include in the widget (all by default).\n+   * Cannot be used with `excludedAttributes`.\n+   *\n+   * @default `[]`\n+   */\n+  includedAttributes?: string[];\n+  /**\n+   * The attributes to exclude from the widget.\n+   * Cannot be used with `includedAttributes`.\n+   *\n+   * @default `['query']`\n+   */\n+  excludedAttributes?: string[];\n+  /**\n+   * Receives the items, and is called before displaying them.\n+   * Should return a new array with the same shape as the original array.\n+   * Useful for mapping over the items to transform, and remove or reorder them.\n+   */\n+  transformItems?: (items: Item[]) => any;\n+}\n+\n+export interface CurrentRefinementsRendererOptions<\n+  TCurrentRefinementsWidgetParams\n+> extends RendererOptions<TCurrentRefinementsWidgetParams> {\n+  items: Item[];\n+  refine(refinement: ItemRefinement): void;\n+  createURL(state: ItemRefinement): string;\n+}\n+\n+export type CurrentRefinementsRenderer<\n+  TCurrentRefinementsWidgetParams\n+> = Renderer<\n+  CurrentRefinementsRendererOptions<\n+    CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+  >\n+>;\n+\n+export type CurrentRefinementsWidgetFactory<\n+  TCurrentRefinementsWidgetParams\n+> = WidgetFactory<\n+  CurrentRefinementsConnectorParams & TCurrentRefinementsWidgetParams\n+>;\n+\n+export type CurrentRefinementsConnector = <TCurrentRefinementsWidgetParams>(\n+  render: CurrentRefinementsRenderer<TCurrentRefinementsWidgetParams>,\n+  unmount?: Unmounter\n+) => CurrentRefinementsWidgetFactory<TCurrentRefinementsWidgetParams>;\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'current-refinements',\n+  connector: true,\n+});\n+\n+const connectCurrentRefinements: CurrentRefinementsConnector = (\n+  renderFn,\n+  unmountFn = noop\n+) => {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    if (\n+      (widgetParams || ({} as any)).includedAttributes &&\n+      (widgetParams || ({} as any)).excludedAttributes\n+    ) {\n+      throw new Error(\n+        withUsage(\n+          'The options `includedAttributes` and `excludedAttributes` cannot be used together.'\n+        )\n+      );\n+    }\n+\n+    const {\n+      includedAttributes,\n+      excludedAttributes = ['query'],\n+      transformItems = (items: Item[]) => items,\n+    } = widgetParams || ({} as CurrentRefinementsConnectorParams);\n+\n+    return {\n+      $$type: 'ais.currentRefinements',\n+\n+      init({ helper, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results: {} as SearchResults,\n+            state: helper.state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          true\n+        );\n+      },\n+\n+      render({ results, helper, state, createURL, instantSearchInstance }) {\n+        const items = transformItems(\n+          getItems({\n+            results,\n+            state,\n+            helper,\n+            includedAttributes,\n+            excludedAttributes,\n+          })\n+        );\n+\n+        renderFn(\n+          {\n+            items,\n+            refine: refinement => clearRefinement(helper, refinement),\n+            createURL: refinement =>\n+              createURL(clearRefinementFromState(helper.state, refinement)),\n+            instantSearchInstance,\n+            widgetParams,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose() {\n+        unmountFn();\n+      },\n+    };\n+  };\n+};\n+\n+function getItems({\n+  results,\n+  state,\n+  helper,\n+  includedAttributes,\n+  excludedAttributes,\n+}: {\n+  results: SearchResults;\n+  state: SearchParameters;\n+  helper: AlgoliaSearchHelper;\n+  includedAttributes: CurrentRefinementsConnectorParams['includedAttributes'];\n+  excludedAttributes: CurrentRefinementsConnectorParams['excludedAttributes'];\n+}): Item[] {\n+  const clearsQuery =\n+    (includedAttributes || []).indexOf('query') !== -1 ||\n+    (excludedAttributes || []).indexOf('query') === -1;\n+\n+  const filterFunction = includedAttributes\n+    ? (item: ConnectorRefinement) =>\n+        includedAttributes.indexOf(item.attribute) !== -1\n+    : (item: ConnectorRefinement) =>\n+        excludedAttributes!.indexOf(item.attribute) === -1;\n+\n+  const items = getRefinements(results, state, clearsQuery)\n+    .map(normalizeRefinement)\n+    .filter(filterFunction);\n+\n+  return items.reduce<any[]>(\n+    (allItems, currentItem) => [\n+      ...allItems.filter(\n+        (item: Item) => item.attribute !== currentItem.attribute\n+      ),\n+      {\n+        attribute: currentItem.attribute,\n+        label: currentItem.attribute,\n+        refinements: items\n+          .filter(result => result.attribute === currentItem.attribute)\n+          // We want to keep the order of refinements except the numeric ones.\n+          .sort((a, b) =>\n+            a.type === 'numeric'\n+              ? (a as ConnectorNumericRefinement).value -\n+                (b as ConnectorNumericRefinement).value\n+              : 0\n+          ),\n+        refine: (refinement: ItemRefinement) =>\n+          clearRefinement(helper, refinement),\n+      },\n+    ],\n+    []\n+  );\n+}\n+\n+function clearRefinementFromState(\n+  state: SearchParameters,\n+  refinement: ItemRefinement\n+): SearchParameters {\n+  switch (refinement.type) {\n+    case 'facet':\n+      return state.removeFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'disjunctive':\n+      return state.removeDisjunctiveFacetRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'hierarchical':\n+      return state.removeHierarchicalFacetRefinement(refinement.attribute);\n+    case 'exclude':\n+      return state.removeExcludeRefinement(\n+        refinement.attribute,\n+        refinement.value\n+      );\n+    case 'numeric':\n+      // @ts-ignore @TODO: fix non-existant `removeNumericRefinement` type in the helper typings",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4000#discussion_r313349202",
+    "id": 313349202,
+    "in_reply_to_id": 311457169,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMxMzM0OTIwMg==",
+    "original_commit_id": "db681a241507c5f9caab63fb45c63f605e817080",
+    "original_line": 275,
+    "original_position": 275,
+    "original_start_line": null,
+    "path": "src/connectors/current-refinements/connectCurrentRefinements.ts",
+    "position": 1,
+    "pull_request_review_id": 274222098,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4000",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313349202/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-08-13T11:50:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/313349202",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

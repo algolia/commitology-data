@@ -1,0 +1,974 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323161617"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161617"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think later we'd want to example for this as I don't find it super trivial TBH.\r\n\r\n```js\r\nconst router = historyRouter()\r\nconst originalWrite = router.write.bind(router)\r\nrouter.write = state => {\r\n    // listening \r\n    originalWrite(state)\r\n}\r\n\r\n{\r\n   routing: {\r\n      router,\r\n      stateMapping: ...\r\n   }\r\n}\r\n\r\n```",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:09:33Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.\n+\n+## connectAutoComplete\n+\n+The `indices` option has been removed, in favour of using `index` widgets (see the federated search section). In practice, this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidget(\n+  autocomplete({\n+    indices: [{\n+      name: \"additional\"\n+    }]\n+  })\n+);\n+```\n+\n+Will be replaced with this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidgets([\n+  index({ indexName: \"additional\" }),\n+  autocomplete()\n+]);\n+```\n+\n+## onHistoryChange\n+\n+This was a function which wasn't documented, and has been a no-op since InstantSearch v2, it has now been removed. Listening to changes in the URL can be done by creating a custom `router` and listening in the `write` hook.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323161617",
+    "id": 323161617,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2MTYxNw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 130,
+    "original_position": 130,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286686547,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161617/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161617",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323161993"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161993"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "as discussed offline, I would love to have an example where this cannot be entirely replaced with a simple searchBox. I'm still missing its point.",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:10:30Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.\n+\n+## connectAutoComplete\n+\n+The `indices` option has been removed, in favour of using `index` widgets (see the federated search section). In practice, this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidget(\n+  autocomplete({\n+    indices: [{\n+      name: \"additional\"\n+    }]\n+  })\n+);\n+```\n+\n+Will be replaced with this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidgets([\n+  index({ indexName: \"additional\" }),\n+  autocomplete()\n+]);\n+```",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323161993",
+    "id": 323161993,
+    "line": 182,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2MTk5Mw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 126,
+    "original_position": 126,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 182,
+    "pull_request_review_id": 286687029,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161993/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323161993",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323163388"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163388"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> more of the functions are now together than before \r\n\r\ncould you double check this phrase, I don't understand it maybe it's missing a word?",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:14:12Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323163388",
+    "id": 323163388,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2MzM4OA==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286688880,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163388/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163388",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323163990"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163990"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Thanks for adding the example! 👍 ",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:15:50Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323163990",
+    "id": 323163990,
+    "line": 155,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2Mzk5MA==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 97,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 155,
+    "pull_request_review_id": 286689646,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163990/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323163990",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323164333"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164333"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I trust your english but allow me suggest this 😄 \r\n```suggestion\r\nAs mentioned earlier, any reference to the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\r\n```",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:16:41Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323164333",
+    "id": 323164333,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2NDMzMw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 60,
+    "original_position": 60,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286690096,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164333/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164333",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323164673"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164673"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Might be worth mentioning the bundlesize difference",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:17:39Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323164673",
+    "id": 323164673,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2NDY3Mw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 56,
+    "original_position": 56,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286690551,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164673/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323164673",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323165103"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323165103"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "👍 ",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:18:51Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323165103",
+    "id": 323165103,
+    "line": 3,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2NTEwMw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 3,
+    "original_position": 3,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 3,
+    "pull_request_review_id": 286691131,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323165103/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323165103",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/2982512?v=4",
+      "events_url": "https://api.github.com/users/tkrugg/events{/privacy}",
+      "followers_url": "https://api.github.com/users/tkrugg/followers",
+      "following_url": "https://api.github.com/users/tkrugg/following{/other_user}",
+      "gists_url": "https://api.github.com/users/tkrugg/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/tkrugg",
+      "id": 2982512,
+      "login": "tkrugg",
+      "node_id": "MDQ6VXNlcjI5ODI1MTI=",
+      "organizations_url": "https://api.github.com/users/tkrugg/orgs",
+      "received_events_url": "https://api.github.com/users/tkrugg/received_events",
+      "repos_url": "https://api.github.com/users/tkrugg/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/tkrugg/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/tkrugg/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/tkrugg",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323168358"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323168358"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What do you think of having a small example for before/after?\r\n\r\n```js\r\n// before\r\nconst stateMapping = {\r\n  stateToRoute(uiState) {\r\n    return {\r\n      query: uiState.query,\r\n      page: uiState.page,\r\n      // ...\r\n    };\r\n  },\r\n\r\n  routeToState(routeState) {\r\n    return {\r\n      query: routeState.query,\r\n      page: routeState.page,\r\n      // ...\r\n    };\r\n  },\r\n};\r\n\r\n// after\r\nconst stateMapping = {\r\n  stateToRoute(uiState) {\r\n    const indexUiState = uiState[indexName];\r\n    return {\r\n      query: indexUiState.query,\r\n      page: indexUiState.page,\r\n      // ...\r\n    };\r\n  },\r\n\r\n  routeToState(routeState) {\r\n    return {\r\n      [indexName]: {\r\n        query: routeState.query,\r\n        page: routeState.page,\r\n        // ...\r\n      },\r\n    };\r\n  },\r\n};\r\n```",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:27:39Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323168358",
+    "id": 323168358,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE2ODM1OA==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286695458,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323168358/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323168358",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323171943"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323171943"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Would add this, but not sure if it’s used ",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T10:37:38Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.\n+\n+## connectAutoComplete\n+\n+The `indices` option has been removed, in favour of using `index` widgets (see the federated search section). In practice, this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidget(\n+  autocomplete({\n+    indices: [{\n+      name: \"additional\"\n+    }]\n+  })\n+);\n+```\n+\n+Will be replaced with this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidgets([\n+  index({ indexName: \"additional\" }),\n+  autocomplete()\n+]);\n+```\n+\n+## onHistoryChange\n+\n+This was a function which wasn't documented, and has been a no-op since InstantSearch v2, it has now been removed. Listening to changes in the URL can be done by creating a custom `router` and listening in the `write` hook.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323171943",
+    "id": 323171943,
+    "in_reply_to_id": 323161617,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE3MTk0Mw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 130,
+    "original_position": 130,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286700099,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323171943/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323171943",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323189423"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323189423"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "makes sense, I'll add this example",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T11:26:47Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323189423",
+    "id": 323189423,
+    "in_reply_to_id": 323168358,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE4OTQyMw==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286722874,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323189423/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323189423",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323193739"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323193739"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "both are correct but mean something else, but `to` might make more sense",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T11:39:45Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323193739",
+    "id": 323193739,
+    "in_reply_to_id": 323164333,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE5MzczOQ==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 60,
+    "original_position": 60,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286728530,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323193739/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323193739",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323195126"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323195126"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What about attaching a link to the source code of the storybook and its live example?\r\nI just tried storybook and I think it explain well how it works.",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T11:43:33Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.\n+\n+## connectAutoComplete\n+\n+The `indices` option has been removed, in favour of using `index` widgets (see the federated search section). In practice, this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidget(\n+  autocomplete({\n+    indices: [{\n+      name: \"additional\"\n+    }]\n+  })\n+);\n+```\n+\n+Will be replaced with this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidgets([\n+  index({ indexName: \"additional\" }),\n+  autocomplete()\n+]);\n+```",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323195126",
+    "id": 323195126,
+    "in_reply_to_id": 323161993,
+    "line": 182,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzE5NTEyNg==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 126,
+    "original_position": 126,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 182,
+    "pull_request_review_id": 286730307,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323195126/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323195126",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323201314"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201314"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you have access to the hits of both of the indices in autocomplete, so it's not the same as a search box (if the autocomplete component you're wrapping is using both hits & query at the same time, which is common)",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T12:00:13Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.\n+\n+## connectAutoComplete\n+\n+The `indices` option has been removed, in favour of using `index` widgets (see the federated search section). In practice, this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidget(\n+  autocomplete({\n+    indices: [{\n+      name: \"additional\"\n+    }]\n+  })\n+);\n+```\n+\n+Will be replaced with this:\n+\n+```js\n+const autocomplete = connectAutocomplete(() => {/* ... */});\n+\n+search.addWidgets([\n+  index({ indexName: \"additional\" }),\n+  autocomplete()\n+]);\n+```",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323201314",
+    "id": 323201314,
+    "in_reply_to_id": 323161993,
+    "line": 182,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzIwMTMxNA==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 126,
+    "original_position": 126,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 182,
+    "pull_request_review_id": 286738164,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201314/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201314",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323201950"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4110"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201950"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Agree the sentence isn't that good, do you know what it should say?",
+    "commit_id": "291824db582a9a50d433d5162f08d39bb51e22a7",
+    "created_at": "2019-09-11T12:02:05Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+# Migrating to InstantSearch v4\n+\n+This latest version of InstantSearch is focused mostly around Federated Search, as well as bundle size. To achieve this, we have made some changes which impact your apps. These changes are detailed here:\n+\n+## Federated Search (multi-index)\n+\n+If you were already using federated search, likely via synchronizing two InstantSearch indices via `searchFunction`, you can now rejoice that this is simpler. There's now a new `index` widget, upon which you can attach more widgets. An example use case is the following:\n+\n+```js\n+const search = instantsearch({ indexName: 'primary', /* ... */ });\n+\n+search.addWidgets([\n+  searchBox(),\n+  hits(),\n+  index({ indexName: 'secondary' }).addWidgets([\n+    searchBox(),\n+    hits(),\n+  ])\n+]);\n+```\n+\n+A more detailed guide on this topic will follow once this version is out of beta stage.\n+\n+## Routing\n+\n+Even if you are not using multi-index, the UiState has changed shape; what used to be:\n+\n+```json\n+{\n+  \"query\": \"value\",\n+  \"page\": 5\n+}\n+```\n+\n+Is now:\n+\n+```json\n+{\n+  \"indexName\": {\n+    \"query\": \"value\",\n+    \"page\": 5\n+  }\n+}\n+```\n+\n+If you are using the default stateMapping with the current version, you can replace that with `singleIndexStateMapping('yourIndexName')` (import from `instantsearch.js/es/lib/stateMappings`).\n+\n+If you were using a custom stateMapping, you need to loop over the outer level of index, and add this extra level back in `routeToState`. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/singleIndex.ts) for reference on how to implement this.\n+\n+### Configure\n+\n+The `configure` widget is now included in the UiState. If you want to exclude this from the URL (because it's usually static, or it allows users to add arbitrary search parameters), you can either use the default stateMappings which exclude it, or exclude it yourself in a custom state mapping. This has to be done both in `stateToRoute` to prevent it appearing in the URL, and `routeToState` to prevent it from applying from the URL. You can check the [source](https://github.com/algolia/instantsearch.js/blob/next/src/lib/stateMappings/simple.ts) for inspiration.\n+\n+## Helper\n+\n+This release includes v3 of the `algoliasearch-helper` package. If you are using the built-in widgets, nothing will change for you. This version no longer includes `lodash`, having two main places of impact for users. The main difference will be in bundle size, which is now significantly smaller. If you are using any methods from the `helper` or `searchResults`, please see the detailed changelog [here](https://github.com/algolia/algoliasearch-helper-js/blob/next/documentation-src/metalsmith/content/upgrade.md).\n+\n+## Custom widgets\n+\n+As mentioned earlier, any reference of the helper now contains the \"new helper\", as well as the `getConfiguration` life cycle no longer being used. You can replace its usage with `getWidgetSearchParameters` and `getWidgetState`. Note that this means that your custom widget will also take part in routing from then on. You can still exclude it from the URL via `stateMapping`.\n+\n+### getConfiguration\n+\n+This life cycle could be used for setting up a facet, or a default refinement previously. This is now replaced by `getWidgetState` and `getWidgetSearchParameters`. This means that there's no longer a separate step for setting up. However, that can be implemented using a check inside `getWidgetSearchParameters`. Code like this (abbreviated):\n+\n+```js\n+const widget = {\n+  getConfiguration(searchParams) {\n+    return {\n+      disjunctiveFacets: ['myAttribute'],\n+    };\n+  },\n+};\n+```\n+\n+Will become like this:\n+\n+```js\n+const widget = {\n+  getWidgetSearchParameters(searchParameters, { uiState }) {\n+    return searchParameters\n+      .addDisjunctiveFacet('myAttribute')\n+      .addDisjunctiveFacetRefinement(\n+        'myAttribute',\n+        uiState.myWidgetName.myAttribute\n+      );\n+  },\n+  getWidgetState(uiState, { searchParameters }) {\n+    return {\n+      ...uiState,\n+      myWidgetName: {\n+        myAttribute: searchParameters.getDisjunctiveRefinements('myAttribute')\n+      }\n+    };\n+  }\n+};\n+```\n+\n+While this looks longer, more of the functions are now together than before, and it isn't possible anymore to get into a state where `getConfiguration` is called multiple times and isn't behaving as you would want.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4110#discussion_r323201950",
+    "id": 323201950,
+    "in_reply_to_id": 323163388,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyMzIwMTk1MA==",
+    "original_commit_id": "3db2ed9544d7fe8b8f274a54b970e265b59f2066",
+    "original_line": 99,
+    "original_position": 99,
+    "original_start_line": null,
+    "path": "MIGRATION.md",
+    "position": 1,
+    "pull_request_review_id": 286739028,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4110",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201950/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-11T12:54:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/323201950",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

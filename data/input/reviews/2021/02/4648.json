@@ -1,0 +1,1670 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574353516"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574353516"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "shouldn't it be: \r\n\r\n```\r\ncontainer\r\n  template (text)\r\n  button\r\n    template (button)\r\n```\r\n\r\n(let's add this widget to specs too)",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T09:29:23Z",
+    "diff_hunk": "@@ -0,0 +1,45 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import Template from '../Template/Template';\n+import {\n+  SmartSortCSSClasses,\n+  SmartSortTemplates,\n+} from '../../widgets/smart-sort/smart-sort';\n+\n+type SmartSortProps = {\n+  cssClasses: SmartSortCSSClasses;\n+  templates: SmartSortTemplates;\n+  isSmartSorted: boolean;\n+  relevancyStrictness?: number;\n+  refine(relevancyStrictness: number | undefined): void;\n+};\n+\n+const SmartSort = ({\n+  cssClasses,\n+  templates,\n+  isSmartSorted,\n+  relevancyStrictness,\n+  refine,\n+}: SmartSortProps) => (\n+  <button",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574353516",
+    "id": 574353516,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDM1MzUxNg==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 25,
+    "original_position": 25,
+    "original_start_line": null,
+    "path": "src/components/SmartSort/SmartSort.tsx",
+    "position": 1,
+    "pull_request_review_id": 588367751,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574353516/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574353516",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574354791"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574354791"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this function reference isn't stable, meaning it won't be the same between renders. You can set it once like in search box and other widgets",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T09:31:23Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574354791",
+    "id": 574354791,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDM1NDc5MQ==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 90,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588369395,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574354791/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574354791",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574355315"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574355315"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "no need to merge search parameters here, it won't work with relevancyStrictness\r\n\r\nyou can do setQueryParameter / getQueryParameter, no?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T09:32:12Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          },\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return mergeSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574355315",
+    "id": 574355315,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDM1NTMxNQ==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588370046,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574355315/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574355315",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574356094"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574356094"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "is this meant to be the default strictness? \r\n\r\nI think it's meant to toggle between:\r\n\r\n1. undefined (100 set by the engine)\r\n2. user-provided value (default to 0)",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T09:33:26Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          },\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return mergeSearchParameters(\n+          new algoliasearchHelper.SearchParameters({\n+            relevancyStrictness: widgetParams.relevancyStrictness,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574356094",
+    "id": 574356094,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDM1NjA5NA==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 102,
+    "original_position": 102,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588370993,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574356094/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574356094",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574393771"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574393771"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I see two cases:\r\n\r\n1. smartSort({ }); // no explicit relevancyStrictness\r\n-> Clicking \"See all results\" set 0 to suppress it.\r\n-> Clicking \"See relevant results\" set undefined to fallback to the value in the index configuration.\r\n\r\n2. smartSort({ relevancyStrictness: xx });\r\n-> Clicking \"See all results\" set 0 to suppress it.\r\n-> Clicking \"See relevant results\" go back to the value in the widgetParams.\r\n\r\nWhat do you think?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T10:32:06Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          },\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return mergeSearchParameters(\n+          new algoliasearchHelper.SearchParameters({\n+            relevancyStrictness: widgetParams.relevancyStrictness,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574393771",
+    "id": 574393771,
+    "in_reply_to_id": 574356094,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDM5Mzc3MQ==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 102,
+    "original_position": 102,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588418087,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574393771/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574393771",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498555"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498555"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "https://github.com/algolia/instantsearch.js/pull/4648/commits/09af204c52a8d328b63a9e09e8ed42872ae9eb19",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T13:26:59Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498555",
+    "id": 574498555,
+    "in_reply_to_id": 574354791,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDQ5ODU1NQ==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 90,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588553382,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498555/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498555",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498692"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498692"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "https://github.com/algolia/instantsearch.js/pull/4648/commits/858f44ba4c3f5e4c350c38729031b0c7a25bf223\r\n\r\nmakes sense?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T13:27:10Z",
+    "diff_hunk": "@@ -0,0 +1,126 @@\n+import { Connector } from '../../types';\n+import {\n+  createDocumentationMessageGenerator,\n+  mergeSearchParameters,\n+  noop,\n+} from '../../lib/utils';\n+import algoliasearchHelper from 'algoliasearch-helper';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: (relevancyStrictness: number) => void;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: relevancyStrictness => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          },\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return mergeSearchParameters(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498692",
+    "id": 574498692,
+    "in_reply_to_id": 574355315,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDQ5ODY5Mg==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 100,
+    "original_position": 100,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 588553549,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498692/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498692",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498950"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498950"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "good suggestion 👍🏼 \r\nhttps://github.com/algolia/instantsearch.js/pull/4648/commits/3bd77d6216129ef2c4c66054f461f8cc6fb9695e\r\n\r\nhttps://github.com/algolia/instantsearch.js/pull/4648/commits/901fa5d5788bfdec3ae9c33ef1c1bc5992c119d9",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-11T13:27:33Z",
+    "diff_hunk": "@@ -0,0 +1,45 @@\n+/** @jsx h */\n+\n+import { h } from 'preact';\n+import Template from '../Template/Template';\n+import {\n+  SmartSortCSSClasses,\n+  SmartSortTemplates,\n+} from '../../widgets/smart-sort/smart-sort';\n+\n+type SmartSortProps = {\n+  cssClasses: SmartSortCSSClasses;\n+  templates: SmartSortTemplates;\n+  isSmartSorted: boolean;\n+  relevancyStrictness?: number;\n+  refine(relevancyStrictness: number | undefined): void;\n+};\n+\n+const SmartSort = ({\n+  cssClasses,\n+  templates,\n+  isSmartSorted,\n+  relevancyStrictness,\n+  refine,\n+}: SmartSortProps) => (\n+  <button",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r574498950",
+    "id": 574498950,
+    "in_reply_to_id": 574353516,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NDQ5ODk1MA==",
+    "original_commit_id": "707d059fb63367f6590e6626505faf0ed293704f",
+    "original_line": 25,
+    "original_position": 25,
+    "original_start_line": null,
+    "path": "src/components/SmartSort/SmartSort.tsx",
+    "position": 1,
+    "pull_request_review_id": 588553889,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498950/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/574498950",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576082774"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576082774"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think by applying the relevancyStrictness by default, we are forcing relevancyStrictness on non-smart sort indices, does that have any undefined behaviour? \r\n\r\nI find it a little odd that this widget would apply the parameter when it shouldn't display.\r\n\r\nPossibly this is because we're missing a condition:\r\n\r\nnormal index: display nothing\r\nsmart index (appliedRelevancyStrictness is set):\r\n- appliedRelevancyStrictness === 0: isSmartSorted: false\r\n- appliedRelevancyStrictness !== 0: isSmartSorted: true\r\n\r\nwhat do you think?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-15T10:18:15Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+import { Connector } from '../../types';\n+import { createDocumentationMessageGenerator, noop } from '../../lib/utils';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+type Refine = (relevancyStrictness: number) => void;\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: Refine;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    type ConnectorState = {\n+      refine?: Refine;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = (relevancyStrictness: number | undefined) => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          };\n+        }\n+\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: connectorState.refine,\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return state.setQueryParameter(\n+          'relevancyStrictness',\n+          uiState.smartSort?.relevancyStrictness ??\n+            state.relevancyStrictness ??\n+            widgetParams.relevancyStrictness",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576082774",
+    "id": 576082774,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjA4Mjc3NA==",
+    "original_commit_id": "88ff0e7c02076a2676b49e3484394c88a90aec4a",
+    "original_line": 111,
+    "original_position": 111,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 590337434,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576082774/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576082774",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576083301"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576083301"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I still think that having this default strictness could pose problems for detecting which state we are in. I think it should stay being set in the settings only",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-15T10:19:05Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+import { Connector } from '../../types';\n+import { createDocumentationMessageGenerator, noop } from '../../lib/utils';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576083301",
+    "id": 576083301,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjA4MzMwMQ==",
+    "original_commit_id": "88ff0e7c02076a2676b49e3484394c88a90aec4a",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 590338145,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576083301/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576083301",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576308341"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576308341"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I had a sync and we're good to remove `relevancyStrictness` from the widget parameter to the component altogether. I had a wrong understanding that it was a part of the spec. I'll update it tomorrow.",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-15T16:29:28Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+import { Connector } from '../../types';\n+import { createDocumentationMessageGenerator, noop } from '../../lib/utils';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+type Refine = (relevancyStrictness: number) => void;\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: Refine;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    type ConnectorState = {\n+      refine?: Refine;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = (relevancyStrictness: number | undefined) => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          };\n+        }\n+\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: connectorState.refine,\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return state.setQueryParameter(\n+          'relevancyStrictness',\n+          uiState.smartSort?.relevancyStrictness ??\n+            state.relevancyStrictness ??\n+            widgetParams.relevancyStrictness",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576308341",
+    "id": 576308341,
+    "in_reply_to_id": 576082774,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjMwODM0MQ==",
+    "original_commit_id": "88ff0e7c02076a2676b49e3484394c88a90aec4a",
+    "original_line": 111,
+    "original_position": 111,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 590622480,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576308341/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576308341",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576874013"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576874013"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "In the updated version, I didn't remove the ability to apply relevancyStrictness altogether. I just removed the widget parameter. The component still gets `refine` function and call either `refine(0)` or `refine(undefined)` to toggle the status. https://github.com/algolia/instantsearch.js/pull/4648/commits/2f3409f316f62b53052b3aeeb1e3ee18a67c7573",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T14:41:34Z",
+    "diff_hunk": "@@ -0,0 +1,130 @@\n+import { Connector } from '../../types';\n+import { createDocumentationMessageGenerator, noop } from '../../lib/utils';\n+\n+export type SmartSortConnectorParams = {\n+  relevancyStrictness?: number;\n+};\n+\n+type Refine = (relevancyStrictness: number) => void;\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  refine: Refine;\n+};\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'smartSort',\n+  connector: true,\n+});\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    if (\n+      typeof widgetParams.relevancyStrictness !== 'undefined' &&\n+      (widgetParams.relevancyStrictness < 0 ||\n+        widgetParams.relevancyStrictness > 100)\n+    ) {\n+      throw new Error(\n+        withUsage('The `relevancyStrictness` option must be between 0 and 100.')\n+      );\n+    }\n+\n+    type ConnectorState = {\n+      refine?: Refine;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = (relevancyStrictness: number | undefined) => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          };\n+        }\n+\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,\n+          refine: connectorState.refine,\n+          widgetParams,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(state, { uiState }) {\n+        return state.setQueryParameter(\n+          'relevancyStrictness',\n+          uiState.smartSort?.relevancyStrictness ??\n+            state.relevancyStrictness ??\n+            widgetParams.relevancyStrictness",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576874013",
+    "id": 576874013,
+    "in_reply_to_id": 576082774,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njg3NDAxMw==",
+    "original_commit_id": "88ff0e7c02076a2676b49e3484394c88a90aec4a",
+    "original_line": 111,
+    "original_position": 111,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 591290429,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576874013/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576874013",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576894601"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576894601"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n          isVirtualReplica: appliedRelevancyStrictness !== undefined,\r\n```\r\n\r\nyou can do an assertion directly against undefined",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T15:07:39Z",
+    "diff_hunk": "@@ -98,6 +82,7 @@ const connectSmartSort: SmartSortConnector = function connectSmartSort(\n             typeof appliedRelevancyStrictness !== 'undefined' &&\n             appliedRelevancyStrictness > 0 &&\n             appliedRelevancyStrictness <= 100,\n+          isVirtualReplica: typeof appliedRelevancyStrictness !== 'undefined',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576894601",
+    "id": 576894601,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njg5NDYwMQ==",
+    "original_commit_id": "2f3409f316f62b53052b3aeeb1e3ee18a67c7573",
+    "original_line": 85,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 591317586,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576894601/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576894601",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576895246"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576895246"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n            appliedRelevancyStrictness !== undefined &&\r\n            appliedRelevancyStrictness > 0,\r\n```\r\n\r\nI don't see why this could be > 100",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T15:08:26Z",
+    "diff_hunk": "@@ -98,6 +82,7 @@ const connectSmartSort: SmartSortConnector = function connectSmartSort(\n             typeof appliedRelevancyStrictness !== 'undefined' &&\n             appliedRelevancyStrictness > 0 &&\n             appliedRelevancyStrictness <= 100,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576895246",
+    "id": 576895246,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njg5NTI0Ng==",
+    "original_commit_id": "2f3409f316f62b53052b3aeeb1e3ee18a67c7573",
+    "original_line": 84,
+    "original_position": 46,
+    "original_start_line": 82,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 591318401,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576895246/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576895246",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576900215"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900215"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "no error when the text template isn't defined?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T15:14:43Z",
+    "diff_hunk": "@@ -0,0 +1,40 @@\n+import algoliasearch from 'algoliasearch/lite';\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import smartSort from '../src/widgets/smart-sort/smart-sort';\n+\n+const searchOptions = {\n+  appId: 'C7RIRJRYR9',\n+  apiKey: '77af6d5ffb27caa5ff4937099fcb92e8',\n+  indexName: 'test_Bestbuy_vr_price_asc',\n+  searchClient: algoliasearch('C7RIRJRYR9', '77af6d5ffb27caa5ff4937099fcb92e8'),\n+};\n+\n+storiesOf('Sorting/SmartSort', module)\n+  .add(\n+    'default',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          cssClasses: {\n+            root: 'my-SmartSort',\n+          },\n+        }),\n+      ]);\n+    }, searchOptions)\n+  )\n+  .add(\n+    'explicit value',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          templates: {\n+            button: ({ isSmartSorted }) =>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576900215",
+    "id": 576900215,
+    "line": 32,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjkwMDIxNQ==",
+    "original_commit_id": "8e226cf439d65b5fe6e4daac836c44d41d0e5573",
+    "original_line": 34,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "stories/smart-sort.stories.ts",
+    "position": 32,
+    "pull_request_review_id": 591325054,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900215/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900215",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576900506"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900506"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "actually that makes sense, although I'd still use it in the demo here",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T15:15:08Z",
+    "diff_hunk": "@@ -0,0 +1,40 @@\n+import algoliasearch from 'algoliasearch/lite';\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import smartSort from '../src/widgets/smart-sort/smart-sort';\n+\n+const searchOptions = {\n+  appId: 'C7RIRJRYR9',\n+  apiKey: '77af6d5ffb27caa5ff4937099fcb92e8',\n+  indexName: 'test_Bestbuy_vr_price_asc',\n+  searchClient: algoliasearch('C7RIRJRYR9', '77af6d5ffb27caa5ff4937099fcb92e8'),\n+};\n+\n+storiesOf('Sorting/SmartSort', module)\n+  .add(\n+    'default',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          cssClasses: {\n+            root: 'my-SmartSort',\n+          },\n+        }),\n+      ]);\n+    }, searchOptions)\n+  )\n+  .add(\n+    'explicit value',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          templates: {\n+            button: ({ isSmartSorted }) =>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576900506",
+    "id": 576900506,
+    "in_reply_to_id": 576900215,
+    "line": 32,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjkwMDUwNg==",
+    "original_commit_id": "8e226cf439d65b5fe6e4daac836c44d41d0e5573",
+    "original_line": 34,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "stories/smart-sort.stories.ts",
+    "position": 32,
+    "pull_request_review_id": 591325489,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900506/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576900506",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576901396"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576901396"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "searchClient gets created from appId, apiKey options iirc, no need to create the search client again since there's no special arguments to algoliasearch anymore",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T15:16:12Z",
+    "diff_hunk": "@@ -0,0 +1,40 @@\n+import algoliasearch from 'algoliasearch/lite';\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import smartSort from '../src/widgets/smart-sort/smart-sort';\n+\n+const searchOptions = {\n+  appId: 'C7RIRJRYR9',\n+  apiKey: '77af6d5ffb27caa5ff4937099fcb92e8',\n+  indexName: 'test_Bestbuy_vr_price_asc',\n+  searchClient: algoliasearch('C7RIRJRYR9', '77af6d5ffb27caa5ff4937099fcb92e8'),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576901396",
+    "id": 576901396,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NjkwMTM5Ng==",
+    "original_commit_id": "8e226cf439d65b5fe6e4daac836c44d41d0e5573",
+    "original_line": 10,
+    "original_position": 10,
+    "original_start_line": 7,
+    "path": "stories/smart-sort.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 591326595,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576901396/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576901396",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576955764"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576955764"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "AFAIK being greater than 100 is invalid. So I just made it explicit about it. Should we loosen it?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T16:23:51Z",
+    "diff_hunk": "@@ -98,6 +82,7 @@ const connectSmartSort: SmartSortConnector = function connectSmartSort(\n             typeof appliedRelevancyStrictness !== 'undefined' &&\n             appliedRelevancyStrictness > 0 &&\n             appliedRelevancyStrictness <= 100,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576955764",
+    "id": 576955764,
+    "in_reply_to_id": 576895246,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njk1NTc2NA==",
+    "original_commit_id": "2f3409f316f62b53052b3aeeb1e3ee18a67c7573",
+    "original_line": 84,
+    "original_position": 46,
+    "original_start_line": 82,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 591396740,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576955764/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576955764",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576956829"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576956829"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The text template can be an empty string by default and I also put default templates for the button text. I feel the default values are good enough and don't get a need to throw when not given. What do you think?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T16:25:08Z",
+    "diff_hunk": "@@ -0,0 +1,40 @@\n+import algoliasearch from 'algoliasearch/lite';\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import smartSort from '../src/widgets/smart-sort/smart-sort';\n+\n+const searchOptions = {\n+  appId: 'C7RIRJRYR9',\n+  apiKey: '77af6d5ffb27caa5ff4937099fcb92e8',\n+  indexName: 'test_Bestbuy_vr_price_asc',\n+  searchClient: algoliasearch('C7RIRJRYR9', '77af6d5ffb27caa5ff4937099fcb92e8'),\n+};\n+\n+storiesOf('Sorting/SmartSort', module)\n+  .add(\n+    'default',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          cssClasses: {\n+            root: 'my-SmartSort',\n+          },\n+        }),\n+      ]);\n+    }, searchOptions)\n+  )\n+  .add(\n+    'explicit value',\n+    withHits(({ search, container }) => {\n+      search.addWidgets([\n+        smartSort({\n+          container,\n+          templates: {\n+            button: ({ isSmartSorted }) =>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576956829",
+    "id": 576956829,
+    "in_reply_to_id": 576900215,
+    "line": 32,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njk1NjgyOQ==",
+    "original_commit_id": "8e226cf439d65b5fe6e4daac836c44d41d0e5573",
+    "original_line": 34,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "stories/smart-sort.stories.ts",
+    "position": 32,
+    "pull_request_review_id": 591398119,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576956829/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576956829",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576959685"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576959685"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You're right. I used to have some argument to override the host to a specific one, but forgot to delete this https://github.com/algolia/instantsearch.js/pull/4648/commits/f681b8778dc1f9f90c8c3e0c1fc17425c7b28269",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-16T16:28:20Z",
+    "diff_hunk": "@@ -0,0 +1,40 @@\n+import algoliasearch from 'algoliasearch/lite';\n+import { storiesOf } from '@storybook/html';\n+import { withHits } from '../.storybook/decorators';\n+import smartSort from '../src/widgets/smart-sort/smart-sort';\n+\n+const searchOptions = {\n+  appId: 'C7RIRJRYR9',\n+  apiKey: '77af6d5ffb27caa5ff4937099fcb92e8',\n+  indexName: 'test_Bestbuy_vr_price_asc',\n+  searchClient: algoliasearch('C7RIRJRYR9', '77af6d5ffb27caa5ff4937099fcb92e8'),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r576959685",
+    "id": 576959685,
+    "in_reply_to_id": 576901396,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3Njk1OTY4NQ==",
+    "original_commit_id": "8e226cf439d65b5fe6e4daac836c44d41d0e5573",
+    "original_line": 10,
+    "original_position": 10,
+    "original_start_line": 7,
+    "path": "stories/smart-sort.stories.ts",
+    "position": 1,
+    "pull_request_review_id": 591401784,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576959685/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/576959685",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r577461260"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577461260"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it's the applied relevancy strictness, the engine would throw the error when you save the settings, so it's impossible to receive this situation, no?",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-17T09:39:46Z",
+    "diff_hunk": "@@ -98,6 +82,7 @@ const connectSmartSort: SmartSortConnector = function connectSmartSort(\n             typeof appliedRelevancyStrictness !== 'undefined' &&\n             appliedRelevancyStrictness > 0 &&\n             appliedRelevancyStrictness <= 100,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r577461260",
+    "id": 577461260,
+    "in_reply_to_id": 576895246,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NzQ2MTI2MA==",
+    "original_commit_id": "2f3409f316f62b53052b3aeeb1e3ee18a67c7573",
+    "original_line": 84,
+    "original_position": 46,
+    "original_start_line": 82,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 592001599,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577461260/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577461260",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r577499085"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577499085"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "There's the `Template` type to handle those.",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-17T10:32:55Z",
+    "diff_hunk": "@@ -0,0 +1,108 @@\n+/** @jsx h */\n+\n+import { h, render } from 'preact';\n+import cx from 'classnames';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { component } from '../../lib/suit';\n+import { WidgetFactory, Renderer } from '../../types';\n+import connectSmartSort, {\n+  SmartSortConnectorParams,\n+  SmartSortRendererOptions,\n+} from '../../connectors/smart-sort/connectSmartSort';\n+import SmartSort from '../../components/SmartSort/SmartSort';\n+import defaultTemplates from './defaultTemplates';\n+\n+export type SmartSortCSSClasses = Partial<{\n+  root: string;\n+  text: string;\n+  button: string;\n+}>;\n+\n+export type SmartSortTemplates = Partial<{\n+  text: string | (({ isSmartSorted }: { isSmartSorted: boolean }) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r577499085",
+    "id": 577499085,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3NzQ5OTA4NQ==",
+    "original_commit_id": "f681b8778dc1f9f90c8c3e0c1fc17425c7b28269",
+    "original_line": 25,
+    "original_position": 25,
+    "original_start_line": null,
+    "path": "src/widgets/smart-sort/smart-sort.tsx",
+    "position": 1,
+    "pull_request_review_id": 592049928,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577499085/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/577499085",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r578373708"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/578373708"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n            typeof appliedRelevancyStrictness !== 'undefined' &&\r\n            appliedRelevancyStrictness > 0,\r\n```\r\n\r\nI still think we don't need the <=100",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-18T12:22:56Z",
+    "diff_hunk": "@@ -0,0 +1,111 @@\n+import { Connector } from '../../types';\n+import { noop } from '../../lib/utils';\n+\n+export type SmartSortConnectorParams = {};\n+\n+type Refine = (relevancyStrictness: number) => void;\n+\n+export type SmartSortRendererOptions = {\n+  isSmartSorted: boolean;\n+  isVirtualReplica: boolean;\n+  refine: Refine;\n+};\n+\n+export type SmartSortConnector = Connector<\n+  SmartSortRendererOptions,\n+  SmartSortConnectorParams\n+>;\n+\n+const connectSmartSort: SmartSortConnector = function connectSmartSort(\n+  renderFn = noop,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    type ConnectorState = {\n+      refine?: Refine;\n+    };\n+\n+    const connectorState: ConnectorState = {};\n+\n+    return {\n+      $$type: 'ais.smartSort',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('relevancyStrictness', undefined);\n+      },\n+\n+      getRenderState(renderState, renderOptions) {\n+        return {\n+          ...renderState,\n+          smartSort: this.getWidgetRenderState(renderOptions),\n+        };\n+      },\n+\n+      getWidgetRenderState({ results, helper }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = (relevancyStrictness: number | undefined) => {\n+            helper\n+              .setQueryParameter('relevancyStrictness', relevancyStrictness)\n+              .search();\n+          };\n+        }\n+\n+        const { appliedRelevancyStrictness } = results || {};\n+\n+        return {\n+          isSmartSorted:\n+            typeof appliedRelevancyStrictness !== 'undefined' &&\n+            appliedRelevancyStrictness > 0 &&\n+            appliedRelevancyStrictness <= 100,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r578373708",
+    "id": 578373708,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3ODM3MzcwOA==",
+    "original_commit_id": "3e385d373f3031feb4c9b876f13caa57eb52675c",
+    "original_line": 84,
+    "original_position": 84,
+    "original_start_line": 82,
+    "path": "src/connectors/smart-sort/connectSmartSort.ts",
+    "position": 1,
+    "pull_request_review_id": 593155192,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/578373708/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/578373708",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4648#discussion_r579050042"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4648"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/579050042"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Good catch https://github.com/algolia/instantsearch.js/pull/4648/commits/d54831c2c134251427a3837d2dc16c2967e2d8a9",
+    "commit_id": "777e47d5a1c961a6cfd4f17b7f9ce88ebd66e228",
+    "created_at": "2021-02-19T09:37:02Z",
+    "diff_hunk": "@@ -0,0 +1,108 @@\n+/** @jsx h */\n+\n+import { h, render } from 'preact';\n+import cx from 'classnames';\n+import {\n+  getContainerNode,\n+  createDocumentationMessageGenerator,\n+} from '../../lib/utils';\n+import { component } from '../../lib/suit';\n+import { WidgetFactory, Renderer } from '../../types';\n+import connectSmartSort, {\n+  SmartSortConnectorParams,\n+  SmartSortRendererOptions,\n+} from '../../connectors/smart-sort/connectSmartSort';\n+import SmartSort from '../../components/SmartSort/SmartSort';\n+import defaultTemplates from './defaultTemplates';\n+\n+export type SmartSortCSSClasses = Partial<{\n+  root: string;\n+  text: string;\n+  button: string;\n+}>;\n+\n+export type SmartSortTemplates = Partial<{\n+  text: string | (({ isSmartSorted }: { isSmartSorted: boolean }) => string);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4648#discussion_r579050042",
+    "id": 579050042,
+    "in_reply_to_id": 577499085,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU3OTA1MDA0Mg==",
+    "original_commit_id": "f681b8778dc1f9f90c8c3e0c1fc17425c7b28269",
+    "original_line": 25,
+    "original_position": 25,
+    "original_start_line": null,
+    "path": "src/widgets/smart-sort/smart-sort.tsx",
+    "position": 1,
+    "pull_request_review_id": 594014193,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4648",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/579050042/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-02-22T10:26:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/579050042",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  }
+]

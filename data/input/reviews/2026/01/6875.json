@@ -1,0 +1,420 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2730928322"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730928322"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm surprised this timeout is needed, the algolia client already has timeout logic and should therefore error if not responding soon enough. Are you using a custom client?",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-27T08:51:52Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {\n+      ssrSearchFailed = true;\n+      return { results: [] };\n+    }\n+    return response;\n+  };\n+\n+  const handleError = () => {\n+    ssrSearchFailed = true;\n+    return { results: [] };\n+  };\n \n   if (search.compositionID) {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(query) {\n         requestParamsList = [query.requestBody.params];\n-        return (search.client as CompositionClient).search(query);\n+        return (search.client as CompositionClient)\n+          .search(query)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as CompositionClient);\n   } else {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(queries) {\n         requestParamsList = queries.map(({ params }) => params);\n-        return (search.client as SearchClient).search(queries);\n+        return (search.client as SearchClient)\n+          .search(queries)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as SearchClient);\n   }\n \n   resetWidgetId();\n \n   const waitForResults = () =>\n-    new Promise<void>((resolve) => {\n+    new Promise<void>((resolve, reject) => {\n       let searchReceived = false;\n       let recommendReceived = false;\n-      search.mainHelper!.derivedHelpers[0].once('result', () => {\n+      let isSettled = false;\n+\n+      const helper = search.mainHelper!;\n+      const derivedHelper = helper.derivedHelpers[0];\n+\n+      const timeout = setTimeout(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2730928322",
+    "id": 2730928322,
+    "line": 90,
+    "node_id": "PRRC_kwDOAlnbOs6ixqjC",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 90,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 70,
+    "pull_request_review_id": 3709906310,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730928322/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T08:53:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730928322",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2730929520"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730929520"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "in which case is there a response without results? ",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-27T08:52:09Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2730929520",
+    "id": 2730929520,
+    "line": 43,
+    "node_id": "PRRC_kwDOAlnbOs6ixq1w",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 43,
+    "original_position": 19,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 19,
+    "pull_request_review_id": 3709906310,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730929520/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T08:53:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2730929520",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2732871105"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732871105"
+      }
+    },
+    "author_association": "NONE",
+    "body": "Hey! Answering to your previous question, yes, this happens when running a custom client. I am working using [searchkit](https://github.com/searchkit/searchkit), but in the end.\r\n\r\nI see in the original issue that the reporter uses the typesense adapted, so it might be happening only with custom clients, but I cannot tell 100% sure.",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-27T16:34:12Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {\n+      ssrSearchFailed = true;\n+      return { results: [] };\n+    }\n+    return response;\n+  };\n+\n+  const handleError = () => {\n+    ssrSearchFailed = true;\n+    return { results: [] };\n+  };\n \n   if (search.compositionID) {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(query) {\n         requestParamsList = [query.requestBody.params];\n-        return (search.client as CompositionClient).search(query);\n+        return (search.client as CompositionClient)\n+          .search(query)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as CompositionClient);\n   } else {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(queries) {\n         requestParamsList = queries.map(({ params }) => params);\n-        return (search.client as SearchClient).search(queries);\n+        return (search.client as SearchClient)\n+          .search(queries)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as SearchClient);\n   }\n \n   resetWidgetId();\n \n   const waitForResults = () =>\n-    new Promise<void>((resolve) => {\n+    new Promise<void>((resolve, reject) => {\n       let searchReceived = false;\n       let recommendReceived = false;\n-      search.mainHelper!.derivedHelpers[0].once('result', () => {\n+      let isSettled = false;\n+\n+      const helper = search.mainHelper!;\n+      const derivedHelper = helper.derivedHelpers[0];\n+\n+      const timeout = setTimeout(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2732871105",
+    "id": 2732871105,
+    "in_reply_to_id": 2730928322,
+    "line": 90,
+    "node_id": "PRRC_kwDOAlnbOs6i5E3B",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 90,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 70,
+    "pull_request_review_id": 3712227377,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732871105/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T16:34:13Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732871105",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/15908038?v=4",
+      "events_url": "https://api.github.com/users/nx-alejandrolacasa/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nx-alejandrolacasa/followers",
+      "following_url": "https://api.github.com/users/nx-alejandrolacasa/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nx-alejandrolacasa/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nx-alejandrolacasa",
+      "id": 15908038,
+      "login": "nx-alejandrolacasa",
+      "node_id": "MDQ6VXNlcjE1OTA4MDM4",
+      "organizations_url": "https://api.github.com/users/nx-alejandrolacasa/orgs",
+      "received_events_url": "https://api.github.com/users/nx-alejandrolacasa/received_events",
+      "repos_url": "https://api.github.com/users/nx-alejandrolacasa/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nx-alejandrolacasa/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nx-alejandrolacasa/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nx-alejandrolacasa",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2732877046"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732877046"
+      }
+    },
+    "author_association": "NONE",
+    "body": "In case the server is down or not responding, the answer may be many things (404, 500, error, nothing...). This is an extra measure to prevent this situations that may return valid a JSON, but not a valid response.",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-27T16:35:39Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2732877046",
+    "id": 2732877046,
+    "in_reply_to_id": 2730929520,
+    "line": 43,
+    "node_id": "PRRC_kwDOAlnbOs6i5GT2",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 43,
+    "original_position": 19,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 19,
+    "pull_request_review_id": 3712235901,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732877046/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T16:35:40Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732877046",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/15908038?v=4",
+      "events_url": "https://api.github.com/users/nx-alejandrolacasa/events{/privacy}",
+      "followers_url": "https://api.github.com/users/nx-alejandrolacasa/followers",
+      "following_url": "https://api.github.com/users/nx-alejandrolacasa/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nx-alejandrolacasa/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/nx-alejandrolacasa",
+      "id": 15908038,
+      "login": "nx-alejandrolacasa",
+      "node_id": "MDQ6VXNlcjE1OTA4MDM4",
+      "organizations_url": "https://api.github.com/users/nx-alejandrolacasa/orgs",
+      "received_events_url": "https://api.github.com/users/nx-alejandrolacasa/received_events",
+      "repos_url": "https://api.github.com/users/nx-alejandrolacasa/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/nx-alejandrolacasa/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nx-alejandrolacasa/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/nx-alejandrolacasa",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2735430096"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735430096"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I feel like this is an error in the adapter, and they should throw an error instead. Do you mind making a PR there to fix it instead of handling wrong client behaviour in InstantSearch?",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-28T08:29:00Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2735430096",
+    "id": 2735430096,
+    "in_reply_to_id": 2730929520,
+    "line": 43,
+    "node_id": "PRRC_kwDOAlnbOs6jC1nQ",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 43,
+    "original_position": 19,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 19,
+    "pull_request_review_id": 3715241502,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735430096/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-28T08:29:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735430096",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2735432932"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6875"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735432932"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "makes sense, can you actually make a similar PR to handle timeouts in the adapters instead of in InstantSearch itself. We can't design our library around differently behaving clients IMO",
+    "commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "created_at": "2026-01-28T08:29:44Z",
+    "diff_hunk": "@@ -34,52 +36,105 @@ export function InitializePromise({ nonce }: InitializePromiseProps) {\n       throw new Error('Missing ServerInsertedHTMLContext');\n     });\n \n-  // Extract search parameters from the search client to use them\n-  // later during hydration.\n   let requestParamsList: SearchOptions[];\n+  let ssrSearchFailed = false;\n+\n+  const handleResponse = (response: any) => {\n+    if (!response || !('results' in response)) {\n+      ssrSearchFailed = true;\n+      return { results: [] };\n+    }\n+    return response;\n+  };\n+\n+  const handleError = () => {\n+    ssrSearchFailed = true;\n+    return { results: [] };\n+  };\n \n   if (search.compositionID) {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(query) {\n         requestParamsList = [query.requestBody.params];\n-        return (search.client as CompositionClient).search(query);\n+        return (search.client as CompositionClient)\n+          .search(query)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as CompositionClient);\n   } else {\n     search.mainHelper!.setClient({\n       ...search.mainHelper!.getClient(),\n       search(queries) {\n         requestParamsList = queries.map(({ params }) => params);\n-        return (search.client as SearchClient).search(queries);\n+        return (search.client as SearchClient)\n+          .search(queries)\n+          .then(handleResponse)\n+          .catch(handleError);\n       },\n     } as SearchClient);\n   }\n \n   resetWidgetId();\n \n   const waitForResults = () =>\n-    new Promise<void>((resolve) => {\n+    new Promise<void>((resolve, reject) => {\n       let searchReceived = false;\n       let recommendReceived = false;\n-      search.mainHelper!.derivedHelpers[0].once('result', () => {\n+      let isSettled = false;\n+\n+      const helper = search.mainHelper!;\n+      const derivedHelper = helper.derivedHelpers[0];\n+\n+      const timeout = setTimeout(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6875#discussion_r2735432932",
+    "id": 2735432932,
+    "in_reply_to_id": 2730928322,
+    "line": 90,
+    "node_id": "PRRC_kwDOAlnbOs6jC2Tk",
+    "original_commit_id": "ba3479ae2f248153e2b8c4bfe7823755929fb801",
+    "original_line": 90,
+    "original_position": 70,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch-nextjs/src/InitializePromise.ts",
+    "position": 70,
+    "pull_request_review_id": 3715245321,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6875",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735432932/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-28T08:29:45Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2735432932",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

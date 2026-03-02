@@ -1,0 +1,836 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227972769"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227972769"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n>Sometimes, a second (focused) snapshot is clearer and shorter than a series of isolated assertions. Use your judgment to determine what will make the test the tersest and easiest to understand.\r\n```\r\n\r\nnot sure if this clarification is needed, but could be useful",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T11:31:01Z",
+    "diff_hunk": "@@ -165,9 +166,162 @@ This monorepo has as goal to be used for all InstantSearch flavors and tools. To\n \n ## Tests\n \n-### Unit tests\n+The general philosophy of testing in InstantSearch follows [Testing Library's guiding principles](https://testing-library.com/docs/guiding-principles):\n \n-Our unit tests are written with [Jest](https://facebook.github.io/jest/):\n+>The more your tests resemble the way your software is used, the more confidence they can give you.\n+\n+We rely on [Jest](https://jestjs.io/) for unit tests on all flavors of InstantSearch. In addition, [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) is used to test interactions in React InstantSearch Hooks.\n+\n+### How to write a test\n+\n+Your tests should follow the [Arrange-Act-Assert](http://wiki.c2.com/?ArrangeActAssert) pattern.\n+\n+#### Arrange\n+\n+Set up the conditions for your test, such as creating a mocked search client, initializing the widget, and starting InstantSearch. **It should look like the code an InstantSearch user would write**, so refrain from manipulating internals. If you need mocks or spies, keep them minimal so the test case remains readable.\n+\n+#### Act\n+\n+Execute the code you're testing. If you're testing the initial render, this part would only contain the instantiation of the widget and the starting of InstantSearch. If you're testing what happens when an end user clicks a button, this part would contain the click on the button element as well.\n+\n+When querying elements, do it in a way that mindfully enforces the contract you're defining. For widgets, since class names are part of the public API, it's recommended to query elements by class name.\n+\n+In many like a user would by reflecting the experience of visual/mouse users as well as those that use assistive technology.\n+\n+**❌ Incorrect**\n+\n+```js\n+// There might be other buttons, and this doesn't confirm that the right button\n+// triggered the right action.\n+const button = getByRole('button');\n+\n+// Unless the element is impossible to query without a test ID, avoid them.\n+const button = getByTestId('show-more-button');\n+```\n+\n+**✅ Correct**\n+\n+```js\n+// This enforces the contract by identifying the button with an attribute that\n+// the user has access to and could rely on for other things.\n+const button = document.querySelector('.ais-RefinementList-showMore');\n+```\n+\n+> ℹ️ Learn more about [available queries](https://testing-library.com/docs/queries/about#types-of-queries) and [priority](https://testing-library.com/docs/queries/about#priority).\n+\n+When you're testing user interactions, make sure to simulate full interactions and not manually dispatch events you thing should fire. To do so, use [`user-event`](https://testing-library.com/docs/user-event/intro/).\n+\n+**❌ Incorrect**\n+\n+```js\n+// Use `userEvent` over `fireEvent` unless you have a legit case for it.\n+fireEvent.click(button);\n+\n+// Don't manually dispatch with lower-level APIs or create custom-made events,\n+// the browser might do other things you don't see or know about.\n+fireEvent(button, new MouseEvent('click', { bubbles: true, cancelable: true }));\n+button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));\n+```\n+\n+**✅ Correct**\n+\n+```js\n+// This focuses on the interaction itself and relies on `userEvent` to behave\n+// like the browser would.\n+userEvent.click(button);\n+```\n+\n+> ℹ️ Learn more about [firing events](https://testing-library.com/docs/dom-testing-library/api-events/).\n+\n+#### Assert\n+\n+Verify that the code you're testing behaves as expected.\n+\n+If you're testing the initial render, you can use [inline Jest snapshots](https://jestjs.io/docs/snapshot-testing) to assert what HTML gets rendered on the page. Don't use external snapshots.\n+\n+**❌ Incorrect**\n+\n+```js\n+// Don't use external snapshots as they're harder to manage and makes you switch\n+// between file to understand the test.\n+expect(container).toMatchSnapshot();\n+```\n+\n+**✅ Correct**\n+\n+```js\n+// Use inline snapshots to encapsulate the entire test in a single place.\n+expect(container).toMatchInlineSnapshot(`\n+  <div>\n+    <!-- … -->\n+  </div>\n+`);\n+```\n+\n+Don't overuse snapshots, as they make tests files longer and are harder to review. Try limiting yourself to a single snapshot for initial render, and if you're testing DOM changes after an interaction, only test this part instead of using another snapshot.\n+\n+**❌ Incorrect**\n+\n+```js\n+const showMoreButton = container.querySelector('.ais-RefinementList-showMore');\n+\n+userEvent.click(showMoreButton);\n+\n+// Don't use a snapshot to assert the whole HTML structure after an interaction\n+// as they're harder to read and don't help focusing on what has changed.\n+expect(container).toMatchInlineSnapshot(`\n+  <div>\n+    <!-- … -->\n+  </div>\n+`);\n+```\n+\n+```js\n+const showMoreButton = container.querySelector('.ais-RefinementList-showMore');\n+const listItems = container.querySelectorAll('.ais-RefinementList-item');\n+\n+userEvent.click(showMoreButton);\n+\n+await waitFor(() => {\n+  // Test the elements that did change, making it clear what the consequences of\n+  // the interaction are.\n+  expect(showMoreButton).toHaveTextContent('Show less');\n+  expect(listItems).toHaveLength(20);\n+});\n+```\n+\n+> **Note**\n+>Sometimes, a second snapshot is clearer and shorter than a series of isolated assertions. Use your judgment to determine what will make the test the tersest and easiest to understand.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227972769",
+    "id": 1227972769,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMWCh",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 294,
+    "original_position": 143,
+    "original_start_line": null,
+    "path": "CONTRIBUTING.md",
+    "position": 1,
+    "pull_request_review_id": 1476927157,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227972769/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T11:39:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227972769",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227976241"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227976241"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\nTo ensure InstantSearch widgets behave similarly in JavaScript, React and Vue, we have introduced framework agnostic tests suites to assert behaviors that needs to be consistent across flavors.\r\n```\r\n\r\nor \r\n\r\n```suggestion\r\nTo ensure InstantSearch widgets behave similarly in JavaScript, React and Vue, we need framework agnostic tests suites to assert behaviors that needs to be consistent across flavors.\r\n```",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T11:33:58Z",
+    "diff_hunk": "@@ -0,0 +1,63 @@\n+# Common test suites\n+\n+To ensure InstantSearch widgets behave similarly in JavaScript, React and Vue, we needed framework agnostic tests suites to assert behaviors that needs to be consistent across flavors.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227976241",
+    "id": 1227976241,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMW4x",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 3,
+    "original_position": 3,
+    "original_start_line": null,
+    "path": "tests/common/README.md",
+    "position": 1,
+    "pull_request_review_id": 1476927157,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227976241/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T11:39:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227976241",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227982821"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227982821"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "not sure if it's needed, but this is \"more consistent\" I think\r\n\r\n```suggestion\r\nfunction normalizeSnapshot<TElement extends Element | null>(\r\n  element: TElement\r\n): TElement {\r\n```\r\n\r\nThat way the element doesn't become optional if it was already asserted",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T11:38:13Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227982821",
+    "id": 1227982821,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMYfl",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 43,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1476927157,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227982821/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T11:39:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227982821",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227983321"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227983321"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    test('renders with required props', async () => {\r\n```",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T11:38:37Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {\n+  if (!element) {\n+    return null;\n+  }\n+\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}\n+\n+export function createOptionsTests(setup: BreadcrumbSetup, act: Act) {\n+  describe('options', () => {\n+    test('renders with props', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227983321",
+    "id": 1227983321,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMYnZ",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 60,
+    "original_position": 60,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1476927157,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227983321/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T11:39:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227983321",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227984332"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227984332"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why is this commented? did it not pass?",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T11:39:23Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {\n+  if (!element) {\n+    return null;\n+  }\n+\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}\n+\n+export function createOptionsTests(setup: BreadcrumbSetup, act: Act) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb ais-Breadcrumb--noRefinement\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('transforms the items', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: {\n+          attributes: hierarchicalAttributes,\n+          transformItems: (items) =>\n+            items.map((item) => ({ ...item, label: item.label.toUpperCase() })),\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        [...document.querySelectorAll('.ais-Breadcrumb-item')].map(\n+          (item) => item.textContent\n+        )\n+      ).toMatchInlineSnapshot(`\n+        [\n+          \"Home\",\n+          \">CAMERAS & CAMCORDERS\",\n+          \">DIGITAL CAMERAS\",\n+        ]\n+      `);\n+    });\n+\n+    test('navigates to a parent category', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+    `);\n+\n+      await act(async () => {\n+        userEvent.click(screen.getAllByText('Cameras & Camcorders')[0]);\n+\n+        await wait(0);\n+      });\n+\n+      // expect(searchClient.search).toHaveBeenCalledTimes(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1227984332",
+    "id": 1227984332,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMY3M",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 284,
+    "original_position": 284,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1476927157,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227984332/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T11:39:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1227984332",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228073658"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228073658"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "In the end it caused issues with TypeScript. I opted for a more simplistic approach, as there's no reason for the `element` to be null when we want to normalize for snapshot. See https://github.com/algolia/instantsearch/pull/5674/commits/635991e942c11f87099e50d1fe28ede68094fa83.",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T12:46:44Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228073658",
+    "id": 1228073658,
+    "in_reply_to_id": 1227982821,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMuq6",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 43,
+    "original_position": 43,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477085941,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228073658/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T12:46:44Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228073658",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228075605"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228075605"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Ah yes, it doesn't pass, for a reason I haven't look into yet, `searchClient.search` is actually called a 5th time here, so it might be related to missing mock resets somewhere. I'll dig into it.",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T12:48:03Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {\n+  if (!element) {\n+    return null;\n+  }\n+\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}\n+\n+export function createOptionsTests(setup: BreadcrumbSetup, act: Act) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb ais-Breadcrumb--noRefinement\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('transforms the items', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: {\n+          attributes: hierarchicalAttributes,\n+          transformItems: (items) =>\n+            items.map((item) => ({ ...item, label: item.label.toUpperCase() })),\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        [...document.querySelectorAll('.ais-Breadcrumb-item')].map(\n+          (item) => item.textContent\n+        )\n+      ).toMatchInlineSnapshot(`\n+        [\n+          \"Home\",\n+          \">CAMERAS & CAMCORDERS\",\n+          \">DIGITAL CAMERAS\",\n+        ]\n+      `);\n+    });\n+\n+    test('navigates to a parent category', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+    `);\n+\n+      await act(async () => {\n+        userEvent.click(screen.getAllByText('Cameras & Camcorders')[0]);\n+\n+        await wait(0);\n+      });\n+\n+      // expect(searchClient.search).toHaveBeenCalledTimes(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228075605",
+    "id": 1228075605,
+    "in_reply_to_id": 1227984332,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JMvJV",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 284,
+    "original_position": 284,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477088911,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228075605/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T12:48:04Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228075605",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228113345"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228113345"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Could this be abstracted into a custom Jest matcher?",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T13:14:30Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element): Element {\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228113345",
+    "id": 1228113345,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JM4XB",
+    "original_commit_id": "635991e942c11f87099e50d1fe28ede68094fa83",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": 43,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477147589,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228113345/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-06-13T13:14:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228113345",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228162336"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228162336"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Oh! I like this idea, I'll try something!",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T13:46:50Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element): Element {\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228162336",
+    "id": 1228162336,
+    "in_reply_to_id": 1228113345,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JNEUg",
+    "original_commit_id": "635991e942c11f87099e50d1fe28ede68094fa83",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": 43,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477225130,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228162336/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-06-13T13:46:51Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228162336",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228271308"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228271308"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I like it being explicit in the test, as we don't want to indiscriminately replace the spacing, right? Otherwise I believe we could also edit the html snapshot serializer to remove explicitly authored spaces in ul/li (or maybe even all insignificant places for whitespace, can use https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Whitespace for rules)",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T14:54:59Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element): Element {\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228271308",
+    "id": 1228271308,
+    "in_reply_to_id": 1228113345,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JNe7M",
+    "original_commit_id": "635991e942c11f87099e50d1fe28ede68094fa83",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": 43,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477393907,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228271308/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-06-13T14:56:55Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228271308",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228314763"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228314763"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I kept the definition of the \"normalize function\" in the common test suite itself, but abstracted the rest in an extension of the `toMatchInlineSnapshot` matcher: https://github.com/algolia/instantsearch/pull/5674/commits/bf6e2b582bb5655e3d3ea5da6b73a7cb752dbaa6.",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T15:18:08Z",
+    "diff_hunk": "@@ -0,0 +1,294 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element): Element {\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228314763",
+    "id": 1228314763,
+    "in_reply_to_id": 1228113345,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JNpiL",
+    "original_commit_id": "635991e942c11f87099e50d1fe28ede68094fa83",
+    "original_line": 52,
+    "original_position": 52,
+    "original_start_line": 43,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477453975,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228314763/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2023-06-13T15:18:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228314763",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228358928"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5674"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228358928"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Fixed in https://github.com/algolia/instantsearch/pull/5674/commits/e70aa80ccc14366f6a42861157c543ddf24e54af",
+    "commit_id": "6a891b2fb79676058fcb33a3a200c4ee4c3ead0e",
+    "created_at": "2023-06-13T15:49:25Z",
+    "diff_hunk": "@@ -0,0 +1,298 @@\n+import {\n+  createSearchClient,\n+  createMultiSearchResponse,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import type { BreadcrumbSetup } from '.';\n+import type { Act } from '../../common';\n+import { screen } from '@testing-library/dom';\n+import userEvent from '@testing-library/user-event';\n+import { wait } from '@instantsearch/testutils';\n+\n+const hierarchicalFacets = {\n+  'hierarchicalCategories.lvl0': {\n+    'Cameras & Camcorders': 1369,\n+  },\n+  'hierarchicalCategories.lvl1': {\n+    'Cameras & Camcorders > Digital Cameras': 170,\n+  },\n+};\n+\n+const hierarchicalAttributes = Object.keys(hierarchicalFacets);\n+\n+const searchClient = createSearchClient({\n+  search: jest.fn((requests) => {\n+    return Promise.resolve(\n+      createMultiSearchResponse(\n+        ...requests.map(() =>\n+          createSingleSearchResponse({\n+            facets: hierarchicalFacets,\n+          })\n+        )\n+      )\n+    );\n+  }),\n+});\n+\n+/**\n+ * Removes rendered DOM discrepancies between flavors when\n+ * they don't affect the behavior of the widget\n+ * @param element A DOM element to normalize\n+ * @returns A normalized DOM element\n+ */\n+function normalizeSnapshot(element: Element | null): Element | null {\n+  if (!element) {\n+    return null;\n+  }\n+\n+  const normalizedElement = element.cloneNode() as Element;\n+  normalizedElement.innerHTML = element.innerHTML\n+    // Vue renders a useless extra space between list item elements\n+    .replace(/<\\/li> <li/g, '</li><li')\n+    // Vue renders a useless extra space between last list item element and closing list tag\n+    .replace(/<\\/li> <\\/ul>/g, '</li></ul>');\n+\n+  return normalizedElement;\n+}\n+\n+export function createOptionsTests(setup: BreadcrumbSetup, act: Act) {\n+  describe('options', () => {\n+    test('renders with props', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb ais-Breadcrumb--noRefinement\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+      `);\n+    });\n+\n+    test('transforms the items', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: {\n+          attributes: hierarchicalAttributes,\n+          transformItems: (items) =>\n+            items.map((item) => ({ ...item, label: item.label.toUpperCase() })),\n+        },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        [...document.querySelectorAll('.ais-Breadcrumb-item')].map(\n+          (item) => item.textContent\n+        )\n+      ).toMatchInlineSnapshot(`\n+        [\n+          \"Home\",\n+          \">CAMERAS & CAMCORDERS\",\n+          \">DIGITAL CAMERAS\",\n+        ]\n+      `);\n+    });\n+\n+    test('navigates to a parent category', async () => {\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          initialUiState: {\n+            indexName: {\n+              hierarchicalMenu: {\n+                'hierarchicalCategories.lvl0': [\n+                  'Cameras & Camcorders > Digital Cameras',\n+                ],\n+              },\n+            },\n+          },\n+          searchClient,\n+        },\n+        widgetParams: { attributes: hierarchicalAttributes },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(normalizeSnapshot(document.querySelector('.ais-Breadcrumb')))\n+        .toMatchInlineSnapshot(`\n+        <div\n+          class=\"ais-Breadcrumb\"\n+        >\n+          <ul\n+            class=\"ais-Breadcrumb-list\"\n+          >\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Home\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              <a\n+                class=\"ais-Breadcrumb-link\"\n+                href=\"#\"\n+              >\n+                Cameras & Camcorders\n+              </a>\n+            </li>\n+            <li\n+              class=\"ais-Breadcrumb-item ais-Breadcrumb-item--selected\"\n+            >\n+              <span\n+                aria-hidden=\"true\"\n+                class=\"ais-Breadcrumb-separator\"\n+              >\n+                &gt;\n+              </span>\n+              Digital Cameras\n+            </li>\n+          </ul>\n+        </div>\n+    `);\n+\n+      await act(async () => {\n+        userEvent.click(screen.getAllByText('Cameras & Camcorders')[0]);\n+\n+        await wait(0);\n+      });\n+\n+      // expect(searchClient.search).toHaveBeenCalledTimes(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5674#discussion_r1228358928",
+    "id": 1228358928,
+    "in_reply_to_id": 1227984332,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5JN0UQ",
+    "original_commit_id": "c7ae59e0f92b2d23130b9876b04b1702da61312d",
+    "original_line": 284,
+    "original_position": 284,
+    "original_start_line": null,
+    "path": "tests/common/widgets/breadcrumb/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1477537864,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5674",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228358928/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-06-13T15:49:25Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1228358928",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

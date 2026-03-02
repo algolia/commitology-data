@@ -1,0 +1,279 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90854686"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90854686"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Could we only allow string labels? I feel like it's unecessary to try to handle both.\r\nAlso we can say that the default label is just the value when not provided. In the docs.\r\n\r\nWhat do you think?",
+    "commit_id": "8094ed10a6251d975e9c5942006fdcf79bb8061f",
+    "created_at": "2016-12-05T12:26:52Z",
+    "diff_hunk": "@@ -22,17 +23,30 @@ function getCurrentRefinement(props, state) {\n  * @name connectHitsPerPage\n  * @kind connector\n  * @propType {number} defaultRefinement - The number of items selected by default\n- * @propType {{value, label}[]|number[]} items - List of hits per page options. Passing a list of numbers [n] is a shorthand for [{value: n, label: n}].\n+ * @propType {{value: number, label: string||number}[]} items - List of hits per page options.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90854686",
+    "id": 90854686,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkwODU0Njg2",
+    "original_commit_id": "f74b7f713c5096802aed99ea009c026301f82640",
+    "original_line": null,
+    "original_position": 10,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectHitsPerPage.js",
+    "position": 1,
+    "pull_request_review_id": 11368150,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90854686/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-05T15:15:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90854686",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90855377"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855377"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Was items direclty passed down before this commit? If so I think I just discovered this implementation \"detail\" :)",
+    "commit_id": "8094ed10a6251d975e9c5942006fdcf79bb8061f",
+    "created_at": "2016-12-05T12:32:03Z",
+    "diff_hunk": "@@ -22,17 +23,30 @@ function getCurrentRefinement(props, state) {\n  * @name connectHitsPerPage\n  * @kind connector\n  * @propType {number} defaultRefinement - The number of items selected by default\n- * @propType {{value, label}[]|number[]} items - List of hits per page options. Passing a list of numbers [n] is a shorthand for [{value: n, label: n}].\n+ * @propType {{value: number, label: string||number}[]} items - List of hits per page options.\n  * @providedPropType {function} refine - a function to remove a single filter\n  * @providedPropType {function} createURL - a function to generate a URL for the corresponding state\n  * @providedPropType {string} currentRefinement - the refinement currently applied\n+ * @providedPropType {array.<{isRefined: boolean, label: string||number, value: number}>} items - the list of items the HitsPerPage can display.\n  */\n export default createConnector({\n   displayName: 'AlgoliaHitsPerPage',\n \n+  propTypes: {\n+    defaultRefinement: PropTypes.number.isRequired,\n+    items: PropTypes.arrayOf(PropTypes.shape({\n+      label: PropTypes.string.isRequired,\n+      value: PropTypes.number.isRequired,\n+    })).isRequired,\n+  },\n+\n   getProps(props, state) {\n+    const currentRefinement = getCurrentRefinement(props, state);\n+    const items = props.items.map(i => i.value === currentRefinement\n+      ? {...i, isRefined: true} : {...i, isRefined: false});\n     return {\n-      currentRefinement: getCurrentRefinement(props, state),\n+      items,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90855377",
+    "id": 90855377,
+    "line": 48,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkwODU1Mzc3",
+    "original_commit_id": "f74b7f713c5096802aed99ea009c026301f82640",
+    "original_line": null,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectHitsPerPage.js",
+    "position": 1,
+    "pull_request_review_id": 11368150,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855377/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-05T15:15:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855377",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90855412"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855412"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can we use `item` instead of `i`? So that we avoid single letter variables",
+    "commit_id": "8094ed10a6251d975e9c5942006fdcf79bb8061f",
+    "created_at": "2016-12-05T12:32:18Z",
+    "diff_hunk": "@@ -22,17 +23,30 @@ function getCurrentRefinement(props, state) {\n  * @name connectHitsPerPage\n  * @kind connector\n  * @propType {number} defaultRefinement - The number of items selected by default\n- * @propType {{value, label}[]|number[]} items - List of hits per page options. Passing a list of numbers [n] is a shorthand for [{value: n, label: n}].\n+ * @propType {{value: number, label: string||number}[]} items - List of hits per page options.\n  * @providedPropType {function} refine - a function to remove a single filter\n  * @providedPropType {function} createURL - a function to generate a URL for the corresponding state\n  * @providedPropType {string} currentRefinement - the refinement currently applied\n+ * @providedPropType {array.<{isRefined: boolean, label: string||number, value: number}>} items - the list of items the HitsPerPage can display.\n  */\n export default createConnector({\n   displayName: 'AlgoliaHitsPerPage',\n \n+  propTypes: {\n+    defaultRefinement: PropTypes.number.isRequired,\n+    items: PropTypes.arrayOf(PropTypes.shape({\n+      label: PropTypes.string.isRequired,\n+      value: PropTypes.number.isRequired,\n+    })).isRequired,\n+  },\n+\n   getProps(props, state) {\n+    const currentRefinement = getCurrentRefinement(props, state);\n+    const items = props.items.map(i => i.value === currentRefinement\n+      ? {...i, isRefined: true} : {...i, isRefined: false});",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90855412",
+    "id": 90855412,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkwODU1NDEy",
+    "original_commit_id": "f74b7f713c5096802aed99ea009c026301f82640",
+    "original_line": null,
+    "original_position": 30,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectHitsPerPage.js",
+    "position": 1,
+    "pull_request_review_id": 11368150,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855412/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-05T15:15:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90855412",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90874443"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1659"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90874443"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "well, items was a props from the user so no need to redefine it in the getProps (or getProvidedProps in the future;)).\r\n\r\nNow that I enrich the structure, I need to pass it down through getProvidedProps. ",
+    "commit_id": "8094ed10a6251d975e9c5942006fdcf79bb8061f",
+    "created_at": "2016-12-05T14:31:29Z",
+    "diff_hunk": "@@ -22,17 +23,30 @@ function getCurrentRefinement(props, state) {\n  * @name connectHitsPerPage\n  * @kind connector\n  * @propType {number} defaultRefinement - The number of items selected by default\n- * @propType {{value, label}[]|number[]} items - List of hits per page options. Passing a list of numbers [n] is a shorthand for [{value: n, label: n}].\n+ * @propType {{value: number, label: string||number}[]} items - List of hits per page options.\n  * @providedPropType {function} refine - a function to remove a single filter\n  * @providedPropType {function} createURL - a function to generate a URL for the corresponding state\n  * @providedPropType {string} currentRefinement - the refinement currently applied\n+ * @providedPropType {array.<{isRefined: boolean, label: string||number, value: number}>} items - the list of items the HitsPerPage can display.\n  */\n export default createConnector({\n   displayName: 'AlgoliaHitsPerPage',\n \n+  propTypes: {\n+    defaultRefinement: PropTypes.number.isRequired,\n+    items: PropTypes.arrayOf(PropTypes.shape({\n+      label: PropTypes.string.isRequired,\n+      value: PropTypes.number.isRequired,\n+    })).isRequired,\n+  },\n+\n   getProps(props, state) {\n+    const currentRefinement = getCurrentRefinement(props, state);\n+    const items = props.items.map(i => i.value === currentRefinement\n+      ? {...i, isRefined: true} : {...i, isRefined: false});\n     return {\n-      currentRefinement: getCurrentRefinement(props, state),\n+      items,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1659#discussion_r90874443",
+    "id": 90874443,
+    "in_reply_to_id": 90855377,
+    "line": 48,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDkwODc0NDQz",
+    "original_commit_id": "f74b7f713c5096802aed99ea009c026301f82640",
+    "original_line": null,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/connectors/connectHitsPerPage.js",
+    "position": 1,
+    "pull_request_review_id": 11387928,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1659",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90874443/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-12-05T15:15:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/90874443",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6885378?v=4",
+      "events_url": "https://api.github.com/users/mthuret/events{/privacy}",
+      "followers_url": "https://api.github.com/users/mthuret/followers",
+      "following_url": "https://api.github.com/users/mthuret/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mthuret/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/mthuret",
+      "id": 6885378,
+      "login": "mthuret",
+      "node_id": "MDQ6VXNlcjY4ODUzNzg=",
+      "organizations_url": "https://api.github.com/users/mthuret/orgs",
+      "received_events_url": "https://api.github.com/users/mthuret/received_events",
+      "repos_url": "https://api.github.com/users/mthuret/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/mthuret/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mthuret/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/mthuret",
+      "user_view_type": "public"
+    }
+  }
+]

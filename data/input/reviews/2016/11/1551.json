@@ -1,0 +1,71 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1551#discussion_r88026855"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1551"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/88026855"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is the interesting part, otherwise it's just reindenting :/\n",
+    "commit_id": "e9e6fd6cbafd467d6ce29a87c1f504c7c93b9c65",
+    "created_at": "2016-11-15T14:30:41Z",
+    "diff_hunk": "@@ -19,106 +19,120 @@ const currentToggle = ({\n   containerNode,\n   RefinementList,\n   cssClasses,\n-} = {}) => ({\n-  getConfiguration() {\n-    return {\n-      disjunctiveFacets: [attributeName],\n-    };\n-  },\n-  toggleRefinement(helper, facetValue, isRefined) {\n-    const on = userValues.on;\n-    const off = userValues.off;\n+} = {}) => {\n+  const on = userValues ? escapeRefinement(userValues.on) : undefined;\n+  const off = userValues ? escapeRefinement(userValues.off) : undefined;\n \n-    // Checking\n-    if (!isRefined) {\n-      if (hasAnOffValue) {\n-        helper.removeDisjunctiveFacetRefinement(attributeName, off);\n+  return {\n+    getConfiguration() {\n+      return {\n+        disjunctiveFacets: [attributeName],\n+      };\n+    },\n+    toggleRefinement(helper, facetValue, isRefined) {\n+      // Checking\n+      if (!isRefined) {\n+        if (hasAnOffValue) {\n+          helper.removeDisjunctiveFacetRefinement(attributeName, off);\n+        }\n+        helper.addDisjunctiveFacetRefinement(attributeName, on);\n+      } else {\n+        // Unchecking\n+        helper.removeDisjunctiveFacetRefinement(attributeName, on);\n+        if (hasAnOffValue) {\n+          helper.addDisjunctiveFacetRefinement(attributeName, off);\n+        }\n       }\n-      helper.addDisjunctiveFacetRefinement(attributeName, on);\n-    } else {\n-      // Unchecking\n-      helper.removeDisjunctiveFacetRefinement(attributeName, on);\n-      if (hasAnOffValue) {\n-        helper.addDisjunctiveFacetRefinement(attributeName, off);\n-      }\n-    }\n \n-    helper.search();\n-  },\n-  init({state, helper, templatesConfig}) {\n-    this._templateProps = prepareTemplateProps({\n-      transformData,\n-      defaultTemplates,\n-      templatesConfig,\n-      templates,\n-    });\n+      helper.search();\n+    },\n+    init({state, helper, templatesConfig}) {\n+      this._templateProps = prepareTemplateProps({\n+        transformData,\n+        defaultTemplates,\n+        templatesConfig,\n+        templates,\n+      });\n \n-    this.toggleRefinement = this.toggleRefinement.bind(this, helper);\n+      this.toggleRefinement = this.toggleRefinement.bind(this, helper);\n \n-    // no need to refine anything at init if no custom off values\n-    if (!hasAnOffValue) {\n-      return;\n-    }\n+      // no need to refine anything at init if no custom off values\n+      if (!hasAnOffValue) {\n+        return;\n+      }\n \n-    // Add filtering on the 'off' value if set\n-    const isRefined = state.isDisjunctiveFacetRefined(attributeName, userValues.on);\n-    if (!isRefined) {\n-      helper.addDisjunctiveFacetRefinement(attributeName, userValues.off);\n-    }\n-  },\n-  render({helper, results, state, createURL}) {\n-    const isRefined = helper.state.isDisjunctiveFacetRefined(attributeName, userValues.on);\n-    const onValue = userValues.on;\n-    const offValue = userValues.off === undefined ? false : userValues.off;\n-    const allFacetValues = results.getFacetValues(attributeName);\n-    const onData = find(allFacetValues, {name: onValue.toString()});\n-    const onFacetValue = {\n-      name: label,\n-      isRefined: onData !== undefined ? onData.isRefined : false,\n-      count: onData === undefined ? null : onData.count,\n-    };\n-    const offData = hasAnOffValue ? find(allFacetValues, {name: offValue.toString()}) : undefined;\n-    const offFacetValue = {\n-      name: label,\n-      isRefined: offData !== undefined ? offData.isRefined : false,\n-      count: offData === undefined ? results.nbHits : offData.count,\n-    };\n+      // Add filtering on the 'off' value if set\n+      const isRefined = state.isDisjunctiveFacetRefined(attributeName, on);\n+      if (!isRefined) {\n+        helper.addDisjunctiveFacetRefinement(attributeName, off);\n+      }\n+    },\n+    render({helper, results, state, createURL}) {\n+      const isRefined = helper.state.isDisjunctiveFacetRefined(attributeName, on);\n+      const onValue = on;\n+      const offValue = off === undefined ? false : off;\n+      const allFacetValues = results.getFacetValues(attributeName);\n+      const onData = find(allFacetValues, {name: unescapeRefinement(onValue)});\n+      const onFacetValue = {\n+        name: label,\n+        isRefined: onData !== undefined ? onData.isRefined : false,\n+        count: onData === undefined ? null : onData.count,\n+      };\n+      const offData = hasAnOffValue ? find(allFacetValues, {name: unescapeRefinement(offValue)}) : undefined;\n+      const offFacetValue = {\n+        name: label,\n+        isRefined: offData !== undefined ? offData.isRefined : false,\n+        count: offData === undefined ? results.nbHits : offData.count,\n+      };\n \n-    // what will we show by default,\n-    // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n-    // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n-    const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n+      // what will we show by default,\n+      // if checkbox is not checked, show: [ ] free shipping (countWhenChecked)\n+      // if checkbox is checked, show: [x] free shipping (countWhenNotChecked)\n+      const nextRefinement = isRefined ? offFacetValue : onFacetValue;\n \n-    const facetValue = {\n-      name: label,\n-      isRefined,\n-      count: nextRefinement === undefined ? null : nextRefinement.count,\n-      onFacetValue,\n-      offFacetValue,\n-    };\n+      const facetValue = {\n+        name: label,\n+        isRefined,\n+        count: nextRefinement === undefined ? null : nextRefinement.count,\n+        onFacetValue,\n+        offFacetValue,\n+      };\n \n-    // Bind createURL to this specific attribute\n-    function _createURL() {\n-      return createURL(\n-        state\n-          .removeDisjunctiveFacetRefinement(attributeName, isRefined ? onValue : userValues.off)\n-          .addDisjunctiveFacetRefinement(attributeName, isRefined ? userValues.off : onValue)\n+      // Bind createURL to this specific attribute\n+      function _createURL() {\n+        return createURL(\n+          state\n+            .removeDisjunctiveFacetRefinement(attributeName, isRefined ? onValue : off)\n+            .addDisjunctiveFacetRefinement(attributeName, isRefined ? off : onValue)\n+        );\n+      }\n+\n+      ReactDOM.render(\n+        <RefinementList\n+          collapsible={collapsible}\n+          createURL={_createURL}\n+          cssClasses={cssClasses}\n+          facetValues={[facetValue]}\n+          shouldAutoHideContainer={(facetValue.count === 0 || facetValue.count === null)}\n+          templateProps={this._templateProps}\n+          toggleRefinement={this.toggleRefinement}\n+        />,\n+        containerNode\n       );\n-    }\n+    },\n+  };\n+};\n+\n+function escapeRefinement(value) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1551#discussion_r88026855",
+    "id": 88026855,
+    "line": 126,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDg4MDI2ODU1",
+    "original_commit_id": "e9e6fd6cbafd467d6ce29a87c1f504c7c93b9c65",
+    "original_line": null,
+    "original_position": 184,
+    "original_start_line": null,
+    "path": "src/widgets/toggle/implementations/currentToggle.js",
+    "position": 184,
+    "pull_request_review_id": 8612770,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1551",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/88026855/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-11-15T14:30:46Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/88026855",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,1115 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145939838"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145939838"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Maybe prefer `jest.fn`. We should avoid to add new code with `sinon`. We probably remove it at some point.",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T11:32:42Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145939838",
+    "id": 145939838,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTkzOTgzOA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 473,
+    "original_position": 24,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70814659,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145939838/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145939838",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145940818"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145940818"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You should probably use `done` for finish the test. I think the assertions inside `setImmediate` are executed after the test, if they fail all the process will fail instead of just the test case.\r\n\r\nYou can ensure how many assertions you expect in an async test with:\r\n\r\n```js\r\nexpect.assertions(numberOfAssertionsExpected);\r\n```",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T11:39:02Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145940818",
+    "id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk0MDgxOA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70814659,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145940818/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145940818",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145941542"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145941542"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Maybe cast the value with `Boolean()`, it will ensure that the value will be a `boolean`. With the actual condition the value can be anything thruthy or a `boolean`.",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T11:42:36Z",
+    "diff_hunk": "@@ -247,6 +249,9 @@ export default function refinementList(\n     throw new Error('showMore.limit configuration should be > than the limit in the main configuration'); // eslint-disable-line\n   }\n \n+  const escapeFacetValues = searchForFacetValues\n+    ? searchForFacetValues.escapeFacetValues || false",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145941542",
+    "id": 145941542,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk0MTU0Mg==",
+    "original_commit_id": "d8f4cbff1b238f2bd27953a551fb2808e4b21256",
+    "original_line": 253,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/widgets/refinement-list/refinement-list.js",
+    "position": 1,
+    "pull_request_review_id": 70814659,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145941542/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145941542",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145959452"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959452"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yep that's a good point. I didn't want to make it different from the other tests but you gotta start somewhere ;)",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T13:14:06Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145959452",
+    "id": 145959452,
+    "in_reply_to_id": 145939838,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk1OTQ1Mg==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 473,
+    "original_position": 24,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70837710,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959452/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959452",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145959668"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959668"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I didn't have any issue when the tests are green, it's just that when they fail it breaks jest completely. I will try that, maybe it's gonna be fine.",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T13:15:10Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145959668",
+    "id": 145959668,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk1OTY2OA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70837958,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959668/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145959668",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145961178"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145961178"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I wonder also if we could now use:\r\n\r\n```js\r\nawait Promise.resolve();\r\nawait Promise.resolve();\r\n```\r\n\r\nAs an easy way to wait for the render fn to be called, instead of having to wrap everything in a setImmediate",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T13:22:01Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145961178",
+    "id": 145961178,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk2MTE3OA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70839755,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145961178/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145961178",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145963105"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145963105"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "~~You are right, we could use an `async` function to `await` the result of the `search` function.~~ \r\n\r\nActually we can't because the method don't return the promise.",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T13:30:17Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145963105",
+    "id": 145963105,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk2MzEwNQ==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70842131,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145963105/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145963105",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145969590"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145969590"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "But you can still use await Promise.resolve() to force the event loop to run the render function. That's what setImmediate does here.\r\n\r\nWas just a small comment if it's feasible it might be easier to read than setImmediate (and safer)",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T13:56:20Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145969590",
+    "id": 145969590,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk2OTU5MA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70849814,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145969590/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145969590",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/123822?v=4",
+      "events_url": "https://api.github.com/users/vvo/events{/privacy}",
+      "followers_url": "https://api.github.com/users/vvo/followers",
+      "following_url": "https://api.github.com/users/vvo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/vvo/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/vvo",
+      "id": 123822,
+      "login": "vvo",
+      "node_id": "MDQ6VXNlcjEyMzgyMg==",
+      "organizations_url": "https://api.github.com/users/vvo/orgs",
+      "received_events_url": "https://api.github.com/users/vvo/received_events",
+      "repos_url": "https://api.github.com/users/vvo/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/vvo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/vvo/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/vvo",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145995993"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145995993"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's what I call an interesting hack @vvo :) Thanks.",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T15:34:19Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r145995993",
+    "id": 145995993,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NTk5NTk5Mw==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70881472,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145995993/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/145995993",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146008188"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146008188"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "After looking at some jest issues, it seems that it handles returned promises and since my main issue with setImmediate is that when the test fail jest breaks, I ended up creating a new promise and in the then do my tests. It's not as smart but `¯\\_(ツ)_/¯`",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-20T16:23:55Z",
+    "diff_hunk": "@@ -457,4 +458,305 @@ describe('connectRefinementList', () => {\n \n     expect(rendering.lastCall.args[0].hasExhaustiveItems).toEqual(false);\n   });\n+\n+  it('can search in facet values', () => {\n+    const widget = makeWidget({\n+      attributeName: 'category',\n+      limit: 2,\n+    });\n+\n+    const helper = algoliasearchHelper(\n+      fakeClient,\n+      '',\n+      widget.getConfiguration({})\n+    );\n+    helper.search = sinon.stub();\n+    helper.searchForFacetValues = sinon.stub().returns(\n+      Promise.resolve({\n+        exhaustiveFacetsCount: true,\n+        facetHits: [\n+          {\n+            count: 33,\n+            highlighted: 'Salvador <em>Da</em>li',\n+            value: 'Salvador Dali',\n+          },\n+          {\n+            count: 9,\n+            highlighted: '<em>Da</em>vidoff',\n+            value: 'Davidoff',\n+          },\n+        ],\n+        processingTimeMS: 1,\n+      })\n+    );\n+\n+    // Sinulate the lifecycle\n+    widget.init({\n+      helper,\n+      state: helper.state,\n+      createURL: () => '#',\n+      onHistoryChange: () => {},\n+    });\n+    expect(rendering.callCount).toBe(1);\n+\n+    widget.render({\n+      results: new SearchResults(helper.state, [\n+        {\n+          hits: [],\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+        {\n+          facets: {\n+            category: {\n+              c1: 880,\n+            },\n+          },\n+        },\n+      ]),\n+      state: helper.state,\n+      helper,\n+      createURL: () => '#',\n+    });\n+    expect(rendering.callCount).toBe(2);\n+    // Simulation end\n+\n+    const search = rendering.lastCall.args[0].searchForItems;\n+    search('da');\n+\n+    const [\n+      sffvFacet,\n+      sffvQuery,\n+      maxNbItems,\n+      paramOverride,\n+    ] = helper.searchForFacetValues.lastCall.args;\n+\n+    expect(sffvQuery).toBe('da');\n+    expect(sffvFacet).toBe('category');\n+    expect(maxNbItems).toBe(2);\n+    expect(paramOverride).toEqual({\n+      highlightPreTag: undefined,\n+      highlightPostTag: undefined,\n+    });\n+\n+    // because of how promises are resolved we use setImmediate\n+    setImmediate(() => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146008188",
+    "id": 146008188,
+    "in_reply_to_id": 145940818,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjAwODE4OA==",
+    "original_commit_id": "9c8d6b927c28d3d5c117f6527d1893013db0c051",
+    "original_line": 546,
+    "original_position": 97,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 70895837,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146008188/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146008188",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104236"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104236"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You could use the shorthand method: `.not.toHaveBeenCalled()`",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-21T12:14:58Z",
+    "diff_hunk": "@@ -98,10 +97,10 @@ describe('connectRefinementList', () => {\n     });\n \n     // test if widget is not rendered yet at this point\n-    expect(rendering.callCount).toBe(0);\n+    expect(rendering.mock.calls.length).toBe(0);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104236",
+    "id": 146104236,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjEwNDIzNg==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 100,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71006213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104236/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:30Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104236",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104246"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104246"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You could use the shorthand method: `.toHaveBeenCalled()`",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-21T12:15:23Z",
+    "diff_hunk": "@@ -111,11 +110,11 @@ describe('connectRefinementList', () => {\n     });\n \n     // test that rendering has been called during init with isFirstRendering = true\n-    expect(rendering.callCount).toBe(1);\n+    expect(rendering.mock.calls.length).toBe(1);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104246",
+    "id": 146104246,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjEwNDI0Ng==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 113,
+    "original_position": 36,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71006213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104246/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104246",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104255"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104255"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You could use the shorthand method: `.toHaveBeenCalledTimes(2)`",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-21T12:15:56Z",
+    "diff_hunk": "@@ -130,10 +129,10 @@ describe('connectRefinementList', () => {\n     });\n \n     // test that rendering has been called during init with isFirstRendering = false\n-    expect(rendering.callCount).toBe(2);\n-    expect(rendering.lastCall.args[1]).toBe(false);\n+    expect(rendering.mock.calls.length).toBe(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104255",
+    "id": 146104255,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjEwNDI1NQ==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 132,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71006213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104255/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104255",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104307"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104307"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You could use the shorthand method: `.toHaveBeenLastCalledWith(expect.any(Object), true)`",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-21T12:18:58Z",
+    "diff_hunk": "@@ -111,11 +110,11 @@ describe('connectRefinementList', () => {\n     });\n \n     // test that rendering has been called during init with isFirstRendering = true\n-    expect(rendering.callCount).toBe(1);\n+    expect(rendering.mock.calls.length).toBe(1);\n     // test if isFirstRendering is true during init\n-    expect(rendering.lastCall.args[1]).toBe(true);\n+    expect(rendering.mock.calls[0][1]).toBe(true);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146104307",
+    "id": 146104307,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjEwNDMwNw==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 115,
+    "original_position": 39,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71006213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104307/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146104307",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146209931"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146209931"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I've switched to the number of call counts because it give a finer grain when there is a fail. In this case it would not matter much, but I still prefer consistency of API usage. Is that ok?",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-23T09:25:19Z",
+    "diff_hunk": "@@ -98,10 +97,10 @@ describe('connectRefinementList', () => {\n     });\n \n     // test if widget is not rendered yet at this point\n-    expect(rendering.callCount).toBe(0);\n+    expect(rendering.mock.calls.length).toBe(0);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146209931",
+    "id": 146209931,
+    "in_reply_to_id": 146104236,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjIwOTkzMQ==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 100,
+    "original_position": 23,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71117639,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146209931/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146209931",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146214318"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2507"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146214318"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok gotcha! Thanks!",
+    "commit_id": "8d64d613d70369ecabc18e9ece8832e876b1e14f",
+    "created_at": "2017-10-23T09:43:47Z",
+    "diff_hunk": "@@ -130,10 +129,10 @@ describe('connectRefinementList', () => {\n     });\n \n     // test that rendering has been called during init with isFirstRendering = false\n-    expect(rendering.callCount).toBe(2);\n-    expect(rendering.lastCall.args[1]).toBe(false);\n+    expect(rendering.mock.calls.length).toBe(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2507#discussion_r146214318",
+    "id": 146214318,
+    "in_reply_to_id": 146104255,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0NjIxNDMxOA==",
+    "original_commit_id": "29eadd2aad1f3b3a3bcde3a36d141a473df9f56a",
+    "original_line": 132,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/refinement-list/__tests__/connectRefinementList-test.js",
+    "position": 1,
+    "pull_request_review_id": 71122568,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2507",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146214318/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-10-23T12:55:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/146214318",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  }
+]

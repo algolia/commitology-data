@@ -1,0 +1,210 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475695191"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4487"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475695191"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We removed `fakeHitsPerPage` at line 500, and can we do it again here?",
+    "commit_id": "068099ce02b908797eea5082f41fec61de8dd582",
+    "created_at": "2020-08-24T15:21:12Z",
+    "diff_hunk": "@@ -443,6 +437,84 @@ describe('RoutingManager', () => {\n         },\n       });\n     });\n+\n+    test('skips duplicate route state entries', async () => {\n+      let triggerChange = false;\n+      const searchClient = createSearchClient();\n+      const stateMapping = createFakeStateMapping({\n+        stateToRoute(uiState) {\n+          if (triggerChange) {\n+            return {\n+              ...uiState,\n+              indexName: {\n+                ...uiState.indexName,\n+                triggerChange,\n+              },\n+            };\n+          }\n+\n+          return uiState;\n+        },\n+      });\n+      const history = createFakeHistory();\n+      const router = createFakeRouter({\n+        onUpdate(fn) {\n+          history.subscribe(state => {\n+            fn(state);\n+          });\n+        },\n+        write: jest.fn(state => {\n+          history.push(state);\n+        }),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'indexName',\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox: any = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidgets([fakeSearchBox, fakeHitsPerPage]);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        indexName: {\n+          query: 'Apple',\n+        },\n+      });\n+\n+      // Trigger change without UI state change\n+      search.removeWidgets([fakeHitsPerPage]);\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+\n+      await runAllMicroTasks();\n+\n+      triggerChange = true;\n+      // Trigger change without UI state change but with a route change\n+      search.removeWidgets([fakeHitsPerPage]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475695191",
+    "id": 475695191,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQ3NTY5NTE5MQ==",
+    "original_commit_id": "abcb7a3c36f610305ce48ef28243cd8bb42d2777",
+    "original_line": 508,
+    "original_position": 104,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.ts",
+    "position": 1,
+    "pull_request_review_id": 473606243,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4487",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475695191/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-08-24T17:39:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475695191",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475697111"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4487"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475697111"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It indeed makes more sense to remove another widget.\r\n\r\nAddressed in a6b5dbd7efd8869a45ee884e4e1edf7fc51c732a.",
+    "commit_id": "068099ce02b908797eea5082f41fec61de8dd582",
+    "created_at": "2020-08-24T15:24:02Z",
+    "diff_hunk": "@@ -443,6 +437,84 @@ describe('RoutingManager', () => {\n         },\n       });\n     });\n+\n+    test('skips duplicate route state entries', async () => {\n+      let triggerChange = false;\n+      const searchClient = createSearchClient();\n+      const stateMapping = createFakeStateMapping({\n+        stateToRoute(uiState) {\n+          if (triggerChange) {\n+            return {\n+              ...uiState,\n+              indexName: {\n+                ...uiState.indexName,\n+                triggerChange,\n+              },\n+            };\n+          }\n+\n+          return uiState;\n+        },\n+      });\n+      const history = createFakeHistory();\n+      const router = createFakeRouter({\n+        onUpdate(fn) {\n+          history.subscribe(state => {\n+            fn(state);\n+          });\n+        },\n+        write: jest.fn(state => {\n+          history.push(state);\n+        }),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'indexName',\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox: any = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidgets([fakeSearchBox, fakeHitsPerPage]);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        indexName: {\n+          query: 'Apple',\n+        },\n+      });\n+\n+      // Trigger change without UI state change\n+      search.removeWidgets([fakeHitsPerPage]);\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+\n+      await runAllMicroTasks();\n+\n+      triggerChange = true;\n+      // Trigger change without UI state change but with a route change\n+      search.removeWidgets([fakeHitsPerPage]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475697111",
+    "id": 475697111,
+    "in_reply_to_id": 475695191,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQ3NTY5NzExMQ==",
+    "original_commit_id": "abcb7a3c36f610305ce48ef28243cd8bb42d2777",
+    "original_line": 508,
+    "original_position": 104,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.ts",
+    "position": 1,
+    "pull_request_review_id": 473608703,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4487",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475697111/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-08-24T17:39:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475697111",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475700406"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4487"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475700406"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      search.addWidgets([fakeSearchBox, fakeHitsPerPage1, fakeHitsPerPage2]);\r\n```",
+    "commit_id": "068099ce02b908797eea5082f41fec61de8dd582",
+    "created_at": "2020-08-24T15:28:52Z",
+    "diff_hunk": "@@ -443,6 +437,85 @@ describe('RoutingManager', () => {\n         },\n       });\n     });\n+\n+    test('skips duplicate route state entries', async () => {\n+      let triggerChange = false;\n+      const searchClient = createSearchClient();\n+      const stateMapping = createFakeStateMapping({\n+        stateToRoute(uiState) {\n+          if (triggerChange) {\n+            return {\n+              ...uiState,\n+              indexName: {\n+                ...uiState.indexName,\n+                triggerChange,\n+              },\n+            };\n+          }\n+\n+          return uiState;\n+        },\n+      });\n+      const history = createFakeHistory();\n+      const router = createFakeRouter({\n+        onUpdate(fn) {\n+          history.subscribe(state => {\n+            fn(state);\n+          });\n+        },\n+        write: jest.fn(state => {\n+          history.push(state);\n+        }),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'indexName',\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox: any = createFakeSearchBox();\n+      const fakeHitsPerPage1 = createFakeHitsPerPage();\n+      const fakeHitsPerPage2 = createFakeHitsPerPage();\n+\n+      search.addWidgets([fakeSearchBox, fakeHitsPerPage1]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4487#discussion_r475700406",
+    "id": 475700406,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDQ3NTcwMDQwNg==",
+    "original_commit_id": "a6b5dbd7efd8869a45ee884e4e1edf7fc51c732a",
+    "original_line": 484,
+    "original_position": 80,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.ts",
+    "position": 1,
+    "pull_request_review_id": 473612926,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4487",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475700406/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-08-24T17:39:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/475700406",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,905 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574650899"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574650899"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I had the same issue. Basically in algoliasearch v3 `getRecommendations` doesn't exist so everything in it is not typed. We can safely ignore this.\r\n\r\n```suggestion\r\n          // @ts-ignore\r\n          // `request` will be implicitly typed as any in type-check:v3\r\n          // since `getRecommendations` is not available there\r\n          ...requests.map((request) => {\r\n```",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:12:06Z",
+    "diff_hunk": "@@ -0,0 +1,232 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import { wait } from '@instantsearch/testutils';\n+import { screen } from '@testing-library/dom';\n+\n+import { skippableDescribe } from '../../common';\n+\n+import type { RelatedProductsConnectorSetup } from '.';\n+import type { SetupOptions, TestOptions } from '../../common';\n+import type { SearchClient } from 'instantsearch.js';\n+\n+export function createOptionsTests(\n+  setup: RelatedProductsConnectorSetup,\n+  { act, skippedTests }: Required<TestOptions>\n+) {\n+  skippableDescribe('options', skippedTests, () => {\n+    test('throws when not passing the `objectID` option', async () => {\n+      const options: SetupOptions<RelatedProductsConnectorSetup> = {\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient: createSearchClient(),\n+        },\n+        // @ts-expect-error missing `objectID`\n+        widgetParams: {},\n+      };\n+\n+      await expect(async () => {\n+        await setup(options);\n+      }).rejects.toThrowErrorMatchingInlineSnapshot(`\n+              \"The \\`objectID\\` option is required.\n+\n+              See documentation: https://www.algolia.com/doc/api-reference/widgets/related-products/js/#connector\"\n+            `);\n+    });\n+\n+    test('forwards parameters to the client', async () => {\n+      const searchClient = createMockedSearchClient();\n+      const options: SetupOptions<RelatedProductsConnectorSetup> = {\n+        instantSearchOptions: { indexName: 'indexName', searchClient },\n+        widgetParams: {\n+          objectID: '1',\n+          maxRecommendations: 2,\n+          threshold: 3,\n+          fallbackParameters: { facetFilters: ['test1'] },\n+          queryParameters: { analytics: true },\n+        },\n+      };\n+\n+      await setup(options);\n+\n+      expect(searchClient.getRecommendations).toHaveBeenCalledWith(\n+        expect.arrayContaining([expect.objectContaining(options.widgetParams)])\n+      );\n+    });\n+\n+    test('returns recommendations', async () => {\n+      const options: SetupOptions<RelatedProductsConnectorSetup> = {\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient: createMockedSearchClient(),\n+        },\n+        widgetParams: { objectID: '1' },\n+      };\n+\n+      await setup(options);\n+\n+      expect(screen.getByRole('list')).toMatchInlineSnapshot(`<ul />`);\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(screen.getByRole('list')).toMatchInlineSnapshot(`\n+        <ul>\n+          <li>\n+            A0E200000002BLK\n+          </li>\n+          <li>\n+            A0E200000001WFI\n+          </li>\n+          <li>\n+            A0E2000000024R1\n+          </li>\n+        </ul>\n+      `);\n+    });\n+\n+    test('transforms recommendations', async () => {\n+      const options: SetupOptions<RelatedProductsConnectorSetup> = {\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient: createMockedSearchClient(),\n+        },\n+        widgetParams: {\n+          objectID: '1',\n+          transformItems(items) {\n+            return items.map((item) => ({\n+              ...item,\n+              objectID: item.objectID.toLowerCase(),\n+            }));\n+          },\n+        },\n+      };\n+\n+      await setup(options);\n+\n+      expect(screen.getByRole('list')).toMatchInlineSnapshot(`<ul />`);\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(screen.getByRole('list')).toMatchInlineSnapshot(`\n+        <ul>\n+          <li>\n+            a0e200000002blk\n+          </li>\n+          <li>\n+            a0e200000001wfi\n+          </li>\n+          <li>\n+            a0e2000000024r1\n+          </li>\n+        </ul>\n+      `);\n+    });\n+  });\n+}\n+\n+function createMockedSearchClient() {\n+  return createSearchClient({\n+    getRecommendations: jest.fn((requests) =>\n+      Promise.resolve(\n+        createMultiSearchResponse(\n+          ...requests.map((request) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574650899",
+    "id": 1574650899,
+    "line": 149,
+    "node_id": "PRRC_kwDOAlnbOs5d20QT",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 138,
+    "original_position": 138,
+    "original_start_line": null,
+    "path": "tests/common/connectors/related-products/options.ts",
+    "position": 149,
+    "pull_request_review_id": 2014586852,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574650899/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:33:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574650899",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574665184"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574665184"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "This has been renamed `hits` in `connectFrequentlyBoughtTogether()`.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:23:25Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574665184",
+    "id": 1574665184,
+    "line": 22,
+    "node_id": "PRRC_kwDOAlnbOs5d23vg",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 22,
+    "original_position": 22,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 22,
+    "pull_request_review_id": 2014586852,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574665184/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:33:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574665184",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574667093"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574667093"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "The underlying implementation of multi object ids will be handled next sprint, but we can already switch to `objectIDs` in the connector.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:24:58Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;\n+};\n+\n+export type RelatedProductsConnectorParams<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The `objectID` of the item to get related products from.\n+   */\n+  objectID: string;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574667093",
+    "id": 1574667093,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5d24NV",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 29,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 1,
+    "pull_request_review_id": 2014586852,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574667093/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:33:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574667093",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574669678"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574669678"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "`SearchParameters` can be subbed by `PlainSearchParameters`which already has partial keys.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:26:48Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;\n+};\n+\n+export type RelatedProductsConnectorParams<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The `objectID` of the item to get related products from.\n+   */\n+  objectID: string;\n+  /**\n+   * The number of recommendations to retrieve.\n+   */\n+  maxRecommendations?: number;\n+  /**\n+   * The threshold for the recommendations confidence score (between 0 and 100).\n+   */\n+  threshold?: number;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  fallbackParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  queryParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574669678",
+    "id": 1574669678,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5d241u",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 48,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 1,
+    "pull_request_review_id": 2014586852,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574669678/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:33:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574669678",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574692521"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574692521"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "no big deal, but this same code is in the other connector PR as well and actually should be in the base branch",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:43:29Z",
+    "diff_hunk": "@@ -0,0 +1,11 @@\n+import type { Widget } from '../../types';\n+\n+let id = 0;\n+\n+export function addWidgetId(widget: Widget) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574692521",
+    "id": 1574692521,
+    "line": 5,
+    "node_id": "PRRC_kwDOAlnbOs5d2-ap",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/addWidgetId.ts",
+    "position": 5,
+    "pull_request_review_id": 2014652505,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574692521/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:52:09Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574692521",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574701571"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574701571"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I see the reasons _for_ doing it like this, but we aren't releasing this as `EXPERIMENTAL_` then?",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:49:54Z",
+    "diff_hunk": "@@ -30,6 +30,7 @@ export { default as connectNumericMenu } from './numeric-menu/connectNumericMenu\n export { default as connectPagination } from './pagination/connectPagination';\n export { default as connectRange } from './range/connectRange';\n export { default as connectRefinementList } from './refinement-list/connectRefinementList';\n+export { default as connectRelatedProducts } from './related-products/connectRelatedProducts';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574701571",
+    "id": 1574701571,
+    "line": 33,
+    "node_id": "PRRC_kwDOAlnbOs5d3AoD",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 33,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/index.ts",
+    "position": 4,
+    "pull_request_review_id": 2014652505,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574701571/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:52:09Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574701571",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574703549"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574703549"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure I see the point in first marking $$id as optional, but then in usage just non-null asserting it",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:51:21Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;\n+};\n+\n+export type RelatedProductsConnectorParams<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The `objectID` of the item to get related products from.\n+   */\n+  objectID: string;\n+  /**\n+   * The number of recommendations to retrieve.\n+   */\n+  maxRecommendations?: number;\n+  /**\n+   * The threshold for the recommendations confidence score (between 0 and 100).\n+   */\n+  threshold?: number;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  fallbackParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  queryParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<Hit<THit>, { results: RecommendResultItem }>;\n+};\n+\n+export type RelatedProductsWidgetDescription<THit extends BaseHit = BaseHit> = {\n+  $$type: 'ais.relatedProducts';\n+  renderState: RelatedProductsRenderState<THit>;\n+};\n+\n+export type RelatedProductsConnector<THit extends BaseHit = BaseHit> =\n+  Connector<\n+    RelatedProductsWidgetDescription<THit>,\n+    RelatedProductsConnectorParams<THit>\n+  >;\n+\n+const connectRelatedProducts: RelatedProductsConnector =\n+  function connectRelatedProducts(renderFn, unmountFn = noop) {\n+    checkRendering(renderFn, withUsage());\n+\n+    return function relatedProducts(widgetParams) {\n+      const {\n+        objectID,\n+        maxRecommendations,\n+        threshold,\n+        fallbackParameters,\n+        queryParameters,\n+        transformItems = ((items) => items) as NonNullable<\n+          RelatedProductsConnectorParams['transformItems']\n+        >,\n+      } = widgetParams || {};\n+\n+      if (!objectID) {\n+        throw new Error(withUsage('The `objectID` option is required.'));\n+      }\n+\n+      return {\n+        dependsOn: 'recommend',\n+        $$type: 'ais.relatedProducts',\n+\n+        init(initOptions) {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            true\n+          );\n+        },\n+\n+        render(renderOptions) {\n+          const renderState = this.getWidgetRenderState(renderOptions);\n+\n+          renderFn(\n+            {\n+              ...renderState,\n+              instantSearchInstance: renderOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        },\n+\n+        getRenderState(renderState) {\n+          return renderState;\n+        },\n+\n+        getWidgetRenderState({ results }) {\n+          if (results === null || results === undefined) {\n+            return { recommendations: [], widgetParams };\n+          }\n+\n+          return {\n+            recommendations: transformItems(results.hits, {\n+              results: results as RecommendResultItem,\n+            }),\n+            widgetParams,\n+          };\n+        },\n+\n+        dispose({ state }) {\n+          unmountFn();\n+\n+          return state;\n+        },\n+\n+        getWidgetParameters(state) {\n+          return state.addRelatedProducts({\n+            objectID,\n+            maxRecommendations,\n+            threshold,\n+            fallbackParameters,\n+            queryParameters,\n+            $$id: this.$$id!,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574703549",
+    "id": 1574703549,
+    "line": 149,
+    "node_id": "PRRC_kwDOAlnbOs5d3BG9",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 143,
+    "original_position": 143,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 149,
+    "pull_request_review_id": 2014652505,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574703549/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:52:09Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574703549",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574715097"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574715097"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Because it's set by `index` in `addWidgets`, so at this point we know it's defined.\r\nEventually if we don't want to bother with having to pass `$$id` we could expose a wrapper of `state` to `getWidgetParameters` with curryfied methods that pass the `$$id` themselves.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:57:42Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;\n+};\n+\n+export type RelatedProductsConnectorParams<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The `objectID` of the item to get related products from.\n+   */\n+  objectID: string;\n+  /**\n+   * The number of recommendations to retrieve.\n+   */\n+  maxRecommendations?: number;\n+  /**\n+   * The threshold for the recommendations confidence score (between 0 and 100).\n+   */\n+  threshold?: number;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  fallbackParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  queryParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<Hit<THit>, { results: RecommendResultItem }>;\n+};\n+\n+export type RelatedProductsWidgetDescription<THit extends BaseHit = BaseHit> = {\n+  $$type: 'ais.relatedProducts';\n+  renderState: RelatedProductsRenderState<THit>;\n+};\n+\n+export type RelatedProductsConnector<THit extends BaseHit = BaseHit> =\n+  Connector<\n+    RelatedProductsWidgetDescription<THit>,\n+    RelatedProductsConnectorParams<THit>\n+  >;\n+\n+const connectRelatedProducts: RelatedProductsConnector =\n+  function connectRelatedProducts(renderFn, unmountFn = noop) {\n+    checkRendering(renderFn, withUsage());\n+\n+    return function relatedProducts(widgetParams) {\n+      const {\n+        objectID,\n+        maxRecommendations,\n+        threshold,\n+        fallbackParameters,\n+        queryParameters,\n+        transformItems = ((items) => items) as NonNullable<\n+          RelatedProductsConnectorParams['transformItems']\n+        >,\n+      } = widgetParams || {};\n+\n+      if (!objectID) {\n+        throw new Error(withUsage('The `objectID` option is required.'));\n+      }\n+\n+      return {\n+        dependsOn: 'recommend',\n+        $$type: 'ais.relatedProducts',\n+\n+        init(initOptions) {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            true\n+          );\n+        },\n+\n+        render(renderOptions) {\n+          const renderState = this.getWidgetRenderState(renderOptions);\n+\n+          renderFn(\n+            {\n+              ...renderState,\n+              instantSearchInstance: renderOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        },\n+\n+        getRenderState(renderState) {\n+          return renderState;\n+        },\n+\n+        getWidgetRenderState({ results }) {\n+          if (results === null || results === undefined) {\n+            return { recommendations: [], widgetParams };\n+          }\n+\n+          return {\n+            recommendations: transformItems(results.hits, {\n+              results: results as RecommendResultItem,\n+            }),\n+            widgetParams,\n+          };\n+        },\n+\n+        dispose({ state }) {\n+          unmountFn();\n+\n+          return state;\n+        },\n+\n+        getWidgetParameters(state) {\n+          return state.addRelatedProducts({\n+            objectID,\n+            maxRecommendations,\n+            threshold,\n+            fallbackParameters,\n+            queryParameters,\n+            $$id: this.$$id!,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574715097",
+    "id": 1574715097,
+    "in_reply_to_id": 1574703549,
+    "line": 149,
+    "node_id": "PRRC_kwDOAlnbOs5d3D7Z",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 143,
+    "original_position": 143,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 149,
+    "pull_request_review_id": 2014689733,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574715097/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:57:53Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574715097",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574716740"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574716740"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Has to be optional else we would have to define it when initialized, in the connector factory itself.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T12:58:36Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;\n+};\n+\n+export type RelatedProductsConnectorParams<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The `objectID` of the item to get related products from.\n+   */\n+  objectID: string;\n+  /**\n+   * The number of recommendations to retrieve.\n+   */\n+  maxRecommendations?: number;\n+  /**\n+   * The threshold for the recommendations confidence score (between 0 and 100).\n+   */\n+  threshold?: number;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  fallbackParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * List of search parameters to send.\n+   */\n+  queryParameters?: Partial<\n+    Omit<SearchParameters, 'page' | 'hitsPerPage' | 'offset' | 'length'>\n+  >;\n+  /**\n+   * Function to transform the items passed to the templates.\n+   */\n+  transformItems?: TransformItems<Hit<THit>, { results: RecommendResultItem }>;\n+};\n+\n+export type RelatedProductsWidgetDescription<THit extends BaseHit = BaseHit> = {\n+  $$type: 'ais.relatedProducts';\n+  renderState: RelatedProductsRenderState<THit>;\n+};\n+\n+export type RelatedProductsConnector<THit extends BaseHit = BaseHit> =\n+  Connector<\n+    RelatedProductsWidgetDescription<THit>,\n+    RelatedProductsConnectorParams<THit>\n+  >;\n+\n+const connectRelatedProducts: RelatedProductsConnector =\n+  function connectRelatedProducts(renderFn, unmountFn = noop) {\n+    checkRendering(renderFn, withUsage());\n+\n+    return function relatedProducts(widgetParams) {\n+      const {\n+        objectID,\n+        maxRecommendations,\n+        threshold,\n+        fallbackParameters,\n+        queryParameters,\n+        transformItems = ((items) => items) as NonNullable<\n+          RelatedProductsConnectorParams['transformItems']\n+        >,\n+      } = widgetParams || {};\n+\n+      if (!objectID) {\n+        throw new Error(withUsage('The `objectID` option is required.'));\n+      }\n+\n+      return {\n+        dependsOn: 'recommend',\n+        $$type: 'ais.relatedProducts',\n+\n+        init(initOptions) {\n+          renderFn(\n+            {\n+              ...this.getWidgetRenderState(initOptions),\n+              instantSearchInstance: initOptions.instantSearchInstance,\n+            },\n+            true\n+          );\n+        },\n+\n+        render(renderOptions) {\n+          const renderState = this.getWidgetRenderState(renderOptions);\n+\n+          renderFn(\n+            {\n+              ...renderState,\n+              instantSearchInstance: renderOptions.instantSearchInstance,\n+            },\n+            false\n+          );\n+        },\n+\n+        getRenderState(renderState) {\n+          return renderState;\n+        },\n+\n+        getWidgetRenderState({ results }) {\n+          if (results === null || results === undefined) {\n+            return { recommendations: [], widgetParams };\n+          }\n+\n+          return {\n+            recommendations: transformItems(results.hits, {\n+              results: results as RecommendResultItem,\n+            }),\n+            widgetParams,\n+          };\n+        },\n+\n+        dispose({ state }) {\n+          unmountFn();\n+\n+          return state;\n+        },\n+\n+        getWidgetParameters(state) {\n+          return state.addRelatedProducts({\n+            objectID,\n+            maxRecommendations,\n+            threshold,\n+            fallbackParameters,\n+            queryParameters,\n+            $$id: this.$$id!,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574716740",
+    "id": 1574716740,
+    "in_reply_to_id": 1574703549,
+    "line": 149,
+    "node_id": "PRRC_kwDOAlnbOs5d3EVE",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 143,
+    "original_position": 143,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 149,
+    "pull_request_review_id": 2014692548,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574716740/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T12:58:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574716740",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574821271"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574821271"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Are we settled on this? The name is `recommendations` in the current Recommend library. This will also looks \"better\" with Hooks:\r\n\r\n```js\r\nconst { recommendations } = useFrequentlyBoughtTogether({ /* … */ });\r\n```",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T14:07:24Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574821271",
+    "id": 1574821271,
+    "in_reply_to_id": 1574665184,
+    "line": 22,
+    "node_id": "PRRC_kwDOAlnbOs5d3d2X",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 22,
+    "original_position": 22,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 22,
+    "pull_request_review_id": 2014868163,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574821271/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T14:07:24Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574821271",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574822727"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574822727"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Nope we're going GA directly.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T14:08:16Z",
+    "diff_hunk": "@@ -30,6 +30,7 @@ export { default as connectNumericMenu } from './numeric-menu/connectNumericMenu\n export { default as connectPagination } from './pagination/connectPagination';\n export { default as connectRange } from './range/connectRange';\n export { default as connectRefinementList } from './refinement-list/connectRefinementList';\n+export { default as connectRelatedProducts } from './related-products/connectRelatedProducts';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574822727",
+    "id": 1574822727,
+    "in_reply_to_id": 1574701571,
+    "line": 33,
+    "node_id": "PRRC_kwDOAlnbOs5d3eNH",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 33,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/index.ts",
+    "position": 4,
+    "pull_request_review_id": 2014870849,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574822727/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T14:08:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574822727",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574823576"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574823576"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes but I guess we can just handle conflicts, this shouldn't be too hard.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T14:08:47Z",
+    "diff_hunk": "@@ -0,0 +1,11 @@\n+import type { Widget } from '../../types';\n+\n+let id = 0;\n+\n+export function addWidgetId(widget: Widget) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574823576",
+    "id": 1574823576,
+    "in_reply_to_id": 1574692521,
+    "line": 5,
+    "node_id": "PRRC_kwDOAlnbOs5d3eaY",
+    "original_commit_id": "0b4c876a4a3d0089cabf8d2dbd987b9cc1b5321b",
+    "original_line": 5,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/utils/addWidgetId.ts",
+    "position": 5,
+    "pull_request_review_id": 2014872307,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574823576/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T14:08:47Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574823576",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574837729"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6142"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574837729"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I could not find any piece of info in the RFC favoring either naming. I'm fine with `recommendations` being the exposed prop name. I can switch to this in `frequentlyBoughtTogether`.",
+    "commit_id": "fdf0f7d9222a0a8a7c253e7507a0907a3d14db64",
+    "created_at": "2024-04-22T14:15:22Z",
+    "diff_hunk": "@@ -0,0 +1,150 @@\n+import {\n+  createDocumentationMessageGenerator,\n+  checkRendering,\n+  noop,\n+} from '../../lib/utils';\n+\n+import type { Connector, TransformItems, Hit, BaseHit } from '../../types';\n+import type {\n+  RecommendResultItem,\n+  SearchParameters,\n+} from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'related-products',\n+  connector: true,\n+});\n+\n+export type RelatedProductsRenderState<THit extends BaseHit = BaseHit> = {\n+  /**\n+   * The matched recommendations from the Algolia API.\n+   */\n+  recommendations: Array<Hit<THit>>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6142#discussion_r1574837729",
+    "id": 1574837729,
+    "in_reply_to_id": 1574665184,
+    "line": 22,
+    "node_id": "PRRC_kwDOAlnbOs5d3h3h",
+    "original_commit_id": "4a15d5fbc131ad83ac9e63d090b23e3e61875448",
+    "original_line": 22,
+    "original_position": 22,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/connectors/related-products/connectRelatedProducts.ts",
+    "position": 22,
+    "pull_request_review_id": 2014897221,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6142",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574837729/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-04-22T14:15:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1574837729",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

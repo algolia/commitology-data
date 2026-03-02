@@ -1,0 +1,209 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270798866"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3630"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270798866"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      // Trigger getConfiguration\r\n```",
+    "commit_id": "f55cf1cc99f64f2256b42742aaa01b1d9a596763",
+    "created_at": "2019-04-01T10:10:07Z",
+    "diff_hunk": "@@ -312,5 +382,167 @@ describe('RoutingManager', () => {\n         done();\n       });\n     });\n+\n+    test('should keep the UI state up to date on state changes', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const router = createFakeRouter({\n+        write: jest.fn(),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchClient,\n+        routing: {\n+          stateMapping,\n+          router,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger getConfigurartion\n+      search.removeWidget(fakeHitsPerPage);\n+\n+      await runAllMicroTasks();\n+\n+      expect(router.write).toHaveBeenCalledTimes(2);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+    });\n+\n+    test('should keep the UI state up to date on first render', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const router = createFakeRouter({\n+        write: jest.fn(),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchFunction(helper) {\n+          // Force the value of the query\n+          helper.setQuery('Apple iPhone').search();\n+        },\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      // Trigger the call to `searchFunction` -> Apple iPhone\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple iPhone',\n+      });\n+\n+      // Trigger getConfigurartion\n+      search.removeWidget(fakeHitsPerPage);\n+\n+      await runAllMicroTasks();\n+\n+      expect(router.write).toHaveBeenCalledTimes(2);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple iPhone',\n+      });\n+    });\n+\n+    test('should keep the UI state up to date on router.update', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const history = createFakeHistory();\n+      const router = createFakeRouter({\n+        onUpdate(fn) {\n+          history.subscribe(state => {\n+            fn(state);\n+          });\n+        },\n+        write: jest.fn(state => {\n+          history.push(state);\n+        }),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple iPhone');\n+\n+      expect(router.write).toHaveBeenCalledTimes(2);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple iPhone',\n+      });\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - Apple iPhone → Apple\n+      history.back();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger getConfigurartion",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270798866",
+    "id": 270798866,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MDc5ODg2Ng==",
+    "original_commit_id": "0369f61fe2e69631d438845101a85220697078e0",
+    "original_line": 537,
+    "original_position": 431,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.js",
+    "position": 1,
+    "pull_request_review_id": 221025270,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3630",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270798866/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-04-01T12:34:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270798866",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270800701"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3630"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800701"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      // Trigger getConfiguration\r\n```",
+    "commit_id": "f55cf1cc99f64f2256b42742aaa01b1d9a596763",
+    "created_at": "2019-04-01T10:15:27Z",
+    "diff_hunk": "@@ -312,5 +382,167 @@ describe('RoutingManager', () => {\n         done();\n       });\n     });\n+\n+    test('should keep the UI state up to date on state changes', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const router = createFakeRouter({\n+        write: jest.fn(),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchClient,\n+        routing: {\n+          stateMapping,\n+          router,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger getConfigurartion\n+      search.removeWidget(fakeHitsPerPage);\n+\n+      await runAllMicroTasks();\n+\n+      expect(router.write).toHaveBeenCalledTimes(2);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+    });\n+\n+    test('should keep the UI state up to date on first render', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const router = createFakeRouter({\n+        write: jest.fn(),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchFunction(helper) {\n+          // Force the value of the query\n+          helper.setQuery('Apple iPhone').search();\n+        },\n+        searchClient,\n+        routing: {\n+          router,\n+          stateMapping,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      // Trigger the call to `searchFunction` -> Apple iPhone\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple iPhone',\n+      });\n+\n+      // Trigger getConfigurartion",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270800701",
+    "id": 270800701,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MDgwMDcwMQ==",
+    "original_commit_id": "0369f61fe2e69631d438845101a85220697078e0",
+    "original_line": 469,
+    "original_position": 363,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.js",
+    "position": 1,
+    "pull_request_review_id": 221027550,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3630",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800701/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-04-01T12:34:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800701",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270800820"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3630"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800820"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n      // Trigger getConfiguration\r\n```",
+    "commit_id": "f55cf1cc99f64f2256b42742aaa01b1d9a596763",
+    "created_at": "2019-04-01T10:15:48Z",
+    "diff_hunk": "@@ -312,5 +382,167 @@ describe('RoutingManager', () => {\n         done();\n       });\n     });\n+\n+    test('should keep the UI state up to date on state changes', async () => {\n+      const searchClient = createFakeSearchClient();\n+      const stateMapping = createFakeStateMapping();\n+      const router = createFakeRouter({\n+        write: jest.fn(),\n+      });\n+\n+      const search = instantsearch({\n+        indexName: 'instant_search',\n+        searchClient,\n+        routing: {\n+          stateMapping,\n+          router,\n+        },\n+      });\n+\n+      const fakeSearchBox = createFakeSearchBox();\n+      const fakeHitsPerPage = createFakeHitsPerPage();\n+\n+      search.addWidget(fakeSearchBox);\n+      search.addWidget(fakeHitsPerPage);\n+\n+      search.start();\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger an update - push a change\n+      fakeSearchBox.refine('Apple');\n+\n+      expect(router.write).toHaveBeenCalledTimes(1);\n+      expect(router.write).toHaveBeenLastCalledWith({\n+        query: 'Apple',\n+      });\n+\n+      await runAllMicroTasks();\n+\n+      // Trigger getConfigurartion",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3630#discussion_r270800820",
+    "id": 270800820,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI3MDgwMDgyMA==",
+    "original_commit_id": "0369f61fe2e69631d438845101a85220697078e0",
+    "original_line": 422,
+    "original_position": 316,
+    "original_start_line": null,
+    "path": "src/lib/__tests__/RoutingManager-test.js",
+    "position": 1,
+    "pull_request_review_id": 221027550,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3630",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800820/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-04-01T12:34:56Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/270800820",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

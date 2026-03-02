@@ -1,0 +1,2089 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264308568"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264308568"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "do we not have babel-plugin-lodash here?",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-11T16:09:22Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264308568",
+    "id": 264308568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDMwODU2OA==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 2,
+    "original_position": 2,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 212932681,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264308568/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264308568",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264310436"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264310436"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "When refining an item in a refinement list for example, this will trigger 2 network requests because of this implementation.\r\n\r\n1. Send request to refine the filter ([see `connectRefinementList` implementation](https://github.com/algolia/instantsearch.js/blob/57eaa6056fe0bb7c5e87a8697e7431adbf4042d1/src/connectors/refinement-list/connectRefinementList.js#L308))\r\n2. Send request with the new `ruleContexts` (this line)\r\n\r\nI'm not aware of any current way of batching this kind of requests in InstantSearch.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-11T16:13:20Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264310436",
+    "id": 264310436,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDMxMDQzNg==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 127,
+    "original_position": 119,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 212935126,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264310436/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264310436",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264311232"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264311232"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Unsure about this casting pattern. It's a way to tell TypeScript that the widget parameters are not `undefined` at this step.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-11T16:14:58Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264311232",
+    "id": 264311232,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDMxMTIzMg==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 143,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 212936198,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264311232/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264311232",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264313419"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264313419"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We do not use it in the InstantSearch.js codebase.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-11T16:19:33Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264313419",
+    "id": 264313419,
+    "in_reply_to_id": 264308568,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDMxMzQxOQ==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 2,
+    "original_position": 2,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 212939041,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264313419/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264313419",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264630696"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264630696"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What do we test in that case?",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T11:24:47Z",
+    "diff_hunk": "@@ -0,0 +1,450 @@\n+import algoliasearchHelper, { SearchResults } from 'algoliasearch-helper';\n+import connectQueryRules, {\n+  QueryRulesWidgetFactory,\n+} from '../connectQueryRules';\n+\n+describe('connectQueryRules', () => {\n+  let renderFn = jest.fn();\n+  let unmountFn = jest.fn();\n+  let makeWidget: QueryRulesWidgetFactory<{}>;\n+\n+  const createFakeHelper = (state = {}) => {\n+    const client = {};\n+    const indexName = '';\n+    const helper = algoliasearchHelper(client, indexName, state);\n+\n+    helper.search = jest.fn();\n+\n+    return helper;\n+  };\n+\n+  beforeEach(() => {\n+    renderFn = jest.fn();\n+    unmountFn = jest.fn();\n+    makeWidget = connectQueryRules(renderFn, unmountFn);\n+  });\n+\n+  describe('usage', () => {\n+    test('throws without render function', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectQueryRules()({});\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+\n+    test('does not throw without unmount function', () => {\n+      expect(() => {\n+        connectQueryRules(() => {})({});\n+      }).not.toThrow();\n+    });\n+\n+    test('throws with a non-functon tracked filter', () => {\n+      expect(() => {\n+        makeWidget({\n+          // @ts-ignore\n+          trackedFilters: {\n+            brand: ['Samsung'],\n+          },\n+        });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"'The \\\\\"brand\\\\\" filter value in the \\`trackedFilters\\` option expects a function.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+  });\n+\n+  describe('lifecycle', () => {\n+    test('calls the render function on init', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+      const [renderingParameters, isFirstRender] = renderFn.mock.calls[0];\n+\n+      expect(isFirstRender).toBe(true);\n+\n+      const {\n+        userData,\n+        instantSearchInstance,\n+        widgetParams,\n+      } = renderingParameters;\n+\n+      expect(userData).toEqual([]);\n+      expect(instantSearchInstance).toEqual({});\n+      expect(widgetParams).toEqual({});\n+    });\n+\n+    test('calls the render function on render', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [{ hits: [] }]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[1];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [\n+          { hits: [], userData: [{ banner: 'image.png' }] },\n+        ]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[2];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([{ banner: 'image.png' }]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+    });\n+\n+    test('calls the unmount function on dispose', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.dispose({ state: helper.getState() });\n+\n+      expect(unmountFn).toHaveBeenCalledTimes(1);\n+    });\n+\n+    test('calls the unmount function on dispose with trackedFilters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264630696",
+    "id": 264630696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDYzMDY5Ng==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 145,
+    "original_position": 145,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264630696/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264630696",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264636845"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264636845"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The `widgetParams` should also have access to the `QueryRulesConnectorParams` not only `T`.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T11:42:54Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264636845",
+    "id": 264636845,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDYzNjg0NQ==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 37,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264636845/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264636845",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264640250"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640250"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Why do you want to cast at this step? It should work without it.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T11:53:15Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264640250",
+    "id": 264640250,
+    "in_reply_to_id": 264311232,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY0MDI1MA==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 143,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640250/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640250",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264640562"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640562"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can store this inside a variable since we branch on the same value in `render`.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T11:54:18Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,\n+      transformRuleContexts = (rules => rules) as ParamTransformRuleContexts,\n+      transformItems = (items => items) as ParamTransformItems,\n+    } = widgetParams || {};\n+\n+    Object.keys(trackedFilters).forEach(facetName => {\n+      if (typeof trackedFilters[facetName] !== 'function') {\n+        throw new Error(\n+          withUsage(\n+            `'The \"${facetName}\" filter value in the \\`trackedFilters\\` option expects a function.`\n+          )\n+        );\n+      }\n+    });\n+\n+    return {\n+      init({ helper, state, instantSearchInstance }) {\n+        if (Object.keys(trackedFilters).length > 0) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264640562",
+    "id": 264640562,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY0MDU2Mg==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 152,
+    "original_position": 152,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640562/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264640562",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264643340"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264643340"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We only support `facet` but we could receive a `numeric` refinement? It won't be a `string` but `number[]`.\r\n\r\n> https://community.algolia.com/algoliasearch-helper-js/reference.html#AlgoliaSearchHelper#getRefinements",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:02:18Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264643340",
+    "id": 264643340,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY0MzM0MA==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 70,
+    "original_position": 68,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264643340/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264643340",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264644454"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264644454"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n    (facets, facetName) => {\r\n```\r\n\r\nWe can avoid it with the generic of `reduce<string[]>()`.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:05:35Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264644454",
+    "id": 264644454,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY0NDQ1NA==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 64,
+    "original_position": 64,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264644454/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264644454",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264645425"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264645425"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`findIndex` is not supported in IE and we don't list it inside [the doc](https://www.algolia.com/doc/guides/building-search-ui/installation/js/?language=js#browser-support) browser support. But we list `includes` so we can use it (which simplify a bit the condition).",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:08:22Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264645425",
+    "id": 264645425,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY0NTQyNQ==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 76,
+    "original_position": 76,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264645425/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264645425",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264650082"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650082"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Right now there is none. It's fine for now, we can add the batch to the list of things that the helper can do for us.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:21:55Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264650082",
+    "id": 264650082,
+    "in_reply_to_id": 264310436,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1MDA4Mg==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 127,
+    "original_position": 119,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650082/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650082",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264650696"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650696"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It feels weird to have it called like that specially when `transformItems` is called on it.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:23:33Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,\n+      transformRuleContexts = (rules => rules) as ParamTransformRuleContexts,\n+      transformItems = (items => items) as ParamTransformItems,\n+    } = widgetParams || {};\n+\n+    Object.keys(trackedFilters).forEach(facetName => {\n+      if (typeof trackedFilters[facetName] !== 'function') {\n+        throw new Error(\n+          withUsage(\n+            `'The \"${facetName}\" filter value in the \\`trackedFilters\\` option expects a function.`\n+          )\n+        );\n+      }\n+    });\n+\n+    return {\n+      init({ helper, state, instantSearchInstance }) {\n+        if (Object.keys(trackedFilters).length > 0) {\n+          initialRuleContexts = state.ruleContexts || [];\n+\n+          // The helper's method `getQueryParameter` doesn't work on unset attributes.\n+          // We need to set `ruleContexts` to a default value before retrieving it.\n+          if (initialRuleContexts.length === 0) {\n+            helper.setQueryParameter('ruleContexts', initialRuleContexts);\n+          }\n+\n+          const newRuleContexts = getRuleContextsFromTrackedFilters({\n+            helper,\n+            trackedFilters,\n+          });\n+          addedRuleContexts = newRuleContexts;\n+          const ruleContexts = prepareRuleContexts({\n+            initialRuleContexts,\n+            newRuleContexts,\n+            transformRuleContexts,\n+          });\n+\n+          applyRuleContexts({\n+            helper,\n+            ruleContexts,\n+          });\n+        }\n+\n+        render(\n+          {\n+            userData: [],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264650696",
+    "id": 264650696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1MDY5Ng==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 190,
+    "original_position": 180,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213329356,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650696/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264650696",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655867"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655867"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`transformItems` is only called at `render` for now.\r\n\r\nShould we rather return this at `init`?\r\n\r\n```js\r\nrender(\r\n  {\r\n    userData: transformItems([]),\r\n    instantSearchInstance,\r\n    widgetParams,\r\n  },\r\n  true\r\n);\r\n```",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:39:06Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,\n+      transformRuleContexts = (rules => rules) as ParamTransformRuleContexts,\n+      transformItems = (items => items) as ParamTransformItems,\n+    } = widgetParams || {};\n+\n+    Object.keys(trackedFilters).forEach(facetName => {\n+      if (typeof trackedFilters[facetName] !== 'function') {\n+        throw new Error(\n+          withUsage(\n+            `'The \"${facetName}\" filter value in the \\`trackedFilters\\` option expects a function.`\n+          )\n+        );\n+      }\n+    });\n+\n+    return {\n+      init({ helper, state, instantSearchInstance }) {\n+        if (Object.keys(trackedFilters).length > 0) {\n+          initialRuleContexts = state.ruleContexts || [];\n+\n+          // The helper's method `getQueryParameter` doesn't work on unset attributes.\n+          // We need to set `ruleContexts` to a default value before retrieving it.\n+          if (initialRuleContexts.length === 0) {\n+            helper.setQueryParameter('ruleContexts', initialRuleContexts);\n+          }\n+\n+          const newRuleContexts = getRuleContextsFromTrackedFilters({\n+            helper,\n+            trackedFilters,\n+          });\n+          addedRuleContexts = newRuleContexts;\n+          const ruleContexts = prepareRuleContexts({\n+            initialRuleContexts,\n+            newRuleContexts,\n+            transformRuleContexts,\n+          });\n+\n+          applyRuleContexts({\n+            helper,\n+            ruleContexts,\n+          });\n+        }\n+\n+        render(\n+          {\n+            userData: [],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655867",
+    "id": 264655867,
+    "in_reply_to_id": 264650696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1NTg2Nw==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 190,
+    "original_position": 180,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213361407,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655867/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655867",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655913"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655913"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The reason why I added this test was to make sure that `unmount` is called in `dispose` in all cases because we return the state early.\r\n\r\nFor example, the test would fail if the implementation was like that:\r\n\r\n```js\r\ndispose({ state }) {\r\n  if (Object.keys(trackedFilters).length > 0) {\r\n    const reinitRuleContexts = state\r\n      .getQueryParameter('ruleContexts')\r\n      .filter((rule: string) => !addedRuleContexts.includes(rule));\r\n\r\n    return state.setQueryParameter('ruleContexts', reinitRuleContexts);\r\n  }\r\n\r\n  // Does not get called because `trackedFilters` was defined.\r\n  unmount();\r\n\r\n  return state;\r\n},\r\n```\r\n\r\nThe test doesn't provide much value in itself. I wrote it because when refactoring the `dispose` function I saw some potential misbehaviors here.\r\n\r\nI can remove it if it feels unnecessary.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:39:13Z",
+    "diff_hunk": "@@ -0,0 +1,450 @@\n+import algoliasearchHelper, { SearchResults } from 'algoliasearch-helper';\n+import connectQueryRules, {\n+  QueryRulesWidgetFactory,\n+} from '../connectQueryRules';\n+\n+describe('connectQueryRules', () => {\n+  let renderFn = jest.fn();\n+  let unmountFn = jest.fn();\n+  let makeWidget: QueryRulesWidgetFactory<{}>;\n+\n+  const createFakeHelper = (state = {}) => {\n+    const client = {};\n+    const indexName = '';\n+    const helper = algoliasearchHelper(client, indexName, state);\n+\n+    helper.search = jest.fn();\n+\n+    return helper;\n+  };\n+\n+  beforeEach(() => {\n+    renderFn = jest.fn();\n+    unmountFn = jest.fn();\n+    makeWidget = connectQueryRules(renderFn, unmountFn);\n+  });\n+\n+  describe('usage', () => {\n+    test('throws without render function', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectQueryRules()({});\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+\n+    test('does not throw without unmount function', () => {\n+      expect(() => {\n+        connectQueryRules(() => {})({});\n+      }).not.toThrow();\n+    });\n+\n+    test('throws with a non-functon tracked filter', () => {\n+      expect(() => {\n+        makeWidget({\n+          // @ts-ignore\n+          trackedFilters: {\n+            brand: ['Samsung'],\n+          },\n+        });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"'The \\\\\"brand\\\\\" filter value in the \\`trackedFilters\\` option expects a function.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+  });\n+\n+  describe('lifecycle', () => {\n+    test('calls the render function on init', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+      const [renderingParameters, isFirstRender] = renderFn.mock.calls[0];\n+\n+      expect(isFirstRender).toBe(true);\n+\n+      const {\n+        userData,\n+        instantSearchInstance,\n+        widgetParams,\n+      } = renderingParameters;\n+\n+      expect(userData).toEqual([]);\n+      expect(instantSearchInstance).toEqual({});\n+      expect(widgetParams).toEqual({});\n+    });\n+\n+    test('calls the render function on render', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [{ hits: [] }]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[1];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [\n+          { hits: [], userData: [{ banner: 'image.png' }] },\n+        ]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[2];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([{ banner: 'image.png' }]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+    });\n+\n+    test('calls the unmount function on dispose', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.dispose({ state: helper.getState() });\n+\n+      expect(unmountFn).toHaveBeenCalledTimes(1);\n+    });\n+\n+    test('calls the unmount function on dispose with trackedFilters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655913",
+    "id": 264655913,
+    "in_reply_to_id": 264630696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1NTkxMw==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 145,
+    "original_position": 145,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 213361462,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655913/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655913",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655930"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655930"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's not typed at this step because TypeScript doesn't infer the `QueryRulesConnectorParams` types.\r\n\r\n![image](https://user-images.githubusercontent.com/6137112/54200478-c8d59080-44cb-11e9-9ec4-6645abe85964.png)\r\n",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:39:16Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264655930",
+    "id": 264655930,
+    "in_reply_to_id": 264311232,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1NTkzMA==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 143,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213361480,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655930/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264655930",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264657053"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264657053"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Cool, thank you 👍 ",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T12:42:18Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264657053",
+    "id": 264657053,
+    "in_reply_to_id": 264644454,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY1NzA1Mw==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 64,
+    "original_position": 64,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213362882,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264657053/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264657053",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264671179"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264671179"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok, maybe a clearer test name would help to understand why it’s there. ",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T13:18:17Z",
+    "diff_hunk": "@@ -0,0 +1,450 @@\n+import algoliasearchHelper, { SearchResults } from 'algoliasearch-helper';\n+import connectQueryRules, {\n+  QueryRulesWidgetFactory,\n+} from '../connectQueryRules';\n+\n+describe('connectQueryRules', () => {\n+  let renderFn = jest.fn();\n+  let unmountFn = jest.fn();\n+  let makeWidget: QueryRulesWidgetFactory<{}>;\n+\n+  const createFakeHelper = (state = {}) => {\n+    const client = {};\n+    const indexName = '';\n+    const helper = algoliasearchHelper(client, indexName, state);\n+\n+    helper.search = jest.fn();\n+\n+    return helper;\n+  };\n+\n+  beforeEach(() => {\n+    renderFn = jest.fn();\n+    unmountFn = jest.fn();\n+    makeWidget = connectQueryRules(renderFn, unmountFn);\n+  });\n+\n+  describe('usage', () => {\n+    test('throws without render function', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectQueryRules()({});\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (got type \\\\\"undefined\\\\\").\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+\n+    test('does not throw without unmount function', () => {\n+      expect(() => {\n+        connectQueryRules(() => {})({});\n+      }).not.toThrow();\n+    });\n+\n+    test('throws with a non-functon tracked filter', () => {\n+      expect(() => {\n+        makeWidget({\n+          // @ts-ignore\n+          trackedFilters: {\n+            brand: ['Samsung'],\n+          },\n+        });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"'The \\\\\"brand\\\\\" filter value in the \\`trackedFilters\\` option expects a function.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules/js/#connector\"\n+`);\n+    });\n+  });\n+\n+  describe('lifecycle', () => {\n+    test('calls the render function on init', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+      const [renderingParameters, isFirstRender] = renderFn.mock.calls[0];\n+\n+      expect(isFirstRender).toBe(true);\n+\n+      const {\n+        userData,\n+        instantSearchInstance,\n+        widgetParams,\n+      } = renderingParameters;\n+\n+      expect(userData).toEqual([]);\n+      expect(instantSearchInstance).toEqual({});\n+      expect(widgetParams).toEqual({});\n+    });\n+\n+    test('calls the render function on render', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [{ hits: [] }]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[1];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+\n+      widget.render({\n+        helper,\n+        results: new SearchResults(helper.getState(), [\n+          { hits: [], userData: [{ banner: 'image.png' }] },\n+        ]),\n+        instantSearchInstance: {},\n+      });\n+\n+      {\n+        const [renderingParameters, isFirstRender] = renderFn.mock.calls[2];\n+\n+        expect(isFirstRender).toBe(false);\n+\n+        const {\n+          userData,\n+          instantSearchInstance,\n+          widgetParams,\n+        } = renderingParameters;\n+\n+        expect(userData).toEqual([{ banner: 'image.png' }]);\n+        expect(instantSearchInstance).toEqual({});\n+        expect(widgetParams).toEqual({});\n+      }\n+    });\n+\n+    test('calls the unmount function on dispose', () => {\n+      const helper = createFakeHelper();\n+      const widget = makeWidget({});\n+\n+      widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+      widget.dispose({ state: helper.getState() });\n+\n+      expect(unmountFn).toHaveBeenCalledTimes(1);\n+    });\n+\n+    test('calls the unmount function on dispose with trackedFilters', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264671179",
+    "id": 264671179,
+    "in_reply_to_id": 264630696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDY3MTE3OQ==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 145,
+    "original_position": 145,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 213381162,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264671179/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264671179",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264716098"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264716098"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's unexpected, it should be inferred I think.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T14:45:36Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264716098",
+    "id": 264716098,
+    "in_reply_to_id": 264311232,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDcxNjA5OA==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 143,
+    "original_position": 135,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213435987,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264716098/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264716098",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264718044"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264718044"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually I wasn't talking about that but more about the usage of the API. It's not natural to use `transformItems` on something that at the end is called `userData`. But I get the point that since query rules is a larger spectrum maybe we'll have `items` at some point.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-12T14:49:18Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();\n+  }\n+}\n+\n+const connectQueryRules: QueryRulesConnector = (render, unmount = noop) => {\n+  checkRendering(render, withUsage());\n+\n+  // We store the initial rule contexts applied before creating the widget\n+  // so that we do not override them with the rules created from `trackedFilters`.\n+  let initialRuleContexts: string[] = [];\n+\n+  // We track the added rule contexts to remove them when the widget is disposed.\n+  let addedRuleContexts: string[] = [];\n+\n+  return widgetParams => {\n+    const {\n+      trackedFilters = {} as ParamTrackedFilters,\n+      transformRuleContexts = (rules => rules) as ParamTransformRuleContexts,\n+      transformItems = (items => items) as ParamTransformItems,\n+    } = widgetParams || {};\n+\n+    Object.keys(trackedFilters).forEach(facetName => {\n+      if (typeof trackedFilters[facetName] !== 'function') {\n+        throw new Error(\n+          withUsage(\n+            `'The \"${facetName}\" filter value in the \\`trackedFilters\\` option expects a function.`\n+          )\n+        );\n+      }\n+    });\n+\n+    return {\n+      init({ helper, state, instantSearchInstance }) {\n+        if (Object.keys(trackedFilters).length > 0) {\n+          initialRuleContexts = state.ruleContexts || [];\n+\n+          // The helper's method `getQueryParameter` doesn't work on unset attributes.\n+          // We need to set `ruleContexts` to a default value before retrieving it.\n+          if (initialRuleContexts.length === 0) {\n+            helper.setQueryParameter('ruleContexts', initialRuleContexts);\n+          }\n+\n+          const newRuleContexts = getRuleContextsFromTrackedFilters({\n+            helper,\n+            trackedFilters,\n+          });\n+          addedRuleContexts = newRuleContexts;\n+          const ruleContexts = prepareRuleContexts({\n+            initialRuleContexts,\n+            newRuleContexts,\n+            transformRuleContexts,\n+          });\n+\n+          applyRuleContexts({\n+            helper,\n+            ruleContexts,\n+          });\n+        }\n+\n+        render(\n+          {\n+            userData: [],",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r264718044",
+    "id": 264718044,
+    "in_reply_to_id": 264650696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NDcxODA0NA==",
+    "original_commit_id": "eae2a06cc001606ac0f273b30587496697985f03",
+    "original_line": 190,
+    "original_position": 180,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 213438459,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264718044/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/264718044",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265950883"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265950883"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can provide the default value into the `Renderer` generic.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T11:54:50Z",
+    "diff_hunk": "@@ -1,4 +1,6 @@\n-function checkRendering(rendering: () => void, usage: string) {\n+import { Renderer } from '../../types/connector';\n+\n+function checkRendering(rendering: Renderer<any>, usage: string) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265950883",
+    "id": 265950883,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk1MDg4Mw==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 3,
+    "original_position": 4,
+    "original_start_line": null,
+    "path": "src/lib/utils/checkRendering.ts",
+    "position": 1,
+    "pull_request_review_id": 214994273,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265950883/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265950883",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265951628"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265951628"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`FacetRefinement` could be a `number[]`? According to [the Helper doc](https://community.algolia.com/algoliasearch-helper-js/reference.html#AlgoliaSearchHelper.FacetRefinement) it's not possible. What you want is `type Refinement = FacetRefinement | NumericRefinement` no?",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T11:57:23Z",
+    "diff_hunk": "@@ -11,6 +11,6 @@ export type SearchParameters = any;\n export type SearchResults = any;\n \n export type FacetRefinement = {\n-  value: string;\n+  value: string | number[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265951628",
+    "id": 265951628,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk1MTYyOA==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 14,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/types/instantsearch.ts",
+    "position": 1,
+    "pull_request_review_id": 214994273,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265951628/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265951628",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265952462"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265952462"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We only send one rule context? Is it expected?",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T12:00:30Z",
+    "diff_hunk": "@@ -252,6 +252,51 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules\n         expect(brandFilterSpy).toHaveBeenCalledWith(['Samsung', 'Apple']);\n       });\n \n+      test('adds ruleContexts to search parameters from numeric refinements', () => {\n+        const priceFilterSpy = jest.fn(() => [500]);\n+        const helper = createFakeHelper();\n+        const widget = makeWidget({\n+          trackedFilters: {\n+            price: priceFilterSpy,\n+          },\n+        });\n+\n+        widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(1);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(2);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        helper.setQueryParameter('numericRefinements', {\n+          price: {\n+            '<=': [500, 400],\n+            '>=': [100],\n+          },\n+        });\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([\n+          'ais-price-500',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265952462",
+    "id": 265952462,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk1MjQ2Mg==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 381,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 214994273,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265952462/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265952462",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265953726"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265953726"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Actually after talking a bit with Marie & Julien it might be problematic. We can have a blink:\r\n\r\n1. select the refinement -> a request is triggered\r\n2. render with the results, context is applied -> a new request is triggered\r\n3. a query rule is triggered based on the context that set a new filter\r\n4. render with other results, which means that at the step 2 we get stalled results",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T12:04:59Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265953726",
+    "id": 265953726,
+    "in_reply_to_id": 264310436,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk1MzcyNg==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 127,
+    "original_position": 119,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 214994273,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265953726/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265953726",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265966364"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265966364"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, the `trackedFilters` value only returns `500` in the test:\r\n\r\n```js\r\nconst widget = makeWidget({\r\n  trackedFilters: {\r\n    price: () => [500],\r\n  },\r\n});\r\n```\r\n\r\nSee https://github.com/algolia/instantsearch.js/pull/3597/files#diff-1586d17bb858d5402e71bd206ba2d78fR256",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T12:49:17Z",
+    "diff_hunk": "@@ -252,6 +252,51 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules\n         expect(brandFilterSpy).toHaveBeenCalledWith(['Samsung', 'Apple']);\n       });\n \n+      test('adds ruleContexts to search parameters from numeric refinements', () => {\n+        const priceFilterSpy = jest.fn(() => [500]);\n+        const helper = createFakeHelper();\n+        const widget = makeWidget({\n+          trackedFilters: {\n+            price: priceFilterSpy,\n+          },\n+        });\n+\n+        widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(1);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(2);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        helper.setQueryParameter('numericRefinements', {\n+          price: {\n+            '<=': [500, 400],\n+            '>=': [100],\n+          },\n+        });\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([\n+          'ais-price-500',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265966364",
+    "id": 265966364,
+    "in_reply_to_id": 265952462,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk2NjM2NA==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 381,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 215014072,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265966364/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265966364",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265967014"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967014"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Is that an acceptable tradeoff for now? (I would say so)",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T12:51:26Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265967014",
+    "id": 265967014,
+    "in_reply_to_id": 264310436,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk2NzAxNA==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 127,
+    "original_position": 119,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 215014072,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967014/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967014",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265967508"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967508"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You're right, it makes more sense!",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-15T12:53:03Z",
+    "diff_hunk": "@@ -11,6 +11,6 @@ export type SearchParameters = any;\n export type SearchResults = any;\n \n export type FacetRefinement = {\n-  value: string;\n+  value: string | number[];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r265967508",
+    "id": 265967508,
+    "in_reply_to_id": 265951628,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NTk2NzUwOA==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 14,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/types/instantsearch.ts",
+    "position": 1,
+    "pull_request_review_id": 215014072,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967508/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/265967508",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266409095"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409095"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok but it doesn't seems that we test the behaviour where we return all the value from a refinement. We only test the behaviour with hard coded value.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-18T12:07:39Z",
+    "diff_hunk": "@@ -252,6 +252,51 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules\n         expect(brandFilterSpy).toHaveBeenCalledWith(['Samsung', 'Apple']);\n       });\n \n+      test('adds ruleContexts to search parameters from numeric refinements', () => {\n+        const priceFilterSpy = jest.fn(() => [500]);\n+        const helper = createFakeHelper();\n+        const widget = makeWidget({\n+          trackedFilters: {\n+            price: priceFilterSpy,\n+          },\n+        });\n+\n+        widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(1);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(2);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        helper.setQueryParameter('numericRefinements', {\n+          price: {\n+            '<=': [500, 400],\n+            '>=': [100],\n+          },\n+        });\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([\n+          'ais-price-500',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266409095",
+    "id": 266409095,
+    "in_reply_to_id": 265952462,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NjQwOTA5NQ==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 381,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 215559673,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409095/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409095",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266409511"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409511"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It worth trying with a query rule that alter the results to see the actual impact. We can decide then if it's a tradeoff that is acceptable or not.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-18T12:09:02Z",
+    "diff_hunk": "@@ -0,0 +1,237 @@\n+import noop from 'lodash/noop';\n+import isEqual from 'lodash/isEqual';\n+import {\n+  Renderer,\n+  RenderOptions,\n+  WidgetFactory,\n+  Helper,\n+  FacetRefinement,\n+} from '../../types';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  warning,\n+} from '../../lib/utils';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'query-rules',\n+  connector: true,\n+});\n+\n+type ParamTrackedFilters = {\n+  [facetName: string]: (facetValues: string[]) => string[];\n+};\n+type ParamTransformRuleContexts = (ruleContexts: string[]) => string[];\n+type ParamTransformItems = (items: object[]) => any;\n+\n+export type QueryRulesConnectorParams = {\n+  trackedFilters?: ParamTrackedFilters;\n+  transformRuleContexts?: ParamTransformRuleContexts;\n+  transformItems?: ParamTransformItems;\n+};\n+\n+export interface QueryRulesRenderOptions<T> extends RenderOptions<T> {\n+  userData: object[];\n+}\n+\n+export type QueryRulesRenderer<T> = Renderer<QueryRulesRenderOptions<T>>;\n+\n+export type QueryRulesWidgetFactory<T> = WidgetFactory<\n+  QueryRulesConnectorParams & T\n+>;\n+\n+export type QueryRulesConnector = {\n+  <T>(\n+    render: QueryRulesRenderer<T>,\n+    unmount?: () => void\n+  ): QueryRulesWidgetFactory<T>;\n+};\n+\n+// A context rule must consist only of alphanumeric characters, hyphens, and underscores.\n+// See https://www.algolia.com/doc/guides/managing-results/refine-results/merchandising-and-promoting/in-depth/implementing-query-rules/#context\n+function escapeRuleContext(ruleName: string) {\n+  return ruleName.replace(/[^a-z0-9-_]+/gi, '_');\n+}\n+\n+function getRuleContextsFromTrackedFilters({\n+  helper,\n+  trackedFilters,\n+}: {\n+  helper: Helper;\n+  trackedFilters: ParamTrackedFilters;\n+}) {\n+  const ruleContexts = Object.keys(trackedFilters).reduce(\n+    (facets: string[], facetName) => {\n+      const getFacetValues = trackedFilters[facetName];\n+      const facetRefinements: string[] = helper\n+        .getRefinements(facetName)\n+        .map((refinement: FacetRefinement) => refinement.value);\n+      const facetValues = getFacetValues(facetRefinements);\n+\n+      return [\n+        ...facets,\n+        ...facetRefinements\n+          .filter(\n+            facetRefinement =>\n+              facetValues.findIndex(\n+                facetValue => facetValue === facetRefinement\n+              ) !== -1\n+          )\n+          .map(facetValue =>\n+            escapeRuleContext(`ais-${facetName}-${facetValue}`)\n+          ),\n+      ];\n+    },\n+    []\n+  );\n+\n+  return ruleContexts;\n+}\n+\n+function prepareRuleContexts({\n+  initialRuleContexts,\n+  newRuleContexts,\n+  transformRuleContexts,\n+}: {\n+  initialRuleContexts: string[];\n+  newRuleContexts: string[];\n+  transformRuleContexts: ParamTransformRuleContexts;\n+}) {\n+  const allRuleContexts = [...initialRuleContexts, ...newRuleContexts];\n+\n+  warning(\n+    allRuleContexts.length <= 10,\n+    `\n+The maximum number of \\`ruleContexts\\` is 10. They have been sliced to that limit.\n+Consider using \\`transformRuleContexts\\` to minimize the number of rules sent to Algolia.\n+`\n+  );\n+\n+  const ruleContexts = transformRuleContexts(allRuleContexts).slice(0, 10);\n+\n+  return ruleContexts;\n+}\n+\n+function applyRuleContexts({ helper, ruleContexts }) {\n+  const previousRuleContexts = helper.getQueryParameter('ruleContexts');\n+\n+  if (!isEqual(previousRuleContexts, ruleContexts)) {\n+    helper.setQueryParameter('ruleContexts', ruleContexts).search();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266409511",
+    "id": 266409511,
+    "in_reply_to_id": 264310436,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NjQwOTUxMQ==",
+    "original_commit_id": "57eaa6056fe0bb7c5e87a8697e7431adbf4042d1",
+    "original_line": 127,
+    "original_position": 119,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/connectQueryRules.ts",
+    "position": 1,
+    "pull_request_review_id": 215560229,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409511/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266409511",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266423994"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/3597"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266423994"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We test that the function is called with all the values for this: https://github.com/algolia/instantsearch.js/pull/3597/files#diff-1586d17bb858d5402e71bd206ba2d78fR297.\r\n\r\nI will add a test that checks that all the values can effectively be tracked.",
+    "commit_id": "c8d83900b9e425cfccf1a3b6364a3f87d89434d1",
+    "created_at": "2019-03-18T12:53:21Z",
+    "diff_hunk": "@@ -252,6 +252,51 @@ See documentation: https://www.algolia.com/doc/api-reference/widgets/query-rules\n         expect(brandFilterSpy).toHaveBeenCalledWith(['Samsung', 'Apple']);\n       });\n \n+      test('adds ruleContexts to search parameters from numeric refinements', () => {\n+        const priceFilterSpy = jest.fn(() => [500]);\n+        const helper = createFakeHelper();\n+        const widget = makeWidget({\n+          trackedFilters: {\n+            price: priceFilterSpy,\n+          },\n+        });\n+\n+        widget.init({ helper, state: helper.state, instantSearchInstance: {} });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(1);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([]);\n+        expect(priceFilterSpy).toHaveBeenCalledTimes(2);\n+        expect(priceFilterSpy).toHaveBeenCalledWith([]);\n+\n+        helper.setQueryParameter('numericRefinements', {\n+          price: {\n+            '<=': [500, 400],\n+            '>=': [100],\n+          },\n+        });\n+\n+        widget.render({\n+          helper,\n+          results: new SearchResults(helper.getState(), [{}, {}]),\n+          instantSearchInstance: {},\n+        });\n+\n+        expect(helper.getQueryParameter('ruleContexts')).toEqual([\n+          'ais-price-500',",
+    "html_url": "https://github.com/algolia/instantsearch/pull/3597#discussion_r266423994",
+    "id": 266423994,
+    "in_reply_to_id": 265952462,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDI2NjQyMzk5NA==",
+    "original_commit_id": "845a15c67df7be445fe692071f8e25ab4958aa68",
+    "original_line": 381,
+    "original_position": 52,
+    "original_start_line": null,
+    "path": "src/connectors/query-rules/__tests__/connectQueryRules-test.ts",
+    "position": 1,
+    "pull_request_review_id": 215578570,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/3597",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266423994/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-03-22T14:41:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/266423994",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

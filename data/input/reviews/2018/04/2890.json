@@ -1,0 +1,1257 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182394661"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182394661"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't think we need to save the instance. We keep the exact same instance only for the function that will trigger a new render (because otherwise we have stalled values in the next render). This function works like `refine` or `clearMapRefinement`.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:33:40Z",
+    "diff_hunk": "@@ -192,9 +193,32 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n     const hasMapMoveSinceLastRefine = () =>\n       widgetState.hasMapMoveSinceLastRefine;\n \n+    const getSearchBounds = helper => () => {\n+      const boundingBox =\n+        helper.state.insideBoundingBox &&\n+        helper.state.insideBoundingBox.split(',');\n+\n+      if (!boundingBox) {\n+        return undefined;\n+      }\n+\n+      return {\n+        northEast: {\n+          lat: parseFloat(boundingBox[0]),\n+          lng: parseFloat(boundingBox[1]),\n+        },\n+        southWest: {\n+          lat: parseFloat(boundingBox[2]),\n+          lng: parseFloat(boundingBox[3]),\n+        },\n+      };\n+    };\n+    let getSearchBoundsInstance;\n+\n     const init = initArgs => {\n       const { state, helper, instantSearchInstance } = initArgs;\n       const isFirstRendering = true;\n+      getSearchBoundsInstance = getSearchBounds(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182394661",
+    "id": 182394661,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NDY2MQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 221,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113179418,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182394661/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182394661",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395055"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395055"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "What do you think about trying to merge the two functions that handle bounds?",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:35:38Z",
+    "diff_hunk": "@@ -32,6 +32,41 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n   });\n };\n \n+const getBoundsWithPadding = ({\n+  paddingBoundingBox,\n+  bounds,\n+  mapInstance,\n+  googleReference,\n+}) => {\n+  const scale = Math.pow(2, mapInstance.getZoom()) || 1;\n+\n+  const { northEast, southWest } = bounds;\n+\n+  const toPoint = latLng =>\n+    mapInstance\n+      .getProjection()\n+      .fromLatLngToPoint(\n+        new googleReference.maps.LatLng(latLng.lat, latLng.lng)\n+      );\n+\n+  const northEastPoint = toPoint(northEast);\n+  const southWestPoint = toPoint(southWest);\n+\n+  northEastPoint.x = northEastPoint.x + paddingBoundingBox.right / scale;\n+  northEastPoint.y = northEastPoint.y - paddingBoundingBox.top / scale;\n+\n+  southWestPoint.x = southWestPoint.x - paddingBoundingBox.left / scale;\n+  southWestPoint.y = southWestPoint.y + paddingBoundingBox.bottom / scale;\n+\n+  const ne = mapInstance.getProjection().fromPointToLatLng(northEastPoint);\n+  const sw = mapInstance.getProjection().fromPointToLatLng(southWestPoint);\n+\n+  return {\n+    northEast: { lat: ne.lat(), lng: ne.lng() },\n+    southWest: { lat: sw.lat(), lng: sw.lng() },\n+  };\n+};\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395055",
+    "id": 182395055,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NTA1NQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 69,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113179418,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395055/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395055",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395188"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395188"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can add a test for this case.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:36:17Z",
+    "diff_hunk": "@@ -196,14 +232,26 @@ const renderer = (\n \n   // Fit the map to the markers when needed\n   const hasMarkers = renderState.markers.length;\n-  const center = renderState.mapInstance.getCenter();\n-  const zoom = renderState.mapInstance.getZoom();\n-  const isPositionInitialize = center !== undefined && zoom !== undefined;\n-  const enableFitBounds =\n-    !hasMapMoveSinceLastRefine() &&\n-    (!isRefinedWithMap() || (isRefinedWithMap() && !isPositionInitialize));\n-\n-  if (hasMarkers && enableFitBounds) {\n+  const boundingBoxFromConnector = getSearchBounds();\n+  const enableFitBounds = !hasMapMoveSinceLastRefine() && !isRefinedWithMap();\n+\n+  if (boundingBoxFromConnector && isRefinedWithMap()) {\n+    renderState.isUserInteraction = false;\n+    const boundsWithPadding = getBoundsWithPadding({\n+      bounds: boundingBoxFromConnector,\n+      paddingBoundingBox,\n+      mapInstance: renderState.mapInstance,\n+      googleReference,\n+    });\n+    renderState.mapInstance.fitBounds(\n+      new googleReference.maps.LatLngBounds(\n+        boundsWithPadding.southWest,\n+        boundsWithPadding.northEast\n+      ),\n+      0\n+    );\n+    renderState.isUserInteraction = true;\n+  } else if (hasMarkers && enableFitBounds) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395188",
+    "id": 182395188,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NTE4OA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 254,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 141,
+    "pull_request_review_id": 113179418,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395188/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395188",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395228"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395228"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Nice catch!",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:36:27Z",
+    "diff_hunk": "@@ -20,7 +20,7 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n     .getProjection()\n     .fromLatLngToPoint(mapInstance.getBounds().getSouthWest());\n \n-  southWestPoint.x = southWestPoint.x + paddingBoundingBox.right / scale;\n+  southWestPoint.x = southWestPoint.x + paddingBoundingBox.left / scale;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395228",
+    "id": 182395228,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NTIyOA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 23,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113179418,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395228/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395228",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395333"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395333"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can add tests for those two functions.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:36:56Z",
+    "diff_hunk": "@@ -332,6 +358,27 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n \n         return nextState;\n       },\n+\n+      getWidgetState(uiState, { searchParameters }) {\n+        const boundingBox = searchParameters.insideBoundingBox;\n+        if (boundingBox) {\n+          return {\n+            ...uiState,\n+            boundingBox,\n+          };\n+        }\n+        return uiState;\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        if (uiState.boundingBox) {\n+          return searchParameters.setQueryParameter(\n+            'insideBoundingBox',\n+            uiState.boundingBox\n+          );\n+        }\n+        return searchParameters;\n+      },",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182395333",
+    "id": 182395333,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NTMzMw==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 381,
+    "original_position": 81,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113179418,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395333/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182395333",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396230"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396230"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The functions works in two different directions, so I'd rather have two functions. I can refactor them though.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:41:00Z",
+    "diff_hunk": "@@ -32,6 +32,41 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n   });\n };\n \n+const getBoundsWithPadding = ({\n+  paddingBoundingBox,\n+  bounds,\n+  mapInstance,\n+  googleReference,\n+}) => {\n+  const scale = Math.pow(2, mapInstance.getZoom()) || 1;\n+\n+  const { northEast, southWest } = bounds;\n+\n+  const toPoint = latLng =>\n+    mapInstance\n+      .getProjection()\n+      .fromLatLngToPoint(\n+        new googleReference.maps.LatLng(latLng.lat, latLng.lng)\n+      );\n+\n+  const northEastPoint = toPoint(northEast);\n+  const southWestPoint = toPoint(southWest);\n+\n+  northEastPoint.x = northEastPoint.x + paddingBoundingBox.right / scale;\n+  northEastPoint.y = northEastPoint.y - paddingBoundingBox.top / scale;\n+\n+  southWestPoint.x = southWestPoint.x - paddingBoundingBox.left / scale;\n+  southWestPoint.y = southWestPoint.y + paddingBoundingBox.bottom / scale;\n+\n+  const ne = mapInstance.getProjection().fromPointToLatLng(northEastPoint);\n+  const sw = mapInstance.getProjection().fromPointToLatLng(southWestPoint);\n+\n+  return {\n+    northEast: { lat: ne.lat(), lng: ne.lng() },\n+    southWest: { lat: sw.lat(), lng: sw.lng() },\n+  };\n+};\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396230",
+    "id": 182396230,
+    "in_reply_to_id": 182395055,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NjIzMA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 69,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113181357,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396230/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396230",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396302"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396302"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok I will have a look.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:41:18Z",
+    "diff_hunk": "@@ -196,14 +232,26 @@ const renderer = (\n \n   // Fit the map to the markers when needed\n   const hasMarkers = renderState.markers.length;\n-  const center = renderState.mapInstance.getCenter();\n-  const zoom = renderState.mapInstance.getZoom();\n-  const isPositionInitialize = center !== undefined && zoom !== undefined;\n-  const enableFitBounds =\n-    !hasMapMoveSinceLastRefine() &&\n-    (!isRefinedWithMap() || (isRefinedWithMap() && !isPositionInitialize));\n-\n-  if (hasMarkers && enableFitBounds) {\n+  const boundingBoxFromConnector = getSearchBounds();\n+  const enableFitBounds = !hasMapMoveSinceLastRefine() && !isRefinedWithMap();\n+\n+  if (boundingBoxFromConnector && isRefinedWithMap()) {\n+    renderState.isUserInteraction = false;\n+    const boundsWithPadding = getBoundsWithPadding({\n+      bounds: boundingBoxFromConnector,\n+      paddingBoundingBox,\n+      mapInstance: renderState.mapInstance,\n+      googleReference,\n+    });\n+    renderState.mapInstance.fitBounds(\n+      new googleReference.maps.LatLngBounds(\n+        boundsWithPadding.southWest,\n+        boundsWithPadding.northEast\n+      ),\n+      0\n+    );\n+    renderState.isUserInteraction = true;\n+  } else if (hasMarkers && enableFitBounds) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396302",
+    "id": 182396302,
+    "in_reply_to_id": 182395188,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NjMwMg==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 254,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 141,
+    "pull_request_review_id": 113181452,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396302/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396302",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396713"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396713"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The Helper is mutable and will always be up to date. It's not great to generate at each render the exact same function. In other widgets we try to be careful about those, and we cache the refine functions.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:43:13Z",
+    "diff_hunk": "@@ -192,9 +193,32 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n     const hasMapMoveSinceLastRefine = () =>\n       widgetState.hasMapMoveSinceLastRefine;\n \n+    const getSearchBounds = helper => () => {\n+      const boundingBox =\n+        helper.state.insideBoundingBox &&\n+        helper.state.insideBoundingBox.split(',');\n+\n+      if (!boundingBox) {\n+        return undefined;\n+      }\n+\n+      return {\n+        northEast: {\n+          lat: parseFloat(boundingBox[0]),\n+          lng: parseFloat(boundingBox[1]),\n+        },\n+        southWest: {\n+          lat: parseFloat(boundingBox[2]),\n+          lng: parseFloat(boundingBox[3]),\n+        },\n+      };\n+    };\n+    let getSearchBoundsInstance;\n+\n     const init = initArgs => {\n       const { state, helper, instantSearchInstance } = initArgs;\n       const isFirstRendering = true;\n+      getSearchBoundsInstance = getSearchBounds(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396713",
+    "id": 182396713,
+    "in_reply_to_id": 182394661,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NjcxMw==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 221,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113181983,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396713/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396713",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396788"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396788"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Of course! ",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:43:35Z",
+    "diff_hunk": "@@ -332,6 +358,27 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n \n         return nextState;\n       },\n+\n+      getWidgetState(uiState, { searchParameters }) {\n+        const boundingBox = searchParameters.insideBoundingBox;\n+        if (boundingBox) {\n+          return {\n+            ...uiState,\n+            boundingBox,\n+          };\n+        }\n+        return uiState;\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        if (uiState.boundingBox) {\n+          return searchParameters.setQueryParameter(\n+            'insideBoundingBox',\n+            uiState.boundingBox\n+          );\n+        }\n+        return searchParameters;\n+      },",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182396788",
+    "id": 182396788,
+    "in_reply_to_id": 182395333,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5Njc4OA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 381,
+    "original_position": 81,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113182079,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396788/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182396788",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182397181"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397181"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Agree it's better to have two separate functions (sorry my comment was not very clear). But since we have almost the same logic in the function we can refactor it a bit I think.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:45:11Z",
+    "diff_hunk": "@@ -32,6 +32,41 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n   });\n };\n \n+const getBoundsWithPadding = ({\n+  paddingBoundingBox,\n+  bounds,\n+  mapInstance,\n+  googleReference,\n+}) => {\n+  const scale = Math.pow(2, mapInstance.getZoom()) || 1;\n+\n+  const { northEast, southWest } = bounds;\n+\n+  const toPoint = latLng =>\n+    mapInstance\n+      .getProjection()\n+      .fromLatLngToPoint(\n+        new googleReference.maps.LatLng(latLng.lat, latLng.lng)\n+      );\n+\n+  const northEastPoint = toPoint(northEast);\n+  const southWestPoint = toPoint(southWest);\n+\n+  northEastPoint.x = northEastPoint.x + paddingBoundingBox.right / scale;\n+  northEastPoint.y = northEastPoint.y - paddingBoundingBox.top / scale;\n+\n+  southWestPoint.x = southWestPoint.x - paddingBoundingBox.left / scale;\n+  southWestPoint.y = southWestPoint.y + paddingBoundingBox.bottom / scale;\n+\n+  const ne = mapInstance.getProjection().fromPointToLatLng(northEastPoint);\n+  const sw = mapInstance.getProjection().fromPointToLatLng(southWestPoint);\n+\n+  return {\n+    northEast: { lat: ne.lat(), lng: ne.lng() },\n+    southWest: { lat: sw.lat(), lng: sw.lng() },\n+  };\n+};\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182397181",
+    "id": 182397181,
+    "in_reply_to_id": 182395055,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NzE4MQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 69,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113182542,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397181/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397181",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182397371"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397371"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "agreed\r\n",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:46:05Z",
+    "diff_hunk": "@@ -32,6 +32,41 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n   });\n };\n \n+const getBoundsWithPadding = ({\n+  paddingBoundingBox,\n+  bounds,\n+  mapInstance,\n+  googleReference,\n+}) => {\n+  const scale = Math.pow(2, mapInstance.getZoom()) || 1;\n+\n+  const { northEast, southWest } = bounds;\n+\n+  const toPoint = latLng =>\n+    mapInstance\n+      .getProjection()\n+      .fromLatLngToPoint(\n+        new googleReference.maps.LatLng(latLng.lat, latLng.lng)\n+      );\n+\n+  const northEastPoint = toPoint(northEast);\n+  const southWestPoint = toPoint(southWest);\n+\n+  northEastPoint.x = northEastPoint.x + paddingBoundingBox.right / scale;\n+  northEastPoint.y = northEastPoint.y - paddingBoundingBox.top / scale;\n+\n+  southWestPoint.x = southWestPoint.x - paddingBoundingBox.left / scale;\n+  southWestPoint.y = southWestPoint.y + paddingBoundingBox.bottom / scale;\n+\n+  const ne = mapInstance.getProjection().fromPointToLatLng(northEastPoint);\n+  const sw = mapInstance.getProjection().fromPointToLatLng(southWestPoint);\n+\n+  return {\n+    northEast: { lat: ne.lat(), lng: ne.lng() },\n+    southWest: { lat: sw.lat(), lng: sw.lng() },\n+  };\n+};\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182397371",
+    "id": 182397371,
+    "in_reply_to_id": 182395055,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5NzM3MQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 69,
+    "original_position": 47,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113182795,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397371/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182397371",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182398084"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182398084"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "In which context it's not great? For performance?",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T11:49:20Z",
+    "diff_hunk": "@@ -192,9 +193,32 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n     const hasMapMoveSinceLastRefine = () =>\n       widgetState.hasMapMoveSinceLastRefine;\n \n+    const getSearchBounds = helper => () => {\n+      const boundingBox =\n+        helper.state.insideBoundingBox &&\n+        helper.state.insideBoundingBox.split(',');\n+\n+      if (!boundingBox) {\n+        return undefined;\n+      }\n+\n+      return {\n+        northEast: {\n+          lat: parseFloat(boundingBox[0]),\n+          lng: parseFloat(boundingBox[1]),\n+        },\n+        southWest: {\n+          lat: parseFloat(boundingBox[2]),\n+          lng: parseFloat(boundingBox[3]),\n+        },\n+      };\n+    };\n+    let getSearchBoundsInstance;\n+\n     const init = initArgs => {\n       const { state, helper, instantSearchInstance } = initArgs;\n       const isFirstRendering = true;\n+      getSearchBoundsInstance = getSearchBounds(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182398084",
+    "id": 182398084,
+    "in_reply_to_id": 182394661,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjM5ODA4NA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 221,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113183668,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182398084/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182398084",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182401651"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182401651"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "There is the instanciation time, the garbage collecting and the temporary memory footprint. However, let's not do that here, for consistency with the rest of the implementation.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T12:05:02Z",
+    "diff_hunk": "@@ -192,9 +193,32 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n     const hasMapMoveSinceLastRefine = () =>\n       widgetState.hasMapMoveSinceLastRefine;\n \n+    const getSearchBounds = helper => () => {\n+      const boundingBox =\n+        helper.state.insideBoundingBox &&\n+        helper.state.insideBoundingBox.split(',');\n+\n+      if (!boundingBox) {\n+        return undefined;\n+      }\n+\n+      return {\n+        northEast: {\n+          lat: parseFloat(boundingBox[0]),\n+          lng: parseFloat(boundingBox[1]),\n+        },\n+        southWest: {\n+          lat: parseFloat(boundingBox[2]),\n+          lng: parseFloat(boundingBox[3]),\n+        },\n+      };\n+    };\n+    let getSearchBoundsInstance;\n+\n     const init = initArgs => {\n       const { state, helper, instantSearchInstance } = initArgs;\n       const isFirstRendering = true;\n+      getSearchBoundsInstance = getSearchBounds(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182401651",
+    "id": 182401651,
+    "in_reply_to_id": 182394661,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjQwMTY1MQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 221,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113188035,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182401651/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182401651",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182404945"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182404945"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Since we don't have performance issue I prefer to go for the more simple way, that is (IMO) to create the function every time. Indeed we pay some performance costs but we don't have any issue regarding performance for now. At the end both solutions work, I'm fine with it. Just let's be consistent across the widget.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T12:18:46Z",
+    "diff_hunk": "@@ -192,9 +193,32 @@ const connectGeoSearch = (renderFn, unmountFn) => {\n     const hasMapMoveSinceLastRefine = () =>\n       widgetState.hasMapMoveSinceLastRefine;\n \n+    const getSearchBounds = helper => () => {\n+      const boundingBox =\n+        helper.state.insideBoundingBox &&\n+        helper.state.insideBoundingBox.split(',');\n+\n+      if (!boundingBox) {\n+        return undefined;\n+      }\n+\n+      return {\n+        northEast: {\n+          lat: parseFloat(boundingBox[0]),\n+          lng: parseFloat(boundingBox[1]),\n+        },\n+        southWest: {\n+          lat: parseFloat(boundingBox[2]),\n+          lng: parseFloat(boundingBox[3]),\n+        },\n+      };\n+    };\n+    let getSearchBoundsInstance;\n+\n     const init = initArgs => {\n       const { state, helper, instantSearchInstance } = initArgs;\n       const isFirstRendering = true;\n+      getSearchBoundsInstance = getSearchBounds(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182404945",
+    "id": 182404945,
+    "in_reply_to_id": 182394661,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjQwNDk0NQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 221,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/connectors/geo-search/connectGeoSearch.js",
+    "position": 1,
+    "pull_request_review_id": 113191957,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182404945/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182404945",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182422799"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182422799"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's the story of my first CS project at university.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-18T13:19:38Z",
+    "diff_hunk": "@@ -20,7 +20,7 @@ const refineWithMap = ({ refine, paddingBoundingBox, mapInstance }) => {\n     .getProjection()\n     .fromLatLngToPoint(mapInstance.getBounds().getSouthWest());\n \n-  southWestPoint.x = southWestPoint.x + paddingBoundingBox.right / scale;\n+  southWestPoint.x = southWestPoint.x + paddingBoundingBox.left / scale;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r182422799",
+    "id": 182422799,
+    "in_reply_to_id": 182395228,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MjQyMjc5OQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 23,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 1,
+    "pull_request_review_id": 113213203,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 1,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182422799/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/182422799",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183322640"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183322640"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can you tell me what kind of test do you have in mind here @samouss ?",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-23T09:07:31Z",
+    "diff_hunk": "@@ -196,14 +232,26 @@ const renderer = (\n \n   // Fit the map to the markers when needed\n   const hasMarkers = renderState.markers.length;\n-  const center = renderState.mapInstance.getCenter();\n-  const zoom = renderState.mapInstance.getZoom();\n-  const isPositionInitialize = center !== undefined && zoom !== undefined;\n-  const enableFitBounds =\n-    !hasMapMoveSinceLastRefine() &&\n-    (!isRefinedWithMap() || (isRefinedWithMap() && !isPositionInitialize));\n-\n-  if (hasMarkers && enableFitBounds) {\n+  const boundingBoxFromConnector = getSearchBounds();\n+  const enableFitBounds = !hasMapMoveSinceLastRefine() && !isRefinedWithMap();\n+\n+  if (boundingBoxFromConnector && isRefinedWithMap()) {\n+    renderState.isUserInteraction = false;\n+    const boundsWithPadding = getBoundsWithPadding({\n+      bounds: boundingBoxFromConnector,\n+      paddingBoundingBox,\n+      mapInstance: renderState.mapInstance,\n+      googleReference,\n+    });\n+    renderState.mapInstance.fitBounds(\n+      new googleReference.maps.LatLngBounds(\n+        boundsWithPadding.southWest,\n+        boundsWithPadding.northEast\n+      ),\n+      0\n+    );\n+    renderState.isUserInteraction = true;\n+  } else if (hasMarkers && enableFitBounds) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183322640",
+    "id": 183322640,
+    "in_reply_to_id": 182395188,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MzMyMjY0MA==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 254,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 141,
+    "pull_request_review_id": 114297423,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183322640/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183322640",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183405779"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183405779"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We can check that both cases correctly call fitBounds with the proper values. In the previous implementation the two tests removed does this kind of assertions.",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-23T14:02:37Z",
+    "diff_hunk": "@@ -196,14 +232,26 @@ const renderer = (\n \n   // Fit the map to the markers when needed\n   const hasMarkers = renderState.markers.length;\n-  const center = renderState.mapInstance.getCenter();\n-  const zoom = renderState.mapInstance.getZoom();\n-  const isPositionInitialize = center !== undefined && zoom !== undefined;\n-  const enableFitBounds =\n-    !hasMapMoveSinceLastRefine() &&\n-    (!isRefinedWithMap() || (isRefinedWithMap() && !isPositionInitialize));\n-\n-  if (hasMarkers && enableFitBounds) {\n+  const boundingBoxFromConnector = getSearchBounds();\n+  const enableFitBounds = !hasMapMoveSinceLastRefine() && !isRefinedWithMap();\n+\n+  if (boundingBoxFromConnector && isRefinedWithMap()) {\n+    renderState.isUserInteraction = false;\n+    const boundsWithPadding = getBoundsWithPadding({\n+      bounds: boundingBoxFromConnector,\n+      paddingBoundingBox,\n+      mapInstance: renderState.mapInstance,\n+      googleReference,\n+    });\n+    renderState.mapInstance.fitBounds(\n+      new googleReference.maps.LatLngBounds(\n+        boundsWithPadding.southWest,\n+        boundsWithPadding.northEast\n+      ),\n+      0\n+    );\n+    renderState.isUserInteraction = true;\n+  } else if (hasMarkers && enableFitBounds) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183405779",
+    "id": 183405779,
+    "in_reply_to_id": 182395188,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4MzQwNTc3OQ==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 254,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 141,
+    "pull_request_review_id": 114396655,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183405779/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183405779",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183758316"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2890"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183758316"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I added a test @samouss  :) Not the greatest, but it's okayish",
+    "commit_id": "9b1d6104066f1a8cb951bd244133c5a9a3aac4a4",
+    "created_at": "2018-04-24T14:42:51Z",
+    "diff_hunk": "@@ -196,14 +232,26 @@ const renderer = (\n \n   // Fit the map to the markers when needed\n   const hasMarkers = renderState.markers.length;\n-  const center = renderState.mapInstance.getCenter();\n-  const zoom = renderState.mapInstance.getZoom();\n-  const isPositionInitialize = center !== undefined && zoom !== undefined;\n-  const enableFitBounds =\n-    !hasMapMoveSinceLastRefine() &&\n-    (!isRefinedWithMap() || (isRefinedWithMap() && !isPositionInitialize));\n-\n-  if (hasMarkers && enableFitBounds) {\n+  const boundingBoxFromConnector = getSearchBounds();\n+  const enableFitBounds = !hasMapMoveSinceLastRefine() && !isRefinedWithMap();\n+\n+  if (boundingBoxFromConnector && isRefinedWithMap()) {\n+    renderState.isUserInteraction = false;\n+    const boundsWithPadding = getBoundsWithPadding({\n+      bounds: boundingBoxFromConnector,\n+      paddingBoundingBox,\n+      mapInstance: renderState.mapInstance,\n+      googleReference,\n+    });\n+    renderState.mapInstance.fitBounds(\n+      new googleReference.maps.LatLngBounds(\n+        boundsWithPadding.southWest,\n+        boundsWithPadding.northEast\n+      ),\n+      0\n+    );\n+    renderState.isUserInteraction = true;\n+  } else if (hasMarkers && enableFitBounds) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2890#discussion_r183758316",
+    "id": 183758316,
+    "in_reply_to_id": 182395188,
+    "line": 269,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE4Mzc1ODMxNg==",
+    "original_commit_id": "885c941580b40b9b84873f4407716eb6686b4d72",
+    "original_line": 254,
+    "original_position": 90,
+    "original_start_line": null,
+    "path": "src/widgets/geo-search/GeoSearchRenderer.js",
+    "position": 141,
+    "pull_request_review_id": 114816969,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2890",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183758316/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2018-04-25T16:21:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/183758316",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  }
+]

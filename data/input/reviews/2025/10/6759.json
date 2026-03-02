@@ -1,0 +1,210 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2465421089"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6759"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465421089"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Is this import correct?",
+    "commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "created_at": "2025-10-27T12:11:00Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+/** @jsx h */\n+\n+import {\n+  createAutocompleteComponent,\n+  createAutocompleteIndexComponent,\n+  createAutocompletePanelComponent,\n+  createAutocompletePropGetters,\n+  createAutocompleteSuggestionComponent,\n+  cx,\n+} from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';\n+\n+import SearchBox, {\n+  type SearchBoxComponentCSSClasses,\n+} from '../../components/SearchBox/SearchBox';\n+import TemplateComponent from '../../components/Template/Template';\n+import {\n+  connectAutocomplete,\n+  connectSearchBox,\n+} from '../../connectors/index.umd';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2465421089",
+    "id": 2465421089,
+    "line": 21,
+    "node_id": "PRRC_kwDOAlnbOs6S81ch",
+    "original_commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "original_line": 21,
+    "original_position": 21,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/autocomplete/autocomplete.tsx",
+    "position": 21,
+    "pull_request_review_id": 3383166290,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6759",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465421089/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-27T12:53:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465421089",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2465469004"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6759"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465469004"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think in a future PR, we could move these into a shared file. I believe there are some parts of the chat widgets that could use this approach.",
+    "commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "created_at": "2025-10-27T12:28:38Z",
+    "diff_hunk": "@@ -0,0 +1,249 @@\n+import type { ComponentProps } from '../../types';\n+\n+type BaseHit = Record<string, unknown>;\n+\n+export type AutocompleteIndexConfig<TItem extends BaseHit> = {\n+  indexName: string;\n+  getQuery?: (item: TItem) => string;\n+  getURL?: (item: TItem) => string;\n+  onSelect?: (params: {\n+    item: TItem;\n+    getQuery: () => string;\n+    getURL: () => string;\n+    setQuery: (query: string) => void;\n+  }) => void;\n+};\n+\n+type GetInputProps = () => Partial<ComponentProps<'input'>>;\n+\n+type GetItemProps = (\n+  item: { __indexName: string } & Record<string, unknown>,\n+  index: number\n+) => Pick<ComponentProps<'li'>, 'id' | 'role' | 'aria-selected'> & {\n+  onSelect: () => void;\n+};\n+\n+type GetPanelProps = () => Pick<\n+  ComponentProps<'div'>,\n+  'id' | 'hidden' | 'role' | 'aria-labelledby'\n+>;\n+\n+type GetRootProps = () => Pick<ComponentProps<'div'>, 'ref'>;\n+\n+type CreateAutocompletePropGettersParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useId: () => string;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useRef: <TType>(initialValue: TType | null) => { current: TType | null };\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2465469004",
+    "id": 2465469004,
+    "line": 41,
+    "node_id": "PRRC_kwDOAlnbOs6S9BJM",
+    "original_commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "original_line": 41,
+    "original_position": 41,
+    "original_start_line": 33,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompletePropGetters.ts",
+    "position": 41,
+    "pull_request_review_id": 3383166290,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6759",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465469004/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 33,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2025-10-27T12:53:08Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2465469004",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2468470490"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6759"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2468470490"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes, it prevents us from importing the chat, so rollup can properly bundle the UMD package.",
+    "commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "created_at": "2025-10-28T08:37:14Z",
+    "diff_hunk": "@@ -0,0 +1,370 @@\n+/** @jsx h */\n+\n+import {\n+  createAutocompleteComponent,\n+  createAutocompleteIndexComponent,\n+  createAutocompletePanelComponent,\n+  createAutocompletePropGetters,\n+  createAutocompleteSuggestionComponent,\n+  cx,\n+} from 'instantsearch-ui-components';\n+import { Fragment, h, render } from 'preact';\n+import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';\n+\n+import SearchBox, {\n+  type SearchBoxComponentCSSClasses,\n+} from '../../components/SearchBox/SearchBox';\n+import TemplateComponent from '../../components/Template/Template';\n+import {\n+  connectAutocomplete,\n+  connectSearchBox,\n+} from '../../connectors/index.umd';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6759#discussion_r2468470490",
+    "id": 2468470490,
+    "in_reply_to_id": 2465421089,
+    "line": 21,
+    "node_id": "PRRC_kwDOAlnbOs6TId7a",
+    "original_commit_id": "bb9621bbe758df97246daaad2457f6306db8142e",
+    "original_line": 21,
+    "original_position": 21,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/autocomplete/autocomplete.tsx",
+    "position": 21,
+    "pull_request_review_id": 3387355650,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6759",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2468470490/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-10-28T08:37:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2468470490",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

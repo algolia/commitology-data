@@ -1,0 +1,141 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5528#discussion_r1129482190"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5528"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129482190"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not sure to understand why we need to return a boolean from the handler?",
+    "commit_id": "4c1b558e3f61326e8f602837dff371faf178487e",
+    "created_at": "2023-03-08T14:05:16Z",
+    "diff_hunk": "@@ -2,23 +2,58 @@\n \n import { h } from 'preact';\n \n-import { readDataAttributes, hasDataAttributes } from '../../helpers/insights';\n-import { deserializePayload } from '../utils';\n+import { readDataAttributes } from '../../helpers/insights';\n+import { deserializePayload, warning } from '../utils';\n \n import type { InsightsEvent } from '../../middlewares/createInsightsMiddleware';\n import type { InsightsClient } from '../../types';\n \n-type WithInsightsListenerProps = {\n-  [key: string]: unknown;\n-  insights: InsightsClient;\n-  sendEvent?: (event: InsightsEvent) => void;\n+export type InsightsEventHandlerOptions = {\n+  insights?: InsightsClient;\n+  sendEvent: (event: InsightsEvent) => void;\n };\n \n-const findInsightsTarget = (\n+export const createInsightsEventHandler =\n+  ({ insights, sendEvent }: InsightsEventHandlerOptions) =>\n+  (event: MouseEvent): boolean => {\n+    let hasSentAnEvent = false;\n+\n+    // new way, e.g. bindEvent(\"click\", hit, \"Hit clicked\")\n+    const insightsThroughSendEvent = findInsightsTarget(\n+      event.target as HTMLElement | null,\n+      event.currentTarget as HTMLElement | null,\n+      (element) => element.hasAttribute('data-insights-event')\n+    );\n+\n+    if (insightsThroughSendEvent) {\n+      const payload = parseInsightsEvent(insightsThroughSendEvent);\n+\n+      payload.forEach((single) => sendEvent(single));\n+      hasSentAnEvent = true;\n+    }\n+\n+    // old way, e.g. instantsearch.insights(\"clickedObjectIDsAfterSearch\", { .. })\n+    const insightsThroughFunction = findInsightsTarget(\n+      event.target as HTMLElement | null,\n+      event.currentTarget as HTMLElement | null,\n+      (element) =>\n+        element.hasAttribute('data-insights-method') &&\n+        element.hasAttribute('data-insights-payload')\n+    );\n+    if (insightsThroughFunction) {\n+      const { method, payload } = readDataAttributes(insightsThroughFunction);\n+      insights!(method, payload);\n+      hasSentAnEvent = true;\n+    }\n+\n+    return hasSentAnEvent;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5528#discussion_r1129482190",
+    "id": 1129482190,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5DUofO",
+    "original_commit_id": "b76e7049388ed80925dad13dc69734b8a51c065a",
+    "original_line": 49,
+    "original_position": 55,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 1330737798,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5528",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129482190/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-03-08T14:05:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129482190",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5528#discussion_r1129507217"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5528"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129507217"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it's not really needed for this PR indeed, it was with #5527 in mind. I'll revert here",
+    "commit_id": "4c1b558e3f61326e8f602837dff371faf178487e",
+    "created_at": "2023-03-08T14:19:48Z",
+    "diff_hunk": "@@ -2,23 +2,58 @@\n \n import { h } from 'preact';\n \n-import { readDataAttributes, hasDataAttributes } from '../../helpers/insights';\n-import { deserializePayload } from '../utils';\n+import { readDataAttributes } from '../../helpers/insights';\n+import { deserializePayload, warning } from '../utils';\n \n import type { InsightsEvent } from '../../middlewares/createInsightsMiddleware';\n import type { InsightsClient } from '../../types';\n \n-type WithInsightsListenerProps = {\n-  [key: string]: unknown;\n-  insights: InsightsClient;\n-  sendEvent?: (event: InsightsEvent) => void;\n+export type InsightsEventHandlerOptions = {\n+  insights?: InsightsClient;\n+  sendEvent: (event: InsightsEvent) => void;\n };\n \n-const findInsightsTarget = (\n+export const createInsightsEventHandler =\n+  ({ insights, sendEvent }: InsightsEventHandlerOptions) =>\n+  (event: MouseEvent): boolean => {\n+    let hasSentAnEvent = false;\n+\n+    // new way, e.g. bindEvent(\"click\", hit, \"Hit clicked\")\n+    const insightsThroughSendEvent = findInsightsTarget(\n+      event.target as HTMLElement | null,\n+      event.currentTarget as HTMLElement | null,\n+      (element) => element.hasAttribute('data-insights-event')\n+    );\n+\n+    if (insightsThroughSendEvent) {\n+      const payload = parseInsightsEvent(insightsThroughSendEvent);\n+\n+      payload.forEach((single) => sendEvent(single));\n+      hasSentAnEvent = true;\n+    }\n+\n+    // old way, e.g. instantsearch.insights(\"clickedObjectIDsAfterSearch\", { .. })\n+    const insightsThroughFunction = findInsightsTarget(\n+      event.target as HTMLElement | null,\n+      event.currentTarget as HTMLElement | null,\n+      (element) =>\n+        element.hasAttribute('data-insights-method') &&\n+        element.hasAttribute('data-insights-payload')\n+    );\n+    if (insightsThroughFunction) {\n+      const { method, payload } = readDataAttributes(insightsThroughFunction);\n+      insights!(method, payload);\n+      hasSentAnEvent = true;\n+    }\n+\n+    return hasSentAnEvent;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5528#discussion_r1129507217",
+    "id": 1129507217,
+    "in_reply_to_id": 1129482190,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5DUumR",
+    "original_commit_id": "b76e7049388ed80925dad13dc69734b8a51c065a",
+    "original_line": 49,
+    "original_position": 55,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/lib/insights/listener.tsx",
+    "position": 1,
+    "pull_request_review_id": 1330769689,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5528",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129507217/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-03-08T14:19:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1129507217",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,141 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6829#discussion_r2598732174"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6829"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598732174"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm also wondering if something like this would be possible with custom eslint rules. Would be better in terms of dx if all checks are possible there. Not now ofc, something to keep in mind later.",
+    "commit_id": "83b3b9c956fc26fe2addf123d69a627fd5b443a4",
+    "created_at": "2025-12-08T13:54:34Z",
+    "diff_hunk": "@@ -90,34 +37,156 @@ function delint(sourceFile: ts.SourceFile) {\n     ts.forEachChild(node, delintNode);\n   }\n \n-  function report(node: ts.Node, message: string) {\n-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(\n-      node.getStart()\n+  function report(node: ts.Node) {\n+    return (message: string) => {\n+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(\n+        node.getStart()\n+      );\n+      errors.push({\n+        file: sourceFile.fileName,\n+        line: line + 1,\n+        character: character + 1,\n+        message,\n+      });\n+    };\n+  }\n+\n+  return errors;\n+}\n+\n+function validateIcons(\n+  functionDeclaration: ts.FunctionDeclaration,\n+  _filename: string,\n+  report: (message: string) => void\n+) {\n+  if (\n+    !(\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword\n+      ) &&\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword\n+      )\n+    )\n+  ) {\n+    return;\n+  }\n+\n+  const actualName = functionDeclaration.name?.getText();\n+\n+  if (!actualName || !/^[A-Z].*Icon$/.test(actualName)) {\n+    report(\n+      `Icon function should start with a capital letter and end with 'Icon', but was '${actualName}' instead.`\n     );\n-    errors.push({\n-      file: sourceFile.fileName,\n-      line: line + 1,\n-      character: character + 1,\n-      message,\n-    });\n   }\n \n-  return !exportsValidFunctionName ? errors : [];\n+  const parameters = functionDeclaration.parameters;\n+  if (parameters.length !== 1) {\n+    report(`Icon function should accept exactly one parameter.`);\n+  }\n+\n+  const returnType = functionDeclaration.type;\n+  if (returnType && returnType.getText() !== 'JSX.Element') {\n+    report(\n+      `Icon function should return JSX.Element. (got '${returnType.getText()}')`\n+    );\n+  }\n+}\n+\n+function validateComponents(\n+  functionDeclaration: ts.FunctionDeclaration,\n+  filename: string,\n+  report: (message: string) => void\n+) {\n+  const componentName = `create${filename}Component`;\n+  if (\n+    !(\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword\n+      ) &&\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword\n+      )\n+    )\n+  ) {\n+    return;\n+  }\n+\n+  const actualName = functionDeclaration.name?.getText();\n+\n+  if (actualName?.startsWith('generate')) {\n+    // Allowed for generateSomething helper functions\n+    return;\n+  }\n+\n+  if (actualName !== componentName) {\n+    report(\n+      `Exported component should be named '${componentName}', but was '${actualName}' instead.`\n+    );\n+  }\n+\n+  const returnType = functionDeclaration.type as ts.FunctionTypeNode;\n+\n+  if (returnType.kind !== ts.SyntaxKind.FunctionType) {\n+    report(`Exported component's return type should be a function.`);\n+  }\n+\n+  if (\n+    returnType.kind === ts.SyntaxKind.FunctionType &&\n+    returnType.parameters.length > 1\n+  ) {\n+    report(\n+      `Exported component's return type should have zero or one parameter`\n+    );\n+  }\n+\n+  if (\n+    functionDeclaration.type?.kind === ts.SyntaxKind.FunctionType &&\n+    (functionDeclaration.type as ts.FunctionTypeNode).parameters[0] &&\n+    (\n+      functionDeclaration.type as ts.FunctionTypeNode\n+    ).parameters[0].name.getText() !== 'userProps'\n+  ) {\n+    report(`Exported component's return type should be called 'userProps'.`);\n+  }\n+}\n+\n+const componentsDir = path.join(__dirname, '../dist/es/components');\n+const files: Array<{ file: string; subdir: string }> = [];\n+\n+function walkDir(dir: string, relativePath: string = '') {\n+  const entries = fs.readdirSync(dir, { withFileTypes: true });\n+\n+  for (const entry of entries) {\n+    const fullRelativePath = relativePath\n+      ? path.join(relativePath, entry.name)\n+      : entry.name;\n+\n+    if (entry.isDirectory()) {\n+      walkDir(path.join(dir, entry.name), fullRelativePath);\n+    } else if (\n+      entry.name.endsWith('.d.ts') &&\n+      // Barrel files\n+      !entry.name.startsWith('index') &&\n+      // Helper files (not components)\n+      !entry.name.startsWith('create')\n+    ) {\n+      const subdir = path.dirname(fullRelativePath);\n+      files.push({ file: entry.name, subdir: subdir === '.' ? '' : subdir });\n+    }\n+  }\n }\n \n-const files = fs\n-  .readdirSync(path.join(__dirname, '../dist/es/components'))\n-  .filter((file) => file.endsWith('.d.ts') && !file.startsWith('index'));\n+walkDir(componentsDir);\n \n describe('Exposes correct types', () => {\n-  describe.each(files)('%s', (file) => {\n+  describe.each(files)('$subdir/$file', ({ file, subdir }) => {\n     it('has no errors', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6829#discussion_r2598732174",
+    "id": 2598732174,
+    "line": 240,
+    "node_id": "PRRC_kwDOAlnbOs6a5YGO",
+    "original_commit_id": "5f5f7811774c4ac2a0be4c22d1fa7682848adac0",
+    "original_line": 184,
+    "original_position": 242,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/__tests__/types.test.ts",
+    "position": 306,
+    "pull_request_review_id": 3552204812,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6829",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598732174/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-12-08T13:54:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598732174",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/29524828?v=4",
+      "events_url": "https://api.github.com/users/shaejaz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shaejaz/followers",
+      "following_url": "https://api.github.com/users/shaejaz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shaejaz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shaejaz",
+      "id": 29524828,
+      "login": "shaejaz",
+      "node_id": "MDQ6VXNlcjI5NTI0ODI4",
+      "organizations_url": "https://api.github.com/users/shaejaz/orgs",
+      "received_events_url": "https://api.github.com/users/shaejaz/received_events",
+      "repos_url": "https://api.github.com/users/shaejaz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shaejaz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shaejaz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shaejaz",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6829#discussion_r2598846921"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6829"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598846921"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, probably would be better but this was already introduced in the past so was easier to amend it than restart. ",
+    "commit_id": "83b3b9c956fc26fe2addf123d69a627fd5b443a4",
+    "created_at": "2025-12-08T14:27:18Z",
+    "diff_hunk": "@@ -90,34 +37,156 @@ function delint(sourceFile: ts.SourceFile) {\n     ts.forEachChild(node, delintNode);\n   }\n \n-  function report(node: ts.Node, message: string) {\n-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(\n-      node.getStart()\n+  function report(node: ts.Node) {\n+    return (message: string) => {\n+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(\n+        node.getStart()\n+      );\n+      errors.push({\n+        file: sourceFile.fileName,\n+        line: line + 1,\n+        character: character + 1,\n+        message,\n+      });\n+    };\n+  }\n+\n+  return errors;\n+}\n+\n+function validateIcons(\n+  functionDeclaration: ts.FunctionDeclaration,\n+  _filename: string,\n+  report: (message: string) => void\n+) {\n+  if (\n+    !(\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword\n+      ) &&\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword\n+      )\n+    )\n+  ) {\n+    return;\n+  }\n+\n+  const actualName = functionDeclaration.name?.getText();\n+\n+  if (!actualName || !/^[A-Z].*Icon$/.test(actualName)) {\n+    report(\n+      `Icon function should start with a capital letter and end with 'Icon', but was '${actualName}' instead.`\n     );\n-    errors.push({\n-      file: sourceFile.fileName,\n-      line: line + 1,\n-      character: character + 1,\n-      message,\n-    });\n   }\n \n-  return !exportsValidFunctionName ? errors : [];\n+  const parameters = functionDeclaration.parameters;\n+  if (parameters.length !== 1) {\n+    report(`Icon function should accept exactly one parameter.`);\n+  }\n+\n+  const returnType = functionDeclaration.type;\n+  if (returnType && returnType.getText() !== 'JSX.Element') {\n+    report(\n+      `Icon function should return JSX.Element. (got '${returnType.getText()}')`\n+    );\n+  }\n+}\n+\n+function validateComponents(\n+  functionDeclaration: ts.FunctionDeclaration,\n+  filename: string,\n+  report: (message: string) => void\n+) {\n+  const componentName = `create${filename}Component`;\n+  if (\n+    !(\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword\n+      ) &&\n+      functionDeclaration.modifiers?.some(\n+        (modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword\n+      )\n+    )\n+  ) {\n+    return;\n+  }\n+\n+  const actualName = functionDeclaration.name?.getText();\n+\n+  if (actualName?.startsWith('generate')) {\n+    // Allowed for generateSomething helper functions\n+    return;\n+  }\n+\n+  if (actualName !== componentName) {\n+    report(\n+      `Exported component should be named '${componentName}', but was '${actualName}' instead.`\n+    );\n+  }\n+\n+  const returnType = functionDeclaration.type as ts.FunctionTypeNode;\n+\n+  if (returnType.kind !== ts.SyntaxKind.FunctionType) {\n+    report(`Exported component's return type should be a function.`);\n+  }\n+\n+  if (\n+    returnType.kind === ts.SyntaxKind.FunctionType &&\n+    returnType.parameters.length > 1\n+  ) {\n+    report(\n+      `Exported component's return type should have zero or one parameter`\n+    );\n+  }\n+\n+  if (\n+    functionDeclaration.type?.kind === ts.SyntaxKind.FunctionType &&\n+    (functionDeclaration.type as ts.FunctionTypeNode).parameters[0] &&\n+    (\n+      functionDeclaration.type as ts.FunctionTypeNode\n+    ).parameters[0].name.getText() !== 'userProps'\n+  ) {\n+    report(`Exported component's return type should be called 'userProps'.`);\n+  }\n+}\n+\n+const componentsDir = path.join(__dirname, '../dist/es/components');\n+const files: Array<{ file: string; subdir: string }> = [];\n+\n+function walkDir(dir: string, relativePath: string = '') {\n+  const entries = fs.readdirSync(dir, { withFileTypes: true });\n+\n+  for (const entry of entries) {\n+    const fullRelativePath = relativePath\n+      ? path.join(relativePath, entry.name)\n+      : entry.name;\n+\n+    if (entry.isDirectory()) {\n+      walkDir(path.join(dir, entry.name), fullRelativePath);\n+    } else if (\n+      entry.name.endsWith('.d.ts') &&\n+      // Barrel files\n+      !entry.name.startsWith('index') &&\n+      // Helper files (not components)\n+      !entry.name.startsWith('create')\n+    ) {\n+      const subdir = path.dirname(fullRelativePath);\n+      files.push({ file: entry.name, subdir: subdir === '.' ? '' : subdir });\n+    }\n+  }\n }\n \n-const files = fs\n-  .readdirSync(path.join(__dirname, '../dist/es/components'))\n-  .filter((file) => file.endsWith('.d.ts') && !file.startsWith('index'));\n+walkDir(componentsDir);\n \n describe('Exposes correct types', () => {\n-  describe.each(files)('%s', (file) => {\n+  describe.each(files)('$subdir/$file', ({ file, subdir }) => {\n     it('has no errors', () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6829#discussion_r2598846921",
+    "id": 2598846921,
+    "in_reply_to_id": 2598732174,
+    "line": 240,
+    "node_id": "PRRC_kwDOAlnbOs6a50HJ",
+    "original_commit_id": "5f5f7811774c4ac2a0be4c22d1fa7682848adac0",
+    "original_line": 184,
+    "original_position": 242,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/__tests__/types.test.ts",
+    "position": 306,
+    "pull_request_review_id": 3552353664,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6829",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598846921/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-12-08T14:27:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2598846921",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

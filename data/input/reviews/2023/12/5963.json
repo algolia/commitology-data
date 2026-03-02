@@ -1,0 +1,279 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425249102"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5963"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425249102"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "not relevant now, but I wonder how we'll deal with these differences with only one JSX source",
+    "commit_id": "26e1aaf74c42b6adec65888a42a6a1a8cd68ddfd",
+    "created_at": "2023-12-13T11:54:11Z",
+    "diff_hunk": "@@ -184,6 +189,9 @@ class SearchBox extends Component<\n             spellCheck=\"false\"\n             maxLength={512}\n             onInput={this.onInput}\n+            // see: https://github.com/preactjs/preact/issues/1978\n+            // eslint-disable-next-line react/no-unknown-property\n+            oncompositionend={this.onInput}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425249102",
+    "id": 1425249102,
+    "line": 194,
+    "node_id": "PRRC_kwDOAlnbOs5U85NO",
+    "original_commit_id": "838318719d9b14433ec13e46a35fb9eef4c897a4",
+    "original_line": 194,
+    "original_position": 29,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/components/SearchBox/SearchBox.tsx",
+    "position": 29,
+    "pull_request_review_id": 1779472587,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5963",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425249102/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-12-13T11:56:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425249102",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425251441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5963"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425251441"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "reset the mock after setup maybe so it's clear it's only one?",
+    "commit_id": "26e1aaf74c42b6adec65888a42a6a1a8cd68ddfd",
+    "created_at": "2023-12-13T11:56:20Z",
+    "diff_hunk": "@@ -307,6 +307,72 @@ export function createOptionsTests(\n       expect(screen.getByRole('searchbox')).toHaveValue('iPhone');\n     });\n \n+    test('refines only when not composition is complete', async () => {\n+      const searchClient = createSearchClient({});\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      // Typing 木 using the Wubihua input method\n+      // see:\n+      // - https://en.wikipedia.org/wiki/Stroke_count_method\n+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event\n+      const character = '木';\n+      const strokes = ['一', '丨', '丿', '丶', character];\n+\n+      await act(async () => {\n+        await wait(0);\n+\n+        strokes.forEach((stroke, index) => {\n+          const isFirst = index === 0;\n+          const isLast = index === strokes.length - 1;\n+          const query = isLast ? stroke : strokes.slice(0, index + 1).join('');\n+\n+          if (isFirst) {\n+            fireEvent.compositionStart(screen.getByRole('searchbox'));\n+          }\n+\n+          fireEvent.compositionUpdate(screen.getByRole('searchbox'), {\n+            data: query,\n+          });\n+\n+          fireEvent.input(screen.getByRole('searchbox'), {\n+            isComposing: true,\n+            target: {\n+              value: query,\n+            },\n+          });\n+\n+          if (isLast) {\n+            fireEvent.compositionEnd(screen.getByRole('searchbox'), {\n+              data: query,\n+              target: {\n+                value: query,\n+              },\n+            });\n+          }\n+        });\n+      });\n+\n+      expect(screen.getByRole('searchbox')).toHaveValue(character);\n+\n+      expect(searchClient.search).toHaveBeenCalledTimes(2);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425251441",
+    "id": 1425251441,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5U85xx",
+    "original_commit_id": "838318719d9b14433ec13e46a35fb9eef4c897a4",
+    "original_line": 364,
+    "original_position": 67,
+    "original_start_line": null,
+    "path": "tests/common/widgets/search-box/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1779472587,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5963",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425251441/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-12-13T11:56:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425251441",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425327129"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5963"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425327129"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n        castToJestMock(searchClient.search).mockClear();\r\n```\r\n\r\nalso why not right after setup + wait 0, before starting to compose?\r\n\r\n```\r\nawait act(async () => {\r\n  await wait(0);\r\n  castToJestMock(searchClient.search).mockClear();\r\n});\r\n\r\n// ... character etc\r\n```",
+    "commit_id": "26e1aaf74c42b6adec65888a42a6a1a8cd68ddfd",
+    "created_at": "2023-12-13T13:04:18Z",
+    "diff_hunk": "@@ -307,6 +307,74 @@ export function createOptionsTests(\n       expect(screen.getByRole('searchbox')).toHaveValue('iPhone');\n     });\n \n+    test('refines query only when composition is complete', async () => {\n+      const searchClient = createSearchClient({});\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      // Typing 木 using the Wubihua input method\n+      // see:\n+      // - https://en.wikipedia.org/wiki/Stroke_count_method\n+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event\n+      const character = '木';\n+      const strokes = ['一', '丨', '丿', '丶', character];\n+\n+      await act(async () => {\n+        await wait(0);\n+\n+        searchClient.search.mockClear();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425327129",
+    "id": 1425327129,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5U9MQZ",
+    "original_commit_id": "64018f2a3051f5cd601a1241efc41e3c26d2ac0a",
+    "original_line": 331,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "tests/common/widgets/search-box/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1779595231,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5963",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425327129/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-12-13T13:04:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425327129",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425336891"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5963"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425336891"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I need to wrap the events inside of `act()` so I'm reusing the one that waits for initialization.",
+    "commit_id": "26e1aaf74c42b6adec65888a42a6a1a8cd68ddfd",
+    "created_at": "2023-12-13T13:12:57Z",
+    "diff_hunk": "@@ -307,6 +307,74 @@ export function createOptionsTests(\n       expect(screen.getByRole('searchbox')).toHaveValue('iPhone');\n     });\n \n+    test('refines query only when composition is complete', async () => {\n+      const searchClient = createSearchClient({});\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: {},\n+      });\n+\n+      // Typing 木 using the Wubihua input method\n+      // see:\n+      // - https://en.wikipedia.org/wiki/Stroke_count_method\n+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event\n+      const character = '木';\n+      const strokes = ['一', '丨', '丿', '丶', character];\n+\n+      await act(async () => {\n+        await wait(0);\n+\n+        searchClient.search.mockClear();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5963#discussion_r1425336891",
+    "id": 1425336891,
+    "in_reply_to_id": 1425327129,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5U9Oo7",
+    "original_commit_id": "64018f2a3051f5cd601a1241efc41e3c26d2ac0a",
+    "original_line": 331,
+    "original_position": 34,
+    "original_start_line": null,
+    "path": "tests/common/widgets/search-box/options.ts",
+    "position": 1,
+    "pull_request_review_id": 1779611040,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5963",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425336891/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2023-12-13T13:12:57Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1425336891",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,626 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498233330"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498233330"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this implies we're saving recent searches even if showRecent is false. Should maybe the whole storage be conditional based on showRecent?",
+    "commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "created_at": "2025-11-06T09:39:54Z",
+    "diff_hunk": "@@ -0,0 +1,139 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | object;\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storage = useMemo(() => createStorage({ limit: 5 }), []);\n+    const [snapshot, setSnapshot] = useState(storage.getSnapshot());\n+    useEffect(() => {\n+      storage.registerUpdateListener(() => {\n+        setSnapshot(storage.getSnapshot());\n+      });\n+      return () => {\n+        storage.unregisterUpdateListener();\n+      };\n+    }, [storage]);\n+\n+    const storageHits = snapshot.getAll(query).map((value) => ({\n+      objectID: value,\n+      query: value,\n+      __indexName: 'recent-searches',\n+    }));\n+\n+    const indicesForPropGetters = [...indices];\n+    const indicesConfigForPropGetters = [...indicesConfig];\n+    if (showRecent) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498233330",
+    "id": 2498233330,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6U6APy",
+    "original_commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "original_line": 46,
+    "original_position": 46,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 1,
+    "pull_request_review_id": 3427193111,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498233330/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-06T09:48:33Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498233330",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498263383"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498263383"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Is there some way where we link the autocomplete setup with the recent searches that are being presented? Do we do that in autocomplete.js? \r\n\r\nWhat if there's multiple autocomplete instances in multiple places in the app?",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-06T09:47:48Z",
+    "diff_hunk": "@@ -0,0 +1,139 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | object;\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storage = useMemo(() => createStorage({ limit: 5 }), []);\n+    const [snapshot, setSnapshot] = useState(storage.getSnapshot());\n+    useEffect(() => {\n+      storage.registerUpdateListener(() => {\n+        setSnapshot(storage.getSnapshot());\n+      });\n+      return () => {\n+        storage.unregisterUpdateListener();\n+      };\n+    }, [storage]);\n+\n+    const storageHits = snapshot.getAll(query).map((value) => ({\n+      objectID: value,\n+      query: value,\n+      __indexName: 'recent-searches',\n+    }));\n+\n+    const indicesForPropGetters = [...indices];\n+    const indicesConfigForPropGetters = [...indicesConfig];\n+    if (showRecent) {\n+      indicesForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        indexId: 'recent-searches',\n+        hits: storageHits,\n+      });\n+      indicesConfigForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        // @ts-expect-error - we know it has query as it's generated from storageHits\n+        getQuery: (item) => item.query,\n+      });\n+    }\n+\n+    return {\n+      storage,\n+      storageHits,\n+      indicesForPropGetters,\n+      indicesConfigForPropGetters,\n+    };\n+  };\n+}\n+\n+const LOCAL_STORAGE_KEY_TEST = 'test-localstorage-support';\n+const LOCAL_STORAGE_KEY = 'autocomplete-recent-searches';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498263383",
+    "id": 2498263383,
+    "line": 83,
+    "node_id": "PRRC_kwDOAlnbOs6U6HlX",
+    "original_commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "original_line": 69,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 83,
+    "pull_request_review_id": 3427193111,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498263383/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-06T09:48:33Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498263383",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498337195"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498337195"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Can't call hooks conditionally but I could return a storage with empty function or something yeah",
+    "commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "created_at": "2025-11-06T10:09:55Z",
+    "diff_hunk": "@@ -0,0 +1,139 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | object;\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storage = useMemo(() => createStorage({ limit: 5 }), []);\n+    const [snapshot, setSnapshot] = useState(storage.getSnapshot());\n+    useEffect(() => {\n+      storage.registerUpdateListener(() => {\n+        setSnapshot(storage.getSnapshot());\n+      });\n+      return () => {\n+        storage.unregisterUpdateListener();\n+      };\n+    }, [storage]);\n+\n+    const storageHits = snapshot.getAll(query).map((value) => ({\n+      objectID: value,\n+      query: value,\n+      __indexName: 'recent-searches',\n+    }));\n+\n+    const indicesForPropGetters = [...indices];\n+    const indicesConfigForPropGetters = [...indicesConfig];\n+    if (showRecent) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498337195",
+    "id": 2498337195,
+    "in_reply_to_id": 2498233330,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs6U6Zmr",
+    "original_commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "original_line": 46,
+    "original_position": 46,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 1,
+    "pull_request_review_id": 3427330048,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498337195/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-06T10:09:55Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498337195",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498343295"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498343295"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "I think we could but the original lib doesn't, even though it does have code to handle multiple autocomplete components on a page (which I don't think anyone needs really)",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-06T10:11:40Z",
+    "diff_hunk": "@@ -0,0 +1,139 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | object;\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storage = useMemo(() => createStorage({ limit: 5 }), []);\n+    const [snapshot, setSnapshot] = useState(storage.getSnapshot());\n+    useEffect(() => {\n+      storage.registerUpdateListener(() => {\n+        setSnapshot(storage.getSnapshot());\n+      });\n+      return () => {\n+        storage.unregisterUpdateListener();\n+      };\n+    }, [storage]);\n+\n+    const storageHits = snapshot.getAll(query).map((value) => ({\n+      objectID: value,\n+      query: value,\n+      __indexName: 'recent-searches',\n+    }));\n+\n+    const indicesForPropGetters = [...indices];\n+    const indicesConfigForPropGetters = [...indicesConfig];\n+    if (showRecent) {\n+      indicesForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        indexId: 'recent-searches',\n+        hits: storageHits,\n+      });\n+      indicesConfigForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        // @ts-expect-error - we know it has query as it's generated from storageHits\n+        getQuery: (item) => item.query,\n+      });\n+    }\n+\n+    return {\n+      storage,\n+      storageHits,\n+      indicesForPropGetters,\n+      indicesConfigForPropGetters,\n+    };\n+  };\n+}\n+\n+const LOCAL_STORAGE_KEY_TEST = 'test-localstorage-support';\n+const LOCAL_STORAGE_KEY = 'autocomplete-recent-searches';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2498343295",
+    "id": 2498343295,
+    "in_reply_to_id": 2498263383,
+    "line": 83,
+    "node_id": "PRRC_kwDOAlnbOs6U6bF_",
+    "original_commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "original_line": 69,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 83,
+    "pull_request_review_id": 3427338999,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498343295/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-06T10:11:41Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2498343295",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/9158954?v=4",
+      "events_url": "https://api.github.com/users/aymeric-giraudet/events{/privacy}",
+      "followers_url": "https://api.github.com/users/aymeric-giraudet/followers",
+      "following_url": "https://api.github.com/users/aymeric-giraudet/following{/other_user}",
+      "gists_url": "https://api.github.com/users/aymeric-giraudet/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/aymeric-giraudet",
+      "id": 9158954,
+      "login": "aymeric-giraudet",
+      "node_id": "MDQ6VXNlcjkxNTg5NTQ=",
+      "organizations_url": "https://api.github.com/users/aymeric-giraudet/orgs",
+      "received_events_url": "https://api.github.com/users/aymeric-giraudet/received_events",
+      "repos_url": "https://api.github.com/users/aymeric-giraudet/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/aymeric-giraudet/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/aymeric-giraudet/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/aymeric-giraudet",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2502065225"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2502065225"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "You could have a site-wide autocomplete and one for example just for store finder. I think there are some use cases for multi-instance. Maybe storage should be attached to the original index? ",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-07T08:13:16Z",
+    "diff_hunk": "@@ -0,0 +1,139 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | object;\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storage = useMemo(() => createStorage({ limit: 5 }), []);\n+    const [snapshot, setSnapshot] = useState(storage.getSnapshot());\n+    useEffect(() => {\n+      storage.registerUpdateListener(() => {\n+        setSnapshot(storage.getSnapshot());\n+      });\n+      return () => {\n+        storage.unregisterUpdateListener();\n+      };\n+    }, [storage]);\n+\n+    const storageHits = snapshot.getAll(query).map((value) => ({\n+      objectID: value,\n+      query: value,\n+      __indexName: 'recent-searches',\n+    }));\n+\n+    const indicesForPropGetters = [...indices];\n+    const indicesConfigForPropGetters = [...indicesConfig];\n+    if (showRecent) {\n+      indicesForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        indexId: 'recent-searches',\n+        hits: storageHits,\n+      });\n+      indicesConfigForPropGetters.unshift({\n+        indexName: 'recent-searches',\n+        // @ts-expect-error - we know it has query as it's generated from storageHits\n+        getQuery: (item) => item.query,\n+      });\n+    }\n+\n+    return {\n+      storage,\n+      storageHits,\n+      indicesForPropGetters,\n+      indicesConfigForPropGetters,\n+    };\n+  };\n+}\n+\n+const LOCAL_STORAGE_KEY_TEST = 'test-localstorage-support';\n+const LOCAL_STORAGE_KEY = 'autocomplete-recent-searches';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2502065225",
+    "id": 2502065225,
+    "in_reply_to_id": 2498263383,
+    "line": 83,
+    "node_id": "PRRC_kwDOAlnbOs6VInxJ",
+    "original_commit_id": "8f7e4a4518b84736c35cf5ad13faad5357bfc2c4",
+    "original_line": 69,
+    "original_position": 69,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 83,
+    "pull_request_review_id": 3432176292,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2502065225/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-07T08:13:16Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2502065225",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503758238"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758238"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n              classNames.icon\n```",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-07T14:11:41Z",
+    "diff_hunk": "@@ -0,0 +1,113 @@\n+/** @jsx createElement */\n+\n+import { cx } from '../../lib';\n+\n+import { AutocompleteClockIcon, AutocompleteTrashIcon } from './icons';\n+\n+import type { Renderer } from '../../types';\n+\n+export type AutocompleteRecentSearchProps<\n+  T = { query: string } & Record<string, unknown>\n+> = {\n+  item: T;\n+  onSelect: () => void;\n+  onRemoveRecentSearch: () => void;\n+  classNames?: Partial<AutocompleteRecentSearchClassNames>;\n+};\n+\n+export type AutocompleteRecentSearchClassNames = {\n+  /**\n+   * Class names to apply to the root element\n+   **/\n+  root: string | string[];\n+  /**\n+   * Class names to apply to the content element\n+   **/\n+  content: string | string[];\n+  /**\n+   * Class names to apply to the actions element\n+   **/\n+  actions: string | string[];\n+  /**\n+   * Class names to apply to the icon element\n+   **/\n+  icon: string | string[];\n+  /**\n+   * Class names to apply to the body element\n+   **/\n+  body: string | string[];\n+  /**\n+   * Class names to apply to the delete button element\n+   **/\n+  deleteButton: string | string[];\n+};\n+\n+export function createAutocompleteRecentSearchComponent({\n+  createElement,\n+}: Renderer) {\n+  return function AutocompleteRecentSearch({\n+    item,\n+    onSelect,\n+    onRemoveRecentSearch,\n+    classNames = {},\n+  }: AutocompleteRecentSearchProps) {\n+    return (\n+      <div\n+        onClick={onSelect}\n+        className={cx(\n+          'ais-AutocompleteItemWrapper ais-AutocompleteRecentSearchWrapper',\n+          classNames.root\n+        )}\n+      >\n+        <div\n+          className={cx(\n+            'ais-AutocompleteItemContent',\n+            'ais-AutocompleteRecentSearchItemContent',\n+            classNames.content\n+          )}\n+        >\n+          <div\n+            className={cx(\n+              'ais-AutocompleteItemIcon',\n+              'ais-AutocompleteRecentSearchItemIcon',\n+              classNames.content",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503758238",
+    "id": 2503758238,
+    "line": 73,
+    "node_id": "PRRC_kwDOAlnbOs6VPFGe",
+    "original_commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "original_line": 73,
+    "original_position": 73,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/AutocompleteRecentSearch.tsx",
+    "position": 73,
+    "pull_request_review_id": 3434189685,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758238/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-07T14:22:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758238",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503758790"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758790"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\n              classNames.body\n```",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-07T14:11:47Z",
+    "diff_hunk": "@@ -0,0 +1,113 @@\n+/** @jsx createElement */\n+\n+import { cx } from '../../lib';\n+\n+import { AutocompleteClockIcon, AutocompleteTrashIcon } from './icons';\n+\n+import type { Renderer } from '../../types';\n+\n+export type AutocompleteRecentSearchProps<\n+  T = { query: string } & Record<string, unknown>\n+> = {\n+  item: T;\n+  onSelect: () => void;\n+  onRemoveRecentSearch: () => void;\n+  classNames?: Partial<AutocompleteRecentSearchClassNames>;\n+};\n+\n+export type AutocompleteRecentSearchClassNames = {\n+  /**\n+   * Class names to apply to the root element\n+   **/\n+  root: string | string[];\n+  /**\n+   * Class names to apply to the content element\n+   **/\n+  content: string | string[];\n+  /**\n+   * Class names to apply to the actions element\n+   **/\n+  actions: string | string[];\n+  /**\n+   * Class names to apply to the icon element\n+   **/\n+  icon: string | string[];\n+  /**\n+   * Class names to apply to the body element\n+   **/\n+  body: string | string[];\n+  /**\n+   * Class names to apply to the delete button element\n+   **/\n+  deleteButton: string | string[];\n+};\n+\n+export function createAutocompleteRecentSearchComponent({\n+  createElement,\n+}: Renderer) {\n+  return function AutocompleteRecentSearch({\n+    item,\n+    onSelect,\n+    onRemoveRecentSearch,\n+    classNames = {},\n+  }: AutocompleteRecentSearchProps) {\n+    return (\n+      <div\n+        onClick={onSelect}\n+        className={cx(\n+          'ais-AutocompleteItemWrapper ais-AutocompleteRecentSearchWrapper',\n+          classNames.root\n+        )}\n+      >\n+        <div\n+          className={cx(\n+            'ais-AutocompleteItemContent',\n+            'ais-AutocompleteRecentSearchItemContent',\n+            classNames.content\n+          )}\n+        >\n+          <div\n+            className={cx(\n+              'ais-AutocompleteItemIcon',\n+              'ais-AutocompleteRecentSearchItemIcon',\n+              classNames.content\n+            )}\n+          >\n+            <AutocompleteClockIcon createElement={createElement} />\n+          </div>\n+          <div\n+            className={cx(\n+              'ais-AutocompleteItemContentBody',\n+              'ais-AutocompleteRecentSearchItemContentBody',\n+              classNames.content",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503758790",
+    "id": 2503758790,
+    "line": 82,
+    "node_id": "PRRC_kwDOAlnbOs6VPFPG",
+    "original_commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "original_line": 82,
+    "original_position": 82,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/AutocompleteRecentSearch.tsx",
+    "position": 82,
+    "pull_request_review_id": 3434189685,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758790/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-07T14:22:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503758790",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503768039"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503768039"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Should we check the length of the query, as we do in the IS.js version? Should we also prevent whitespace queries from being saved?",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-07T14:14:08Z",
+    "diff_hunk": "@@ -170,16 +203,35 @@ function InnerAutocomplete<TItem extends BaseHit = BaseHit>({\n   onSelect: userOnSelect,\n   indexUiState,\n   isSearchPage,\n+  showRecent,\n   ...props\n }: InnerAutocompleteProps<TItem>) {\n-  const { indices, refine: refineAutocomplete } = useAutocomplete();\n+  const {\n+    indices,\n+    refine: refineAutocomplete,\n+    currentRefinement,\n+  } = useAutocomplete();\n+\n+  const {\n+    storage,\n+    storageHits,\n+    indicesForPropGetters,\n+    indicesConfigForPropGetters,\n+  } = useStorage<TItem>({\n+    showRecent,\n+    query: currentRefinement,\n+    indices,\n+    indicesConfig,\n+  });\n+\n   const { getInputProps, getItemProps, getPanelProps, getRootProps } =\n     usePropGetters<TItem>({\n-      indices,\n-      indicesConfig,\n+      indices: indicesForPropGetters,\n+      indicesConfig: indicesConfigForPropGetters,\n       onRefine: (query) => {\n         refineAutocomplete(query);\n         refineSearchBox(query);\n+        storage.onAdd(query);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503768039",
+    "id": 2503768039,
+    "line": 234,
+    "node_id": "PRRC_kwDOAlnbOs6VPHfn",
+    "original_commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "original_line": 234,
+    "original_position": 115,
+    "original_start_line": null,
+    "path": "packages/react-instantsearch/src/widgets/Autocomplete.tsx",
+    "position": 115,
+    "pull_request_review_id": 3434189685,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503768039/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-07T14:22:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503768039",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503776932"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6747"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503776932"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Should we allow this limit to be customized?",
+    "commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "created_at": "2025-11-07T14:16:34Z",
+    "diff_hunk": "@@ -0,0 +1,159 @@\n+import type { UsePropGetters } from './createAutocompletePropGetters';\n+\n+type CreateAutocompleteStorageParams = {\n+  useEffect: (effect: () => void, inputs?: readonly unknown[]) => void;\n+  useMemo: <TType>(factory: () => TType, inputs: readonly unknown[]) => TType;\n+  useState: <TType>(\n+    initialState: TType\n+  ) => [TType, (newState: TType) => unknown];\n+};\n+\n+type UseStorageParams<TItem extends Record<string, unknown>> = {\n+  showRecent?: boolean | { storageKey?: string };\n+  query?: string;\n+} & Pick<Parameters<UsePropGetters<TItem>>[0], 'indices' | 'indicesConfig'>;\n+\n+export function createAutocompleteStorage({\n+  useEffect,\n+  useMemo,\n+  useState,\n+}: CreateAutocompleteStorageParams) {\n+  return function useStorage<TItem extends Record<string, unknown>>({\n+    showRecent,\n+    query,\n+    indices,\n+    indicesConfig,\n+  }: UseStorageParams<TItem>) {\n+    const storageKey =\n+      showRecent && typeof showRecent === 'object'\n+        ? showRecent.storageKey\n+        : undefined;\n+    const storage = useMemo(\n+      () => createStorage({ limit: 5, storageKey }),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6747#discussion_r2503776932",
+    "id": 2503776932,
+    "line": 32,
+    "node_id": "PRRC_kwDOAlnbOs6VPJqk",
+    "original_commit_id": "0a3da5756891aee567d5840c49725d071f32f59d",
+    "original_line": 32,
+    "original_position": 32,
+    "original_start_line": null,
+    "path": "packages/instantsearch-ui-components/src/components/autocomplete/createAutocompleteStorage.ts",
+    "position": 32,
+    "pull_request_review_id": 3434189685,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6747",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503776932/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2025-11-07T14:22:19Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2503776932",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/662153?v=4",
+      "events_url": "https://api.github.com/users/FabienMotte/events{/privacy}",
+      "followers_url": "https://api.github.com/users/FabienMotte/followers",
+      "following_url": "https://api.github.com/users/FabienMotte/following{/other_user}",
+      "gists_url": "https://api.github.com/users/FabienMotte/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/FabienMotte",
+      "id": 662153,
+      "login": "FabienMotte",
+      "node_id": "MDQ6VXNlcjY2MjE1Mw==",
+      "organizations_url": "https://api.github.com/users/FabienMotte/orgs",
+      "received_events_url": "https://api.github.com/users/FabienMotte/received_events",
+      "repos_url": "https://api.github.com/users/FabienMotte/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/FabienMotte/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/FabienMotte/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/FabienMotte",
+      "user_view_type": "public"
+    }
+  }
+]

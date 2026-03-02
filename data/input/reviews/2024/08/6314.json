@@ -1,0 +1,419 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706470032"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706470032"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't think we need to add that or think about it yet, but when hit is supported, this needs insights tests and functionality too.",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T06:47:17Z",
+    "diff_hunk": "@@ -0,0 +1,227 @@\n+/**\n+ * @jest-environment jsdom\n+ */\n+/** @jsx h */\n+\n+import { render } from '@testing-library/preact';\n+import { h } from 'preact';\n+\n+import { carousel } from '../carousel/carousel';\n+\n+describe('carousel', () => {\n+  test('renders with default options', () => {\n+    const template = carousel();\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item.objectID}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container).toMatchInlineSnapshot(`\n+      <div>\n+        <div\n+          class=\"ais-Carousel\"\n+        >\n+          <button\n+            aria-controls=\"ais-Carousel-0\"\n+            aria-label=\"Previous\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--previous\"\n+            hidden=\"\"\n+            title=\"Previous\"\n+          >\n+            <svg\n+              fill=\"none\"\n+              height=\"16\"\n+              viewBox=\"0 0 8 16\"\n+              width=\"8\"\n+            >\n+              <path\n+                clipRule=\"evenodd\"\n+                d=\"M7.13809 0.744078C7.39844 1.06951 7.39844 1.59715 7.13809 1.92259L2.27616 8L7.13809 14.0774C7.39844 14.4028 7.39844 14.9305 7.13809 15.2559C6.87774 15.5814 6.45563 15.5814 6.19528 15.2559L0.861949 8.58926C0.6016 8.26382 0.6016 7.73618 0.861949 7.41074L6.19528 0.744078C6.45563 0.418641 6.87774 0.418641 7.13809 0.744078Z\"\n+                fill=\"currentColor\"\n+                fillRule=\"evenodd\"\n+              />\n+            </svg>\n+          </button>\n+          <ol\n+            aria-label=\"Items\"\n+            aria-live=\"polite\"\n+            aria-roledescription=\"carousel\"\n+            class=\"ais-Carousel-list\"\n+            id=\"ais-Carousel-0\"\n+            tabindex=\"0\"\n+          >\n+            <li\n+              aria-label=\"1 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                1\n+              </p>\n+            </li>\n+            <li\n+              aria-label=\"2 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                2\n+              </p>\n+            </li>\n+          </ol>\n+          <button\n+            aria-controls=\"ais-Carousel-0\"\n+            aria-label=\"Next\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--next\"\n+            title=\"Next\"\n+          >\n+            <svg\n+              fill=\"none\"\n+              height=\"16\"\n+              viewBox=\"0 0 8 16\"\n+              width=\"8\"\n+            >\n+              <path\n+                clipRule=\"evenodd\"\n+                d=\"M0.861908 15.2559C0.601559 14.9305 0.601559 14.4028 0.861908 14.0774L5.72384 8L0.861908 1.92259C0.601559 1.59715 0.601559 1.06952 0.861908 0.744079C1.12226 0.418642 1.54437 0.418642 1.80472 0.744079L7.13805 7.41074C7.3984 7.73618 7.3984 8.26382 7.13805 8.58926L1.80472 15.2559C1.54437 15.5814 1.12226 15.5814 0.861908 15.2559Z\"\n+                fill=\"currentColor\"\n+                fillRule=\"evenodd\"\n+              />\n+            </svg>\n+          </button>\n+        </div>\n+      </div>\n+    `);\n+  });\n+\n+  test('adds custom CSS classes', () => {\n+    const template = carousel({\n+      cssClasses: {\n+        root: 'ROOT',\n+        list: 'LIST',\n+        item: 'ITEM',\n+        navigation: 'NAVIGATION',\n+        navigationNext: 'NAVIGATION_NEXT',\n+        navigationPrevious: 'NAVIGATION_PREVIOUS',\n+      },\n+    });\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container.querySelector('.ais-Carousel')).toHaveClass('ROOT');\n+    expect(container.querySelector('.ais-Carousel-list')).toHaveClass('LIST');\n+    expect(container.querySelector('.ais-Carousel-item')).toHaveClass('ITEM');\n+    expect(\n+      container.querySelector('.ais-Carousel-navigation--previous')\n+    ).toHaveClass('NAVIGATION', 'NAVIGATION_PREVIOUS');\n+    expect(\n+      container.querySelector('.ais-Carousel-navigation--next')\n+    ).toHaveClass('NAVIGATION', 'NAVIGATION_NEXT');\n+  });\n+\n+  test('adds custom templates', () => {\n+    const template = carousel({\n+      templates: {\n+        previous() {\n+          return <p>Previous</p>;\n+        },\n+        next() {\n+          return <p>Next</p>;\n+        },\n+      },\n+    });\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item.objectID}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container).toMatchInlineSnapshot(`\n+      <div>\n+        <div\n+          class=\"ais-Carousel\"\n+        >\n+          <button\n+            aria-controls=\"ais-Carousel-2\"\n+            aria-label=\"Previous\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--previous\"\n+            hidden=\"\"\n+            title=\"Previous\"\n+          >\n+            <p>\n+              Previous\n+            </p>\n+          </button>\n+          <ol\n+            aria-label=\"Items\"\n+            aria-live=\"polite\"\n+            aria-roledescription=\"carousel\"\n+            class=\"ais-Carousel-list\"\n+            id=\"ais-Carousel-2\"\n+            tabindex=\"0\"\n+          >\n+            <li\n+              aria-label=\"1 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                1\n+              </p>\n+            </li>\n+            <li\n+              aria-label=\"2 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                2\n+              </p>\n+            </li>\n+          </ol>\n+          <button\n+            aria-controls=\"ais-Carousel-2\"\n+            aria-label=\"Next\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--next\"\n+            title=\"Next\"\n+          >\n+            <p>\n+              Next\n+            </p>\n+          </button>\n+        </div>\n+      </div>\n+    `);\n+  });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706470032",
+    "id": 1706470032,
+    "line": 226,
+    "node_id": "PRRC_kwDOAlnbOs5ltqqQ",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 226,
+    "original_position": 226,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/templates/__tests__/carousel.test.tsx",
+    "position": 226,
+    "pull_request_review_id": 2222769006,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706470032/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T06:52:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706470032",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706473362"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706473362"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  templates = {},\r\n```\r\n\r\nif code ~ like this, you don't need to check `templates?.` later",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T06:50:22Z",
+    "diff_hunk": "@@ -0,0 +1,85 @@\n+/** @jsx h */\n+\n+import { html } from 'htm/preact';\n+import {\n+  createCarouselComponent,\n+  generateCarouselId,\n+} from 'instantsearch-ui-components';\n+import { Fragment, h } from 'preact';\n+import { useRef } from 'preact/hooks';\n+\n+import type {\n+  CarouselProps as CarouselUiProps,\n+  VNode,\n+} from 'instantsearch-ui-components';\n+\n+const Carousel = createCarouselComponent({\n+  createElement: h,\n+  Fragment,\n+});\n+\n+function CarouselWithRefs<TObject extends Record<string, unknown>>(\n+  props: Omit<\n+    CarouselUiProps<TObject>,\n+    'listRef' | 'nextButtonRef' | 'previousButtonRef' | 'carouselIdRef'\n+  >\n+) {\n+  const carouselRefs: Pick<\n+    CarouselUiProps<TObject>,\n+    'listRef' | 'nextButtonRef' | 'previousButtonRef' | 'carouselIdRef'\n+  > = {\n+    listRef: useRef(null),\n+    nextButtonRef: useRef(null),\n+    previousButtonRef: useRef(null),\n+    carouselIdRef: useRef(generateCarouselId()),\n+  };\n+\n+  return <Carousel {...carouselRefs} {...props} />;\n+}\n+\n+type Template = (params: { html: typeof html }) => VNode | VNode[] | null;\n+\n+type CreateCarouselTemplateProps<TObject extends Record<string, unknown>> = {\n+  templates?: Partial<{\n+    previous: Exclude<Template, string>;\n+    next: Exclude<Template, string>;\n+  }>;\n+  cssClasses?: Partial<CarouselUiProps<TObject>['classNames']>;\n+};\n+\n+type CarouselTemplateProps<TObject extends Record<string, unknown>> = Pick<\n+  CarouselUiProps<TObject>,\n+  'items'\n+> & {\n+  templates: {\n+    item?: CarouselUiProps<TObject>['itemComponent'];\n+  };\n+};\n+\n+export function carousel<TObject extends Record<string, unknown>>({\n+  cssClasses,\n+  templates,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706473362",
+    "id": 1706473362,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5ltreS",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 61,
+    "original_position": 61,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/templates/carousel/carousel.tsx",
+    "position": 1,
+    "pull_request_review_id": 2222769006,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706473362/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T06:52:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706473362",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706474751"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706474751"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "surely there's always at least a default item template?",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T06:51:37Z",
+    "diff_hunk": "@@ -111,6 +111,33 @@ const renderer =\n         : undefined\n     ) as FrequentlyBoughtTogetherUiProps<Hit>['emptyComponent'];\n \n+    const layoutComponent = (\n+      templates.layout\n+        ? (data) => (\n+            <TemplateComponent\n+              {...renderState.templateProps}\n+              templateKey=\"layout\"\n+              rootTagName=\"fragment\"\n+              data={{\n+                items: data.items,\n+                templates: {\n+                  item: templates.item",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706474751",
+    "id": 1706474751,
+    "line": 124,
+    "node_id": "PRRC_kwDOAlnbOs5ltrz_",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 124,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/frequently-bought-together.tsx",
+    "position": 14,
+    "pull_request_review_id": 2222769006,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706474751/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T06:52:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706474751",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706601676"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706601676"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yes, we can accept `sendEvent` in there when it's time.",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T08:28:18Z",
+    "diff_hunk": "@@ -0,0 +1,227 @@\n+/**\n+ * @jest-environment jsdom\n+ */\n+/** @jsx h */\n+\n+import { render } from '@testing-library/preact';\n+import { h } from 'preact';\n+\n+import { carousel } from '../carousel/carousel';\n+\n+describe('carousel', () => {\n+  test('renders with default options', () => {\n+    const template = carousel();\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item.objectID}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container).toMatchInlineSnapshot(`\n+      <div>\n+        <div\n+          class=\"ais-Carousel\"\n+        >\n+          <button\n+            aria-controls=\"ais-Carousel-0\"\n+            aria-label=\"Previous\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--previous\"\n+            hidden=\"\"\n+            title=\"Previous\"\n+          >\n+            <svg\n+              fill=\"none\"\n+              height=\"16\"\n+              viewBox=\"0 0 8 16\"\n+              width=\"8\"\n+            >\n+              <path\n+                clipRule=\"evenodd\"\n+                d=\"M7.13809 0.744078C7.39844 1.06951 7.39844 1.59715 7.13809 1.92259L2.27616 8L7.13809 14.0774C7.39844 14.4028 7.39844 14.9305 7.13809 15.2559C6.87774 15.5814 6.45563 15.5814 6.19528 15.2559L0.861949 8.58926C0.6016 8.26382 0.6016 7.73618 0.861949 7.41074L6.19528 0.744078C6.45563 0.418641 6.87774 0.418641 7.13809 0.744078Z\"\n+                fill=\"currentColor\"\n+                fillRule=\"evenodd\"\n+              />\n+            </svg>\n+          </button>\n+          <ol\n+            aria-label=\"Items\"\n+            aria-live=\"polite\"\n+            aria-roledescription=\"carousel\"\n+            class=\"ais-Carousel-list\"\n+            id=\"ais-Carousel-0\"\n+            tabindex=\"0\"\n+          >\n+            <li\n+              aria-label=\"1 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                1\n+              </p>\n+            </li>\n+            <li\n+              aria-label=\"2 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                2\n+              </p>\n+            </li>\n+          </ol>\n+          <button\n+            aria-controls=\"ais-Carousel-0\"\n+            aria-label=\"Next\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--next\"\n+            title=\"Next\"\n+          >\n+            <svg\n+              fill=\"none\"\n+              height=\"16\"\n+              viewBox=\"0 0 8 16\"\n+              width=\"8\"\n+            >\n+              <path\n+                clipRule=\"evenodd\"\n+                d=\"M0.861908 15.2559C0.601559 14.9305 0.601559 14.4028 0.861908 14.0774L5.72384 8L0.861908 1.92259C0.601559 1.59715 0.601559 1.06952 0.861908 0.744079C1.12226 0.418642 1.54437 0.418642 1.80472 0.744079L7.13805 7.41074C7.3984 7.73618 7.3984 8.26382 7.13805 8.58926L1.80472 15.2559C1.54437 15.5814 1.12226 15.5814 0.861908 15.2559Z\"\n+                fill=\"currentColor\"\n+                fillRule=\"evenodd\"\n+              />\n+            </svg>\n+          </button>\n+        </div>\n+      </div>\n+    `);\n+  });\n+\n+  test('adds custom CSS classes', () => {\n+    const template = carousel({\n+      cssClasses: {\n+        root: 'ROOT',\n+        list: 'LIST',\n+        item: 'ITEM',\n+        navigation: 'NAVIGATION',\n+        navigationNext: 'NAVIGATION_NEXT',\n+        navigationPrevious: 'NAVIGATION_PREVIOUS',\n+      },\n+    });\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container.querySelector('.ais-Carousel')).toHaveClass('ROOT');\n+    expect(container.querySelector('.ais-Carousel-list')).toHaveClass('LIST');\n+    expect(container.querySelector('.ais-Carousel-item')).toHaveClass('ITEM');\n+    expect(\n+      container.querySelector('.ais-Carousel-navigation--previous')\n+    ).toHaveClass('NAVIGATION', 'NAVIGATION_PREVIOUS');\n+    expect(\n+      container.querySelector('.ais-Carousel-navigation--next')\n+    ).toHaveClass('NAVIGATION', 'NAVIGATION_NEXT');\n+  });\n+\n+  test('adds custom templates', () => {\n+    const template = carousel({\n+      templates: {\n+        previous() {\n+          return <p>Previous</p>;\n+        },\n+        next() {\n+          return <p>Next</p>;\n+        },\n+      },\n+    });\n+\n+    const { container } = render(\n+      template({\n+        items: [\n+          { objectID: '1', __position: 1 },\n+          { objectID: '2', __position: 2 },\n+        ],\n+        templates: {\n+          item({ item }) {\n+            return <p>{item.objectID}</p>;\n+          },\n+        },\n+      })\n+    );\n+\n+    expect(container).toMatchInlineSnapshot(`\n+      <div>\n+        <div\n+          class=\"ais-Carousel\"\n+        >\n+          <button\n+            aria-controls=\"ais-Carousel-2\"\n+            aria-label=\"Previous\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--previous\"\n+            hidden=\"\"\n+            title=\"Previous\"\n+          >\n+            <p>\n+              Previous\n+            </p>\n+          </button>\n+          <ol\n+            aria-label=\"Items\"\n+            aria-live=\"polite\"\n+            aria-roledescription=\"carousel\"\n+            class=\"ais-Carousel-list\"\n+            id=\"ais-Carousel-2\"\n+            tabindex=\"0\"\n+          >\n+            <li\n+              aria-label=\"1 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                1\n+              </p>\n+            </li>\n+            <li\n+              aria-label=\"2 of 2\"\n+              aria-roledescription=\"slide\"\n+              class=\"ais-Carousel-item\"\n+            >\n+              <p>\n+                2\n+              </p>\n+            </li>\n+          </ol>\n+          <button\n+            aria-controls=\"ais-Carousel-2\"\n+            aria-label=\"Next\"\n+            class=\"ais-Carousel-navigation ais-Carousel-navigation--next\"\n+            title=\"Next\"\n+          >\n+            <p>\n+              Next\n+            </p>\n+          </button>\n+        </div>\n+      </div>\n+    `);\n+  });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706601676",
+    "id": 1706601676,
+    "in_reply_to_id": 1706470032,
+    "line": 226,
+    "node_id": "PRRC_kwDOAlnbOs5luKzM",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 226,
+    "original_position": 226,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/templates/__tests__/carousel.test.tsx",
+    "position": 226,
+    "pull_request_review_id": 2223315183,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706601676/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T08:28:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706601676",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706624489"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706624489"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "The default item template is defined in the UI component. At the widget level, the `itemComponent` can be undefined, which will be forwarded as-is to the UI component and be defaulted there.",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T08:44:24Z",
+    "diff_hunk": "@@ -111,6 +111,33 @@ const renderer =\n         : undefined\n     ) as FrequentlyBoughtTogetherUiProps<Hit>['emptyComponent'];\n \n+    const layoutComponent = (\n+      templates.layout\n+        ? (data) => (\n+            <TemplateComponent\n+              {...renderState.templateProps}\n+              templateKey=\"layout\"\n+              rootTagName=\"fragment\"\n+              data={{\n+                items: data.items,\n+                templates: {\n+                  item: templates.item",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706624489",
+    "id": 1706624489,
+    "in_reply_to_id": 1706474751,
+    "line": 124,
+    "node_id": "PRRC_kwDOAlnbOs5luQXp",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 124,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/widgets/frequently-bought-together/frequently-bought-together.tsx",
+    "position": 14,
+    "pull_request_review_id": 2223411409,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706624489/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T08:44:24Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706624489",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706625450"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6314"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706625450"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yup! Done in [77f0549](https://github.com/algolia/instantsearch/pull/6314/commits/77f0549d51380c2fc7e11659806810a107bd88e0).",
+    "commit_id": "77f0549d51380c2fc7e11659806810a107bd88e0",
+    "created_at": "2024-08-07T08:45:03Z",
+    "diff_hunk": "@@ -0,0 +1,85 @@\n+/** @jsx h */\n+\n+import { html } from 'htm/preact';\n+import {\n+  createCarouselComponent,\n+  generateCarouselId,\n+} from 'instantsearch-ui-components';\n+import { Fragment, h } from 'preact';\n+import { useRef } from 'preact/hooks';\n+\n+import type {\n+  CarouselProps as CarouselUiProps,\n+  VNode,\n+} from 'instantsearch-ui-components';\n+\n+const Carousel = createCarouselComponent({\n+  createElement: h,\n+  Fragment,\n+});\n+\n+function CarouselWithRefs<TObject extends Record<string, unknown>>(\n+  props: Omit<\n+    CarouselUiProps<TObject>,\n+    'listRef' | 'nextButtonRef' | 'previousButtonRef' | 'carouselIdRef'\n+  >\n+) {\n+  const carouselRefs: Pick<\n+    CarouselUiProps<TObject>,\n+    'listRef' | 'nextButtonRef' | 'previousButtonRef' | 'carouselIdRef'\n+  > = {\n+    listRef: useRef(null),\n+    nextButtonRef: useRef(null),\n+    previousButtonRef: useRef(null),\n+    carouselIdRef: useRef(generateCarouselId()),\n+  };\n+\n+  return <Carousel {...carouselRefs} {...props} />;\n+}\n+\n+type Template = (params: { html: typeof html }) => VNode | VNode[] | null;\n+\n+type CreateCarouselTemplateProps<TObject extends Record<string, unknown>> = {\n+  templates?: Partial<{\n+    previous: Exclude<Template, string>;\n+    next: Exclude<Template, string>;\n+  }>;\n+  cssClasses?: Partial<CarouselUiProps<TObject>['classNames']>;\n+};\n+\n+type CarouselTemplateProps<TObject extends Record<string, unknown>> = Pick<\n+  CarouselUiProps<TObject>,\n+  'items'\n+> & {\n+  templates: {\n+    item?: CarouselUiProps<TObject>['itemComponent'];\n+  };\n+};\n+\n+export function carousel<TObject extends Record<string, unknown>>({\n+  cssClasses,\n+  templates,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6314#discussion_r1706625450",
+    "id": 1706625450,
+    "in_reply_to_id": 1706473362,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5luQmq",
+    "original_commit_id": "205eb93237273fae31be49b15bfe236d04fe61da",
+    "original_line": 61,
+    "original_position": 61,
+    "original_start_line": null,
+    "path": "packages/instantsearch.js/src/templates/carousel/carousel.tsx",
+    "position": 1,
+    "pull_request_review_id": 2223415404,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6314",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706625450/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-08-07T08:45:04Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1706625450",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  }
+]

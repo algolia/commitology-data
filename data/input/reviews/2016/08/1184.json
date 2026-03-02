@@ -1,0 +1,209 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75147453"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1184"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75147453"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I haven't seen this new slider live, but `transform: translate()` usually works better when positioning stuff.\n",
+    "commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "created_at": "2016-08-17T15:37:12Z",
+    "diff_hunk": "@@ -0,0 +1,169 @@\n+import React, {PropTypes, Component} from 'react';\n+import {sortedIndex} from 'lodash';\n+\n+function lerp(a, b, t) {\n+  return a + t * (b - a);\n+}\n+\n+function inverseLerp(a, b, c) {\n+  return (c - a) / (b - a);\n+}\n+\n+export default class Slider extends Component {\n+  static propTypes = {\n+    applyTheme: PropTypes.func.isRequired,\n+    translate: PropTypes.func.isRequired,\n+    min: PropTypes.number.isRequired,\n+    max: PropTypes.number.isRequired,\n+    value: PropTypes.arrayOf(PropTypes.number).isRequired,\n+    onStart: PropTypes.func,\n+    onChange: PropTypes.func.isRequired,\n+    onEnd: PropTypes.func,\n+  };\n+\n+  static defaultProps = {\n+    onStart: () => {},\n+    onEnd: () => {},\n+  };\n+\n+  constructor() {\n+    super();\n+\n+    this.state = {\n+      activeIdx: null,\n+    };\n+  }\n+\n+  onMouseDown = e => {\n+    if (e.button !== 0) {\n+      return;\n+    }\n+    e.preventDefault();\n+    e.stopPropagation();\n+    this.onStart(e.pageX);\n+    document.addEventListener('mousemove', this.onMouseMove);\n+    document.addEventListener('mouseup', this.onMouseUp);\n+  };\n+\n+  onMouseMove = e => {\n+    e.preventDefault();\n+    e.stopPropagation();\n+    this.onChange(e.pageX);\n+  };\n+\n+  onMouseUp = e => {\n+    e.preventDefault();\n+    e.stopPropagation();\n+    this.onStop(e.pageX);\n+  };\n+\n+  getPos = x => {\n+    const rect = this.node.getBoundingClientRect();\n+    return Math.max(0, Math.min(1, inverseLerp(rect.left, rect.right, x)));\n+  };\n+\n+  setPos = (idx, t) => {\n+    const {min, max, value} = this.props;\n+    const nextValue = value.slice();\n+    const v = lerp(min, max, t);\n+    nextValue.splice(idx, 1);\n+    const newIdx = sortedIndex(nextValue, v);\n+    nextValue.splice(newIdx, 0, v);\n+    this.props.onChange(nextValue);\n+  }\n+\n+  onStart = x => {\n+    const {min, max, value} = this.props;\n+    const t = this.getPos(x);\n+    const offsets = value.map(v => inverseLerp(min, max, v));\n+    const insertIdx = sortedIndex(offsets, t);\n+    let closestValueIdx;\n+    if (insertIdx === 0) {\n+      closestValueIdx = 0;\n+    } else if (insertIdx === offsets.length) {\n+      closestValueIdx = offsets.length - 1;\n+    } else if (offsets[insertIdx] - t < t - offsets[insertIdx - 1]) {\n+      closestValueIdx = insertIdx;\n+    } else {\n+      closestValueIdx = insertIdx - 1;\n+    }\n+    this.props.onStart();\n+    this.setPos(closestValueIdx, t);\n+    this.setState({\n+      activeIdx: closestValueIdx,\n+    });\n+  };\n+\n+  onChange = x => {\n+    this.setPos(this.state.activeIdx, this.getPos(x));\n+  };\n+\n+  onStop = x => {\n+    document.removeEventListener('mousemove', this.onMouseMove);\n+    document.removeEventListener('mouseup', this.onMouseUp);\n+    this.setPos(this.state.activeIdx, this.getPos(x));\n+    this.props.onEnd();\n+    this.setState({\n+      activeIdx: null,\n+    });\n+  };\n+\n+  onRef = node => {\n+    this.node = node;\n+  };\n+\n+  render() {\n+    const {applyTheme, translate, min, max, value} = this.props;\n+    const {activeIdx} = this.state;\n+\n+    const offsets = value.map(v => inverseLerp(min, max, v) * 100);\n+\n+    const handles = offsets.map((offset, i) =>\n+      <div\n+        {...applyTheme(i, 'handle', i === activeIdx && 'handleActive')}\n+        style={{\n+          left: `${offset}%`,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75147453",
+    "id": 75147453,
+    "line": 125,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDc1MTQ3NDUz",
+    "original_commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "original_line": null,
+    "original_position": 125,
+    "original_start_line": null,
+    "path": "packages/instantsearch-react/src/impl/Slider.js",
+    "position": 125,
+    "pull_request_review_id": null,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1184",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75147453/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-08-17T15:37:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75147453",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75148063"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1184"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75148063"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Isn't the proptype `translate` and a simple function?\n",
+    "commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "created_at": "2016-08-17T15:40:10Z",
+    "diff_hunk": "@@ -75,7 +75,12 @@ class Search extends Component {\n             defaultSelectedIndex=\"instant_search\"\n           />\n           <HitsPerPage items={[10, 20, 30]} defaultHitsPerPage={20} />\n-          <Range attributeName=\"price\" />\n+          <Range\n+            attributeName=\"price\"\n+            translations={{",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75148063",
+    "id": 75148063,
+    "line": 80,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDc1MTQ4MDYz",
+    "original_commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/instantsearch-react/examples/Search.js",
+    "position": 16,
+    "pull_request_review_id": null,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1184",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75148063/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-08-17T15:40:23Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75148063",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75152396"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/1184"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75152396"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "The [`translatable`](https://github.com/algolia/instantsearch.js/blob/instantsearch-react/packages/instantsearch-react/src/translatable.js) HOC consumes a `translations` prop that is a map of translation key to translation strings/functions, and forwards a `translate` prop that is a function.\n",
+    "commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "created_at": "2016-08-17T16:02:25Z",
+    "diff_hunk": "@@ -75,7 +75,12 @@ class Search extends Component {\n             defaultSelectedIndex=\"instant_search\"\n           />\n           <HitsPerPage items={[10, 20, 30]} defaultHitsPerPage={20} />\n-          <Range attributeName=\"price\" />\n+          <Range\n+            attributeName=\"price\"\n+            translations={{",
+    "html_url": "https://github.com/algolia/instantsearch/pull/1184#discussion_r75152396",
+    "id": 75152396,
+    "line": 80,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDc1MTUyMzk2",
+    "original_commit_id": "0e2649f413c8e860e08aa179fe2778c836673b36",
+    "original_line": null,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "packages/instantsearch-react/examples/Search.js",
+    "position": 16,
+    "pull_request_review_id": null,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/1184",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75152396/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2016-08-17T16:02:25Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/75152396",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/1621758?v=4",
+      "events_url": "https://api.github.com/users/alexkirsz/events{/privacy}",
+      "followers_url": "https://api.github.com/users/alexkirsz/followers",
+      "following_url": "https://api.github.com/users/alexkirsz/following{/other_user}",
+      "gists_url": "https://api.github.com/users/alexkirsz/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/alexkirsz",
+      "id": 1621758,
+      "login": "alexkirsz",
+      "node_id": "MDQ6VXNlcjE2MjE3NTg=",
+      "organizations_url": "https://api.github.com/users/alexkirsz/orgs",
+      "received_events_url": "https://api.github.com/users/alexkirsz/received_events",
+      "repos_url": "https://api.github.com/users/alexkirsz/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/alexkirsz/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/alexkirsz/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/alexkirsz",
+      "user_view_type": "public"
+    }
+  }
+]

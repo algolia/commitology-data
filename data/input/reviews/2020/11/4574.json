@@ -1,0 +1,560 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r518926115"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926115"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Conceptually `getWidgetRenderState` shouldn't trigger side effects when you call it—I'm wondering if those assignments should be in `init`?",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-06T18:21:54Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r518926115",
+    "id": 518926115,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkyNjExNQ==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 525391019,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926115/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-06T18:23:25Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926115",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r518926599"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926599"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It would be nice to have such a syntax:\r\n\r\n```ts\r\nconnectorState.refine ??= page => { /* ... */ }\r\n```",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-06T18:22:46Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r518926599",
+    "id": 518926599,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxODkyNjU5OQ==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 525391019,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926599/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-06T18:23:25Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/518926599",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519179984"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519179984"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "If I do that, then the tests which ran getRenderState before init (in index) seemed to fail. In some other cases we had moved it to getWidgetRenderState too. I'm not sure either what's the best",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-07T13:55:05Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519179984",
+    "id": 519179984,
+    "in_reply_to_id": 518926115,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTE3OTk4NA==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 525654606,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519179984/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-07T13:55:05Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519179984",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519180040"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519180040"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "https://tc39.es/proposal-logical-assignment/#sec-assignment-operators, it's stage 4 so we can look into if it needs to be enabled for babel / ts",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-07T13:55:44Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519180040",
+    "id": 519180040,
+    "in_reply_to_id": 518926599,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTE4MDA0MA==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 525654649,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519180040/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-07T13:56:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519180040",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519691272"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519691272"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I just tried and it requires `@babel/plugin-proposal-logical-assignment-operators` to be added (as well as a new eslint rule, I guess) . I can create a separate PR with this if you want.",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-09T10:09:55Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519691272",
+    "id": 519691272,
+    "in_reply_to_id": 518926599,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTY5MTI3Mg==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 526100232,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519691272/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-09T10:10:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519691272",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519700713"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519700713"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think we can decide on that later ",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-09T10:24:23Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519700713",
+    "id": 519700713,
+    "in_reply_to_id": 518926599,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTcwMDcxMw==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 526112042,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519700713/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-09T10:24:23Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519700713",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519712161"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712161"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "> getRenderState before init (in index) seemed to fail\r\n\r\nWhich makes sense because `init` is supposed to be called before `getRenderState` right now.\r\n\r\nIf we think long-term, when `init` doesn't exist anymore, it makes sense to manipulate `refine` _only_ in `getWidgetRenderState` (because it'll become contained in that method)—so I think it's fine to have this as it is now. But let's all be aware of this unexpected side effect.",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-09T10:43:00Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519712161",
+    "id": 519712161,
+    "in_reply_to_id": 518926115,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTcxMjE2MQ==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 526126716,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 3,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 3,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712161/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-09T10:43:01Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712161",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519712880"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4574"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712880"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "that's what I thought too, if init doesn't exist anymore, getWidgetRenderState should be in control of the initialisation of functions which should only be set once. ",
+    "commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "created_at": "2020-11-09T10:44:17Z",
+    "diff_hunk": "@@ -0,0 +1,187 @@\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  noop,\n+} from '../../lib/utils';\n+import Paginator from './Paginator';\n+import { Connector } from '../../types';\n+import { SearchParameters } from 'algoliasearch-helper';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'pagination',\n+  connector: true,\n+});\n+\n+export type PaginationConnectorParams = {\n+  /**\n+   * The total number of pages to browse.\n+   */\n+  totalPages?: number;\n+\n+  /**\n+   * The padding of pages to show around the current page\n+   * @default 3\n+   */\n+  padding?: number;\n+};\n+\n+export type PaginationRendererOptions = {\n+  /** Creates URLs for the next state, the number is the page to generate the URL for. */\n+  createURL(page: number): string;\n+\n+  /** Sets the current page and triggers a search. */\n+  refine(page: number): void;\n+\n+  /** The number of the page currently displayed. */\n+  currentRefinement: number;\n+\n+  /** The number of hits computed for the last query (can be approximated). */\n+  nbHits: number;\n+\n+  /** The number of pages for the result set. */\n+  nbPages: number;\n+\n+  /** The actual pages relevant to the current situation and padding. */\n+  pages: number[];\n+\n+  /** true if the current page is also the first page. */\n+  isFirstPage: boolean;\n+\n+  /** true if the current page is also the last page. */\n+  isLastPage: boolean;\n+};\n+\n+type ConnectPagination = Connector<\n+  PaginationRendererOptions,\n+  PaginationConnectorParams\n+>;\n+\n+/**\n+ * **Pagination** connector provides the logic to build a widget that will let the user\n+ * choose the current page of the results.\n+ *\n+ * When using the pagination with Algolia, you should be aware that the engine won't provide you pages\n+ * beyond the 1000th hits by default. You can find more information on the [Algolia documentation](https://www.algolia.com/doc/guides/searching/pagination/#pagination-limitations).\n+ */\n+const connectPagination: ConnectPagination = function connectPagination(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { totalPages, padding = 3 } =\n+      widgetParams || ({} as typeof widgetParams);\n+\n+    const pager = new Paginator({\n+      currentPage: 0,\n+      total: 0,\n+      padding,\n+    });\n+\n+    type ConnectorState = {\n+      refine(page: number): void;\n+      createURL(state: SearchParameters): (page: number) => string;\n+    };\n+\n+    const connectorState = {} as ConnectorState;\n+\n+    function getMaxPage({ nbPages }) {\n+      return totalPages !== undefined ? Math.min(totalPages, nbPages) : nbPages;\n+    }\n+\n+    return {\n+      $$type: 'ais.pagination',\n+\n+      init(initOptions) {\n+        const { instantSearchInstance } = initOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(initOptions),\n+            instantSearchInstance,\n+          },\n+          true\n+        );\n+      },\n+\n+      render(renderOptions) {\n+        const { instantSearchInstance } = renderOptions;\n+\n+        renderFn(\n+          {\n+            ...this.getWidgetRenderState(renderOptions),\n+            instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+\n+      dispose({ state }) {\n+        unmountFn();\n+\n+        return state.setQueryParameter('page', undefined);\n+      },\n+\n+      getWidgetUiState(uiState, { searchParameters }) {\n+        const page = searchParameters.page || 0;\n+\n+        if (!page) {\n+          return uiState;\n+        }\n+\n+        return {\n+          ...uiState,\n+          page: page + 1,\n+        };\n+      },\n+\n+      getWidgetSearchParameters(searchParameters, { uiState }) {\n+        const page = uiState.page ? uiState.page - 1 : 0;\n+\n+        return searchParameters.setQueryParameter('page', page);\n+      },\n+\n+      getWidgetRenderState({ results, helper, createURL }) {\n+        if (!connectorState.refine) {\n+          connectorState.refine = page => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4574#discussion_r519712880",
+    "id": 519712880,
+    "in_reply_to_id": 518926115,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUxOTcxMjg4MA==",
+    "original_commit_id": "89a6f86287f263d305a34bf04f8e86a5d1d4606d",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "src/connectors/pagination/connectPagination.ts",
+    "position": 147,
+    "pull_request_review_id": 526127652,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4574",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712880/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-11-09T10:44:17Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/519712880",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

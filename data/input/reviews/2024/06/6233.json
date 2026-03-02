@@ -1,0 +1,420 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1632884298"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632884298"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "not sure if worth testing, but we could add a test that only refines min or max, not both, to check it doesn't accidentally refine 0 or something. ",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T09:08:33Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.\n+  return commonNormalizeSnapshot(html)\n+    .replace(/ ais-RangeInput--noRefinement/g, '')\n+    .replace(/value=\"\"/g, '');\n+}\n+\n+export function createOptionsTests(\n+  setup: RangeInputWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with default props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RangeInput')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RangeInput\"\n+        >\n+          <form\n+            class=\"ais-RangeInput-form\"\n+          >\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--min\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <span\n+              class=\"ais-RangeInput-separator\"\n+            >\n+              to\n+            </span>\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--max\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1000\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <button\n+              class=\"ais-RangeInput-submit\"\n+              type=\"submit\"\n+            >\n+              Go\n+            </button>\n+          </form>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+          initialUiState: {\n+            indexName: {\n+              range: {\n+                price: '100:200',\n+              },\n+            },\n+          },\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-RangeInput-input--min')).toHaveValue(\n+        100\n+      );\n+      expect(document.querySelector('.ais-RangeInput-input--max')).toHaveValue(\n+        200\n+      );\n+    });\n+\n+    test('renders with precision', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price', precision: 2 },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      ['min', 'max'].forEach((target) => {\n+        expect(\n+          document.querySelector(`.ais-RangeInput-input--${target}`)\n+        ).toHaveAttribute('step', '0.01');\n+      });\n+    });\n+\n+    test('refines on submit', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1632884298",
+    "id": 1632884298,
+    "line": 147,
+    "node_id": "PRRC_kwDOAlnbOs5hU9ZK",
+    "original_commit_id": "3f6daa572bd9a6f76ca1ce6aabecd96204ae9674",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 147,
+    "pull_request_review_id": 2107171128,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632884298/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-06-10T09:08:37Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632884298",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1632967942"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632967942"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Would it make sense to add the modifier in JS and Vue instead?",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T09:48:56Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1632967942",
+    "id": 1632967942,
+    "line": 17,
+    "node_id": "PRRC_kwDOAlnbOs5hVR0G",
+    "original_commit_id": "f494480f0eaa6105a6f4aa96682637eb29897a9a",
+    "original_line": 17,
+    "original_position": 17,
+    "original_start_line": 16,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 17,
+    "pull_request_review_id": 2107318624,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632967942/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 16,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-06-10T09:50:00Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1632967942",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633126919"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633126919"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "We could, but to make it complete we would also need to introduce the `noRefinementRoot` className. Shouldn't we do this separately during our effort to unify?",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T11:57:06Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633126919",
+    "id": 1633126919,
+    "in_reply_to_id": 1632967942,
+    "line": 17,
+    "node_id": "PRRC_kwDOAlnbOs5hV4oH",
+    "original_commit_id": "f494480f0eaa6105a6f4aa96682637eb29897a9a",
+    "original_line": 17,
+    "original_position": 17,
+    "original_start_line": 16,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 17,
+    "pull_request_review_id": 2107585476,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633126919/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 16,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-06-10T11:57:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633126919",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633146441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146441"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yep I'm fine with this, thanks for looking!",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T12:12:51Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633146441",
+    "id": 1633146441,
+    "in_reply_to_id": 1632967942,
+    "line": 17,
+    "node_id": "PRRC_kwDOAlnbOs5hV9ZJ",
+    "original_commit_id": "f494480f0eaa6105a6f4aa96682637eb29897a9a",
+    "original_line": 17,
+    "original_position": 17,
+    "original_start_line": 16,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 17,
+    "pull_request_review_id": 2107618586,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146441/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 16,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-06-10T12:12:51Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146441",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633146718"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146718"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Done in 21bb94f04, does this work for you?",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T12:13:06Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.\n+  return commonNormalizeSnapshot(html)\n+    .replace(/ ais-RangeInput--noRefinement/g, '')\n+    .replace(/value=\"\"/g, '');\n+}\n+\n+export function createOptionsTests(\n+  setup: RangeInputWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with default props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RangeInput')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RangeInput\"\n+        >\n+          <form\n+            class=\"ais-RangeInput-form\"\n+          >\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--min\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <span\n+              class=\"ais-RangeInput-separator\"\n+            >\n+              to\n+            </span>\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--max\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1000\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <button\n+              class=\"ais-RangeInput-submit\"\n+              type=\"submit\"\n+            >\n+              Go\n+            </button>\n+          </form>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+          initialUiState: {\n+            indexName: {\n+              range: {\n+                price: '100:200',\n+              },\n+            },\n+          },\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-RangeInput-input--min')).toHaveValue(\n+        100\n+      );\n+      expect(document.querySelector('.ais-RangeInput-input--max')).toHaveValue(\n+        200\n+      );\n+    });\n+\n+    test('renders with precision', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price', precision: 2 },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      ['min', 'max'].forEach((target) => {\n+        expect(\n+          document.querySelector(`.ais-RangeInput-input--${target}`)\n+        ).toHaveAttribute('step', '0.01');\n+      });\n+    });\n+\n+    test('refines on submit', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633146718",
+    "id": 1633146718,
+    "in_reply_to_id": 1632884298,
+    "line": 147,
+    "node_id": "PRRC_kwDOAlnbOs5hV9de",
+    "original_commit_id": "3f6daa572bd9a6f76ca1ce6aabecd96204ae9674",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 147,
+    "pull_request_review_id": 2107619084,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146718/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-06-10T12:13:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633146718",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633150593"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6233"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633150593"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "yes that's fine, although I meant to do that in a separate test",
+    "commit_id": "09537b494ec5d9e06cef604c2074fafd7509a943",
+    "created_at": "2024-06-10T12:16:25Z",
+    "diff_hunk": "@@ -0,0 +1,220 @@\n+import {\n+  createMultiSearchResponse,\n+  createSearchClient,\n+  createSingleSearchResponse,\n+} from '@instantsearch/mocks';\n+import {\n+  normalizeSnapshot as commonNormalizeSnapshot,\n+  wait,\n+} from '@instantsearch/testutils';\n+import userEvent from '@testing-library/user-event';\n+\n+import type { RangeInputWidgetSetup } from '.';\n+import type { TestOptions } from '../../common';\n+\n+function normalizeSnapshot(html: string) {\n+  // React InstantSearch adds a noRefinement modifier on the list.\n+  // @MAJOR: Remove this once React InstantSearch aligns with spec.\n+  return commonNormalizeSnapshot(html)\n+    .replace(/ ais-RangeInput--noRefinement/g, '')\n+    .replace(/value=\"\"/g, '');\n+}\n+\n+export function createOptionsTests(\n+  setup: RangeInputWidgetSetup,\n+  { act }: Required<TestOptions>\n+) {\n+  describe('options', () => {\n+    test('renders with default props', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(\n+        document.querySelector('.ais-RangeInput')\n+      ).toMatchNormalizedInlineSnapshot(\n+        normalizeSnapshot,\n+        `\n+        <div\n+          class=\"ais-RangeInput\"\n+        >\n+          <form\n+            class=\"ais-RangeInput-form\"\n+          >\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--min\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <span\n+              class=\"ais-RangeInput-separator\"\n+            >\n+              to\n+            </span>\n+            <label\n+              class=\"ais-RangeInput-label\"\n+            >\n+              <input\n+                class=\"ais-RangeInput-input ais-RangeInput-input--max\"\n+                max=\"1000\"\n+                min=\"1\"\n+                placeholder=\"1000\"\n+                step=\"1\"\n+                type=\"number\"\n+              />\n+            </label>\n+            <button\n+              class=\"ais-RangeInput-submit\"\n+              type=\"submit\"\n+            >\n+              Go\n+            </button>\n+          </form>\n+        </div>\n+      `\n+      );\n+    });\n+\n+    test('renders with initial refinements', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+          initialUiState: {\n+            indexName: {\n+              range: {\n+                price: '100:200',\n+              },\n+            },\n+          },\n+        },\n+        widgetParams: { attribute: 'price' },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      expect(document.querySelector('.ais-RangeInput-input--min')).toHaveValue(\n+        100\n+      );\n+      expect(document.querySelector('.ais-RangeInput-input--max')).toHaveValue(\n+        200\n+      );\n+    });\n+\n+    test('renders with precision', async () => {\n+      const searchClient = createMockedSearchClient();\n+\n+      await setup({\n+        instantSearchOptions: {\n+          indexName: 'indexName',\n+          searchClient,\n+        },\n+        widgetParams: { attribute: 'price', precision: 2 },\n+      });\n+\n+      await act(async () => {\n+        await wait(0);\n+      });\n+\n+      ['min', 'max'].forEach((target) => {\n+        expect(\n+          document.querySelector(`.ais-RangeInput-input--${target}`)\n+        ).toHaveAttribute('step', '0.01');\n+      });\n+    });\n+\n+    test('refines on submit', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6233#discussion_r1633150593",
+    "id": 1633150593,
+    "in_reply_to_id": 1632884298,
+    "line": 147,
+    "node_id": "PRRC_kwDOAlnbOs5hV-aB",
+    "original_commit_id": "3f6daa572bd9a6f76ca1ce6aabecd96204ae9674",
+    "original_line": 147,
+    "original_position": 147,
+    "original_start_line": null,
+    "path": "tests/common/widgets/range-input/options.ts",
+    "position": 147,
+    "pull_request_review_id": 2107626303,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6233",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633150593/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2024-06-10T12:16:25Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1633150593",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

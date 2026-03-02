@@ -1,0 +1,1257 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r528594999"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/528594999"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "it'd be nice to have a little comment about floor for min and ceil for max.",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-23T10:15:49Z",
+    "diff_hunk": "@@ -0,0 +1,2151 @@\n+import jsHelper, {\n+  SearchResults,\n+  SearchParameters,\n+  AlgoliaSearchHelper,\n+} from 'algoliasearch-helper';\n+import connectRange from '../connectRange';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import { createInstantSearch } from '../../../../test/mock/createInstantSearch';\n+\n+function createFacetStatsResults({\n+  helper,\n+  attribute,\n+  min,\n+  max,\n+}: {\n+  helper: AlgoliaSearchHelper;\n+  attribute: string;\n+  min: number;\n+  max: number;\n+}): SearchResults {\n+  return new SearchResults(helper.state, [\n+    createSingleSearchResponse({\n+      facets: { [attribute]: { [min]: 10000, [max]: 1 } },\n+      facets_stats: {\n+        [attribute]: {\n+          min,\n+          max,\n+          avg: min,\n+          sum: max,\n+        },\n+      },\n+    }),\n+  ]);\n+}\n+\n+describe('connectRange', () => {\n+  describe('Usage', () => {\n+    it('throws without render function', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectRange()({});\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (received type Undefined).\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('throws without attribute', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectRange(() => {})({ attribute: undefined });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`attribute\\` option is required.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('throws with `max` lower than `min`', () => {\n+      expect(() => {\n+        connectRange(() => {})({ attribute: 'price', min: 100, max: 50 });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`max\\` option can't be lower than \\`min\\`.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('is a widget', () => {\n+      const render = jest.fn();\n+      const unmount = jest.fn();\n+\n+      const customRange = connectRange(render, unmount);\n+      const widget = customRange({ attribute: 'facet' });\n+\n+      expect(widget).toEqual(\n+        expect.objectContaining({\n+          $$type: 'ais.range',\n+          init: expect.any(Function),\n+          render: expect.any(Function),\n+          dispose: expect.any(Function),\n+\n+          getWidgetUiState: expect.any(Function),\n+          getWidgetSearchParameters: expect.any(Function),\n+        })\n+      );\n+    });\n+  });\n+\n+  it('Renders during init and render', () => {\n+    // test that the dummyRendering is called with the isFirstRendering\n+    // flag set accordingly\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({\n+      attribute,\n+    });\n+\n+    const config = widget.getWidgetSearchParameters!(new SearchParameters(), {\n+      uiState: {},\n+    });\n+    expect(config).toEqual(\n+      new SearchParameters({\n+        numericRefinements: { price: {} },\n+        disjunctiveFacets: [attribute],\n+      })\n+    );\n+\n+    const helper = jsHelper(createSearchClient(), '', config);\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    {\n+      // should call the rendering once with isFirstRendering to true\n+      expect(rendering).toHaveBeenCalledTimes(1);\n+      const isFirstRendering =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][1];\n+      expect(isFirstRendering).toBe(true);\n+\n+      // should provide good values for the first rendering\n+      const { range, start, widgetParams } = rendering.mock.calls[\n+        rendering.mock.calls.length - 1\n+      ][0];\n+      expect(range).toEqual({ min: 0, max: 0 });\n+      expect(start).toEqual([-Infinity, Infinity]);\n+      expect(widgetParams).toEqual({\n+        attribute,\n+        precision: 0,\n+      });\n+    }\n+\n+    widget.render!(\n+      createRenderOptions({\n+        results: createFacetStatsResults({\n+          min: 10,\n+          max: 30,\n+          helper,\n+          attribute: 'price',\n+        }),\n+        helper,\n+      })\n+    );\n+\n+    {\n+      // Should call the rendering a second time, with isFirstRendering to false\n+      expect(rendering).toHaveBeenCalledTimes(2);\n+      const isFirstRendering =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][1];\n+      expect(isFirstRendering).toBe(false);\n+\n+      // should provide good values for the first rendering\n+      const { range, start, widgetParams } = rendering.mock.calls[\n+        rendering.mock.calls.length - 1\n+      ][0];\n+      expect(range).toEqual({ min: 10, max: 30 });\n+      expect(start).toEqual([-Infinity, Infinity]);\n+      expect(widgetParams).toEqual({\n+        attribute,\n+        precision: 0,\n+      });\n+    }\n+  });\n+\n+  it('Accepts some user bounds', () => {\n+    const makeWidget = connectRange(() => {});\n+\n+    const attribute = 'price';\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        min: 0,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: { '>=': [0] },\n+        },\n+      })\n+    );\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        max: 100,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: { '<=': [100] },\n+        },\n+      })\n+    );\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        min: 0,\n+        max: 100,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: {\n+            '>=': [0],\n+            '<=': [100],\n+          },\n+        },\n+      })\n+    );\n+  });\n+\n+  it('Provides a function to update the refinements at each step', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({\n+      attribute,\n+    });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+      })\n+    );\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+    }\n+\n+    widget.render!(\n+      createRenderOptions({\n+        results: createFacetStatsResults({\n+          min: 10,\n+          max: 30,\n+          helper,\n+          attribute: 'price',\n+        }),\n+        state: helper.state,\n+        helper,\n+      })\n+    );\n+\n+    {\n+      // Second rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([23, 27]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([23]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([27]);\n+      expect(helper.search).toHaveBeenCalledTimes(2);\n+    }\n+  });\n+\n+  it('should add numeric refinement when refining min boundary without previous configuration', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute, min: 0, max: 500 });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+    }\n+  });\n+\n+  it('should add numeric refinement when refining min boundary with previous configuration', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute, min: 0, max: 500 });\n+    const configuration = widget.getWidgetSearchParameters!(\n+      new SearchParameters({\n+        index: 'movie',\n+      }),\n+      { uiState: {} }\n+    );\n+\n+    const helper = jsHelper(createSearchClient(), '', configuration);\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+        instantSearchInstance: createInstantSearch(),\n+      })\n+    );\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+    }\n+  });\n+\n+  it('should refine on boundaries when no min/max defined', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+      })\n+    );\n+\n+    {\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+\n+      refine([undefined, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([]);\n+      expect(helper.search).toHaveBeenCalledTimes(2);\n+\n+      refine([0, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n+      expect(helper.search).toHaveBeenCalledTimes(3);\n+    }\n+  });\n+\n+  describe('range', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default range', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+\n+      const { range } = widget.getWidgetRenderState(createInitOptions());\n+\n+      expect(range).toEqual({ min: 0, max: 0 });\n+    });\n+\n+    it('expect to return range from bounds', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        min: 20,\n+        max: 250,\n+      });\n+\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 10,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 20, max: 250 });\n+    });\n+\n+    it('expect to return range from stats', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 10,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 10, max: 500 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 0', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 0,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.79,\n+            max: 499.99,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1, max: 500 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 1', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 1,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.1, max: 499.6 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 2', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 2,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.12, max: 499.57 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 3', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 3,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.123, max: 499.568 });\n+    });\n+  });\n+\n+  describe('start', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+    const createHelper = () => jsHelper(createSearchClient(), '');\n+\n+    it('expect to return default refinement', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([-Infinity, Infinity]);\n+    });\n+\n+    it('expect to return refinement from helper', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+      helper.addNumericRefinement(attribute, '>=', 10);\n+      helper.addNumericRefinement(attribute, '<=', 100);\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([10, 100]);\n+    });\n+\n+    it('expect to return float refinement values', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+      helper.addNumericRefinement(attribute, '>=', 10.9);\n+      helper.addNumericRefinement(attribute, '<=', 99.1);\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([10.9, 99.1]);\n+    });\n+  });\n+\n+  describe('refine', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+    const createHelper = () => {\n+      const helper = jsHelper(createSearchClient(), '');\n+      helper.search = jest.fn();\n+      jest.spyOn(helper.state, 'removeNumericRefinement');\n+      return helper;\n+    };\n+\n+    it('expect to refine when range are not set', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createInitOptions({ helper })\n+      );\n+\n+      refine([10, 490]);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalledWith(\n+        attribute\n+      );\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are in range', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute,\n+          }),\n+        })\n+      );\n+\n+      refine([10, 490]);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalledWith(\n+        attribute\n+      );\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are parsable integer', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute: 'price',\n+          }),\n+        })\n+      );\n+\n+      // @ts-ignore\n+      refine(['10', '490']);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalled();\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are parsable float', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute: 'price',\n+          }),\n+        })\n+      );\n+\n+      // @ts-ignore\n+      refine(['10.50', '490.50']);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r528594999",
+    "id": 528594999,
+    "line": 771,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUyODU5NDk5OQ==",
+    "original_commit_id": "59d7c0d5e64e348bf02f5bd54e0d6632b89f236b",
+    "original_line": 771,
+    "original_position": 770,
+    "original_start_line": null,
+    "path": "src/connectors/range/__tests__/connectRange-test.ts",
+    "position": 771,
+    "pull_request_review_id": 536331152,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/528594999/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/528594999",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r530929773"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/530929773"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "36e87c07",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-26T10:32:58Z",
+    "diff_hunk": "@@ -0,0 +1,2151 @@\n+import jsHelper, {\n+  SearchResults,\n+  SearchParameters,\n+  AlgoliaSearchHelper,\n+} from 'algoliasearch-helper';\n+import connectRange from '../connectRange';\n+import {\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { createSearchClient } from '../../../../test/mock/createSearchClient';\n+import { createSingleSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import { createInstantSearch } from '../../../../test/mock/createInstantSearch';\n+\n+function createFacetStatsResults({\n+  helper,\n+  attribute,\n+  min,\n+  max,\n+}: {\n+  helper: AlgoliaSearchHelper;\n+  attribute: string;\n+  min: number;\n+  max: number;\n+}): SearchResults {\n+  return new SearchResults(helper.state, [\n+    createSingleSearchResponse({\n+      facets: { [attribute]: { [min]: 10000, [max]: 1 } },\n+      facets_stats: {\n+        [attribute]: {\n+          min,\n+          max,\n+          avg: min,\n+          sum: max,\n+        },\n+      },\n+    }),\n+  ]);\n+}\n+\n+describe('connectRange', () => {\n+  describe('Usage', () => {\n+    it('throws without render function', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectRange()({});\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The render function is not valid (received type Undefined).\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('throws without attribute', () => {\n+      expect(() => {\n+        // @ts-ignore\n+        connectRange(() => {})({ attribute: undefined });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`attribute\\` option is required.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('throws with `max` lower than `min`', () => {\n+      expect(() => {\n+        connectRange(() => {})({ attribute: 'price', min: 100, max: 50 });\n+      }).toThrowErrorMatchingInlineSnapshot(`\n+\"The \\`max\\` option can't be lower than \\`min\\`.\n+\n+See documentation: https://www.algolia.com/doc/api-reference/widgets/range-input/js/#connector, https://www.algolia.com/doc/api-reference/widgets/range-slider/js/#connector\"\n+`);\n+    });\n+\n+    it('is a widget', () => {\n+      const render = jest.fn();\n+      const unmount = jest.fn();\n+\n+      const customRange = connectRange(render, unmount);\n+      const widget = customRange({ attribute: 'facet' });\n+\n+      expect(widget).toEqual(\n+        expect.objectContaining({\n+          $$type: 'ais.range',\n+          init: expect.any(Function),\n+          render: expect.any(Function),\n+          dispose: expect.any(Function),\n+\n+          getWidgetUiState: expect.any(Function),\n+          getWidgetSearchParameters: expect.any(Function),\n+        })\n+      );\n+    });\n+  });\n+\n+  it('Renders during init and render', () => {\n+    // test that the dummyRendering is called with the isFirstRendering\n+    // flag set accordingly\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({\n+      attribute,\n+    });\n+\n+    const config = widget.getWidgetSearchParameters!(new SearchParameters(), {\n+      uiState: {},\n+    });\n+    expect(config).toEqual(\n+      new SearchParameters({\n+        numericRefinements: { price: {} },\n+        disjunctiveFacets: [attribute],\n+      })\n+    );\n+\n+    const helper = jsHelper(createSearchClient(), '', config);\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    {\n+      // should call the rendering once with isFirstRendering to true\n+      expect(rendering).toHaveBeenCalledTimes(1);\n+      const isFirstRendering =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][1];\n+      expect(isFirstRendering).toBe(true);\n+\n+      // should provide good values for the first rendering\n+      const { range, start, widgetParams } = rendering.mock.calls[\n+        rendering.mock.calls.length - 1\n+      ][0];\n+      expect(range).toEqual({ min: 0, max: 0 });\n+      expect(start).toEqual([-Infinity, Infinity]);\n+      expect(widgetParams).toEqual({\n+        attribute,\n+        precision: 0,\n+      });\n+    }\n+\n+    widget.render!(\n+      createRenderOptions({\n+        results: createFacetStatsResults({\n+          min: 10,\n+          max: 30,\n+          helper,\n+          attribute: 'price',\n+        }),\n+        helper,\n+      })\n+    );\n+\n+    {\n+      // Should call the rendering a second time, with isFirstRendering to false\n+      expect(rendering).toHaveBeenCalledTimes(2);\n+      const isFirstRendering =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][1];\n+      expect(isFirstRendering).toBe(false);\n+\n+      // should provide good values for the first rendering\n+      const { range, start, widgetParams } = rendering.mock.calls[\n+        rendering.mock.calls.length - 1\n+      ][0];\n+      expect(range).toEqual({ min: 10, max: 30 });\n+      expect(start).toEqual([-Infinity, Infinity]);\n+      expect(widgetParams).toEqual({\n+        attribute,\n+        precision: 0,\n+      });\n+    }\n+  });\n+\n+  it('Accepts some user bounds', () => {\n+    const makeWidget = connectRange(() => {});\n+\n+    const attribute = 'price';\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        min: 0,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: { '>=': [0] },\n+        },\n+      })\n+    );\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        max: 100,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: { '<=': [100] },\n+        },\n+      })\n+    );\n+\n+    expect(\n+      makeWidget({\n+        attribute,\n+        min: 0,\n+        max: 100,\n+      }).getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    ).toEqual(\n+      new SearchParameters({\n+        disjunctiveFacets: [attribute],\n+        numericRefinements: {\n+          [attribute]: {\n+            '>=': [0],\n+            '<=': [100],\n+          },\n+        },\n+      })\n+    );\n+  });\n+\n+  it('Provides a function to update the refinements at each step', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({\n+      attribute,\n+    });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+      })\n+    );\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+    }\n+\n+    widget.render!(\n+      createRenderOptions({\n+        results: createFacetStatsResults({\n+          min: 10,\n+          max: 30,\n+          helper,\n+          attribute: 'price',\n+        }),\n+        state: helper.state,\n+        helper,\n+      })\n+    );\n+\n+    {\n+      // Second rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([23, 27]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([23]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([27]);\n+      expect(helper.search).toHaveBeenCalledTimes(2);\n+    }\n+  });\n+\n+  it('should add numeric refinement when refining min boundary without previous configuration', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute, min: 0, max: 500 });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(createInitOptions({ helper }));\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+    }\n+  });\n+\n+  it('should add numeric refinement when refining min boundary with previous configuration', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute, min: 0, max: 500 });\n+    const configuration = widget.getWidgetSearchParameters!(\n+      new SearchParameters({\n+        index: 'movie',\n+      }),\n+      { uiState: {} }\n+    );\n+\n+    const helper = jsHelper(createSearchClient(), '', configuration);\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+        state: helper.state,\n+        instantSearchInstance: createInstantSearch(),\n+      })\n+    );\n+\n+    {\n+      // first rendering\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+      refine([10, 30]);\n+\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([30]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([500]);\n+    }\n+  });\n+\n+  it('should refine on boundaries when no min/max defined', () => {\n+    const rendering = jest.fn();\n+    const makeWidget = connectRange(rendering);\n+\n+    const attribute = 'price';\n+    const widget = makeWidget({ attribute });\n+\n+    const helper = jsHelper(\n+      createSearchClient(),\n+      '',\n+      widget.getWidgetSearchParameters!(new SearchParameters(), { uiState: {} })\n+    );\n+    helper.search = jest.fn();\n+\n+    widget.init!(\n+      createInitOptions({\n+        helper,\n+      })\n+    );\n+\n+    {\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n+\n+      const renderOptions =\n+        rendering.mock.calls[rendering.mock.calls.length - 1][0];\n+      const { refine } = renderOptions;\n+\n+      refine([undefined, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual(undefined);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n+      expect(helper.search).toHaveBeenCalledTimes(1);\n+\n+      refine([0, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([]);\n+      expect(helper.search).toHaveBeenCalledTimes(2);\n+\n+      refine([0, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n+      expect(helper.search).toHaveBeenCalledTimes(3);\n+    }\n+  });\n+\n+  describe('range', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default range', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+\n+      const { range } = widget.getWidgetRenderState(createInitOptions());\n+\n+      expect(range).toEqual({ min: 0, max: 0 });\n+    });\n+\n+    it('expect to return range from bounds', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        min: 20,\n+        max: 250,\n+      });\n+\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 10,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 20, max: 250 });\n+    });\n+\n+    it('expect to return range from stats', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 10,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 10, max: 500 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 0', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 0,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.79,\n+            max: 499.99,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1, max: 500 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 1', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 1,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.1, max: 499.6 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 2', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 2,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.12, max: 499.57 });\n+    });\n+\n+    it('expect to return rounded range values when precision is 3', () => {\n+      const widget = connectRange(rendering)({\n+        attribute,\n+        precision: 3,\n+      });\n+      const helper = jsHelper(createSearchClient(), '');\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { range } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 1.12345,\n+            max: 499.56789,\n+          }),\n+        })\n+      );\n+\n+      expect(range).toEqual({ min: 1.123, max: 499.568 });\n+    });\n+  });\n+\n+  describe('start', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+    const createHelper = () => jsHelper(createSearchClient(), '');\n+\n+    it('expect to return default refinement', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([-Infinity, Infinity]);\n+    });\n+\n+    it('expect to return refinement from helper', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+      helper.addNumericRefinement(attribute, '>=', 10);\n+      helper.addNumericRefinement(attribute, '<=', 100);\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([10, 100]);\n+    });\n+\n+    it('expect to return float refinement values', () => {\n+      const widget = connectRange(rendering)({ attribute });\n+      const helper = createHelper();\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+      helper.addNumericRefinement(attribute, '>=', 10.9);\n+      helper.addNumericRefinement(attribute, '<=', 99.1);\n+\n+      const { start } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            helper,\n+            attribute,\n+            min: 0,\n+            max: 500,\n+          }),\n+        })\n+      );\n+\n+      expect(start).toEqual([10.9, 99.1]);\n+    });\n+  });\n+\n+  describe('refine', () => {\n+    const attribute = 'price';\n+    const rendering = () => {};\n+    const createHelper = () => {\n+      const helper = jsHelper(createSearchClient(), '');\n+      helper.search = jest.fn();\n+      jest.spyOn(helper.state, 'removeNumericRefinement');\n+      return helper;\n+    };\n+\n+    it('expect to refine when range are not set', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({\n+        attribute,\n+      });\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createInitOptions({ helper })\n+      );\n+\n+      refine([10, 490]);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalledWith(\n+        attribute\n+      );\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are in range', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute,\n+          }),\n+        })\n+      );\n+\n+      refine([10, 490]);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalledWith(\n+        attribute\n+      );\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are parsable integer', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute: 'price',\n+          }),\n+        })\n+      );\n+\n+      // @ts-ignore\n+      refine(['10', '490']);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);\n+      expect(helper.getNumericRefinement(attribute, '<=')).toEqual([490]);\n+      expect(helper.state.removeNumericRefinement).toHaveBeenCalled();\n+      expect(helper.search).toHaveBeenCalled();\n+    });\n+\n+    it('expect to refine when values are parsable float', () => {\n+      const helper = createHelper();\n+      const widget = connectRange(rendering)({ attribute });\n+\n+      helper.setState(\n+        widget.getWidgetSearchParameters!(helper.state, { uiState: {} })\n+      );\n+\n+      const { refine } = widget.getWidgetRenderState(\n+        createRenderOptions({\n+          helper,\n+          results: createFacetStatsResults({\n+            min: 0,\n+            max: 500,\n+            helper,\n+            attribute: 'price',\n+          }),\n+        })\n+      );\n+\n+      // @ts-ignore\n+      refine(['10.50', '490.50']);\n+\n+      expect(helper.getNumericRefinement(attribute, '>=')).toEqual([10]);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r530929773",
+    "id": 530929773,
+    "in_reply_to_id": 528594999,
+    "line": 771,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMDkyOTc3Mw==",
+    "original_commit_id": "59d7c0d5e64e348bf02f5bd54e0d6632b89f236b",
+    "original_line": 771,
+    "original_position": 770,
+    "original_start_line": null,
+    "path": "src/connectors/range/__tests__/connectRange-test.ts",
+    "position": 771,
+    "pull_request_review_id": 539189733,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/530929773/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/530929773",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531599915"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531599915"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Since we export these types, can we prefix them with `Range`?",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T13:24:04Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531599915",
+    "id": 531599915,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTU5OTkxNQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": 25,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 539977213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531599915/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531599915",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531600545"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531600545"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Would `RangeBoundaries` make more sense?\r\n\r\n```suggestion\r\nexport type RangeBoundaries = [Min, Max];\r\n```",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T13:25:16Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531600545",
+    "id": 531600545,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTYwMDU0NQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 539977213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531600545/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531600545",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531603335"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531603335"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "If this repo tooling supports it, we can start using [`assert`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions) functions so that the TS compiler understands that for this code path, those variables exist.",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T13:30:40Z",
+    "diff_hunk": "@@ -110,40 +181,39 @@ export default function connectRange(renderFn, unmountFn = noop) {\n       const isValidNewNextMin = isFiniteNumber(newNextMin);\n       const isValidMinCurrentRange = isFiniteNumber(currentRangeMin);\n       const isGreaterThanCurrentRange =\n-        isValidMinCurrentRange && currentRangeMin <= newNextMin;\n+        isValidMinCurrentRange && currentRangeMin! <= newNextMin!;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531603335",
+    "id": 531603335,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTYwMzMzNQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 184,
+    "original_position": 227,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 539977213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531603335/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531603335",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531604325"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531604325"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Any particular reasons for this change?",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T13:32:36Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531604325",
+    "id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTYwNDMyNQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 539977213,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531604325/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531604325",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648046"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648046"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "isFiniteNumber already does that, but since we saved it to variables, it doesn't work in all cases. I didn't want to risk making too many changes here (since the variables were chosen to make the final equation not too complex). Not sure what you prefer",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T14:59:03Z",
+    "diff_hunk": "@@ -110,40 +181,39 @@ export default function connectRange(renderFn, unmountFn = noop) {\n       const isValidNewNextMin = isFiniteNumber(newNextMin);\n       const isValidMinCurrentRange = isFiniteNumber(currentRangeMin);\n       const isGreaterThanCurrentRange =\n-        isValidMinCurrentRange && currentRangeMin <= newNextMin;\n+        isValidMinCurrentRange && currentRangeMin! <= newNextMin!;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648046",
+    "id": 531648046,
+    "in_reply_to_id": 531603335,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTY0ODA0Ng==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 184,
+    "original_position": 227,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 540039413,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648046/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648046",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648409"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648409"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "undefined isn't a valid value according to the type, since `x?: y` isn't the same as `x: y | undefined`",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T14:59:42Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648409",
+    "id": 531648409,
+    "in_reply_to_id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTY0ODQwOQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 540039828,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648409/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648409",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648608"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648608"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I prefer boundaries, but the property in the renderState which is called `start`, so I went with the same",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T15:00:06Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531648608",
+    "id": 531648608,
+    "in_reply_to_id": 531600545,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTY0ODYwOA==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 540040103,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648608/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531648608",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531650605"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531650605"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "are you suggesting this?\r\n\r\n```\r\nexport type RangeMin = number | undefined;\r\nexport type RangeMax = number | undefined;\r\nexport type RangeStart = [RangeMin, RangeMax];\r\nexport type RangeRange = {\r\n  min: RangeMin;\r\n  max: RangeMax;\r\n};\r\n```\r\n\r\nor keep RangeRange as Range?\r\n",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-11-27T15:04:16Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r531650605",
+    "id": 531650605,
+    "in_reply_to_id": 531599915,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMTY1MDYwNQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": 25,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 540042651,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531650605/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/531650605",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533224641"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533224641"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, and keeping `Range`.",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T09:33:49Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533224641",
+    "id": 533224641,
+    "in_reply_to_id": 531599915,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzIyNDY0MQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": 25,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541711818,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533224641/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533224641",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533226698"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533226698"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's not only used for `start` so it's fine for the name to differ: https://github.com/algolia/instantsearch.js/blob/0844f036cc51938a2ac6b3fccd6ff5ee948dc93a/src/connectors/range/connectRange.ts#L40",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T09:35:12Z",
+    "diff_hunk": "@@ -14,68 +22,128 @@ const withUsage = createDocumentationMessageGenerator(\n \n const $$type = 'ais.range';\n \n-/**\n- * @typedef {Object} CustomRangeWidgetOptions\n- * @property {string} attribute Name of the attribute for faceting.\n- * @property {number} [min = undefined] Minimal range value, default to automatically computed from the result set.\n- * @property {number} [max = undefined] Maximal range value, default to automatically computed from the result set.\n- * @property {number} [precision = 2] Number of digits after decimal point to use.\n- */\n-\n-/**\n- * @typedef {Object} RangeRenderingOptions\n- * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n- * are optional, and will default to the higher and lower bounds. You can use `undefined` to remove a\n- * previously set bound or to set an infinite bound.\n- * @property {{min: number, max: number}} range Results bounds without the current range filter.\n- * @property {Array<number, number>} start Current numeric bounds of the search.\n- * @property {{from: function, to: function}} formatter Transform for the rendering `from` and/or `to` values.\n- * Both functions take a `number` as input and should output a `string`.\n- * @property {Object} widgetParams All original `CustomRangeWidgetOptions` forwarded to the `renderFn`.\n- */\n+export type Min = number | undefined;\n+export type Max = number | undefined;\n+export type Start = [Min, Max];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533226698",
+    "id": 533226698,
+    "in_reply_to_id": 531600545,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzIyNjY5OA==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 27,
+    "original_position": 45,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541713042,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533226698/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533226698",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533229046"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229046"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Fine—we can introduce this pattern in future PRs. The main advantage is that we don't need to use `!` at every use, but only assert that the variable exists in the scope (it'll also be handy in our `index` widget where the lifecycle mutates the \"class variables\").",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T09:37:03Z",
+    "diff_hunk": "@@ -110,40 +181,39 @@ export default function connectRange(renderFn, unmountFn = noop) {\n       const isValidNewNextMin = isFiniteNumber(newNextMin);\n       const isValidMinCurrentRange = isFiniteNumber(currentRangeMin);\n       const isGreaterThanCurrentRange =\n-        isValidMinCurrentRange && currentRangeMin <= newNextMin;\n+        isValidMinCurrentRange && currentRangeMin! <= newNextMin!;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533229046",
+    "id": 533229046,
+    "in_reply_to_id": 531603335,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzIyOTA0Ng==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 184,
+    "original_position": 227,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541714638,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229046/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229046",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533229821"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229821"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Right, we might as well change the type in the Helper then?",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T09:37:40Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533229821",
+    "id": 533229821,
+    "in_reply_to_id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzIyOTgyMQ==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541715237,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229821/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533229821",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533323557"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533323557"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "changed it to need less !",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T11:03:47Z",
+    "diff_hunk": "@@ -110,40 +181,39 @@ export default function connectRange(renderFn, unmountFn = noop) {\n       const isValidNewNextMin = isFiniteNumber(newNextMin);\n       const isValidMinCurrentRange = isFiniteNumber(currentRangeMin);\n       const isGreaterThanCurrentRange =\n-        isValidMinCurrentRange && currentRangeMin <= newNextMin;\n+        isValidMinCurrentRange && currentRangeMin! <= newNextMin!;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533323557",
+    "id": 533323557,
+    "in_reply_to_id": 531603335,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzMyMzU1Nw==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 184,
+    "original_position": 227,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541786695,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533323557/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533323557",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533324246"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533324246"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the type in the helper is `numericRefinements: { [facet: string]: SearchParameters.OperatorList }`, do you think that should be `numericRefinements: { [facet: string]: SearchParameters.OperatorList | undefined }`? I feel like we'd need to change a couple more types for that to be consistent. I'd rather keep the delete, it's not a performance footgun anymore nowadays",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-01T11:05:04Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r533324246",
+    "id": 533324246,
+    "in_reply_to_id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzMzMyNDI0Ng==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 541787628,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533324246/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/533324246",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r534000718"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534000718"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "with https://github.com/algolia/algoliasearch-helper-js/pull/801 we can use this for dispose instead (much cleaner IMO)\r\n\r\n```js\r\n        return state\r\n          .removeDisjunctiveFacet(attribute)\r\n          .removeNumericRefinement(attribute);\r\n```",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-02T09:04:49Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r534000718",
+    "id": 534000718,
+    "in_reply_to_id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzNDAwMDcxOA==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 542623078,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534000718/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:02:18Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534000718",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4587#discussion_r534043390"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4587"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534043390"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "fixed in https://github.com/algolia/instantsearch.js/pull/4587/commits/93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "commit_id": "93dd0e5edcfc5048c44b94e235a3b0412eff75fa",
+    "created_at": "2020-12-02T10:06:27Z",
+    "diff_hunk": "@@ -342,10 +420,7 @@ export default function connectRange(renderFn, unmountFn = noop) {\n         // can not use setQueryParameters || removeNumericRefinement, because\n         // they both keep the old value. This isn't immutable, but it is fine\n         // since it's already a copy.\n-        stateWithoutDisjunctive.numericRefinements = {\n-          ...state.numericRefinements,\n-          [attribute]: undefined,\n-        };\n+        delete stateWithoutDisjunctive.numericRefinements[attribute];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4587#discussion_r534043390",
+    "id": 534043390,
+    "in_reply_to_id": 531604325,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDUzNDA0MzM5MA==",
+    "original_commit_id": "36e87c0729ab93e3f351ef63042f899033601fab",
+    "original_line": 423,
+    "original_position": 459,
+    "original_start_line": null,
+    "path": "src/connectors/range/connectRange.ts",
+    "position": 1,
+    "pull_request_review_id": 542677449,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4587",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534043390/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2020-12-02T10:06:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/534043390",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

@@ -1,0 +1,210 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326549408"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4128"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326549408"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`setOnToggleShowMore` wdyt?",
+    "commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "created_at": "2019-09-20T09:36:59Z",
+    "diff_hunk": "@@ -0,0 +1,54 @@\n+interface ShowMoreState {\n+  isShowingMore: boolean;\n+}\n+\n+type Listener = () => void;\n+\n+type ShowMoreCallback = ({\n+  toggleShowMore,\n+  isShowingMore,\n+  onToggleShowMore,\n+}: {\n+  toggleShowMore: () => void;\n+  isShowingMore: () => boolean;\n+  onToggleShowMore: (listener: Listener) => void;\n+}) => void;\n+\n+export function createWithShowMore(initialState?: Partial<ShowMoreState>) {\n+  const state: ShowMoreState = {\n+    isShowingMore: false,\n+    ...initialState,\n+  };\n+\n+  let onToggle: Listener | null = null;\n+\n+  function toggleShowMore() {\n+    state.isShowingMore = !state.isShowingMore;\n+\n+    if (onToggle) {\n+      onToggle();\n+    }\n+  }\n+\n+  function onToggleShowMore(listener: Listener) {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326549408",
+    "id": 326549408,
+    "line": 33,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyNjU0OTQwOA==",
+    "original_commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "original_line": 33,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/lib/enhancers/withShowMore.ts",
+    "position": 33,
+    "pull_request_review_id": 291056830,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4128",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326549408/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-20T09:36:59Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326549408",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326599500"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4128"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326599500"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'd rather have a way to share behaviour, which can influence every part of the widget, including search parameters. As @samouss said, the issue is broader than just here, and thus might not be the pattern that fits us best",
+    "commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "created_at": "2019-09-20T12:14:25Z",
+    "diff_hunk": "@@ -114,165 +117,148 @@ export default function connectMenu(renderFn, unmountFn = noop) {\n       );\n     }\n \n-    return {\n-      $$type: 'ais.menu',\n-\n-      isShowingMore: false,\n-\n-      // Provide the same function to the `renderFn` so that way the user\n-      // has to only bind it once when `isFirstRendering` for instance\n-      toggleShowMore() {},\n-      cachedToggleShowMore() {\n-        this.toggleShowMore();\n-      },\n-\n-      createToggleShowMore({ results, instantSearchInstance }) {\n-        return () => {\n-          this.isShowingMore = !this.isShowingMore;\n-          this.render({ results, instantSearchInstance });\n-        };\n-      },\n-\n-      getLimit() {\n-        return this.isShowingMore ? showMoreLimit : limit;\n-      },\n-\n-      refine(helper) {\n-        return facetValue => {\n-          const [refinedItem] = helper.getHierarchicalFacetBreadcrumb(\n-            attribute\n+    return withShowMore(\n+      ({ toggleShowMore, isShowingMore, onToggleShowMore }) => ({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326599500",
+    "id": 326599500,
+    "line": 121,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyNjU5OTUwMA==",
+    "original_commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "original_line": 121,
+    "original_position": 46,
+    "original_start_line": null,
+    "path": "src/connectors/menu/connectMenu.js",
+    "position": 46,
+    "pull_request_review_id": 291124097,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4128",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326599500/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-20T12:14:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326599500",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326720234"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4128"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326720234"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is precisely what _I didn't want_ to do in this proposal – I tried another approach (see https://github.com/algolia/instantsearch.js/pull/4128#issuecomment-533633177). Not saying that one is better than another, just wanted to try something new and trigger discussion.\r\n\r\nHere I wanted the connector to still be in control of everything with the given information (e.g. \"is it showing more right now?\"). I tried to avoid the black box architecture that React InstantSearch creates.",
+    "commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "created_at": "2019-09-20T17:02:05Z",
+    "diff_hunk": "@@ -114,165 +117,148 @@ export default function connectMenu(renderFn, unmountFn = noop) {\n       );\n     }\n \n-    return {\n-      $$type: 'ais.menu',\n-\n-      isShowingMore: false,\n-\n-      // Provide the same function to the `renderFn` so that way the user\n-      // has to only bind it once when `isFirstRendering` for instance\n-      toggleShowMore() {},\n-      cachedToggleShowMore() {\n-        this.toggleShowMore();\n-      },\n-\n-      createToggleShowMore({ results, instantSearchInstance }) {\n-        return () => {\n-          this.isShowingMore = !this.isShowingMore;\n-          this.render({ results, instantSearchInstance });\n-        };\n-      },\n-\n-      getLimit() {\n-        return this.isShowingMore ? showMoreLimit : limit;\n-      },\n-\n-      refine(helper) {\n-        return facetValue => {\n-          const [refinedItem] = helper.getHierarchicalFacetBreadcrumb(\n-            attribute\n+    return withShowMore(\n+      ({ toggleShowMore, isShowingMore, onToggleShowMore }) => ({",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4128#discussion_r326720234",
+    "id": 326720234,
+    "in_reply_to_id": 326599500,
+    "line": 121,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDMyNjcyMDIzNA==",
+    "original_commit_id": "d21788871c6c75dfcfb46cbd1362e51f19395841",
+    "original_line": 121,
+    "original_position": 46,
+    "original_start_line": null,
+    "path": "src/connectors/menu/connectMenu.js",
+    "position": 46,
+    "pull_request_review_id": 291285816,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4128",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326720234/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2019-09-20T17:02:06Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/326720234",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

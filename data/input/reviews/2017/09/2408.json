@@ -1,0 +1,1737 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141368615"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141368615"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Nice move. Indeed the implementation should be as \"stupid\" as possible :)",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T14:52:18Z",
+    "diff_hunk": "@@ -31,17 +30,9 @@ class Slider extends Component {\n     return this.props.min >= this.props.max;\n   }\n \n-  handleChange = ({ min, max, values }) => {\n-    // when Slider is disabled, we alter `min, max` values\n-    // in order to render a \"disabled state\" Slider. Since we alter\n-    // theses values, Rheostat trigger a \"change\" event which trigger a new\n-    // search to Algolia with wrong values.\n+  handleChange = ({ values }) => {\n     if (!this.isDisabled) {\n-      const { refine } = this.props;\n-      refine([\n-        min === values[0] ? undefined : values[0],\n-        max === values[1] ? undefined : values[1],\n-      ]);\n+      this.props.refine(values);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141368615",
+    "id": 141368615,
+    "line": 35,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM2ODYxNQ==",
+    "original_commit_id": "bd74044fe8742a31607b415fa62ccc8cc8f8ea62",
+    "original_line": 35,
+    "original_position": 36,
+    "original_start_line": null,
+    "path": "src/components/Slider/Slider.js",
+    "position": 36,
+    "pull_request_review_id": 65571626,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141368615/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141368615",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141375612"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141375612"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Not a huge fan of mocking the Helper. Or in this case, the state. What counts is the final result not the call to specific methods. If you want I can give you a hand on changing the strategy.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:13:54Z",
+    "diff_hunk": "@@ -250,15 +291,649 @@ describe('connectRangeSlider', () => {\n       expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n       expect(helper.search.callCount).toBe(1);\n \n-      refine([0, undefined]);\n-      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      refine([10, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n       expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n       expect(helper.search.callCount).toBe(2);\n \n-      refine([0, 100]);\n-      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      refine([10, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n       expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n       expect(helper.search.callCount).toBe(3);\n     }\n   });\n+\n+  describe('getConfiguration', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default configuration', () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return default configuration if previous one has already numeric refinements', () => {\n+      const currentConfiguration = {\n+        numericRefinements: {\n+          price: {\n+            '<=': [500],\n+          },\n+        },\n+      };\n+\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        max: 500,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it(\"expect to return default configuration if the given bounds aren't valid\", () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        min: 1000,\n+        max: 500,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return configuration with added numeric refinements', () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        max: 500,\n+      });\n+\n+      const expectation = {\n+        disjunctiveFacets: ['price'],\n+        numericRefinements: {\n+          price: {\n+            '<=': [500],\n+          },\n+        },\n+      };\n+\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+  });\n+\n+  describe('_isAbleToRefine', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return true when only min is provided', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(10, null);\n+      const actual1 = widget._isAbleToRefine(10, undefined);\n+\n+      expect(actual0).toBe(true);\n+      expect(actual1).toBe(true);\n+    });\n+\n+    it('expect to return true when only max is provided', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(null, 10);\n+      const actual1 = widget._isAbleToRefine(undefined, 10);\n+\n+      expect(actual0).toBe(true);\n+      expect(actual1).toBe(true);\n+    });\n+\n+    it('expect to return true when both are provided with min lower than max', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual = widget._isAbleToRefine(10, 20);\n+\n+      expect(actual).toBe(true);\n+    });\n+\n+    it('expect to return false when both are provided with min greater or equal than max', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(10, 10);\n+      const actual1 = widget._isAbleToRefine(20, 10);\n+\n+      expect(actual0).toBe(false);\n+      expect(actual1).toBe(false);\n+    });\n+\n+    it('expect to return false when both are invalid', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(null, null);\n+      const actual1 = widget._isAbleToRefine(null, undefined);\n+      const actual2 = widget._isAbleToRefine(undefined, null);\n+      const actual3 = widget._isAbleToRefine(undefined, undefined);\n+\n+      expect(actual0).toBe(false);\n+      expect(actual1).toBe(false);\n+      expect(actual2).toBe(false);\n+      expect(actual3).toBe(false);\n+    });\n+  });\n+\n+  describe('_getCurrentRange', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default range', () => {\n+      const stats = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 0, max: 0 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return range from bounds', () => {\n+      const stats = { min: 10, max: 500 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        min: 20,\n+        max: 250,\n+      });\n+\n+      const expectation = { min: 20, max: 250 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return range from stats', () => {\n+      const stats = { min: 10, max: 500 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 10, max: 500 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return rounded range values', () => {\n+      const stats = { min: 1.79, max: 499.99 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 1, max: 500 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+  });\n+\n+  describe('_getCurrentRefinement', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default refinement', () => {\n+      const widget = connectRangeSlider(rendering)({ attributeName });\n+      const helper = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141375612",
+    "id": 141375612,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM3NTYxMg==",
+    "original_commit_id": "bd74044fe8742a31607b415fa62ccc8cc8f8ea62",
+    "original_line": 506,
+    "original_position": 295,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/__tests__/connectRangeSlider-test.js",
+    "position": 1,
+    "pull_request_review_id": 65571626,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141375612/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141375612",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141377990"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141377990"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes indeed :)",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:21:25Z",
+    "diff_hunk": "@@ -82,12 +82,12 @@ export default function connectRangeSlider(renderFn) {\n         };\n \n         const hasUserBounds = userMin !== undefined || userMax !== undefined;\n-        const boundsNotAlreadyDefined =\n-          !originalConf ||\n-          (originalConf.numericRefinements &&\n-            originalConf.numericRefinements[attributeName] === undefined);\n+        const boundsAlreadyDefined =",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141377990",
+    "id": 141377990,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM3Nzk5MA==",
+    "original_commit_id": "eca7d371c2ec626231a1d28948c7c0002c7fdeb7",
+    "original_line": 85,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65571626,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141377990/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141377990",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141380973"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141380973"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`_` is a bit scala idiomatic ;) I think that `f` would be slightly better.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:30:35Z",
+    "diff_hunk": "@@ -186,28 +210,18 @@ export default function connectRangeSlider(renderFn) {\n       },\n \n       render({ results, helper, instantSearchInstance }) {\n+        const bounds = { min: userMin, max: userMax };\n         const facetsFromResults = results.disjunctiveFacets || [];\n-        const facet = find(\n-          facetsFromResults,\n-          ({ name }) => name === attributeName\n-        );\n-        const stats =\n-          facet !== undefined && facet.stats !== undefined\n-            ? facet.stats\n-            : {\n-                min: null,\n-                max: null,\n-              };\n-\n-        if (userMin !== undefined) stats.min = userMin;\n-        if (userMax !== undefined) stats.max = userMax;\n+        const facet = find(facetsFromResults, _ => _.name === attributeName);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141380973",
+    "id": 141380973,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM4MDk3Mw==",
+    "original_commit_id": "924cee3c787790411c10af5ca00db946005ad5bf",
+    "original_line": 215,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65571626,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141380973/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141380973",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141385469"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141385469"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`(_) => _.` is really not explicit, and you are using `lodash/find` you can refactor this in a more explicit way:\r\n\r\n```js\r\nconst facet = find(facetsFromResults, { name: attributeName })\r\n```",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:45:14Z",
+    "diff_hunk": "@@ -186,28 +210,18 @@ export default function connectRangeSlider(renderFn) {\n       },\n \n       render({ results, helper, instantSearchInstance }) {\n+        const bounds = { min: userMin, max: userMax };\n         const facetsFromResults = results.disjunctiveFacets || [];\n-        const facet = find(\n-          facetsFromResults,\n-          ({ name }) => name === attributeName\n-        );\n-        const stats =\n-          facet !== undefined && facet.stats !== undefined\n-            ? facet.stats\n-            : {\n-                min: null,\n-                max: null,\n-              };\n-\n-        if (userMin !== undefined) stats.min = userMin;\n-        if (userMax !== undefined) stats.max = userMax;\n+        const facet = find(facetsFromResults, _ => _.name === attributeName);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141385469",
+    "id": 141385469,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM4NTQ2OQ==",
+    "original_commit_id": "924cee3c787790411c10af5ca00db946005ad5bf",
+    "original_line": 215,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65591544,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141385469/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141385469",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141387320"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141387320"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think we should be able to refactor more and use this:\r\n\r\n```js\r\nconst boundsDefined = isSafeInteger(userMin) || isSafeInteger(userMax);\r\n```\r\nhttp://devdocs.io/lodash~4/index#isSafeInteger\r\n",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:50:54Z",
+    "diff_hunk": "@@ -101,26 +101,33 @@ export default function connectRangeSlider(renderFn) {\n         };\n       },\n \n-      getConfiguration: originalConf => {\n-        const conf = {\n+      getConfiguration: currentConfiguration => {\n+        const configuration = {\n           disjunctiveFacets: [attributeName],\n         };\n \n-        const hasUserBounds = userMin !== undefined || userMax !== undefined;\n+        const isMinBound = userMin !== undefined && userMin !== null;\n+        const isMaxBound = userMax !== undefined && userMax !== null;\n+        const boundsDefined = isMinBound || isMaxBound;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141387320",
+    "id": 141387320,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM4NzMyMA==",
+    "original_commit_id": "04834b89bfe79e29cfd0eb644f0625289ab659a0",
+    "original_line": 111,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65593582,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141387320/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141387320",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141388441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141388441"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Do we explicitly need a fat arrow function here?",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:54:19Z",
+    "diff_hunk": "@@ -131,7 +131,7 @@ export default function connectRangeSlider(renderFn) {\n         return configuration;\n       },\n \n-      _getCurrentRefinement(helper, stats = {}) {\n+      _getCurrentRefinement: (helper, stats = {}) => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141388441",
+    "id": 141388441,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM4ODQ0MQ==",
+    "original_commit_id": "d0b02f141d923fa3a439de3c03e3b099911815e8",
+    "original_line": 134,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65594810,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141388441/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141388441",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141389299"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141389299"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I'm not a super fan to re instantiate a new function on every render, the helper reference won't change in between two calls we can cache this.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:56:59Z",
+    "diff_hunk": "@@ -238,7 +238,7 @@ export default function connectRangeSlider(renderFn) {\n \n         renderFn(\n           {\n-            refine: this._refine,\n+            refine: this._refine(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141389299",
+    "id": 141389299,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM4OTI5OQ==",
+    "original_commit_id": "cf9883d7afa0a5fa06de92825a7a8ad426ff484a",
+    "original_line": 241,
+    "original_position": 105,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65595766,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141389299/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141389299",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390160"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390160"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Did you need this in order to query the Rheostat component itself in the tests?",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T15:59:34Z",
+    "diff_hunk": "@@ -13,7 +12,7 @@ import Pit from './Pit.js';\n import autoHideContainerHOC from '../../decorators/autoHideContainer.js';\n import headerFooterHOC from '../../decorators/headerFooter.js';\n \n-class Slider extends Component {\n+export class Slider extends Component {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390160",
+    "id": 141390160,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MDE2MA==",
+    "original_commit_id": "509b7d4c8cc4fd277fdd108effaae1be4cae9738",
+    "original_line": 15,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/components/Slider/Slider.js",
+    "position": 1,
+    "pull_request_review_id": 65596776,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390160/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390160",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390415"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390415"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Can we \"patch\" this on our side to avoid breaking changes to the public API?",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:00:30Z",
+    "diff_hunk": "@@ -34,9 +34,9 @@ Full documentation available at https://community.algolia.com/instantsearch.js/c\n \n /**\n  * @typedef {Object} RangeSliderRenderingOptions\n- * @property {function({min: number, max: number})} refine Sets a range to filter the results on. Both values\n+ * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n  * are optional, and will default to the higher and lower bounds.\n- * @property {{min: number, max: number}} numeric Results bounds without the current range filter.\n+ * @property {{min: number, max: number}} range Results bounds without the current range filter.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390415",
+    "id": 141390415,
+    "line": 40,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MDQxNQ==",
+    "original_commit_id": "b51f5551f018711569a7c5ac4077962d499b926b",
+    "original_line": 39,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 14,
+    "pull_request_review_id": 65597095,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390415/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390415",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390829"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390829"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't get this change, when you want to select to complete range of results keep in mind they're might be lower than zeros values. Or am I missing something?",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:02:02Z",
+    "diff_hunk": "@@ -121,7 +121,7 @@ export default function connectRangeSlider(renderFn) {\n         } else if (stats.min !== undefined && stats.min !== null) {\n           min = stats.min;\n         } else {\n-          min = -Infinity;\n+          min = 0;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390829",
+    "id": 141390829,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MDgyOQ==",
+    "original_commit_id": "d3530a08bf7b1b5482904a1c6935ee2cdd734b7f",
+    "original_line": 124,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65597574,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390829/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390829",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390986"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390986"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "My bad, it was fixed two commits later: https://github.com/algolia/instantsearch.js/pull/2408/commits/ca2ea036053aeed375db6579b84639b04df23aa6",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:02:38Z",
+    "diff_hunk": "@@ -121,7 +121,7 @@ export default function connectRangeSlider(renderFn) {\n         } else if (stats.min !== undefined && stats.min !== null) {\n           min = stats.min;\n         } else {\n-          min = -Infinity;\n+          min = 0;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141390986",
+    "id": 141390986,
+    "in_reply_to_id": 141390829,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MDk4Ng==",
+    "original_commit_id": "d3530a08bf7b1b5482904a1c6935ee2cdd734b7f",
+    "original_line": 124,
+    "original_position": 5,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65597755,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390986/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141390986",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141391696"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141391696"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Me gusta 👍 ",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:04:58Z",
+    "diff_hunk": "@@ -105,28 +105,24 @@ export default function connectRangeSlider(renderFn) {\n       },\n \n       _getCurrentRefinement: (helper, stats = {}) => {\n-        const minValues = helper.state.getNumericRefinement(\n-          attributeName,\n-          '>='\n-        );\n+        const [minValue] =\n+          helper.state.getNumericRefinement(attributeName, '>=') || [];",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141391696",
+    "id": 141391696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MTY5Ng==",
+    "original_commit_id": "152e3eabfefa8db999e3f71c75ca845b6a641ba0",
+    "original_line": 109,
+    "original_position": 9,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65598567,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141391696/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141391696",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141393807"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141393807"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Not really but it's more easy to do with the export. It's avoid something like:\r\n\r\n```js\r\nshallow(<Enhance {...props} />)\r\n    .find('Slider-HeaderFooter')\r\n    .shallow()\r\n    .find('Slider')\r\n    .shallow()\r\n    .find('Rheostat')\r\n    .simulate('change', {\r\n      values: [0, 100],\r\n    });\r\n```",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:12:22Z",
+    "diff_hunk": "@@ -13,7 +12,7 @@ import Pit from './Pit.js';\n import autoHideContainerHOC from '../../decorators/autoHideContainer.js';\n import headerFooterHOC from '../../decorators/headerFooter.js';\n \n-class Slider extends Component {\n+export class Slider extends Component {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141393807",
+    "id": 141393807,
+    "in_reply_to_id": 141390160,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5MzgwNw==",
+    "original_commit_id": "509b7d4c8cc4fd277fdd108effaae1be4cae9738",
+    "original_line": 15,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/components/Slider/Slider.js",
+    "position": 1,
+    "pull_request_review_id": 65601062,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141393807/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141393807",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141396891"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141396891"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It's not a breaking change, just a fix in the documentation.\r\n\r\n- The `refine` function is already called with [an array and not an object](https://github.com/algolia/instantsearch.js/pull/2408/files#diff-6594f5647a134a790a0668875d7b1045L131).\r\n- The property `numeric` doesn't exist on the render function, [it's name is `range`](https://github.com/algolia/instantsearch.js/pull/2408/files#diff-6594f5647a134a790a0668875d7b1045L210).",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:23:38Z",
+    "diff_hunk": "@@ -34,9 +34,9 @@ Full documentation available at https://community.algolia.com/instantsearch.js/c\n \n /**\n  * @typedef {Object} RangeSliderRenderingOptions\n- * @property {function({min: number, max: number})} refine Sets a range to filter the results on. Both values\n+ * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n  * are optional, and will default to the higher and lower bounds.\n- * @property {{min: number, max: number}} numeric Results bounds without the current range filter.\n+ * @property {{min: number, max: number}} range Results bounds without the current range filter.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141396891",
+    "id": 141396891,
+    "in_reply_to_id": 141390415,
+    "line": 40,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTM5Njg5MQ==",
+    "original_commit_id": "b51f5551f018711569a7c5ac4077962d499b926b",
+    "original_line": 39,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 14,
+    "pull_request_review_id": 65604544,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 2,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141396891/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141396891",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141402650"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141402650"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Ok for me. \r\nBut if the user set min / max with a floating number `isSafeInteger` will fail. \r\nMaybe we should go for `isFinite` ? Or we consider that passing floating numbers for bounds is not valid.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:46:49Z",
+    "diff_hunk": "@@ -101,26 +101,33 @@ export default function connectRangeSlider(renderFn) {\n         };\n       },\n \n-      getConfiguration: originalConf => {\n-        const conf = {\n+      getConfiguration: currentConfiguration => {\n+        const configuration = {\n           disjunctiveFacets: [attributeName],\n         };\n \n-        const hasUserBounds = userMin !== undefined || userMax !== undefined;\n+        const isMinBound = userMin !== undefined && userMin !== null;\n+        const isMaxBound = userMax !== undefined && userMax !== null;\n+        const boundsDefined = isMinBound || isMaxBound;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141402650",
+    "id": 141402650,
+    "in_reply_to_id": 141387320,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTQwMjY1MA==",
+    "original_commit_id": "04834b89bfe79e29cfd0eb644f0625289ab659a0",
+    "original_line": 111,
+    "original_position": 14,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65611228,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141402650/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141402650",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141404693"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141404693"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Later I add also `range` as parameter, both can be cached but I prefer to rely on arguments for function instead of `this._cachedRange`. IMHO it's easier to reason about.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-27T16:54:51Z",
+    "diff_hunk": "@@ -238,7 +238,7 @@ export default function connectRangeSlider(renderFn) {\n \n         renderFn(\n           {\n-            refine: this._refine,\n+            refine: this._refine(helper),",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141404693",
+    "id": 141404693,
+    "in_reply_to_id": 141389299,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTQwNDY5Mw==",
+    "original_commit_id": "cf9883d7afa0a5fa06de92825a7a8ad426ff484a",
+    "original_line": 241,
+    "original_position": 105,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65613581,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141404693/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141404693",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141612364"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141612364"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "That's something we do for other components. We've prefixed the component without the wrappers with `Raw` like ClearAll (the one with the headers and autohidecontainer) and RawClearAll (the one without).",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:11:30Z",
+    "diff_hunk": "@@ -13,7 +12,7 @@ import Pit from './Pit.js';\n import autoHideContainerHOC from '../../decorators/autoHideContainer.js';\n import headerFooterHOC from '../../decorators/headerFooter.js';\n \n-class Slider extends Component {\n+export class Slider extends Component {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141612364",
+    "id": 141612364,
+    "in_reply_to_id": 141390160,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxMjM2NA==",
+    "original_commit_id": "509b7d4c8cc4fd277fdd108effaae1be4cae9738",
+    "original_line": 15,
+    "original_position": 16,
+    "original_start_line": null,
+    "path": "src/components/Slider/Slider.js",
+    "position": 1,
+    "pull_request_review_id": 65852574,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141612364/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141612364",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141613367"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613367"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`_isAbleToRefine` is called once with minBounds and maxBounds as the values, right? If yes this seems superfluous.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:15:41Z",
+    "diff_hunk": "@@ -76,108 +80,146 @@ export default function connectRangeSlider(renderFn) {\n     };\n \n     return {\n-      getConfiguration: originalConf => {\n-        const conf = {\n-          disjunctiveFacets: [attributeName],\n-        };\n+      _isAbleToRefine(min, max) {\n+        const isMinValid = _isFinite(min);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141613367",
+    "id": 141613367,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxMzM2Nw==",
+    "original_commit_id": "19b95ff7a0f200a348251c75dab753ffd4051b2f",
+    "original_line": 84,
+    "original_position": 48,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65853805,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613367/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613367",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141613997"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613997"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I don't get why 0 could be a good value here. Can you explain?",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:17:59Z",
+    "diff_hunk": "@@ -76,108 +80,146 @@ export default function connectRangeSlider(renderFn) {\n     };\n \n     return {\n-      getConfiguration: originalConf => {\n-        const conf = {\n-          disjunctiveFacets: [attributeName],\n-        };\n+      _isAbleToRefine(min, max) {\n+        const isMinValid = _isFinite(min);\n+        const isMaxValid = _isFinite(max);\n \n-        const hasUserBounds = userMin !== undefined || userMax !== undefined;\n-        const boundsNotAlreadyDefined =\n-          !originalConf ||\n-          (originalConf.numericRefinements &&\n-            originalConf.numericRefinements[attributeName] === undefined);\n-\n-        if (hasUserBounds && boundsNotAlreadyDefined) {\n-          conf.numericRefinements = { [attributeName]: {} };\n-          if (userMin !== undefined)\n-            conf.numericRefinements[attributeName]['>='] = [userMin];\n-          if (userMax !== undefined)\n-            conf.numericRefinements[attributeName]['<='] = [userMax];\n+        if (isMinValid && isMaxValid && min >= max) {\n+          return false;\n         }\n \n-        return conf;\n+        return isMinValid || isMaxValid;\n       },\n \n-      _getCurrentRefinement(helper) {\n-        let min = helper.state.getNumericRefinement(attributeName, '>=');\n-        let max = helper.state.getNumericRefinement(attributeName, '<=');\n-\n-        if (min && min.length) {\n-          min = min[0];\n+      _getCurrentRange(stats = {}) {\n+        let min;\n+        if (isMinBounds) {\n+          min = minBounds;\n+        } else if (_isFinite(stats.min)) {\n+          min = stats.min;\n         } else {\n-          min = -Infinity;\n+          min = 0;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141613997",
+    "id": 141613997,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxMzk5Nw==",
+    "original_commit_id": "19b95ff7a0f200a348251c75dab753ffd4051b2f",
+    "original_line": 101,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65854548,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613997/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141613997",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141614696"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141614696"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`_getCurrentRefinement` should return an array so we don't have to extract the values and create an array.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:20:44Z",
+    "diff_hunk": "@@ -76,108 +80,146 @@ export default function connectRangeSlider(renderFn) {\n     };\n \n     return {\n-      getConfiguration: originalConf => {\n-        const conf = {\n-          disjunctiveFacets: [attributeName],\n-        };\n+      _isAbleToRefine(min, max) {\n+        const isMinValid = _isFinite(min);\n+        const isMaxValid = _isFinite(max);\n \n-        const hasUserBounds = userMin !== undefined || userMax !== undefined;\n-        const boundsNotAlreadyDefined =\n-          !originalConf ||\n-          (originalConf.numericRefinements &&\n-            originalConf.numericRefinements[attributeName] === undefined);\n-\n-        if (hasUserBounds && boundsNotAlreadyDefined) {\n-          conf.numericRefinements = { [attributeName]: {} };\n-          if (userMin !== undefined)\n-            conf.numericRefinements[attributeName]['>='] = [userMin];\n-          if (userMax !== undefined)\n-            conf.numericRefinements[attributeName]['<='] = [userMax];\n+        if (isMinValid && isMaxValid && min >= max) {\n+          return false;\n         }\n \n-        return conf;\n+        return isMinValid || isMaxValid;\n       },\n \n-      _getCurrentRefinement(helper) {\n-        let min = helper.state.getNumericRefinement(attributeName, '>=');\n-        let max = helper.state.getNumericRefinement(attributeName, '<=');\n-\n-        if (min && min.length) {\n-          min = min[0];\n+      _getCurrentRange(stats = {}) {\n+        let min;\n+        if (isMinBounds) {\n+          min = minBounds;\n+        } else if (_isFinite(stats.min)) {\n+          min = stats.min;\n         } else {\n-          min = -Infinity;\n+          min = 0;\n         }\n \n-        if (max && max.length) {\n-          max = max[0];\n+        let max;\n+        if (isMaxBounds) {\n+          max = maxBounds;\n+        } else if (_isFinite(stats.max)) {\n+          max = stats.max;\n         } else {\n-          max = Infinity;\n+          max = 0;\n         }\n \n         return {\n-          min,\n-          max,\n+          min: Math.floor(min),\n+          max: Math.ceil(max),\n         };\n       },\n \n-      init({ helper, instantSearchInstance }) {\n-        this._refine = bounds => newValues => {\n-          const currentValues = [\n-            helper.getNumericRefinement(attributeName, '>='),\n-            helper.getNumericRefinement(attributeName, '<='),\n-          ];\n-\n-          if (\n-            currentValues[0] !== newValues[0] ||\n-            currentValues[1] !== newValues[1]\n-          ) {\n-            helper.clearRefinements(attributeName);\n-\n-            const hasMin = bounds.min !== null && bounds.min !== undefined;\n-            const minValueChanged =\n-              newValues[0] !== null && newValues[0] !== undefined;\n-\n-            if (\n-              (hasMin && minValueChanged && bounds.min < newValues[0]) ||\n-              (!hasMin && minValueChanged)\n-            ) {\n+      _getCurrentRefinement(helper) {\n+        const [minValue] =\n+          helper.state.getNumericRefinement(attributeName, '>=') || [];\n+\n+        const [maxValue] =\n+          helper.state.getNumericRefinement(attributeName, '<=') || [];\n+\n+        const min = _isFinite(minValue) ? minValue : -Infinity;\n+        const max = _isFinite(maxValue) ? maxValue : Infinity;\n+\n+        return {\n+          min: Math.floor(min),\n+          max: Math.ceil(max),\n+        };\n+      },\n+\n+      _refine(helper, range = {}) {\n+        return ([nextMin, nextMax] = []) => {\n+          const { min: rangeMin, max: rangeMax } = range;\n+\n+          const [min] = helper.getNumericRefinement(attributeName, '>=') || [];\n+          const [max] = helper.getNumericRefinement(attributeName, '<=') || [];\n+\n+          const newNextMin =\n+            !isMinBounds && rangeMin === nextMin ? undefined : nextMin;\n+\n+          const newNextMax =\n+            !isMaxBounds && rangeMax === nextMax ? undefined : nextMax;\n+\n+          if (min !== newNextMin || max !== newNextMax) {\n+            helper.clearRefinements();\n+\n+            const isValidMinInput = _isFinite(newNextMin);\n+            const isValidMinRange = _isFinite(rangeMin);\n+            const isGreatherThanRange =\n+              isValidMinRange && rangeMin <= newNextMin;\n+\n+            if (isValidMinInput && (!isValidMinRange || isGreatherThanRange)) {\n               helper.addNumericRefinement(\n                 attributeName,\n                 '>=',\n-                formatToNumber(newValues[0])\n+                formatToNumber(newNextMin)\n               );\n             }\n \n-            const hasMax = bounds.max !== null && bounds.max !== undefined;\n-            const maxValueChanged =\n-              newValues[1] !== null && newValues[1] !== undefined;\n+            const isValidMaxInput = _isFinite(newNextMax);\n+            const isValidMaxRange = _isFinite(rangeMax);\n+            const isLowerThanRange = isValidMaxRange && rangeMax >= newNextMax;\n \n-            if (\n-              (hasMax && maxValueChanged && bounds.max > newValues[1]) ||\n-              (!hasMax && maxValueChanged)\n-            ) {\n+            if (isValidMaxInput && (!isValidMaxRange || isLowerThanRange)) {\n               helper.addNumericRefinement(\n                 attributeName,\n                 '<=',\n-                formatToNumber(newValues[1])\n+                formatToNumber(newNextMax)\n               );\n             }\n+\n             helper.search();\n           }\n         };\n+      },\n \n-        const stats = {\n-          min: userMin || null,\n-          max: userMax || null,\n+      getConfiguration(currentConfiguration) {\n+        const configuration = {\n+          disjunctiveFacets: [attributeName],\n         };\n-        const currentRefinement = this._getCurrentRefinement(helper);\n+\n+        const boundsAlreadyDefined =\n+          currentConfiguration &&\n+          currentConfiguration.numericRefinements &&\n+          currentConfiguration.numericRefinements[attributeName] !== undefined;\n+\n+        const isBoundsDefined = isMinBounds || isMaxBounds;\n+        const isAbleToRefine = this._isAbleToRefine(minBounds, maxBounds);\n+\n+        if (isBoundsDefined && !boundsAlreadyDefined && isAbleToRefine) {\n+          configuration.numericRefinements = { [attributeName]: {} };\n+\n+          if (isMinBounds) {\n+            configuration.numericRefinements[attributeName]['>='] = [minBounds];\n+          }\n+\n+          if (isMaxBounds) {\n+            configuration.numericRefinements[attributeName]['<='] = [maxBounds];\n+          }\n+        }\n+\n+        return configuration;\n+      },\n+\n+      init({ helper, instantSearchInstance }) {\n+        const stats = {};\n+        const range = this._getCurrentRange(stats);\n+        const { min, max } = this._getCurrentRefinement(helper);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141614696",
+    "id": 141614696,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxNDY5Ng==",
+    "original_commit_id": "19b95ff7a0f200a348251c75dab753ffd4051b2f",
+    "original_line": 212,
+    "original_position": 235,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65855376,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141614696/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141614696",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/393765?v=4",
+      "events_url": "https://api.github.com/users/bobylito/events{/privacy}",
+      "followers_url": "https://api.github.com/users/bobylito/followers",
+      "following_url": "https://api.github.com/users/bobylito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bobylito/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/bobylito",
+      "id": 393765,
+      "login": "bobylito",
+      "node_id": "MDQ6VXNlcjM5Mzc2NQ==",
+      "organizations_url": "https://api.github.com/users/bobylito/orgs",
+      "received_events_url": "https://api.github.com/users/bobylito/received_events",
+      "repos_url": "https://api.github.com/users/bobylito/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/bobylito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bobylito/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/bobylito",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141616101"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616101"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "No problem, I will update it. \r\nI ping you if I have trouble.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:26:05Z",
+    "diff_hunk": "@@ -250,15 +291,649 @@ describe('connectRangeSlider', () => {\n       expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n       expect(helper.search.callCount).toBe(1);\n \n-      refine([0, undefined]);\n-      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      refine([10, undefined]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n       expect(helper.getNumericRefinement('price', '<=')).toEqual(undefined);\n       expect(helper.search.callCount).toBe(2);\n \n-      refine([0, 100]);\n-      expect(helper.getNumericRefinement('price', '>=')).toEqual([0]);\n+      refine([10, 100]);\n+      expect(helper.getNumericRefinement('price', '>=')).toEqual([10]);\n       expect(helper.getNumericRefinement('price', '<=')).toEqual([100]);\n       expect(helper.search.callCount).toBe(3);\n     }\n   });\n+\n+  describe('getConfiguration', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default configuration', () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return default configuration if previous one has already numeric refinements', () => {\n+      const currentConfiguration = {\n+        numericRefinements: {\n+          price: {\n+            '<=': [500],\n+          },\n+        },\n+      };\n+\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        max: 500,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it(\"expect to return default configuration if the given bounds aren't valid\", () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        min: 1000,\n+        max: 500,\n+      });\n+\n+      const expectation = { disjunctiveFacets: ['price'] };\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return configuration with added numeric refinements', () => {\n+      const currentConfiguration = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        max: 500,\n+      });\n+\n+      const expectation = {\n+        disjunctiveFacets: ['price'],\n+        numericRefinements: {\n+          price: {\n+            '<=': [500],\n+          },\n+        },\n+      };\n+\n+      const actual = widget.getConfiguration(currentConfiguration);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+  });\n+\n+  describe('_isAbleToRefine', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return true when only min is provided', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(10, null);\n+      const actual1 = widget._isAbleToRefine(10, undefined);\n+\n+      expect(actual0).toBe(true);\n+      expect(actual1).toBe(true);\n+    });\n+\n+    it('expect to return true when only max is provided', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(null, 10);\n+      const actual1 = widget._isAbleToRefine(undefined, 10);\n+\n+      expect(actual0).toBe(true);\n+      expect(actual1).toBe(true);\n+    });\n+\n+    it('expect to return true when both are provided with min lower than max', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual = widget._isAbleToRefine(10, 20);\n+\n+      expect(actual).toBe(true);\n+    });\n+\n+    it('expect to return false when both are provided with min greater or equal than max', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(10, 10);\n+      const actual1 = widget._isAbleToRefine(20, 10);\n+\n+      expect(actual0).toBe(false);\n+      expect(actual1).toBe(false);\n+    });\n+\n+    it('expect to return false when both are invalid', () => {\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const actual0 = widget._isAbleToRefine(null, null);\n+      const actual1 = widget._isAbleToRefine(null, undefined);\n+      const actual2 = widget._isAbleToRefine(undefined, null);\n+      const actual3 = widget._isAbleToRefine(undefined, undefined);\n+\n+      expect(actual0).toBe(false);\n+      expect(actual1).toBe(false);\n+      expect(actual2).toBe(false);\n+      expect(actual3).toBe(false);\n+    });\n+  });\n+\n+  describe('_getCurrentRange', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default range', () => {\n+      const stats = {};\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 0, max: 0 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return range from bounds', () => {\n+      const stats = { min: 10, max: 500 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+        min: 20,\n+        max: 250,\n+      });\n+\n+      const expectation = { min: 20, max: 250 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return range from stats', () => {\n+      const stats = { min: 10, max: 500 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 10, max: 500 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+\n+    it('expect to return rounded range values', () => {\n+      const stats = { min: 1.79, max: 499.99 };\n+      const widget = connectRangeSlider(rendering)({\n+        attributeName,\n+      });\n+\n+      const expectation = { min: 1, max: 500 };\n+      const actual = widget._getCurrentRange(stats);\n+\n+      expect(actual).toEqual(expectation);\n+    });\n+  });\n+\n+  describe('_getCurrentRefinement', () => {\n+    const attributeName = 'price';\n+    const rendering = () => {};\n+\n+    it('expect to return default refinement', () => {\n+      const widget = connectRangeSlider(rendering)({ attributeName });\n+      const helper = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141616101",
+    "id": 141616101,
+    "in_reply_to_id": 141375612,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxNjEwMQ==",
+    "original_commit_id": "bd74044fe8742a31607b415fa62ccc8cc8f8ea62",
+    "original_line": 506,
+    "original_position": 295,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/__tests__/connectRangeSlider-test.js",
+    "position": 1,
+    "pull_request_review_id": 65857060,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616101/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616101",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141616585"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616585"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I finally use the solution pushed by @iam4x \r\n\r\n```js\r\nconst facet = find(facetsFromResults, { name: attributeName });\r\n```",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:27:56Z",
+    "diff_hunk": "@@ -186,28 +210,18 @@ export default function connectRangeSlider(renderFn) {\n       },\n \n       render({ results, helper, instantSearchInstance }) {\n+        const bounds = { min: userMin, max: userMax };\n         const facetsFromResults = results.disjunctiveFacets || [];\n-        const facet = find(\n-          facetsFromResults,\n-          ({ name }) => name === attributeName\n-        );\n-        const stats =\n-          facet !== undefined && facet.stats !== undefined\n-            ? facet.stats\n-            : {\n-                min: null,\n-                max: null,\n-              };\n-\n-        if (userMin !== undefined) stats.min = userMin;\n-        if (userMax !== undefined) stats.max = userMax;\n+        const facet = find(facetsFromResults, _ => _.name === attributeName);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141616585",
+    "id": 141616585,
+    "in_reply_to_id": 141380973,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxNjU4NQ==",
+    "original_commit_id": "924cee3c787790411c10af5ca00db946005ad5bf",
+    "original_line": 215,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65857673,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616585/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141616585",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141617660"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141617660"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "True my bad, thought we were calling `refine({ min, max })`",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:31:33Z",
+    "diff_hunk": "@@ -34,9 +34,9 @@ Full documentation available at https://community.algolia.com/instantsearch.js/c\n \n /**\n  * @typedef {Object} RangeSliderRenderingOptions\n- * @property {function({min: number, max: number})} refine Sets a range to filter the results on. Both values\n+ * @property {function(Array<number, number>)} refine Sets a range to filter the results on. Both values\n  * are optional, and will default to the higher and lower bounds.\n- * @property {{min: number, max: number}} numeric Results bounds without the current range filter.\n+ * @property {{min: number, max: number}} range Results bounds without the current range filter.",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141617660",
+    "id": 141617660,
+    "in_reply_to_id": 141390415,
+    "line": 40,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYxNzY2MA==",
+    "original_commit_id": "b51f5551f018711569a7c5ac4077962d499b926b",
+    "original_line": 39,
+    "original_position": 8,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 14,
+    "pull_request_review_id": 65858944,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141617660/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141617660",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/893837?v=4",
+      "events_url": "https://api.github.com/users/iam4x/events{/privacy}",
+      "followers_url": "https://api.github.com/users/iam4x/followers",
+      "following_url": "https://api.github.com/users/iam4x/following{/other_user}",
+      "gists_url": "https://api.github.com/users/iam4x/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/iam4x",
+      "id": 893837,
+      "login": "iam4x",
+      "node_id": "MDQ6VXNlcjg5MzgzNw==",
+      "organizations_url": "https://api.github.com/users/iam4x/orgs",
+      "received_events_url": "https://api.github.com/users/iam4x/received_events",
+      "repos_url": "https://api.github.com/users/iam4x/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/iam4x/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/iam4x/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/iam4x",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141621379"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/2408"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141621379"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I tried to kept the compatibility.\r\n\r\nIn the previous version the range was compute with the stats object in the [init](https://github.com/algolia/instantsearch.js/blob/develop/src/connectors/range-slider/connectRangeSlider.js#L169) and the [render](https://github.com/algolia/instantsearch.js/blob/develop/src/connectors/range-slider/connectRangeSlider.js#L194) functions. Then thoses values are rounded when passed to the rendering function. But it might happen that the stats object can be `{ min: null, max: null }` and `null` is rounded to `0`.\r\n\r\nThe `0` case is used in `RangeSlider` for [hide it](https://github.com/algolia/instantsearch.js/blob/develop/src/widgets/range-slider/range-slider.js#L44) when there are nothing to display. In upcoming version we can imagine to pass a `disabled` property instead of rely on range values.",
+    "commit_id": "87a5e974df9e222076656d330869e64931bd8282",
+    "created_at": "2017-09-28T13:45:21Z",
+    "diff_hunk": "@@ -76,108 +80,146 @@ export default function connectRangeSlider(renderFn) {\n     };\n \n     return {\n-      getConfiguration: originalConf => {\n-        const conf = {\n-          disjunctiveFacets: [attributeName],\n-        };\n+      _isAbleToRefine(min, max) {\n+        const isMinValid = _isFinite(min);\n+        const isMaxValid = _isFinite(max);\n \n-        const hasUserBounds = userMin !== undefined || userMax !== undefined;\n-        const boundsNotAlreadyDefined =\n-          !originalConf ||\n-          (originalConf.numericRefinements &&\n-            originalConf.numericRefinements[attributeName] === undefined);\n-\n-        if (hasUserBounds && boundsNotAlreadyDefined) {\n-          conf.numericRefinements = { [attributeName]: {} };\n-          if (userMin !== undefined)\n-            conf.numericRefinements[attributeName]['>='] = [userMin];\n-          if (userMax !== undefined)\n-            conf.numericRefinements[attributeName]['<='] = [userMax];\n+        if (isMinValid && isMaxValid && min >= max) {\n+          return false;\n         }\n \n-        return conf;\n+        return isMinValid || isMaxValid;\n       },\n \n-      _getCurrentRefinement(helper) {\n-        let min = helper.state.getNumericRefinement(attributeName, '>=');\n-        let max = helper.state.getNumericRefinement(attributeName, '<=');\n-\n-        if (min && min.length) {\n-          min = min[0];\n+      _getCurrentRange(stats = {}) {\n+        let min;\n+        if (isMinBounds) {\n+          min = minBounds;\n+        } else if (_isFinite(stats.min)) {\n+          min = stats.min;\n         } else {\n-          min = -Infinity;\n+          min = 0;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/2408#discussion_r141621379",
+    "id": 141621379,
+    "in_reply_to_id": 141613997,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDE0MTYyMTM3OQ==",
+    "original_commit_id": "19b95ff7a0f200a348251c75dab753ffd4051b2f",
+    "original_line": 101,
+    "original_position": 85,
+    "original_start_line": null,
+    "path": "src/connectors/range-slider/connectRangeSlider.js",
+    "position": 1,
+    "pull_request_review_id": 65863433,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/2408",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141621379/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2017-09-29T13:45:10Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/141621379",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513513?v=4",
+      "events_url": "https://api.github.com/users/samouss/events{/privacy}",
+      "followers_url": "https://api.github.com/users/samouss/followers",
+      "following_url": "https://api.github.com/users/samouss/following{/other_user}",
+      "gists_url": "https://api.github.com/users/samouss/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/samouss",
+      "id": 6513513,
+      "login": "samouss",
+      "node_id": "MDQ6VXNlcjY1MTM1MTM=",
+      "organizations_url": "https://api.github.com/users/samouss/orgs",
+      "received_events_url": "https://api.github.com/users/samouss/received_events",
+      "repos_url": "https://api.github.com/users/samouss/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/samouss/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/samouss/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/samouss",
+      "user_view_type": "public"
+    }
+  }
+]

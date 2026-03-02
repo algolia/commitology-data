@@ -1,0 +1,1039 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598573775"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573775"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I think it makes sense not to return any renderState here",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:02:59Z",
+    "diff_hunk": "@@ -0,0 +1,106 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import { getWidgetAttribute, noop } from '../../lib/utils';\n+import { Connector, Widget } from '../../types';\n+\n+export type DynamicWidgetsRendererOptions = {\n+  attributesToRender: string[];\n+};\n+\n+export type DynamicWidgetsConnectorParams = {\n+  widgets: Widget[];\n+  transformItems?(\n+    items: string[],\n+    metadata: { results: SearchResults }\n+  ): string[];\n+};\n+\n+export type DynamicWidgetsConnector = Connector<\n+  DynamicWidgetsRendererOptions,\n+  DynamicWidgetsConnectorParams\n+>;\n+\n+const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWidgets(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    const { widgets, transformItems = items => items } = widgetParams;\n+\n+    const localWidgets: Map<\n+      string,\n+      { widget: Widget; isMounted: boolean }\n+    > = new Map();\n+\n+    return {\n+      $$type: 'ais.dynamicWidgets',\n+      init(initOptions) {\n+        widgets.forEach(widget => {\n+          const attribute = getWidgetAttribute(widget, initOptions);\n+          localWidgets.set(attribute, { widget, isMounted: true });\n+        });\n+        initOptions.parent!.addWidgets(widgets);\n+      },\n+      render(renderOptions) {\n+        const { parent } = renderOptions;\n+        const renderState = this.getWidgetRenderState(renderOptions);\n+\n+        const widgetsToUnmount: Widget[] = [];\n+        const widgetsToMount: Widget[] = [];\n+\n+        localWidgets.forEach(({ widget, isMounted }, attribute) => {\n+          const shouldMount =\n+            renderState.attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            widgetsToMount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            widgetsToUnmount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: false,\n+            });\n+          }\n+        });\n+\n+        parent!.addWidgets(widgetsToMount);\n+        // make sure this only happens after the regular render, otherwise it\n+        // happens too quick, since render is \"deferred\" for the next microtask,\n+        // so this needs to be a whole task later\n+        setTimeout(() => parent!.removeWidgets(widgetsToUnmount), 0);\n+\n+        renderFn(\n+          {\n+            ...renderState,\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+      dispose() {\n+        unmountFn();\n+      },\n+      getRenderState(renderState) {\n+        // @TODO: decide whether it makes sense to return anything,\n+        // knowing that you could have multiple instances of dynamic\n+        // and they are hard/impossible to distinguish at this point\n+        return renderState;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598573775",
+    "id": 598573775,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU3Mzc3NQ==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 131,
+    "original_position": 90,
+    "original_start_line": 87,
+    "path": "src/connectors/dynamic-widgets/connectDynamicWidgets.ts",
+    "position": 1,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573775/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573775",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598573987"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573987"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this will be done after merge, once the format is set in stone",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:03:15Z",
+    "diff_hunk": "@@ -0,0 +1,106 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import { getWidgetAttribute, noop } from '../../lib/utils';\n+import { Connector, Widget } from '../../types';\n+\n+export type DynamicWidgetsRendererOptions = {\n+  attributesToRender: string[];\n+};\n+\n+export type DynamicWidgetsConnectorParams = {\n+  widgets: Widget[];\n+  transformItems?(\n+    items: string[],\n+    metadata: { results: SearchResults }\n+  ): string[];\n+};\n+\n+export type DynamicWidgetsConnector = Connector<\n+  DynamicWidgetsRendererOptions,\n+  DynamicWidgetsConnectorParams\n+>;\n+\n+const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWidgets(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    const { widgets, transformItems = items => items } = widgetParams;\n+\n+    const localWidgets: Map<\n+      string,\n+      { widget: Widget; isMounted: boolean }\n+    > = new Map();\n+\n+    return {\n+      $$type: 'ais.dynamicWidgets',\n+      init(initOptions) {\n+        widgets.forEach(widget => {\n+          const attribute = getWidgetAttribute(widget, initOptions);\n+          localWidgets.set(attribute, { widget, isMounted: true });\n+        });\n+        initOptions.parent!.addWidgets(widgets);\n+      },\n+      render(renderOptions) {\n+        const { parent } = renderOptions;\n+        const renderState = this.getWidgetRenderState(renderOptions);\n+\n+        const widgetsToUnmount: Widget[] = [];\n+        const widgetsToMount: Widget[] = [];\n+\n+        localWidgets.forEach(({ widget, isMounted }, attribute) => {\n+          const shouldMount =\n+            renderState.attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            widgetsToMount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            widgetsToUnmount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: false,\n+            });\n+          }\n+        });\n+\n+        parent!.addWidgets(widgetsToMount);\n+        // make sure this only happens after the regular render, otherwise it\n+        // happens too quick, since render is \"deferred\" for the next microtask,\n+        // so this needs to be a whole task later\n+        setTimeout(() => parent!.removeWidgets(widgetsToUnmount), 0);\n+\n+        renderFn(\n+          {\n+            ...renderState,\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+      dispose() {\n+        unmountFn();\n+      },\n+      getRenderState(renderState) {\n+        // @TODO: decide whether it makes sense to return anything,\n+        // knowing that you could have multiple instances of dynamic\n+        // and they are hard/impossible to distinguish at this point\n+        return renderState;\n+      },\n+      getWidgetRenderState({ results }) {\n+        if (!results) {\n+          return { attributesToRender: [], widgetParams };\n+        }\n+\n+        // @TODO: retrieve the facet order out of the results:\n+        // results.facetOrder.map(facet => facet.attribute)\n+        const attributesToRender = transformItems([], { results });",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598573987",
+    "id": 598573987,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU3Mzk4Nw==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 162,
+    "original_position": 99,
+    "original_start_line": 97,
+    "path": "src/connectors/dynamic-widgets/connectDynamicWidgets.ts",
+    "position": 1,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573987/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 97,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598573987",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598574823"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598574823"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "this code could potentially be part of the widget instead of the connector since vue (and react) can rely on the host's ability to mount and unmount, but that would mean the widget itself becomes slightly more complicated, since it would have both rendering logic and widget mounting logic",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:04:28Z",
+    "diff_hunk": "@@ -0,0 +1,106 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import { getWidgetAttribute, noop } from '../../lib/utils';\n+import { Connector, Widget } from '../../types';\n+\n+export type DynamicWidgetsRendererOptions = {\n+  attributesToRender: string[];\n+};\n+\n+export type DynamicWidgetsConnectorParams = {\n+  widgets: Widget[];\n+  transformItems?(\n+    items: string[],\n+    metadata: { results: SearchResults }\n+  ): string[];\n+};\n+\n+export type DynamicWidgetsConnector = Connector<\n+  DynamicWidgetsRendererOptions,\n+  DynamicWidgetsConnectorParams\n+>;\n+\n+const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWidgets(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    const { widgets, transformItems = items => items } = widgetParams;\n+\n+    const localWidgets: Map<\n+      string,\n+      { widget: Widget; isMounted: boolean }\n+    > = new Map();\n+\n+    return {\n+      $$type: 'ais.dynamicWidgets',\n+      init(initOptions) {\n+        widgets.forEach(widget => {\n+          const attribute = getWidgetAttribute(widget, initOptions);\n+          localWidgets.set(attribute, { widget, isMounted: true });\n+        });\n+        initOptions.parent!.addWidgets(widgets);\n+      },\n+      render(renderOptions) {\n+        const { parent } = renderOptions;\n+        const renderState = this.getWidgetRenderState(renderOptions);\n+\n+        const widgetsToUnmount: Widget[] = [];\n+        const widgetsToMount: Widget[] = [];\n+\n+        localWidgets.forEach(({ widget, isMounted }, attribute) => {\n+          const shouldMount =\n+            renderState.attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            widgetsToMount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            widgetsToUnmount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: false,\n+            });\n+          }\n+        });\n+\n+        parent!.addWidgets(widgetsToMount);\n+        // make sure this only happens after the regular render, otherwise it\n+        // happens too quick, since render is \"deferred\" for the next microtask,\n+        // so this needs to be a whole task later\n+        setTimeout(() => parent!.removeWidgets(widgetsToUnmount), 0);\n+",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598574823",
+    "id": 598574823,
+    "line": 129,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU3NDgyMw==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 129,
+    "original_position": 74,
+    "original_start_line": 50,
+    "path": "src/connectors/dynamic-widgets/connectDynamicWidgets.ts",
+    "position": 129,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598574823/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 105,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598574823",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598582362"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582362"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "for custom widgets without type this will serialise as `{}`, do we see an alternative?",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:12:34Z",
+    "diff_hunk": "@@ -0,0 +1,37 @@\n+import { InitOptions, Widget, WidgetRenderState } from '../../types';\n+\n+export function getWidgetAttribute(\n+  widget: Widget,\n+  initOptions: InitOptions\n+): string {\n+  try {\n+    // assume the type to be the correct one, but throw a nice error if it isn't the case\n+    type WidgetWithAttribute = Widget<{\n+      renderState: WidgetRenderState<\n+        Record<string, any>,\n+        { attribute: string } | { attributes: string[] }\n+      >;\n+    }>;\n+\n+    const {\n+      widgetParams,\n+    } = (widget as WidgetWithAttribute).getWidgetRenderState(initOptions);\n+\n+    const attribute =\n+      'attribute' in widgetParams\n+        ? widgetParams.attribute\n+        : widgetParams.attributes[0];\n+\n+    if (typeof attribute !== 'string') throw new Error();\n+\n+    return attribute;\n+  } catch (e) {\n+    throw new Error(\n+      `Could not find the attribute of the widget:\n+\n+${JSON.stringify(widget)}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598582362",
+    "id": 598582362,
+    "line": 33,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4MjM2Mg==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 33,
+    "original_position": 32,
+    "original_start_line": null,
+    "path": "src/lib/utils/getWidgetAttribute.ts",
+    "position": 33,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582362/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582362",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598582846"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582846"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n  container: HTMLElement | string;\r\n```",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:13:18Z",
+    "diff_hunk": "@@ -0,0 +1,66 @@\n+import connectDynamicWidgets, {\n+  DynamicWidgetsConnectorParams,\n+  DynamicWidgetsRendererOptions,\n+} from '../../connectors/dynamic-widgets/connectDynamicWidgets';\n+import { getWidgetAttribute } from '../../lib/utils';\n+import { Widget, WidgetFactory } from '../../types';\n+\n+export type DynamicWidgetsWidgetParams = {\n+  container: HTMLElement;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598582846",
+    "id": 598582846,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4Mjg0Ng==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 9,
+    "original_position": 9,
+    "original_start_line": null,
+    "path": "src/widgets/dynamic-widgets/dynamic-widgets.ts",
+    "position": 1,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582846/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598582846",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583082"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583082"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "different way of emptying the container? ",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:13:37Z",
+    "diff_hunk": "@@ -0,0 +1,66 @@\n+import connectDynamicWidgets, {\n+  DynamicWidgetsConnectorParams,\n+  DynamicWidgetsRendererOptions,\n+} from '../../connectors/dynamic-widgets/connectDynamicWidgets';\n+import { getWidgetAttribute } from '../../lib/utils';\n+import { Widget, WidgetFactory } from '../../types';\n+\n+export type DynamicWidgetsWidgetParams = {\n+  container: HTMLElement;\n+  widgets: Array<(container: HTMLElement) => Widget>;\n+};\n+\n+export type DynamicWidgets = WidgetFactory<\n+  DynamicWidgetsRendererOptions,\n+  Omit<DynamicWidgetsConnectorParams, 'widgets'>,\n+  DynamicWidgetsWidgetParams\n+>;\n+\n+const dynamicWidgets: DynamicWidgets = function dynamicWidgets(widgetParams) {\n+  const { container: rootContainer, transformItems, widgets } =\n+    widgetParams || {};\n+\n+  const containers = new Map<string, HTMLElement>();\n+  const connectorWidgets: Widget[] = [];\n+\n+  const makeWidget = connectDynamicWidgets(\n+    ({ attributesToRender }) => {\n+      attributesToRender.forEach(attribute => {\n+        if (!containers.has(attribute)) {\n+          return;\n+        }\n+        const container = containers.get(attribute)!;\n+        rootContainer.appendChild(container);\n+      });\n+    },\n+    () => {\n+      rootContainer.innerText = '';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583082",
+    "id": 598583082,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4MzA4Mg==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 37,
+    "original_position": 37,
+    "original_start_line": null,
+    "path": "src/widgets/dynamic-widgets/dynamic-widgets.ts",
+    "position": 1,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583082/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583082",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583563"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583563"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "use suit",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:14:18Z",
+    "diff_hunk": "@@ -0,0 +1,66 @@\n+import connectDynamicWidgets, {\n+  DynamicWidgetsConnectorParams,\n+  DynamicWidgetsRendererOptions,\n+} from '../../connectors/dynamic-widgets/connectDynamicWidgets';\n+import { getWidgetAttribute } from '../../lib/utils';\n+import { Widget, WidgetFactory } from '../../types';\n+\n+export type DynamicWidgetsWidgetParams = {\n+  container: HTMLElement;\n+  widgets: Array<(container: HTMLElement) => Widget>;\n+};\n+\n+export type DynamicWidgets = WidgetFactory<\n+  DynamicWidgetsRendererOptions,\n+  Omit<DynamicWidgetsConnectorParams, 'widgets'>,\n+  DynamicWidgetsWidgetParams\n+>;\n+\n+const dynamicWidgets: DynamicWidgets = function dynamicWidgets(widgetParams) {\n+  const { container: rootContainer, transformItems, widgets } =\n+    widgetParams || {};\n+\n+  const containers = new Map<string, HTMLElement>();\n+  const connectorWidgets: Widget[] = [];\n+\n+  const makeWidget = connectDynamicWidgets(\n+    ({ attributesToRender }) => {\n+      attributesToRender.forEach(attribute => {\n+        if (!containers.has(attribute)) {\n+          return;\n+        }\n+        const container = containers.get(attribute)!;\n+        rootContainer.appendChild(container);\n+      });\n+    },\n+    () => {\n+      rootContainer.innerText = '';\n+    }\n+  );\n+\n+  const widget = makeWidget({\n+    transformItems,\n+    widgets: connectorWidgets,\n+  });\n+\n+  return {\n+    ...widget,\n+    init(initOptions) {\n+      widgets.forEach(cb => {\n+        const container = document.createElement('div');\n+        container.className = 'ais-DynamicWidgets-widget';",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583563",
+    "id": 598583563,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4MzU2Mw==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 51,
+    "original_position": 51,
+    "original_start_line": null,
+    "path": "src/widgets/dynamic-widgets/dynamic-widgets.ts",
+    "position": 1,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583563/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583563",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583848"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583848"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "root container needs to be made _inside_ container",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:14:41Z",
+    "diff_hunk": "@@ -0,0 +1,66 @@\n+import connectDynamicWidgets, {\n+  DynamicWidgetsConnectorParams,\n+  DynamicWidgetsRendererOptions,\n+} from '../../connectors/dynamic-widgets/connectDynamicWidgets';\n+import { getWidgetAttribute } from '../../lib/utils';\n+import { Widget, WidgetFactory } from '../../types';\n+\n+export type DynamicWidgetsWidgetParams = {\n+  container: HTMLElement;\n+  widgets: Array<(container: HTMLElement) => Widget>;\n+};\n+\n+export type DynamicWidgets = WidgetFactory<\n+  DynamicWidgetsRendererOptions,\n+  Omit<DynamicWidgetsConnectorParams, 'widgets'>,\n+  DynamicWidgetsWidgetParams\n+>;\n+\n+const dynamicWidgets: DynamicWidgets = function dynamicWidgets(widgetParams) {\n+  const { container: rootContainer, transformItems, widgets } =\n+    widgetParams || {};\n+\n+  const containers = new Map<string, HTMLElement>();\n+  const connectorWidgets: Widget[] = [];\n+\n+  const makeWidget = connectDynamicWidgets(\n+    ({ attributesToRender }) => {\n+      attributesToRender.forEach(attribute => {\n+        if (!containers.has(attribute)) {\n+          return;\n+        }\n+        const container = containers.get(attribute)!;\n+        rootContainer.appendChild(container);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598583848",
+    "id": 598583848,
+    "line": 65,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4Mzg0OA==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 65,
+    "original_position": 33,
+    "original_start_line": null,
+    "path": "src/widgets/dynamic-widgets/dynamic-widgets.ts",
+    "position": 65,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583848/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598583848",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598584075"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598584075"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "mounted widgets need to be unmounted",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-03-22T10:15:01Z",
+    "diff_hunk": "@@ -0,0 +1,106 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import { getWidgetAttribute, noop } from '../../lib/utils';\n+import { Connector, Widget } from '../../types';\n+\n+export type DynamicWidgetsRendererOptions = {\n+  attributesToRender: string[];\n+};\n+\n+export type DynamicWidgetsConnectorParams = {\n+  widgets: Widget[];\n+  transformItems?(\n+    items: string[],\n+    metadata: { results: SearchResults }\n+  ): string[];\n+};\n+\n+export type DynamicWidgetsConnector = Connector<\n+  DynamicWidgetsRendererOptions,\n+  DynamicWidgetsConnectorParams\n+>;\n+\n+const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWidgets(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  return widgetParams => {\n+    const { widgets, transformItems = items => items } = widgetParams;\n+\n+    const localWidgets: Map<\n+      string,\n+      { widget: Widget; isMounted: boolean }\n+    > = new Map();\n+\n+    return {\n+      $$type: 'ais.dynamicWidgets',\n+      init(initOptions) {\n+        widgets.forEach(widget => {\n+          const attribute = getWidgetAttribute(widget, initOptions);\n+          localWidgets.set(attribute, { widget, isMounted: true });\n+        });\n+        initOptions.parent!.addWidgets(widgets);\n+      },\n+      render(renderOptions) {\n+        const { parent } = renderOptions;\n+        const renderState = this.getWidgetRenderState(renderOptions);\n+\n+        const widgetsToUnmount: Widget[] = [];\n+        const widgetsToMount: Widget[] = [];\n+\n+        localWidgets.forEach(({ widget, isMounted }, attribute) => {\n+          const shouldMount =\n+            renderState.attributesToRender.indexOf(attribute) > -1;\n+\n+          if (!isMounted && shouldMount) {\n+            widgetsToMount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: true,\n+            });\n+          } else if (isMounted && !shouldMount) {\n+            widgetsToUnmount.push(widget);\n+            localWidgets.set(attribute, {\n+              widget,\n+              isMounted: false,\n+            });\n+          }\n+        });\n+\n+        parent!.addWidgets(widgetsToMount);\n+        // make sure this only happens after the regular render, otherwise it\n+        // happens too quick, since render is \"deferred\" for the next microtask,\n+        // so this needs to be a whole task later\n+        setTimeout(() => parent!.removeWidgets(widgetsToUnmount), 0);\n+\n+        renderFn(\n+          {\n+            ...renderState,\n+            instantSearchInstance: renderOptions.instantSearchInstance,\n+          },\n+          false\n+        );\n+      },\n+      dispose() {\n+        unmountFn();",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r598584075",
+    "id": 598584075,
+    "line": 147,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDU5ODU4NDA3NQ==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 147,
+    "original_position": 84,
+    "original_start_line": null,
+    "path": "src/connectors/dynamic-widgets/connectDynamicWidgets.ts",
+    "position": 147,
+    "pull_request_review_id": 617336929,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598584075/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/598584075",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622901782"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622901782"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "`transformItems` should be required until we implement the `attributes` later.",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-29T09:55:50Z",
+    "diff_hunk": "@@ -0,0 +1,581 @@\n+import { connectMenu, EXPERIMENTAL_connectDynamicWidgets } from '../..';\n+import { index } from '../../../widgets';\n+import { widgetSnapshotSerializer } from '../../../../test/utils/widgetSnapshotSerializer';\n+import {\n+  createDisposeOptions,\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { runAllMacroTasks } from '../../../../test/utils/runAllMicroTasks';\n+import { SearchParameters, SearchResults } from 'algoliasearch-helper';\n+import { createMultiSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectHierarchicalMenu from '../../hierarchical-menu/connectHierarchicalMenu';\n+\n+expect.addSnapshotSerializer(widgetSnapshotSerializer);\n+\n+describe('connectDynamicWidgets', () => {\n+  describe('Usage', () => {\n+    it('fails when no renderer is given', () => {\n+      expect(() =>\n+        // @ts-expect-error\n+        EXPERIMENTAL_connectDynamicWidgets({})\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The render function is not valid (received type Object).\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('fails when no widgets are given', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})(\n+          // @ts-expect-error\n+          {}\n+        )\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The \\`widgets\\` option expects an array of widgets.\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('correct usage', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+        })\n+      ).not.toThrow();\n+    });\n+\n+    it('transformItems', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+          transformItems(items, { results }) {\n+            return items.map(item => item + results.nbHits);\n+          },\n+        })\n+      ).not.toThrow();\n+    });\n+  });\n+\n+  describe('init', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          true\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('adds all widgets to the parent', () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+      });\n+    });\n+  });\n+\n+  describe('render', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+\n+      it('calls the render function with the result of transformItems', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          transformItems() {\n+            return ['test1'];\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: ['test1'],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('removes all widgets by default', async () => {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622901782",
+    "id": 622901782,
+    "line": null,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMjkwMTc4Mg==",
+    "original_commit_id": "4bca94fb05eaf65463b20c0012ab0c180a93dbdf",
+    "original_line": 192,
+    "original_position": 192,
+    "original_start_line": null,
+    "path": "src/connectors/dynamic-widgets/__tests__/connectDynamicWidgets-test.ts",
+    "position": 1,
+    "pull_request_review_id": 648018302,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622901782/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622901782",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622904955"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622904955"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "why isn't the order test2 → test1 ?",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-29T10:00:32Z",
+    "diff_hunk": "@@ -0,0 +1,581 @@\n+import { connectMenu, EXPERIMENTAL_connectDynamicWidgets } from '../..';\n+import { index } from '../../../widgets';\n+import { widgetSnapshotSerializer } from '../../../../test/utils/widgetSnapshotSerializer';\n+import {\n+  createDisposeOptions,\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { runAllMacroTasks } from '../../../../test/utils/runAllMicroTasks';\n+import { SearchParameters, SearchResults } from 'algoliasearch-helper';\n+import { createMultiSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectHierarchicalMenu from '../../hierarchical-menu/connectHierarchicalMenu';\n+\n+expect.addSnapshotSerializer(widgetSnapshotSerializer);\n+\n+describe('connectDynamicWidgets', () => {\n+  describe('Usage', () => {\n+    it('fails when no renderer is given', () => {\n+      expect(() =>\n+        // @ts-expect-error\n+        EXPERIMENTAL_connectDynamicWidgets({})\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The render function is not valid (received type Object).\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('fails when no widgets are given', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})(\n+          // @ts-expect-error\n+          {}\n+        )\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The \\`widgets\\` option expects an array of widgets.\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('correct usage', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+        })\n+      ).not.toThrow();\n+    });\n+\n+    it('transformItems', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+          transformItems(items, { results }) {\n+            return items.map(item => item + results.nbHits);\n+          },\n+        })\n+      ).not.toThrow();\n+    });\n+  });\n+\n+  describe('init', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          true\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('adds all widgets to the parent', () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+      });\n+    });\n+  });\n+\n+  describe('render', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+\n+      it('calls the render function with the result of transformItems', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          transformItems() {\n+            return ['test1'];\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: ['test1'],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('removes all widgets by default', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(createRenderOptions({ parent }));\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+      });\n+\n+      it('keeps static widgets returned in transformItems', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          transformItems() {\n+            return ['test1'];\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(createRenderOptions({ parent }));\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+          ]\n+        `);\n+      });\n+\n+      it('renders widgets returned by transformItems', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          transformItems(_items, { results }) {\n+            return results.userData[0].MOCK_facetOrder;\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(\n+          createRenderOptions({\n+            parent,\n+            results: new SearchResults(\n+              new SearchParameters(),\n+              createMultiSearchResponse({\n+                userData: [{ MOCK_facetOrder: ['test1'] }],\n+              }).results\n+            ),\n+          })\n+        );\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(\n+          createRenderOptions({\n+            parent,\n+            results: new SearchResults(\n+              new SearchParameters(),\n+              createMultiSearchResponse({\n+                userData: [{ MOCK_facetOrder: ['test2', 'test1'] }],\n+              }).results\n+            ),\n+          })\n+        );\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622904955",
+    "id": 622904955,
+    "line": 379,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMjkwNDk1NQ==",
+    "original_commit_id": "4bca94fb05eaf65463b20c0012ab0c180a93dbdf",
+    "original_line": 379,
+    "original_position": 362,
+    "original_start_line": null,
+    "path": "src/connectors/dynamic-widgets/__tests__/connectDynamicWidgets-test.ts",
+    "position": 379,
+    "pull_request_review_id": 648018302,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622904955/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622904955",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/499898?v=4",
+      "events_url": "https://api.github.com/users/eunjae-lee/events{/privacy}",
+      "followers_url": "https://api.github.com/users/eunjae-lee/followers",
+      "following_url": "https://api.github.com/users/eunjae-lee/following{/other_user}",
+      "gists_url": "https://api.github.com/users/eunjae-lee/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/eunjae-lee",
+      "id": 499898,
+      "login": "eunjae-lee",
+      "node_id": "MDQ6VXNlcjQ5OTg5OA==",
+      "organizations_url": "https://api.github.com/users/eunjae-lee/orgs",
+      "received_events_url": "https://api.github.com/users/eunjae-lee/received_events",
+      "repos_url": "https://api.github.com/users/eunjae-lee/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/eunjae-lee/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/eunjae-lee/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/eunjae-lee",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622964661"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622964661"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "the widgets themselves don't have a useful concept of ordering, therefore the only important thing is that the right ones are mounted more than their order.",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-29T11:35:45Z",
+    "diff_hunk": "@@ -0,0 +1,581 @@\n+import { connectMenu, EXPERIMENTAL_connectDynamicWidgets } from '../..';\n+import { index } from '../../../widgets';\n+import { widgetSnapshotSerializer } from '../../../../test/utils/widgetSnapshotSerializer';\n+import {\n+  createDisposeOptions,\n+  createInitOptions,\n+  createRenderOptions,\n+} from '../../../../test/mock/createWidget';\n+import { runAllMacroTasks } from '../../../../test/utils/runAllMicroTasks';\n+import { SearchParameters, SearchResults } from 'algoliasearch-helper';\n+import { createMultiSearchResponse } from '../../../../test/mock/createAPIResponse';\n+import connectHierarchicalMenu from '../../hierarchical-menu/connectHierarchicalMenu';\n+\n+expect.addSnapshotSerializer(widgetSnapshotSerializer);\n+\n+describe('connectDynamicWidgets', () => {\n+  describe('Usage', () => {\n+    it('fails when no renderer is given', () => {\n+      expect(() =>\n+        // @ts-expect-error\n+        EXPERIMENTAL_connectDynamicWidgets({})\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The render function is not valid (received type Object).\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('fails when no widgets are given', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})(\n+          // @ts-expect-error\n+          {}\n+        )\n+      ).toThrowErrorMatchingInlineSnapshot(`\n+        \"The \\`widgets\\` option expects an array of widgets.\n+\n+        See documentation: https://www.algolia.com/doc/api-reference/widgets/dynamic-widgets/js/#connector\"\n+      `);\n+    });\n+\n+    it('correct usage', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+        })\n+      ).not.toThrow();\n+    });\n+\n+    it('transformItems', () => {\n+      expect(() =>\n+        EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [],\n+          transformItems(items, { results }) {\n+            return items.map(item => item + results.nbHits);\n+          },\n+        })\n+      ).not.toThrow();\n+    });\n+  });\n+\n+  describe('init', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          true\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('adds all widgets to the parent', () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+      });\n+    });\n+  });\n+\n+  describe('render', () => {\n+    describe('rendering', () => {\n+      it('calls the render function', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: [],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+\n+      it('calls the render function with the result of transformItems', () => {\n+        const renderFn = jest.fn();\n+        const widgetParams = {\n+          transformItems() {\n+            return ['test1'];\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        };\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(renderFn)(\n+          widgetParams\n+        );\n+\n+        dynamicWidgets.render!(createRenderOptions());\n+\n+        expect(renderFn).toHaveBeenCalledWith(\n+          {\n+            attributesToRender: ['test1'],\n+            widgetParams,\n+            instantSearchInstance: expect.any(Object),\n+          },\n+          false\n+        );\n+      });\n+    });\n+\n+    describe('widgets', () => {\n+      it('removes all widgets by default', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(createRenderOptions({ parent }));\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+      });\n+\n+      it('keeps static widgets returned in transformItems', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          transformItems() {\n+            return ['test1'];\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(createRenderOptions({ parent }));\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+          ]\n+        `);\n+      });\n+\n+      it('renders widgets returned by transformItems', async () => {\n+        const dynamicWidgets = EXPERIMENTAL_connectDynamicWidgets(() => {})({\n+          transformItems(_items, { results }) {\n+            return results.userData[0].MOCK_facetOrder;\n+          },\n+          widgets: [\n+            connectMenu(() => {})({ attribute: 'test1' }),\n+            connectHierarchicalMenu(() => {})({\n+              attributes: ['test2', 'test3'],\n+            }),\n+          ],\n+        });\n+\n+        const parent = index({ indexName: 'test' }).addWidgets([\n+          dynamicWidgets,\n+        ]);\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+          ]\n+        `);\n+\n+        dynamicWidgets.init!(createInitOptions({ parent }));\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+            Widget(ais.hierarchicalMenu) {\n+              attribute: test2\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(\n+          createRenderOptions({\n+            parent,\n+            results: new SearchResults(\n+              new SearchParameters(),\n+              createMultiSearchResponse({\n+                userData: [{ MOCK_facetOrder: ['test1'] }],\n+              }).results\n+            ),\n+          })\n+        );\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`\n+          Array [\n+            Widget(ais.dynamicWidgets),\n+            Widget(ais.menu) {\n+              attribute: test1\n+            },\n+          ]\n+        `);\n+\n+        dynamicWidgets.render!(\n+          createRenderOptions({\n+            parent,\n+            results: new SearchResults(\n+              new SearchParameters(),\n+              createMultiSearchResponse({\n+                userData: [{ MOCK_facetOrder: ['test2', 'test1'] }],\n+              }).results\n+            ),\n+          })\n+        );\n+\n+        await runAllMacroTasks();\n+\n+        expect(parent.getWidgets()).toMatchInlineSnapshot(`",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r622964661",
+    "id": 622964661,
+    "in_reply_to_id": 622904955,
+    "line": 379,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMjk2NDY2MQ==",
+    "original_commit_id": "4bca94fb05eaf65463b20c0012ab0c180a93dbdf",
+    "original_line": 379,
+    "original_position": 362,
+    "original_start_line": null,
+    "path": "src/connectors/dynamic-widgets/__tests__/connectDynamicWidgets-test.ts",
+    "position": 379,
+    "pull_request_review_id": 648097659,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622964661/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/622964661",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r623023923"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623023923"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "```suggestion\r\n          container,\r\n          transformItems() {\r\n            return [];\r\n          }\r\n```\r\n\r\nas it's now required",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-29T12:54:43Z",
+    "diff_hunk": "@@ -121,6 +121,13 @@ function initiateAllWidgets(): Array<[WidgetNames, Widget]> {\n           attributes: ['attr1', 'attr2'],\n         });\n       }\n+      case 'EXPERIMENTAL_dynamicWidgets': {\n+        const EXPERIMENTAL_dynamicWidgets = widget as Widgets['EXPERIMENTAL_dynamicWidgets'];\n+        return EXPERIMENTAL_dynamicWidgets({\n+          container,",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r623023923",
+    "id": 623023923,
+    "line": 130,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyMzAyMzkyMw==",
+    "original_commit_id": "7c01e00082d303fc38056d17ac0cd2c75db54617",
+    "original_line": 127,
+    "original_position": 7,
+    "original_start_line": null,
+    "path": "src/widgets/__tests__/index.test.ts",
+    "position": 10,
+    "pull_request_review_id": 648168168,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623023923/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/623023923",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r624021000"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624021000"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "```suggestion\r\n```\r\n\r\nThis seems to be a duplicate of [L#49-L#57](https://github.com/algolia/instantsearch.js/pull/4687/files#diff-0e702402589e6d51a73188d89dc4c8a7a79cc3d1d3681e649cdd9a0cea1cd18eR49-R57)",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-30T16:49:51Z",
+    "diff_hunk": "@@ -0,0 +1,170 @@\n+import { SearchResults } from 'algoliasearch-helper';\n+import {\n+  checkRendering,\n+  createDocumentationMessageGenerator,\n+  getWidgetAttribute,\n+  noop,\n+} from '../../lib/utils';\n+import { Connector, Widget } from '../../types';\n+\n+const withUsage = createDocumentationMessageGenerator({\n+  name: 'dynamic-widgets',\n+  connector: true,\n+});\n+\n+export type DynamicWidgetsRenderState = {\n+  attributesToRender: string[];\n+};\n+\n+export type DynamicWidgetsConnectorParams = {\n+  widgets: Widget[];\n+  transformItems(\n+    items: string[],\n+    metadata: { results: SearchResults }\n+  ): string[];\n+};\n+\n+export type DynamicWidgetsWidgetDescription = {\n+  $$type: 'ais.dynamicWidgets';\n+  renderState: DynamicWidgetsRenderState;\n+  indexRenderState: {\n+    dynamicWidgets: DynamicWidgetsRenderState;\n+  };\n+};\n+\n+export type DynamicWidgetsConnector = Connector<\n+  DynamicWidgetsWidgetDescription,\n+  DynamicWidgetsConnectorParams\n+>;\n+\n+const connectDynamicWidgets: DynamicWidgetsConnector = function connectDynamicWidgets(\n+  renderFn,\n+  unmountFn = noop\n+) {\n+  checkRendering(renderFn, withUsage());\n+\n+  return widgetParams => {\n+    const { widgets, transformItems } = widgetParams;\n+\n+    if (\n+      !widgets ||\n+      !Array.isArray(widgets) ||\n+      widgets.some(widget => typeof widget !== 'object')\n+    ) {\n+      throw new Error(\n+        withUsage('The `widgets` option expects an array of widgets.')\n+      );\n+    }\n+\n+    // @TODO once the attributes are computed from the results, make this optional\n+    if (typeof transformItems !== 'function') {\n+      throw new Error(\n+        withUsage('the `transformItems` option is required to be a function.')\n+      );\n+    }\n+\n+    if (\n+      !widgets ||\n+      !Array.isArray(widgets) ||\n+      widgets.some(widget => typeof widget !== 'object')\n+    ) {\n+      throw new Error(\n+        withUsage('The `widgets` option expects an array of widgets.')\n+      );\n+    }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r624021000",
+    "id": 624021000,
+    "line": 74,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyNDAyMTAwMA==",
+    "original_commit_id": "4c2f00c7ceaf3009fd111a3dfc60ce95a34fab58",
+    "original_line": 74,
+    "original_position": 74,
+    "original_start_line": 65,
+    "path": "src/connectors/dynamic-widgets/connectDynamicWidgets.ts",
+    "position": 74,
+    "pull_request_review_id": 649403822,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624021000/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 65,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624021000",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4687#discussion_r624027475"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4687"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624027475"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "We could just throw `Could not find the attribute of the custom widget.`, wdyt?",
+    "commit_id": "fd416dc005b7feab3980b2a37d0bcc561e7eefdd",
+    "created_at": "2021-04-30T17:00:04Z",
+    "diff_hunk": "@@ -0,0 +1,37 @@\n+import { InitOptions, Widget, WidgetRenderState } from '../../types';\n+\n+export function getWidgetAttribute(\n+  widget: Widget,\n+  initOptions: InitOptions\n+): string {\n+  try {\n+    // assume the type to be the correct one, but throw a nice error if it isn't the case\n+    type WidgetWithAttribute = Widget<{\n+      renderState: WidgetRenderState<\n+        Record<string, any>,\n+        { attribute: string } | { attributes: string[] }\n+      >;\n+    }>;\n+\n+    const {\n+      widgetParams,\n+    } = (widget as WidgetWithAttribute).getWidgetRenderState(initOptions);\n+\n+    const attribute =\n+      'attribute' in widgetParams\n+        ? widgetParams.attribute\n+        : widgetParams.attributes[0];\n+\n+    if (typeof attribute !== 'string') throw new Error();\n+\n+    return attribute;\n+  } catch (e) {\n+    throw new Error(\n+      `Could not find the attribute of the widget:\n+\n+${JSON.stringify(widget)}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4687#discussion_r624027475",
+    "id": 624027475,
+    "in_reply_to_id": 598582362,
+    "line": 33,
+    "node_id": "MDI0OlB1bGxSZXF1ZXN0UmV2aWV3Q29tbWVudDYyNDAyNzQ3NQ==",
+    "original_commit_id": "4a476e461b25c30b8945986314fddd4c8379f06b",
+    "original_line": 33,
+    "original_position": 32,
+    "original_start_line": null,
+    "path": "src/lib/utils/getWidgetAttribute.ts",
+    "position": 33,
+    "pull_request_review_id": 649403822,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4687",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624027475/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2021-04-30T19:48:03Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/624027475",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/20689156?v=4",
+      "events_url": "https://api.github.com/users/shortcuts/events{/privacy}",
+      "followers_url": "https://api.github.com/users/shortcuts/followers",
+      "following_url": "https://api.github.com/users/shortcuts/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shortcuts/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/shortcuts",
+      "id": 20689156,
+      "login": "shortcuts",
+      "node_id": "MDQ6VXNlcjIwNjg5MTU2",
+      "organizations_url": "https://api.github.com/users/shortcuts/orgs",
+      "received_events_url": "https://api.github.com/users/shortcuts/received_events",
+      "repos_url": "https://api.github.com/users/shortcuts/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/shortcuts/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shortcuts/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/shortcuts",
+      "user_view_type": "public"
+    }
+  }
+]

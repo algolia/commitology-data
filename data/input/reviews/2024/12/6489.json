@@ -1,0 +1,140 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6489#discussion_r1894096287"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6489"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894096287"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "I went with this approach because it allows things to be completely transparent for `connectRefinementList`, but I'm open to suggestions",
+    "commit_id": "7d594f374e615fef536bd8e93dceec5346cc65a6",
+    "created_at": "2024-12-20T15:48:14Z",
+    "diff_hunk": "@@ -589,6 +589,11 @@ See documentation: ${createDocumentationLink({\n         persistHierarchicalRootCount: this.future.persistHierarchicalRootCount,\n       });\n \n+    if (this.compositionID) {\n+      mainHelper.searchForFacetValues =\n+        mainHelper.searchForCompositionFacetValues.bind(mainHelper);\n+    }",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6489#discussion_r1894096287",
+    "id": 1894096287,
+    "line": 595,
+    "node_id": "PRRC_kwDOAlnbOs5w5Z2f",
+    "original_commit_id": "00e11cbe437c042c940d5fc086de506c06fe88b2",
+    "original_line": 595,
+    "original_position": 7,
+    "original_start_line": 592,
+    "path": "packages/instantsearch.js/src/lib/InstantSearch.ts",
+    "position": 7,
+    "pull_request_review_id": 2517827726,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6489",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894096287/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 592,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-12-20T15:48:14Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894096287",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/7290398?v=4",
+      "events_url": "https://api.github.com/users/e-krebs/events{/privacy}",
+      "followers_url": "https://api.github.com/users/e-krebs/followers",
+      "following_url": "https://api.github.com/users/e-krebs/following{/other_user}",
+      "gists_url": "https://api.github.com/users/e-krebs/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/e-krebs",
+      "id": 7290398,
+      "login": "e-krebs",
+      "node_id": "MDQ6VXNlcjcyOTAzOTg=",
+      "organizations_url": "https://api.github.com/users/e-krebs/orgs",
+      "received_events_url": "https://api.github.com/users/e-krebs/received_events",
+      "repos_url": "https://api.github.com/users/e-krebs/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/e-krebs/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/e-krebs/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/e-krebs",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6489#discussion_r1894144177"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6489"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894144177"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "```suggestion\r\n```",
+    "commit_id": "7d594f374e615fef536bd8e93dceec5346cc65a6",
+    "created_at": "2024-12-20T16:31:20Z",
+    "diff_hunk": "@@ -461,6 +461,85 @@ AlgoliaSearchHelper.prototype.searchForFacetValues = function (\n   );\n };\n \n+/**\n+ * Search for facet values using the Composition API & based on a query and the name of a faceted attribute.\n+ * This triggers a search and will return a promise. On top of using the query, it also sends\n+ * the parameters from the state so that the search is narrowed down to only the possible values.\n+ *\n+ * See the description of [FacetSearchResult](reference.html#FacetSearchResult)\n+ * @param {string} facet the name of the faceted attribute\n+ * @param {string} query the string query for the search\n+ * @param {number} [maxFacetHits] the maximum number values returned. Should be > 0 and <= 100\n+ * @param {object} [userState] the set of custom parameters to use on top of the current state. Setting a property to `undefined` removes\n+ * it in the generated query.\n+ * @return {promise.<FacetSearchResult>} the results of the search\n+ */\n+AlgoliaSearchHelper.prototype.searchForCompositionFacetValues = function (\n+  facet,\n+  query,\n+  maxFacetHits,\n+  userState\n+) {\n+  if (typeof this.client.searchForFacetValues !== 'function') {\n+    throw new Error(\n+      'search for facet values (searchable) was called, but this client does not have a function client.searchForFacetValues'\n+    );\n+  }\n+\n+  var state = this.state.setQueryParameters(userState || {});\n+  var isDisjunctive = state.isDisjunctiveFacet(facet);\n+\n+  this._currentNbQueries++;\n+  // eslint-disable-next-line consistent-this\n+  var self = this;\n+  var searchForFacetValuesPromise;\n+\n+  searchForFacetValuesPromise = this.client.searchForFacetValues({\n+    compositionID: state.index,\n+    facetName: facet,\n+    searchForFacetValuesRequest: {\n+      params: {\n+        query: state.query,\n+        maxFacetHits: maxFacetHits,\n+        searchQuery: { query: query },\n+      },\n+    },\n+  });\n+  // searchForFacetValuesPromise = this.client.searchForFacetValues([\n+  //   { indexName: state.index, params: algoliaQuery },\n+  // ]);\n+  // algoliasearch < 3.27.1",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6489#discussion_r1894144177",
+    "id": 1894144177,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs5w5lix",
+    "original_commit_id": "aafd00648befd9c7e3b2a9582b079756fa1c3c9c",
+    "original_line": 511,
+    "original_position": 51,
+    "original_start_line": 508,
+    "path": "packages/algoliasearch-helper/src/algoliasearch.helper.js",
+    "position": 1,
+    "pull_request_review_id": 2517911184,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6489",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 1,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894144177/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-12-20T16:31:20Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1894144177",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  }
+]

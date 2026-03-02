@@ -1,0 +1,696 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777926833"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777926833"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Why do we need a key here since we're not in a list? Same question for previous, next and last.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-04T09:14:21Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777926833",
+    "id": 777926833,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs4uXjix",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 75,
+    "original_position": 177,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 163,
+    "pull_request_review_id": 843342497,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777926833/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-04T09:26:39Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777926833",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777928891"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777928891"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Not blocking, but since we're not using `pages` anywhere else, it could be inlined so the code is visually in the same order as the visual representation.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-04T09:17:29Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"\n+            ariaLabel={'First'}\n+            additionalClassName={props.cssClasses.firstPageItem}\n+            isDisabled={props.isFirstPage}\n+            label={props.templates.first}\n+            pageNumber={0}\n+            createURL={props.createURL}\n+            cssClasses={props.cssClasses}\n+            handleClick={handleClick}\n+          />\n+        )}\n+\n+        {props.showPrevious && (\n+          <PaginationLink\n+            key=\"previous\"\n+            ariaLabel={'Previous'}\n+            additionalClassName={props.cssClasses.previousPageItem}\n+            isDisabled={props.isFirstPage}\n+            label={props.templates.previous}\n+            pageNumber={props.currentPage - 1}\n+            createURL={props.createURL}\n+            cssClasses={props.cssClasses}\n+            handleClick={handleClick}\n+          />\n+        )}\n+\n+        {pages}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777928891",
+    "id": 777928891,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4uXkC7",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 101,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 1,
+    "pull_request_review_id": 843342497,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777928891/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-04T09:26:39Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777928891",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777935485"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935485"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "we actually are in a list: `[first, previous, ...pages, next, last]`",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-04T09:27:43Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777935485",
+    "id": 777935485,
+    "in_reply_to_id": 777926833,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs4uXlp9",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 75,
+    "original_position": 177,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 163,
+    "pull_request_review_id": 843354732,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935485/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-04T09:27:43Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935485",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777935701"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935701"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "sure, this was just closer to the previous implementation, I prefer it inline too",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-04T09:28:04Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"\n+            ariaLabel={'First'}\n+            additionalClassName={props.cssClasses.firstPageItem}\n+            isDisabled={props.isFirstPage}\n+            label={props.templates.first}\n+            pageNumber={0}\n+            createURL={props.createURL}\n+            cssClasses={props.cssClasses}\n+            handleClick={handleClick}\n+          />\n+        )}\n+\n+        {props.showPrevious && (\n+          <PaginationLink\n+            key=\"previous\"\n+            ariaLabel={'Previous'}\n+            additionalClassName={props.cssClasses.previousPageItem}\n+            isDisabled={props.isFirstPage}\n+            label={props.templates.previous}\n+            pageNumber={props.currentPage - 1}\n+            createURL={props.createURL}\n+            cssClasses={props.cssClasses}\n+            handleClick={handleClick}\n+          />\n+        )}\n+\n+        {pages}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777935701",
+    "id": 777935701,
+    "in_reply_to_id": 777928891,
+    "line": null,
+    "node_id": "PRRC_kwDOAlnbOs4uXltV",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 101,
+    "original_position": 203,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 1,
+    "pull_request_review_id": 843355060,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935701/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-04T09:28:04Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777935701",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777937305"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777937305"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "This element is not part of an array, is it? It should be stable.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-04T09:30:28Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r777937305",
+    "id": 777937305,
+    "in_reply_to_id": 777926833,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs4uXmGZ",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 75,
+    "original_position": 177,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 163,
+    "pull_request_review_id": 843357358,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777937305/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-04T09:30:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/777937305",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779423611"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423611"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This default props pattern doesn't work well with TypeScript, it lies about some fields being optional, while they can't be. We could default the props line 41 when destructuring.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-06T09:48:43Z",
+    "diff_hunk": "@@ -32,145 +32,104 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779423611",
+    "id": 779423611,
+    "line": 35,
+    "node_id": "PRRC_kwDOAlnbOs4udQ97",
+    "original_commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "original_line": 35,
+    "original_position": 22,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 22,
+    "pull_request_review_id": 845454378,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423611/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-06T09:54:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423611",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779423990"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423990"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "It is not needed here, as @sarahdayan explained.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-06T09:49:18Z",
+    "diff_hunk": "@@ -32,145 +32,106 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  const pages = props.pages!.map((pageNumber) => (\n+    <PaginationLink\n+      key={pageNumber}\n+      ariaLabel={`${pageNumber + 1}`}\n+      additionalClassName={props.cssClasses.pageItem}\n+      isSelected={pageNumber === props.currentPage}\n+      label={`${pageNumber + 1}`}\n+      pageNumber={pageNumber}\n+      createURL={props.createURL}\n+      cssClasses={props.cssClasses}\n+      handleClick={handleClick}\n+    />\n+  ));\n+\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779423990",
+    "id": 779423990,
+    "in_reply_to_id": 777926833,
+    "line": 61,
+    "node_id": "PRRC_kwDOAlnbOs4udRD2",
+    "original_commit_id": "6009a9da8759887bb11909c086cdfeaf0989fa32",
+    "original_line": 75,
+    "original_position": 177,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 163,
+    "pull_request_review_id": 845454378,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423990/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-06T09:54:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779423990",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779424563"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779424563"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "This is the syntax we use everywhere else. (Same applies in other places.)\r\n\r\n```suggestion\r\n            ariaLabel=\"First\"\r\n```",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-06T09:50:14Z",
+    "diff_hunk": "@@ -32,145 +32,104 @@ export type PaginationProps = {\n   showNext?: boolean;\n };\n \n-type PageLink = {\n-  label: string;\n-  ariaLabel: string;\n-  pageNumber: number;\n-  additionalClassName: string | null;\n-  isDisabled?: boolean;\n-  isSelected?: boolean;\n-  createURL(value: number): string;\n-};\n-\n const defaultProps = {\n   currentPage: 0,\n   nbPages: 0,\n   pages: [],\n };\n \n-class Pagination extends Component<PaginationProps> {\n-  public static defaultProps = defaultProps;\n-\n-  private pageLink({\n-    label,\n-    ariaLabel,\n-    pageNumber,\n-    additionalClassName = null,\n-    isDisabled = false,\n-    isSelected = false,\n-    createURL,\n-  }: PageLink) {\n-    const cssClasses = {\n-      item: cx(this.props.cssClasses.item, additionalClassName),\n-      link: this.props.cssClasses.link,\n-    };\n-\n-    if (isDisabled) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.disabledItem);\n-    } else if (isSelected) {\n-      cssClasses.item = cx(cssClasses.item, this.props.cssClasses.selectedItem);\n-    }\n-\n-    const url = !isDisabled ? createURL(pageNumber) : '#';\n-\n-    return (\n-      <PaginationLink\n-        ariaLabel={ariaLabel}\n-        cssClasses={cssClasses}\n-        handleClick={this.handleClick}\n-        isDisabled={isDisabled}\n-        key={label + pageNumber + ariaLabel}\n-        label={label}\n-        pageNumber={pageNumber}\n-        url={url}\n-      />\n-    );\n-  }\n-\n-  public handleClick = (pageNumber: number, event: MouseEvent) => {\n+function Pagination(props: PaginationProps) {\n+  const handleClick = (pageNumber: number, event: MouseEvent) => {\n     if (isSpecialClick(event)) {\n       // do not alter the default browser behavior\n       // if one special key is down\n       return;\n     }\n     event.preventDefault();\n-    this.props.setCurrentPage(pageNumber);\n-  };\n-\n-  private previousPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Previous',\n-      additionalClassName: this.props.cssClasses.previousPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.previous,\n-      pageNumber: this.props.currentPage - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private nextPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Next',\n-      additionalClassName: this.props.cssClasses.nextPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.next,\n-      pageNumber: this.props.currentPage + 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private firstPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'First',\n-      additionalClassName: this.props.cssClasses.firstPageItem,\n-      isDisabled: this.props.isFirstPage,\n-      label: this.props.templates.first,\n-      pageNumber: 0,\n-      createURL: this.props.createURL,\n-    });\n+    props.setCurrentPage(pageNumber);\n   };\n \n-  private lastPageLink = () => {\n-    return this.pageLink({\n-      ariaLabel: 'Last',\n-      additionalClassName: this.props.cssClasses.lastPageItem,\n-      isDisabled: this.props.isLastPage,\n-      label: this.props.templates.last,\n-      pageNumber: this.props.nbPages! - 1,\n-      createURL: this.props.createURL,\n-    });\n-  };\n-\n-  private pages = () => {\n-    return this.props.pages!.map((pageNumber) =>\n-      this.pageLink({\n-        ariaLabel: `${pageNumber + 1}`,\n-        additionalClassName: this.props.cssClasses.pageItem,\n-        isSelected: pageNumber === this.props.currentPage,\n-        label: `${pageNumber + 1}`,\n-        pageNumber,\n-        createURL: this.props.createURL,\n-      })\n-    );\n-  };\n-\n-  public render() {\n-    return (\n-      <div\n-        className={cx(this.props.cssClasses.root, {\n-          [this.props.cssClasses.noRefinementRoot]: this.props.nbPages! <= 1,\n-        })}\n-      >\n-        <ul className={this.props.cssClasses.list}>\n-          {this.props.showFirst && this.firstPageLink()}\n-          {this.props.showPrevious && this.previousPageLink()}\n-          {this.pages()}\n-          {this.props.showNext && this.nextPageLink()}\n-          {this.props.showLast && this.lastPageLink()}\n-        </ul>\n-      </div>\n-    );\n-  }\n+  return (\n+    <div\n+      className={cx(props.cssClasses.root, {\n+        [props.cssClasses.noRefinementRoot]: props.nbPages! <= 1,\n+      })}\n+    >\n+      <ul className={props.cssClasses.list}>\n+        {props.showFirst && (\n+          <PaginationLink\n+            key=\"first\"\n+            ariaLabel={'First'}",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779424563",
+    "id": 779424563,
+    "line": 62,
+    "node_id": "PRRC_kwDOAlnbOs4udRMz",
+    "original_commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "original_line": 62,
+    "original_position": 164,
+    "original_start_line": null,
+    "path": "src/components/Pagination/Pagination.tsx",
+    "position": 164,
+    "pull_request_review_id": 845454378,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779424563/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-06T09:54:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779424563",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779426286"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779426286"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Why introduce a new API when we can use the native `className` prop?",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-06T09:52:57Z",
+    "diff_hunk": "@@ -1,36 +1,48 @@\n /** @jsx h */\n \n import { h } from 'preact';\n+import cx from 'classnames';\n \n-export type PaginationLinkComponentCSSClasses = {\n-  item: string;\n-  link: string;\n-};\n+import type { PaginationComponentCSSClasses } from './Pagination';\n \n-export type PaginationLinkProps = {\n-  ariaLabel: string;\n-  cssClasses: PaginationLinkComponentCSSClasses;\n-  handleClick(pageNumber: number, event: MouseEvent): void;\n-  isDisabled: boolean;\n+type PageLinkProps = {\n   label: string;\n+  ariaLabel: string;\n   pageNumber: number;\n-  url?: string;\n+  additionalClassName: string | null;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779426286",
+    "id": 779426286,
+    "line": 12,
+    "node_id": "PRRC_kwDOAlnbOs4udRnu",
+    "original_commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "original_line": 12,
+    "original_position": 22,
+    "original_start_line": null,
+    "path": "src/components/Pagination/PaginationLink.tsx",
+    "position": 22,
+    "pull_request_review_id": 845454378,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779426286/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2022-01-06T09:54:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779426286",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779427218"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/4981"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779427218"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "We could reduce nesting by having two variables: `itemClassName` and `linkClassName`. The object as a whole doesn't hold any specific meaning.",
+    "commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "created_at": "2022-01-06T09:54:26Z",
+    "diff_hunk": "@@ -1,36 +1,48 @@\n /** @jsx h */\n \n import { h } from 'preact';\n+import cx from 'classnames';\n \n-export type PaginationLinkComponentCSSClasses = {\n-  item: string;\n-  link: string;\n-};\n+import type { PaginationComponentCSSClasses } from './Pagination';\n \n-export type PaginationLinkProps = {\n-  ariaLabel: string;\n-  cssClasses: PaginationLinkComponentCSSClasses;\n-  handleClick(pageNumber: number, event: MouseEvent): void;\n-  isDisabled: boolean;\n+type PageLinkProps = {\n   label: string;\n+  ariaLabel: string;\n   pageNumber: number;\n-  url?: string;\n+  additionalClassName: string | null;\n+  isDisabled?: boolean;\n+  isSelected?: boolean;\n+  cssClasses: PaginationComponentCSSClasses;\n+  createURL(value: number): string;\n+  handleClick(pageNumber: number, event: MouseEvent): void;\n };\n \n-const PaginationLink = ({\n-  cssClasses,\n+function PaginationLink({\n   label,\n   ariaLabel,\n-  url,\n-  isDisabled,\n-  handleClick,\n   pageNumber,\n-}: PaginationLinkProps) => {\n+  additionalClassName = null,\n+  isDisabled = false,\n+  isSelected = false,\n+  cssClasses,\n+  createURL,\n+  handleClick,\n+}: PageLinkProps) {\n+  const classes = {\n+    item: cx(\n+      cssClasses.item,\n+      additionalClassName,\n+      isDisabled && cssClasses.disabledItem,\n+      isSelected && cssClasses.selectedItem\n+    ),\n+    link: cssClasses.link,\n+  };",
+    "html_url": "https://github.com/algolia/instantsearch/pull/4981#discussion_r779427218",
+    "id": 779427218,
+    "line": 39,
+    "node_id": "PRRC_kwDOAlnbOs4udR2S",
+    "original_commit_id": "59daea8fcfb4809120e9134e0ecc4c131ee01c57",
+    "original_line": 39,
+    "original_position": 55,
+    "original_start_line": 31,
+    "path": "src/components/Pagination/PaginationLink.tsx",
+    "position": 55,
+    "pull_request_review_id": 845454378,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/4981",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779427218/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 31,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2022-01-06T09:54:36Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/779427218",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6137112?v=4",
+      "events_url": "https://api.github.com/users/francoischalifour/events{/privacy}",
+      "followers_url": "https://api.github.com/users/francoischalifour/followers",
+      "following_url": "https://api.github.com/users/francoischalifour/following{/other_user}",
+      "gists_url": "https://api.github.com/users/francoischalifour/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/francoischalifour",
+      "id": 6137112,
+      "login": "francoischalifour",
+      "node_id": "MDQ6VXNlcjYxMzcxMTI=",
+      "organizations_url": "https://api.github.com/users/francoischalifour/orgs",
+      "received_events_url": "https://api.github.com/users/francoischalifour/received_events",
+      "repos_url": "https://api.github.com/users/francoischalifour/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/francoischalifour/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/francoischalifour/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/francoischalifour",
+      "user_view_type": "public"
+    }
+  }
+]

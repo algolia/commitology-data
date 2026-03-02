@@ -1,0 +1,559 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1452441061"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452441061"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "This all could be simpler but it can be tackled in a separate refactoring PR.",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-15T14:25:28Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number\n+        ) {\n+          setUserTokenToSearch(token, true);\n+\n+          if (userToken) {\n+            insightsClient('setUserToken', userToken);\n+          }\n+          if (authenticatedUserToken) {\n+            insightsClient('setAuthenticatedUserToken', authenticatedUserToken);\n+          }\n+        }\n+\n+        // We consider the `userToken` or `authenticatedUserToken` before an\n+        // `init` call of higher importance than one from the queue.\n+        const tokenBeforeInit =\n+          authenticatedUserTokenBeforeInit || userTokenBeforeInit;\n+        const queuedToken = queuedAuthenticatedUserToken || queuedUserToken;",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1452441061",
+    "id": 1452441061,
+    "line": 276,
+    "node_id": "PRRC_kwDOAlnbOs5Wkn3l",
+    "original_commit_id": "cdd3313eebf892f58e212f723a05dac9b596b11d",
+    "original_line": 276,
+    "original_position": 87,
+    "original_start_line": 274,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 87,
+    "pull_request_review_id": 1821789675,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452441061/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 274,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-15T14:25:28Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1452441061",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453213217"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453213217"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Could there be a race condition here where reverting to the `userToken` would be overridden by an undefined `authenticatedUserToken`?",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T10:15:38Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number\n+        ) {\n+          setUserTokenToSearch(token, true);\n+\n+          if (userToken) {\n+            insightsClient('setUserToken', userToken);\n+          }\n+          if (authenticatedUserToken) {\n+            insightsClient('setAuthenticatedUserToken', authenticatedUserToken);\n+          }\n+        }\n+\n+        // We consider the `userToken` or `authenticatedUserToken` before an\n+        // `init` call of higher importance than one from the queue.\n+        const tokenBeforeInit =\n+          authenticatedUserTokenBeforeInit || userTokenBeforeInit;\n+        const queuedToken = queuedAuthenticatedUserToken || queuedUserToken;\n+\n+        if (tokenBeforeInit) {\n+          setUserToken(\n+            tokenBeforeInit,\n+            userTokenBeforeInit,\n+            authenticatedUserTokenBeforeInit\n+          );\n+        } else if (queuedToken) {\n+          setUserToken(\n+            queuedToken,\n+            queuedUserToken,\n+            queuedAuthenticatedUserToken\n+          );\n         }\n \n         // This updates userToken which is set explicitly by `aa('setUserToken', userToken)`\n         insightsClient('onUserTokenChange', setUserTokenToSearch, {\n           immediate: true,\n         });\n \n+        // This updates userToken which is set explicitly by `aa('setAuthenticatedtUserToken', authenticatedUserToken)`\n+        insightsClient(\n+          'onAuthenticatedUserTokenChange',\n+          (authenticatedUserToken) => {\n+            // If we're unsetting the `authenticatedUserToken`, we revert to the `userToken`\n+            if (!authenticatedUserToken) {\n+              insightsClient('getUserToken', null, (_, userToken) => {\n+                setUserTokenToSearch(userToken);\n+              });\n+            }\n+\n+            setUserTokenToSearch(authenticatedUserToken);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453213217",
+    "id": 1453213217,
+    "line": 308,
+    "node_id": "PRRC_kwDOAlnbOs5WnkYh",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 308,
+    "original_position": 119,
+    "original_start_line": 302,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 119,
+    "pull_request_review_id": 1822983808,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453213217/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 302,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T10:17:29Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453213217",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453509128"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453509128"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "you mentioned the refactor, but I'm not sure if it's a good idea to have two adjacent optional params. Shouldn't the first userToken be required (but allowed to be undefined)?",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T14:30:11Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453509128",
+    "id": 1453509128,
+    "line": 260,
+    "node_id": "PRRC_kwDOAlnbOs5WosoI",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 260,
+    "original_position": 71,
+    "original_start_line": 259,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 71,
+    "pull_request_review_id": 1823579902,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453509128/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 259,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T14:30:11Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453509128",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453539403"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453539403"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "The internal `setUserTokenToSearch` function returns if the passed `userToken` is falsy (once normalized) so this shouldn't happen. Is this what you had in mind?",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T14:50:21Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number\n+        ) {\n+          setUserTokenToSearch(token, true);\n+\n+          if (userToken) {\n+            insightsClient('setUserToken', userToken);\n+          }\n+          if (authenticatedUserToken) {\n+            insightsClient('setAuthenticatedUserToken', authenticatedUserToken);\n+          }\n+        }\n+\n+        // We consider the `userToken` or `authenticatedUserToken` before an\n+        // `init` call of higher importance than one from the queue.\n+        const tokenBeforeInit =\n+          authenticatedUserTokenBeforeInit || userTokenBeforeInit;\n+        const queuedToken = queuedAuthenticatedUserToken || queuedUserToken;\n+\n+        if (tokenBeforeInit) {\n+          setUserToken(\n+            tokenBeforeInit,\n+            userTokenBeforeInit,\n+            authenticatedUserTokenBeforeInit\n+          );\n+        } else if (queuedToken) {\n+          setUserToken(\n+            queuedToken,\n+            queuedUserToken,\n+            queuedAuthenticatedUserToken\n+          );\n         }\n \n         // This updates userToken which is set explicitly by `aa('setUserToken', userToken)`\n         insightsClient('onUserTokenChange', setUserTokenToSearch, {\n           immediate: true,\n         });\n \n+        // This updates userToken which is set explicitly by `aa('setAuthenticatedtUserToken', authenticatedUserToken)`\n+        insightsClient(\n+          'onAuthenticatedUserTokenChange',\n+          (authenticatedUserToken) => {\n+            // If we're unsetting the `authenticatedUserToken`, we revert to the `userToken`\n+            if (!authenticatedUserToken) {\n+              insightsClient('getUserToken', null, (_, userToken) => {\n+                setUserTokenToSearch(userToken);\n+              });\n+            }\n+\n+            setUserTokenToSearch(authenticatedUserToken);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453539403",
+    "id": 1453539403,
+    "in_reply_to_id": 1453213217,
+    "line": 308,
+    "node_id": "PRRC_kwDOAlnbOs5Wo0BL",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 308,
+    "original_position": 119,
+    "original_start_line": 302,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 119,
+    "pull_request_review_id": 1823651646,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453539403/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 302,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T14:50:22Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453539403",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453541458"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453541458"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Isn't it the same? If not passed, the `userToken ` will be `undefined`.",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T14:51:49Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453541458",
+    "id": 1453541458,
+    "in_reply_to_id": 1453509128,
+    "line": 260,
+    "node_id": "PRRC_kwDOAlnbOs5Wo0hS",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 260,
+    "original_position": 71,
+    "original_start_line": 259,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 71,
+    "pull_request_review_id": 1823656744,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453541458/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 259,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T14:51:49Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453541458",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453549463"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453549463"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Ah yes, that's it.",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T14:57:23Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number\n+        ) {\n+          setUserTokenToSearch(token, true);\n+\n+          if (userToken) {\n+            insightsClient('setUserToken', userToken);\n+          }\n+          if (authenticatedUserToken) {\n+            insightsClient('setAuthenticatedUserToken', authenticatedUserToken);\n+          }\n+        }\n+\n+        // We consider the `userToken` or `authenticatedUserToken` before an\n+        // `init` call of higher importance than one from the queue.\n+        const tokenBeforeInit =\n+          authenticatedUserTokenBeforeInit || userTokenBeforeInit;\n+        const queuedToken = queuedAuthenticatedUserToken || queuedUserToken;\n+\n+        if (tokenBeforeInit) {\n+          setUserToken(\n+            tokenBeforeInit,\n+            userTokenBeforeInit,\n+            authenticatedUserTokenBeforeInit\n+          );\n+        } else if (queuedToken) {\n+          setUserToken(\n+            queuedToken,\n+            queuedUserToken,\n+            queuedAuthenticatedUserToken\n+          );\n         }\n \n         // This updates userToken which is set explicitly by `aa('setUserToken', userToken)`\n         insightsClient('onUserTokenChange', setUserTokenToSearch, {\n           immediate: true,\n         });\n \n+        // This updates userToken which is set explicitly by `aa('setAuthenticatedtUserToken', authenticatedUserToken)`\n+        insightsClient(\n+          'onAuthenticatedUserTokenChange',\n+          (authenticatedUserToken) => {\n+            // If we're unsetting the `authenticatedUserToken`, we revert to the `userToken`\n+            if (!authenticatedUserToken) {\n+              insightsClient('getUserToken', null, (_, userToken) => {\n+                setUserTokenToSearch(userToken);\n+              });\n+            }\n+\n+            setUserTokenToSearch(authenticatedUserToken);",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453549463",
+    "id": 1453549463,
+    "in_reply_to_id": 1453213217,
+    "line": 308,
+    "node_id": "PRRC_kwDOAlnbOs5Wo2eX",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 308,
+    "original_position": 119,
+    "original_start_line": 302,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 119,
+    "pull_request_review_id": 1823677749,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453549463/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 302,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T14:57:24Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453549463",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453552287"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453552287"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "Yes, but there's no real use case for passing `authenticatedUserToken` if `userToken` isn't passed (you can't do it). If the signature is required (maybe even for both) we won't have weird edge cases if ever we call setUserToken without parameters",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T14:59:20Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453552287",
+    "id": 1453552287,
+    "in_reply_to_id": 1453509128,
+    "line": 260,
+    "node_id": "PRRC_kwDOAlnbOs5Wo3Kf",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 260,
+    "original_position": 71,
+    "original_start_line": 259,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 71,
+    "pull_request_review_id": 1823684533,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453552287/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 259,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T14:59:20Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453552287",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453575750"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/5997"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453575750"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Yep I think I see what you mean. This function is meant to be internal (and temporary) just to avoid repetition and further inflating bundle size. I can rewrite it more cleanly later.",
+    "commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "created_at": "2024-01-16T15:16:31Z",
+    "diff_hunk": "@@ -241,21 +254,64 @@ export function createInsightsMiddleware<\n           setUserTokenToSearch(anonymousUserToken, true);\n         }\n \n-        // We consider the `userToken` coming from a `init` call to have a higher\n-        // importance than the one coming from the queue.\n-        if (userTokenBeforeInit) {\n-          setUserTokenToSearch(userTokenBeforeInit, true);\n-          insightsClient('setUserToken', userTokenBeforeInit);\n-        } else if (queuedUserToken) {\n-          setUserTokenToSearch(queuedUserToken, true);\n-          insightsClient('setUserToken', queuedUserToken);\n+        function setUserToken(\n+          token: string | number,\n+          userToken?: string | number,\n+          authenticatedUserToken?: string | number",
+    "html_url": "https://github.com/algolia/instantsearch/pull/5997#discussion_r1453575750",
+    "id": 1453575750,
+    "in_reply_to_id": 1453509128,
+    "line": 260,
+    "node_id": "PRRC_kwDOAlnbOs5Wo85G",
+    "original_commit_id": "4802b7b1c1bdfad898e20637438fc7f79d744b77",
+    "original_line": 260,
+    "original_position": 71,
+    "original_start_line": 259,
+    "path": "packages/instantsearch.js/src/middlewares/createInsightsMiddleware.ts",
+    "position": 71,
+    "pull_request_review_id": 1823742910,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/5997",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453575750/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": 259,
+    "start_side": "RIGHT",
+    "subject_type": "line",
+    "updated_at": "2024-01-16T15:16:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/1453575750",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5370675?v=4",
+      "events_url": "https://api.github.com/users/sarahdayan/events{/privacy}",
+      "followers_url": "https://api.github.com/users/sarahdayan/followers",
+      "following_url": "https://api.github.com/users/sarahdayan/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sarahdayan/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sarahdayan",
+      "id": 5370675,
+      "login": "sarahdayan",
+      "node_id": "MDQ6VXNlcjUzNzA2NzU=",
+      "organizations_url": "https://api.github.com/users/sarahdayan/orgs",
+      "received_events_url": "https://api.github.com/users/sarahdayan/received_events",
+      "repos_url": "https://api.github.com/users/sarahdayan/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/sarahdayan/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sarahdayan/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/sarahdayan",
+      "user_view_type": "public"
+    }
+  }
+]

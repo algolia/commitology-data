@@ -1,0 +1,211 @@
+[
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732164052"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6869"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732164052"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "Does this still require `NPM_TOKEN` or have you enabled trusted publishing?",
+    "commit_id": "41276be107dbb691035e05421034015347b67399",
+    "created_at": "2026-01-27T14:03:16Z",
+    "diff_hunk": "@@ -0,0 +1,74 @@\n+name: Trigger a release\n+\n+on:\n+  status:\n+  workflow_dispatch:\n+\n+permissions:\n+  contents: write\n+  pull-requests: write\n+\n+concurrency:\n+  group: release-trigger-${{ github.ref }}\n+  cancel-in-progress: false\n+\n+jobs:\n+  release:\n+    if: |\n+      (github.event_name == 'status' &&\n+       github.event.state == 'success' &&\n+       github.event.branches[0].name == 'master' &&\n+       github.event.context == 'ci/circleci: signal release ready') ||\n+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')\n+    name: Release if needed\n+    runs-on: ubuntu-latest\n+    steps:\n+      - uses: actions/checkout@v4\n+\n+      - uses: actions/setup-node@v4\n+        with:\n+          node-version-file: '.nvmrc'\n+\n+      - name: Download CircleCI build artifacts\n+        env:\n+          CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}\n+        run: |\n+          COMMIT_SHA=\"${{ github.sha }}\"\n+\n+          # Find pipeline for this commit\n+          PIPELINE=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/pipeline?branch=master\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r --arg sha \"$COMMIT_SHA\" '.items[] | select(.vcs.revision == $sha) | .id' | head -1)\n+\n+          [ -z \"$PIPELINE\" ] && echo \"Pipeline not found\" && exit 1\n+\n+          # Find workflow and job\n+          WORKFLOW=$(curl -s \"https://circleci.com/api/v2/pipeline/$PIPELINE/workflow\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"ci\") | .id' | head -1)\n+\n+          [ -z \"$WORKFLOW\" ] && echo \"Workflow not found\" && exit 1\n+\n+          JOB_NUM=$(curl -s \"https://circleci.com/api/v2/workflow/$WORKFLOW/job\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"signal release ready\") | .job_number')\n+\n+          [ -z \"$JOB_NUM\" ] && echo \"Job not found\" && exit 1\n+\n+          # Download artifact\n+          ARTIFACT=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/$JOB_NUM/artifacts\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.path | endswith(\"build-artifacts.tar.gz\")) | .url')\n+\n+          [ -z \"$ARTIFACT\" ] && echo \"Artifact not found\" && exit 1\n+\n+          curl -L \"$ARTIFACT\" -o build-artifacts.tar.gz -H \"Circle-Token: $CIRCLECI_TOKEN\"\n+          tar -xzf build-artifacts.tar.gz\n+\n+      - name: Configure git user\n+        run: |\n+          git config user.name \"github-actions[bot]\"\n+          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n+\n+      - name: Trigger release if latest commit is a release commit\n+        env:\n+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n+        run: npx shipjs@0.26.0 trigger",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732164052",
+    "id": 2732164052,
+    "line": 59,
+    "node_id": "PRRC_kwDOAlnbOs6i2YPU",
+    "original_commit_id": "fcca998e2961b6a2138d555e19e83045481033bf",
+    "original_line": 74,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": ".github/workflows/release-trigger.yml",
+    "position": 59,
+    "pull_request_review_id": 3711387687,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6869",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732164052/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T14:04:32Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732164052",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732184187"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6869"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732184187"
+      }
+    },
+    "author_association": "CONTRIBUTOR",
+    "body": "good catch! one of the things I couldn't check without doing a release 😅 ",
+    "commit_id": "41276be107dbb691035e05421034015347b67399",
+    "created_at": "2026-01-27T14:07:30Z",
+    "diff_hunk": "@@ -0,0 +1,74 @@\n+name: Trigger a release\n+\n+on:\n+  status:\n+  workflow_dispatch:\n+\n+permissions:\n+  contents: write\n+  pull-requests: write\n+\n+concurrency:\n+  group: release-trigger-${{ github.ref }}\n+  cancel-in-progress: false\n+\n+jobs:\n+  release:\n+    if: |\n+      (github.event_name == 'status' &&\n+       github.event.state == 'success' &&\n+       github.event.branches[0].name == 'master' &&\n+       github.event.context == 'ci/circleci: signal release ready') ||\n+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')\n+    name: Release if needed\n+    runs-on: ubuntu-latest\n+    steps:\n+      - uses: actions/checkout@v4\n+\n+      - uses: actions/setup-node@v4\n+        with:\n+          node-version-file: '.nvmrc'\n+\n+      - name: Download CircleCI build artifacts\n+        env:\n+          CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}\n+        run: |\n+          COMMIT_SHA=\"${{ github.sha }}\"\n+\n+          # Find pipeline for this commit\n+          PIPELINE=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/pipeline?branch=master\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r --arg sha \"$COMMIT_SHA\" '.items[] | select(.vcs.revision == $sha) | .id' | head -1)\n+\n+          [ -z \"$PIPELINE\" ] && echo \"Pipeline not found\" && exit 1\n+\n+          # Find workflow and job\n+          WORKFLOW=$(curl -s \"https://circleci.com/api/v2/pipeline/$PIPELINE/workflow\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"ci\") | .id' | head -1)\n+\n+          [ -z \"$WORKFLOW\" ] && echo \"Workflow not found\" && exit 1\n+\n+          JOB_NUM=$(curl -s \"https://circleci.com/api/v2/workflow/$WORKFLOW/job\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"signal release ready\") | .job_number')\n+\n+          [ -z \"$JOB_NUM\" ] && echo \"Job not found\" && exit 1\n+\n+          # Download artifact\n+          ARTIFACT=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/$JOB_NUM/artifacts\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.path | endswith(\"build-artifacts.tar.gz\")) | .url')\n+\n+          [ -z \"$ARTIFACT\" ] && echo \"Artifact not found\" && exit 1\n+\n+          curl -L \"$ARTIFACT\" -o build-artifacts.tar.gz -H \"Circle-Token: $CIRCLECI_TOKEN\"\n+          tar -xzf build-artifacts.tar.gz\n+\n+      - name: Configure git user\n+        run: |\n+          git config user.name \"github-actions[bot]\"\n+          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n+\n+      - name: Trigger release if latest commit is a release commit\n+        env:\n+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n+        run: npx shipjs@0.26.0 trigger",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732184187",
+    "id": 2732184187,
+    "in_reply_to_id": 2732164052,
+    "line": 59,
+    "node_id": "PRRC_kwDOAlnbOs6i2dJ7",
+    "original_commit_id": "fcca998e2961b6a2138d555e19e83045481033bf",
+    "original_line": 74,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": ".github/workflows/release-trigger.yml",
+    "position": 59,
+    "pull_request_review_id": 3711412904,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6869",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 0,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732184187/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T14:07:31Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732184187",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
+      "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
+      "followers_url": "https://api.github.com/users/Haroenv/followers",
+      "following_url": "https://api.github.com/users/Haroenv/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Haroenv/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/Haroenv",
+      "id": 6270048,
+      "login": "Haroenv",
+      "node_id": "MDQ6VXNlcjYyNzAwNDg=",
+      "organizations_url": "https://api.github.com/users/Haroenv/orgs",
+      "received_events_url": "https://api.github.com/users/Haroenv/received_events",
+      "repos_url": "https://api.github.com/users/Haroenv/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/Haroenv/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Haroenv/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/Haroenv",
+      "user_view_type": "public"
+    }
+  },
+  {
+    "_links": {
+      "html": {
+        "href": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732211842"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/6869"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732211842"
+      }
+    },
+    "author_association": "MEMBER",
+    "body": "If it's not too complex, I'd recommend relying on [trusted publishing](https://docs.npmjs.com/trusted-publishers#step-1-add-a-trusted-publisher-on-npmjscom) then.",
+    "commit_id": "41276be107dbb691035e05421034015347b67399",
+    "created_at": "2026-01-27T14:13:54Z",
+    "diff_hunk": "@@ -0,0 +1,74 @@\n+name: Trigger a release\n+\n+on:\n+  status:\n+  workflow_dispatch:\n+\n+permissions:\n+  contents: write\n+  pull-requests: write\n+\n+concurrency:\n+  group: release-trigger-${{ github.ref }}\n+  cancel-in-progress: false\n+\n+jobs:\n+  release:\n+    if: |\n+      (github.event_name == 'status' &&\n+       github.event.state == 'success' &&\n+       github.event.branches[0].name == 'master' &&\n+       github.event.context == 'ci/circleci: signal release ready') ||\n+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')\n+    name: Release if needed\n+    runs-on: ubuntu-latest\n+    steps:\n+      - uses: actions/checkout@v4\n+\n+      - uses: actions/setup-node@v4\n+        with:\n+          node-version-file: '.nvmrc'\n+\n+      - name: Download CircleCI build artifacts\n+        env:\n+          CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}\n+        run: |\n+          COMMIT_SHA=\"${{ github.sha }}\"\n+\n+          # Find pipeline for this commit\n+          PIPELINE=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/pipeline?branch=master\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r --arg sha \"$COMMIT_SHA\" '.items[] | select(.vcs.revision == $sha) | .id' | head -1)\n+\n+          [ -z \"$PIPELINE\" ] && echo \"Pipeline not found\" && exit 1\n+\n+          # Find workflow and job\n+          WORKFLOW=$(curl -s \"https://circleci.com/api/v2/pipeline/$PIPELINE/workflow\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"ci\") | .id' | head -1)\n+\n+          [ -z \"$WORKFLOW\" ] && echo \"Workflow not found\" && exit 1\n+\n+          JOB_NUM=$(curl -s \"https://circleci.com/api/v2/workflow/$WORKFLOW/job\" -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.name == \"signal release ready\") | .job_number')\n+\n+          [ -z \"$JOB_NUM\" ] && echo \"Job not found\" && exit 1\n+\n+          # Download artifact\n+          ARTIFACT=$(curl -s \"https://circleci.com/api/v2/project/gh/algolia/instantsearch/$JOB_NUM/artifacts\" \\\n+            -H \"Circle-Token: $CIRCLECI_TOKEN\" | \\\n+            jq -r '.items[] | select(.path | endswith(\"build-artifacts.tar.gz\")) | .url')\n+\n+          [ -z \"$ARTIFACT\" ] && echo \"Artifact not found\" && exit 1\n+\n+          curl -L \"$ARTIFACT\" -o build-artifacts.tar.gz -H \"Circle-Token: $CIRCLECI_TOKEN\"\n+          tar -xzf build-artifacts.tar.gz\n+\n+      - name: Configure git user\n+        run: |\n+          git config user.name \"github-actions[bot]\"\n+          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n+\n+      - name: Trigger release if latest commit is a release commit\n+        env:\n+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n+        run: npx shipjs@0.26.0 trigger",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6869#discussion_r2732211842",
+    "id": 2732211842,
+    "in_reply_to_id": 2732164052,
+    "line": 59,
+    "node_id": "PRRC_kwDOAlnbOs6i2j6C",
+    "original_commit_id": "fcca998e2961b6a2138d555e19e83045481033bf",
+    "original_line": 74,
+    "original_position": 74,
+    "original_start_line": null,
+    "path": ".github/workflows/release-trigger.yml",
+    "position": 59,
+    "pull_request_review_id": 3711445563,
+    "pull_request_url": "https://api.github.com/repos/algolia/instantsearch/pulls/6869",
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "confused": 0,
+      "eyes": 1,
+      "heart": 0,
+      "hooray": 0,
+      "laugh": 0,
+      "rocket": 0,
+      "total_count": 1,
+      "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732211842/reactions"
+    },
+    "side": "RIGHT",
+    "start_line": null,
+    "start_side": null,
+    "subject_type": "line",
+    "updated_at": "2026-01-27T14:13:54Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/pulls/comments/2732211842",
+    "user": {
+      "avatar_url": "https://avatars.githubusercontent.com/u/154633?v=4",
+      "events_url": "https://api.github.com/users/dhayab/events{/privacy}",
+      "followers_url": "https://api.github.com/users/dhayab/followers",
+      "following_url": "https://api.github.com/users/dhayab/following{/other_user}",
+      "gists_url": "https://api.github.com/users/dhayab/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/dhayab",
+      "id": 154633,
+      "login": "dhayab",
+      "node_id": "MDQ6VXNlcjE1NDYzMw==",
+      "organizations_url": "https://api.github.com/users/dhayab/orgs",
+      "received_events_url": "https://api.github.com/users/dhayab/received_events",
+      "repos_url": "https://api.github.com/users/dhayab/repos",
+      "site_admin": false,
+      "starred_url": "https://api.github.com/users/dhayab/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/dhayab/subscriptions",
+      "type": "User",
+      "url": "https://api.github.com/users/dhayab",
+      "user_view_type": "public"
+    }
+  }
+]
