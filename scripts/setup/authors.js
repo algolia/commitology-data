@@ -1,20 +1,22 @@
 import { _, pMap } from 'golgoth';
-import { spinner } from 'firost';
+import { absolute, exists, readJson, spinner, writeJson } from 'firost';
 import { dataInputAuthorsPath, repo } from '../../lib/config.js';
 import { getAuthorList } from '../../lib/git.js';
+import { getCommit } from '../../lib/github.js';
 
-const CONCURRENCY = 10;
+const CONCURRENCY = 5;
 const authorList = await getAuthorList();
 const authorMaxCount = authorList.length;
 const progress = spinner();
 
 await pMap(
   authorList,
-  async (author, authorIndex) => {
-    const { name } = author;
+  async (gitAuthor, authorIndex) => {
+    const { name, email } = gitAuthor;
     const tickTitle = `[${authorIndex}/${authorMaxCount}] ${name}`;
     progress.tick(tickTitle);
 
+    // Find a commit from that author locally
     const escapedName = _.chain(name)
       .replace(/\[/g, '\\[')
       .replace(/\]/g, '\\]')
@@ -22,7 +24,46 @@ await pMap(
     const firstCommitHash = await repo.run(
       `log --author="${escapedName}" --format="%H" -1`,
     );
-    console.log(firstCommitHash, dataInputAuthorsPath);
+
+    // Get the github author of that commit
+    const commitData = await getCommit(firstCommitHash);
+    let githubAuthor = commitData.author || commitData.committer;
+    let githubLogin = githubAuthor?.login;
+
+    // User has no github profile; we'll put it into a catch-all bucket
+    if (!githubLogin) {
+      githubLogin = '__UNKNOWN_GITHUB_PROFILE__';
+      githubAuthor = {};
+    }
+
+    // Create or update the user json file
+    const authorPath = absolute(dataInputAuthorsPath, `${githubLogin}.json`);
+
+    let authorContent = {
+      github: githubAuthor,
+      aliases: {
+        names: [name],
+        emails: [email],
+      },
+    };
+    if (await exists(authorPath)) {
+      authorContent = await readJson(authorPath);
+      authorContent.aliases.names = _.chain(authorContent)
+        .get('aliases.names')
+        .concat(name)
+        .uniq()
+        .sort()
+        .value();
+      authorContent.aliases.emails = _.chain(authorContent)
+        .get('aliases.emails')
+        .concat(email)
+        .uniq()
+        .sort()
+        .value();
+    }
+
+    // Save the file
+    await writeJson(authorContent, authorPath);
   },
   { concurrency: CONCURRENCY },
 );
