@@ -27,14 +27,8 @@ await pMap(
 
     // Get the github author of that commit
     const commitData = await getCommit(firstCommitHash);
-    let githubAuthor = commitData.author || commitData.committer;
-    let githubLogin = githubAuthor?.login;
-
-    // User has no github profile; we'll put it into a catch-all bucket
-    if (!githubLogin) {
-      githubLogin = '__UNKNOWN_GITHUB_PROFILE__';
-      githubAuthor = {};
-    }
+    const githubAuthor = commitData.author || {};
+    const githubLogin = githubAuthor?.login || '__UNKNOWN_GITHUB_PROFILE__';
 
     // Create or update the user json file
     const authorPath = absolute(dataInputAuthorsPath, `${githubLogin}.json`);
