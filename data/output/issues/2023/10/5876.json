@@ -1,0 +1,52 @@
+{
+  "number": 5876,
+  "title": "are some type definitions within the default `history()` router and `stateMapping` incorrect?",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/1937355",
+    "id": 1937355,
+    "login": "i-a-n",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\n\nI notice that the functions I pass to the default `history()` router and `stateMapping` object seem to require different types than they actually use. specifically, for one example, the `createURL()` function, instantiated like this:\r\n\r\n```tsx\r\nimport { InstantSearch } from 'react-instantsearch';\r\nimport { history } from 'instantsearch.js/es/lib/routers';\r\n\r\n// ..\r\n<InstantSearch\r\n  indexName=\"search\"\r\n  searchClient={/* .. */}\r\n  routing={{\r\n    router: history({\r\n      createURL({ qsModule, routeState, location }) {\r\n        // `routeState` here thinks it's of type \"UiState\"..\r\n        // UIState is:\r\n        // [indexName] : { query, ... }\r\n\r\n        // ..but that's not what it is:\r\n        console.log(routeState);\r\n        // { query: 'foo', ... }\r\n\r\n        // ^ there's no [indexName] key! it seems to actually just be \"IndexUiState\"\r\n      }\r\n    })\r\n  }}\r\n/>\r\n```\r\n\r\nit seems these functions (createURL, parseURL, stateToRoute, routeToState, etc) all expect the `routeState` or `uiState` parameters to be of type `UiState`, but I think I'm seeing those parameters _actually_ being of type `IndexUiState`.\r\n\r\nis it possible there's a mistake in [the type definition files](https://github.com/algolia/instantsearch/blob/master/packages/instantsearch.js/src/types/router.ts)?\n\n### 🔍 Steps to reproduce\n\nI created a vanilla react-typescript sandbox and copied over the default \"routing-seo-friendly\" example from the documentation:\r\n\r\nhttps://codesandbox.io/s/stupefied-panna-rk3cpp?file=/src/search-routing.ts\r\n\r\nthis looks to me like (in the `search-results.ts` file) there is clearly a problem with the `uiState` type definitions.\n\n### Live reproduction\n\nhttps://codesandbox.io/s/stupefied-panna-rk3cpp?file=/src/search-routing.ts\n\n### 💭 Expected behavior\n\n...I'd expect the type defs to line up with what's actually being provided from those methods, I suppose\n\n### Package version\n\nlatest instantsearch.js\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1696279772,
+  "labels": [
+    {
+      "color": "5319E7",
+      "id": 4913597511,
+      "name": "triage"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I believe this is not totally clear, but the default value of TRouteState is UiState, so to correctly do the typing, you need something like this:\r\n\r\n```ts\r\ntype RouteState = {\r\n  query?: string\r\n ...\r\n}; // or IndexUiState if you use a straight mapping\r\n\r\n<InstantSearch<UiState, RouteState>\r\n  indexName=\"search\"\r\n  searchClient={/* .. */}\r\n  routing={{\r\n    router: history({\r\n      createURL({ qsModule, routeState, location }) {\r\n        // `routeState` here thinks it's of type \"UiState\"..\r\n        // UIState is:\r\n        // [indexName] : { query, ... }\r\n\r\n        // ..but that's not what it is:\r\n        console.log(routeState);\r\n        // { query: 'foo', ... }\r\n\r\n        // ^ there's no [indexName] key! it seems to actually just be \"IndexUiState\"\r\n      }\r\n    })\r\n  }}\r\n/>\r\n```\r\n\r\nThere's definitely improvements possible in this type, but we haven't found the most ergonomic way to infer these types yet",
+      "date": 1696321612,
+      "reactions": {},
+      "id": 1744459470
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1937355",
+        "id": 1937355,
+        "login": "i-a-n",
+        "type": "User"
+      },
+      "body": "got it, thanks! I understand how the \"\"\"fix\"\" could be quite complex so I'll close this issue since there's a simple workaround 👍 ",
+      "date": 1696349955,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1745312836
+    }
+  ]
+}

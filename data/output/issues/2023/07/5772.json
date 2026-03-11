@@ -1,0 +1,45 @@
+{
+  "number": 5772,
+  "title": "Broken SSR when using InfiniteHitsSessionStorageCache",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/389352",
+    "id": 389352,
+    "login": "lluzak",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\n\nSSR in Next.js is currently broken when used together with `createInfiniteHitsSessionStorageCache`.\n\n### 🔍 Steps to reproduce\n\n1. Load more results\r\n2. Hard refresh page\r\n3. Hydration error will be displayed\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/white-rgb-t5lkyg\n\n### 💭 Expected behavior\n\nSkip loading cache on hydration.\n\n### Package version\n\nreact-instantsearch-hooks-web 6.47.1\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1689960918,
+  "labels": [
+    {
+      "color": "EED646",
+      "id": 4913578451,
+      "name": "Library: InstantSearch.js"
+    },
+    {
+      "color": "1d76db",
+      "id": 4936474361,
+      "name": "Library: React InstantSearch ≥ 7"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hey @lluzak !\r\n\r\nA userland solution would be to create a custom cache that bails the first `read`/`write` : \r\n\r\n```ts\r\nconst cache = createInfiniteHitsSessionStorageCache();\r\n\r\nconst ssrSafeCache: typeof cache & {\r\n  firstReadDone: boolean;\r\n  firstWriteDone: boolean;\r\n} = {\r\n  firstReadDone: false,\r\n  firstWriteDone: false,\r\n  read({ state }) {\r\n    if (!this.firstReadDone) {\r\n      this.firstReadDone = true;\r\n      return null;\r\n    }\r\n    return cache.read({ state });\r\n  },\r\n  write({ state, hits }) {\r\n    if (!this.firstWriteDone) {\r\n      this.firstWriteDone = true;\r\n      return;\r\n    }\r\n    cache.write({ state, hits });\r\n  },\r\n};\r\n```\r\n\r\nYou can see it in action there : https://codesandbox.io/p/sandbox/confident-moon-vhm9rq?file=%2Fpages%2Findex.tsx%3A24%2C1-46%2C3\r\n\r\nUnfortunately this will lead to a small layout shift, but let me know if it works for you !\r\n\r\nI'll look if it's possible to handle it directly in the lib, if not we can document or package this SSR-safe cache.",
+      "date": 1690448148,
+      "reactions": {
+        "👀": 4
+      },
+      "id": 1653188889
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "number": 1960,
+  "title": "Configure calls onSearchStateChange and locks up JS thread",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/449136",
+    "id": 449136,
+    "login": "zackify",
+    "type": "User"
+  },
+  "body": "Bug: What is the current behavior?\r\n\r\nConfigure calls onSearchStateChanged nonstop and locks up the browser until a callstack exceeded error happens.\r\n\r\n\r\nWhat project are you opening an issue for?\r\n\r\nreact-instantsearch\r\nWhat is the version you are using? Always use the latest one before opening a bug issue.\r\n\r\nv3.1.0\r\n\r\nMy guess is it triggers a render, and configure is rendered again, calls search state change again. It should just trigger it if the current configure object is different so this doesnt happen.\r\n\r\nlast issue: #1950",
+  "date": 1486591918,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "Hi @zackify, this shouldn't happen normally as we perform a deepEqual when a component receive new props. So if the props didn't changed, the onSearchStateChange shouldn't be trigger infinitely. \r\n\r\nBut sometimes depending on the upper component of the `<InstantSearch/>` root component, those infinite loops can still happen, for example in the `react-router v3` recipe I had to implement the `shouldComponentUpdate` lifecycle method. \r\n\r\nAny chance you can provide a small sample to help us understand what's happening with your use case? Maybe you can use this jsfiddle template https://jsfiddle.net/h3nus3gg/? ",
+      "date": 1486632443,
+      "reactions": {},
+      "id": 278589802
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/449136",
+        "id": 449136,
+        "login": "zackify",
+        "type": "User"
+      },
+      "body": "I'll look into this today. The thing is, this component worked perfectly\nwith no problems in 2.2.5 just never updated the search state. Every part\nof my app works minus this now. I was in a rush when I made this issue\nbecause I need it working next week. My bad on not giving you enough info!\nI'll post here later today.\nOn Thu, Feb 9, 2017 at 04:27 Marie-Laure Thuret <notifications@github.com>\nwrote:\n\n> Hi @zackify <https://github.com/zackify>, this shouldn't happen normally\n> as we perform a deepEqual when a component receive new props. So if the\n> props didn't changed, the onSearchStateChange shouldn't be trigger\n> infinitely.\n>\n> But sometimes depending on the upper component of the <InstantSearch/>\n> root component, those infinite loops can still happen, for example in the react-router\n> v3 recipe I had to implement the shouldComponentUpdate lifecycle method.\n>\n> Any chance you can provide a small sample to help us understand what's\n> happening with your use case? Maybe you can use this jsfiddle template\n> https://jsfiddle.net/h3nus3gg/?\n>\n> —\n> You are receiving this because you were mentioned.\n> Reply to this email directly, view it on GitHub\n> <https://github.com/algolia/instantsearch.js/issues/1960#issuecomment-278589802>,\n> or mute the thread\n> <https://github.com/notifications/unsubscribe-auth/AAbacOYtIkF7bP8Y4_Zz4JAq6vNu6kuhks5ratv8gaJpZM4L7bq5>\n> .\n>\n",
+      "date": 1486643023,
+      "reactions": {},
+      "id": 278626704
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/449136",
+        "id": 449136,
+        "login": "zackify",
+        "type": "User"
+      },
+      "body": "Here's the problem: I was doing:\r\n\r\n```\r\nif (this.state.lastPush && newPush - this.state.lastPush <= THRESHOLD) {\r\n      router.replace(nextSearchState ? `?${string}` : '')\r\n    } else {\r\n      router.push(nextSearchState ? `?${string}` : '')\r\n    }\r\n```\r\n\r\nThen set the search state from the location string:\r\n\r\n\r\n```\r\n<InstantSearch\r\n          indexName={index}\r\n          searchState={qs.parse(location.search.substring(1)}\r\n      ....\r\n```\r\n\r\nFor some reason this causes an infinite render. I don't think it should. \r\n\r\nEdit: for some reason it just keeps being rendered, trying to debug it :/",
+      "date": 1486663111,
+      "reactions": {},
+      "id": 278721143
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/449136",
+        "id": 449136,
+        "login": "zackify",
+        "type": "User"
+      },
+      "body": "This looks like a react router bug, traced it down to passing the location into the pagination connector. Weird, but fixed",
+      "date": 1486664708,
+      "reactions": {},
+      "id": 278728711
+    }
+  ]
+}

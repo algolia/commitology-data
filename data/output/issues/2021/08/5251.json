@@ -1,0 +1,54 @@
+{
+  "number": 5251,
+  "title": "Offer delay by default at 100 milliseconds for Autocomplete",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/5952918",
+    "id": 5952918,
+    "login": "achadee",
+    "type": "User"
+  },
+  "body": "The autocomplete feature should offer a delay prop, to avoid unnecessary queries when typing fast.\r\n\r\nI had to implement it manually like so:\r\n\r\n```ts\r\n  var timeoutId\r\n\r\n  function delay(t, v) {\r\n    return new Promise(function(resolve) {\r\n       clearTimeout(timeoutId)\r\n       timeoutId = setTimeout(resolve.bind(null, v), t)\r\n    });\r\n  }\r\n\r\n\r\n\r\nuseEffect(() => {\r\n\r\n    const algoliaClient = algoliasearch(\r\n      '***',\r\n      '***'\r\n    )\r\n\r\n    const sc = {\r\n      async search(requests: any) {\r\n        await delay(200);\r\n\r\n        const shouldSearch = requests.some(\r\n          ({ params: { query } }: any) => query !== ''\r\n        )\r\n        if (shouldSearch) {\r\n          return algoliaClient.search(requests)\r\n        }\r\n        return Promise.resolve({\r\n          results: [{ hits: [] }],\r\n        })\r\n      },\r\n      searchForFacetValues: algoliaClient.searchForFacetValues,\r\n    }\r\n\r\n    setSearchClient(sc)\r\n  }, [])\r\n\r\n  return (\r\n          <InstantSearch\r\n            searchClient={searchClient}\r\n            indexName=\"shopify_products\"\r\n          >\r\n             ....\r\n```\r\n\r\nThis is a standard feature in most Autocomplete modules and a lot of search engines offer a delay :)\r\n",
+  "date": 1628201184,
+  "labels": [
+    {
+      "color": "61dafb",
+      "id": 4926236951,
+      "name": "Library: React InstantSearch < 7"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Sorry, this is intentional, a debounced search box will give users the perception of a much slower experience than it actually could be.\r\n\r\nAside of that, it's indeed possible to debounce yourself as in the example, although you just delay every call instead of debouncing, that means you're still doing the same amount of queries, just slower. \r\n\r\nWhat you'll want to do more likely is:\r\n\r\nhttps://codesandbox.io/s/fast-currying-3dp59?file=/src/App.js\r\n",
+      "date": 1628234708,
+      "reactions": {
+        "👎️": 1
+      },
+      "id": 1363060477
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5952918",
+        "id": 5952918,
+        "login": "achadee",
+        "type": "User"
+      },
+      "body": "@Haroenv its slower, but its much cheaper. Algolia charges per search request, 100ms delay is a very reasonable compromise for businesses that have a budget. \r\n\r\nAlso, i'm not delaying every request, `clearTimeout` negates previous requests if the next character is typed",
+      "date": 1628374116,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1363060491
+    }
+  ]
+}

@@ -1,0 +1,361 @@
+{
+  "number": 5729,
+  "title": "setIndex should not set page to 0 (and any other method)",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/1689007",
+    "id": 1689007,
+    "login": "maxiloc",
+    "type": "User"
+  },
+  "body": "I understand why it was there in the first place (the setPage(0)) but it the snippet bellow will not load page 2. And I think it is not what we want.\n\n```\nhelper.setCurrentPage(2);\nhelper.setIndex(indexName);\nhelper.search()\n```\n",
+  "date": 1435332047,
+  "labels": [
+    {
+      "color": "d93f0b",
+      "id": 238751632,
+      "name": "Type: Bug"
+    },
+    {
+      "color": "E3B103",
+      "id": 5723773724,
+      "name": "Library: AlgoliaSearch Helper"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "PR or it did not happen :dancer: \n",
+      "date": 1435332260,
+      "reactions": {},
+      "id": 1631045453
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "I don't agree, while changing the index you can't know in advance how many pages there will be in the next search therefore resetting the page to 0 is a safe bet. If you are sure that there will be a page, let's say because you are using a slave that only changes the ordering of the results, then you are in a specific case. And then you can use : \n\n```\nvar page = helper.getCurrentPage();\nhelper.setIndex( indexName )\n      .setCurrentPage( page )\n      .search();\n```\n",
+      "date": 1435333324,
+      "reactions": {},
+      "id": 1631045460
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "I agree with both arguments given their context but still @maxiloc was trapped by the behavior of setIndex when loading a state from a url, the order you do .setCurrentPage and .setIndex should not matter on the result.\n\nIf @maxiloc was trapped then I guess other people will be trapped too?\n\nSo:\n- when changing the index using a UX element the expected behavior is always to be at page 0. Even if you were at page 5 and you are sure there will be a page 5 in the new index, it doesn't make sense to keep the page between the sort changes, no one would expect this.\n- when there's a pageload, the .setCurrentPage and .setIndex order should not matter because it's disturbing\n\nThere's no API to handle both cases easily so I would just not set the page in setIndex because setIndex on a API level says: \"set the index\". not \"set the index and the page\".\n\nSwitching to page 0 when changing the index is a sweet shortcut but it can be tricky in some situations (page load).\n\nWe rather let the API consumer figure out that yes if he's implementing a sorting dropdown, he should reset to page 0 before calling search.\n\nthoughts? \n",
+      "date": 1435342350,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1631045470
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Ok I understand better now. Makes sense when using this API. But, there is\na cleaner way to do that when loading from a URL. Using setState, first\nretrieve the partial from the URL into an object, and then use setState to\nfix the state as defined in the URL.\nOn Jun 26, 2015 8:12 PM, \"Vincent Voyer\" notifications@github.com wrote:\n\n> I agree with both arguments given their context but still @maxiloc\n> https://github.com/maxiloc was trapped by the behavior of setIndex when\n> loading a state from a url, the order you do .setCurrentPage and .setIndex\n> should not matter on the result.\n> \n> If @maxiloc https://github.com/maxiloc was trapped then I guess other\n> people will be trapped too?\n> \n> So:\n> - when changing the index using a UX element the expected behavior is\n>   always to be at page 0. Even if you were at page 5 and you are sure there\n>   will be a page 5 in the new index, it doesn't make sense to keep the page\n>   between the sort changes, no one would expect this.\n> - when there's a pageload, the .setCurrentPage and .setIndex order\n>   should not matter because it's disturbing\n> \n> There's no API to handle both cases easily so I would just not set the\n> page in setIndex because setIndex on a API level says: \"set the index\". not\n> \"set the index and the page\".\n> \n> Switching to page 0 when changing the index is a sweet shortcut but it can\n> be tricky in some situations (page load).\n> \n> We rather let the API consumer figure out that yes if he's implementing a\n> sorting dropdown, he should reset to page 0 before calling search.\n> \n> thoughts?\n> \n> —\n> Reply to this email directly or view it on GitHub\n> https://github.com/algolia/instantsearch/issues/5729\n> .\n",
+      "date": 1435344984,
+      "reactions": {},
+      "id": 1631045473
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/29529",
+        "id": 29529,
+        "login": "redox",
+        "type": "User"
+      },
+      "body": "I understand your point @bobylito but I think there are a lot of other things you can do that will generate a 0 results answer and that are not checked -> like if I add a wrong numeric filter and so on.\n\nI would remove that `setCurrentPage` from the `setIndex` method to make sure we don't do anything magic.\n",
+      "date": 1435345696,
+      "reactions": {},
+      "id": 1631045484
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "In the case of the URL I would still suggest using the setState, because it's less mutations and less functions calls.\n\nBut if you think that there is magic when we set the current page to 0 when we change the index, we have to have the same behavior in every methods that has the same behavior. Will fix that in the next version, but this will break the code of the users of the current version.\n",
+      "date": 1435347517,
+      "reactions": {},
+      "id": 1631045498
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Why don't we discuss about this issue around a cup of coffee Monday morning?\nOn Jun 26, 2015 9:08 PM, \"Sylvain Utard\" notifications@github.com wrote:\n\n> I understand your point @bobylito https://github.com/bobylito but I\n> think there are a lot of other things you can do that will generate a 0\n> results answer and that are not checked -> like if I add a wrong numeric\n> filter and so on.\n> \n> I would remove that setCurrentPage from the setIndex method to make sure\n> we don't do anything magic.\n> \n> —\n> Reply to this email directly or view it on GitHub\n> https://github.com/algolia/instantsearch/issues/5729\n> .\n",
+      "date": 1435349491,
+      "reactions": {},
+      "id": 1631045509
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Of course we will :)\n",
+      "date": 1435350214,
+      "reactions": {},
+      "id": 1631045515
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1492215",
+        "id": 1492215,
+        "login": "pand-app",
+        "type": "User"
+      },
+      "body": "Hello,\nI have an issue, probably linked to this one.\n\nThis workflow call right my page :\n- `helper.clearRefinements`\n- `helper.setQueryParameter`\n- `helper.addFacetRefinement`\n- `helper.addDisjunctiveFacetRefinement`\n- `helper.on('result', function(){})`\n- **`helper.setCurrentPage`**\n- `helper.search`\n\nBut in this order, it's not working : \n- **`helper.setCurrentPage`**\n- `helper.clearRefinements`\n- `helper.setQueryParameter`\n- `helper.addFacetRefinement`\n- `helper.addDisjunctiveFacetRefinement`\n- `helper.on('result', function(){})`\n- `helper.search`\n\nMaybe it's important to document somewhere _when_ we should call setCurrentPage  ?\n\nHave a nice day,\nGaël\n",
+      "date": 1453903913,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1631045524
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "@Nainterceptor Any method that will change the number of pages will reset the current page to avoid inconsistencies. For example, if it was not the case we could stay on page 3 even though there were only 2 pages returned. So in fact, in your example `clearRefinements` `setQueryParameter` `addFacetRefinement` and `addDisjunctiveFacetRefinement` will set the current page to 0. You should call `setCurrentPage` when you want to change the current page.\n",
+      "date": 1453905223,
+      "reactions": {},
+      "id": 1631045536
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1492215",
+        "id": 1492215,
+        "login": "pand-app",
+        "type": "User"
+      },
+      "body": "@bobylito It make sense, I agree, but it's maybe important to write somewhere in the doc, to prevent bad usages like mine ?\n",
+      "date": 1453906298,
+      "reactions": {},
+      "id": 1631045552
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "You are right! :) algolia/algoliasearch-helper-js#274\n",
+      "date": 1453906443,
+      "reactions": {},
+      "id": 1631045557
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Maybe we could be even more magical and solve this issue by not resetting to page 0 if the page was manually set somewhere before a call to .search.\n\nSo if at any moment the user specifically says he wants page 1 and calls for .search() then he should be one page 1, no matter the calling order.\n\nDocumenting it will maybe help people struggling with this issue get an answer at some point. But only after having struggled with it for a good amount of time.\n\nIf we can fix the issue for good we should do it?\n",
+      "date": 1453923443,
+      "reactions": {},
+      "id": 1631045566
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5570853",
+        "id": 5570853,
+        "login": "rayrutjes",
+        "type": "User"
+      },
+      "body": "+1 for me on this one, this currently breaks pagination on all WordPress instant-search instances ;)\n",
+      "date": 1475077374,
+      "reactions": {},
+      "id": 1631045580
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Some context given @rayrutjes comment: https://github.com/algolia/algoliasearch-wordpress/pull/305\n\nI know this is not constructive to say \"We need to fix this\". Still, we just experienced a painful debugging session because of the setPage(0) being done, behind the scenes while when using the helper, one could always think \"This is a somehow low level API (no UI), I am in control when I call setQueryParameter()\". \n\nIt's not the case if you forget/do not know what is happening.\n",
+      "date": 1475077565,
+      "reactions": {},
+      "id": 1631045588
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/314079",
+        "id": 314079,
+        "login": "olance",
+        "type": "User"
+      },
+      "body": "+1, just spent ~1h debugging instantsearch pagination wondering why an out-of-the-box widget wouldn't change pages... only to realize I have some code that changes the helper state for some advanced use case and was resetting the page before `search()` was called.\n\nAlthough I understand where it comes from, it's an unexpected side-effect and breaks the principle of least astonishment. (yeah, big words! :))\n",
+      "date": 1477406376,
+      "reactions": {},
+      "id": 1631045603
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "I also got bitten by `setQueryParameter`'s `setPage(0)`.\r\nI used an init widget only to change the `highlight{Pre,Post}Tag` s and couldn't understand why it was failing.\r\n\r\nIn my case, I guess I could just fix it by using `instantsearch.js`'s `searchParams` instead, but it definitely is surprising.\r\n\r\n=> https://github.com/algolia/algoliasearch-shopify/commit/e995a94523d8bbeb337671f3834bb7ee055ce6e1",
+      "date": 1479809192,
+      "reactions": {},
+      "id": 1631045612
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Since we are gonna work on a revamped helper version those feedbacks are important and shows that everytime we do a little bit of magic in low level libraries it's worth considering the impacts it has more precisely.\r\n\r\nThanks!",
+      "date": 1479809972,
+      "reactions": {},
+      "id": 1631045621
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5570853",
+        "id": 5570853,
+        "login": "rayrutjes",
+        "type": "User"
+      },
+      "body": "We need to methods for this indeed ;)",
+      "date": 1479815653,
+      "reactions": {},
+      "id": 1631045633
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "Spent half an hour again today on this one in Zendesk. /o\\\\\r\nI was used to using custom widgets to set my refinements and did a hack to set a query parameter in the searchFunction, both of which I had to surround with `cont page = getPage(); ...; setPage(page)`.",
+      "date": 1482238487,
+      "reactions": {},
+      "id": 1631045644
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "Basically, I think the idea here is that it doesn't make sense to reset the page when done before the `search.start()` of `instantsearch.js`, because there, we're initializing with the same thing as always, so we know there'll be results, but it does when done afterwards. Maybe worth having a before start / after start mode ?",
+      "date": 1482238813,
+      "reactions": {},
+      "id": 1631045655
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "I would say for such a low level library, when modifying a state object, we should never try to be smart on the page being reset to 0. We have now seen that many people were tricked by it.\r\n\r\nWe are gonna work on instantsearch-core in January and will tackle this issue inside it I think.",
+      "date": 1482246206,
+      "reactions": {},
+      "id": 1631045662
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Alright this is indeed very not cool what you have to implement @Jerskouille :/ Let's move forward.",
+      "date": 1482247724,
+      "reactions": {},
+      "id": 1631045669
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "Getting bit in my hack inside the `searchFunction` is definitely OK, the surpising part is really inside an `init` function of a custom widget.",
+      "date": 1482248044,
+      "reactions": {},
+      "id": 1631045684
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5215365",
+        "id": 5215365,
+        "login": "tekstrand",
+        "type": "User"
+      },
+      "body": "Wanted to check in to see where this is at and if anyone has a recommended workaround. I'm running into this while try to create an initial query object based off of URL parameters in my app.",
+      "date": 1496865041,
+      "reactions": {},
+      "id": 1631045698
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "That’s still the case. You need to `getPage` first and do `setPage` with that page after doing that mutation.",
+      "date": 1496865235,
+      "reactions": {},
+      "id": 1631045713
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1169926",
+        "id": 1169926,
+        "login": "drzraf",
+        "type": "User"
+      },
+      "body": "+1. I spent hours figuring out what was happening.\r\nI based my `searchFunction` on what is provided by https://www.algolia.com/doc/api-reference/widgets/instantsearch/js/#widget-param-searchfunction\r\nBut even though the comments state `// we re-apply the previous page`, it's so counter-intuitive and hard to understand!\r\n1. It appears like the button (`view more`, `page 2`) does not work.\r\n2. You need to disable caching to see actual (redundants) requests issued and see `page=0`\r\n3. You need to understand why page isn't incremented (and find this ticket or read X times the above link)\r\n\r\nSome clearer warning must be set somewhere about this `setPage()` usage within `searchFunction`.",
+      "date": 1593092718,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1631045719
+    }
+  ]
+}

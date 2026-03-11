@@ -1,0 +1,174 @@
+{
+  "number": 5236,
+  "title": "`createURL` always returns root/empty url on first render",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/1457102",
+    "id": 1457102,
+    "login": "sixers",
+    "type": "User"
+  },
+  "body": "## 🐛 Bug description\r\n\r\n<!-- A clear and concise description of what the bug is. -->\r\n\r\n`createURL` produces incorrect URLs on the server (it's always root URL). \r\nThe same applies to standard components from `react-instantsearch-hooks-web`: `Pagination`, etc.\r\n\r\n## 🔍 Bug reproduction\r\n\r\n**Steps to reproduce the behavior:**\r\n\r\n1. Fork [[SSR example with Remix](https://codesandbox.io/s/github/algolia/doc-code-samples/tree/master/react-instantsearch-hooks/remix?file=/app/routes/index.tsx)\r\n2. Edit `app/root.tsx` and comment out `<Scripts />`\r\n3. Refresh the page and inspect the `href`s of pagination links (`.ais-Pagination-link`)\r\n\r\n<!-- A live example helps a lot! Fork the sandbox, reproduce the bug and paste the URL here: -->\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/zen-cache-7cyfjo?file=/app/root.tsx\r\n\r\n## 💭 Expected behavior\r\n\r\n`createURL` should produce correct URLs when server rendering, without running any code on the client.\r\n\r\n## 🖥 Screenshots\r\n\r\n<!-- If applicable, add screenshots to help explain your problem. -->\r\n\r\n## Environment\r\n\r\n- React InstantSearch Hooks version: 6.38.1\r\n- React version: 17.0.2\r\n- Browser: Chrome\r\n- OS: MacOS\r\n\r\n## Additional context\r\n\r\n<!-- Add any other context about the problem here. -->\r\n",
+  "date": 1668890095,
+  "labels": [
+    {
+      "color": "1d76db",
+      "id": 4936474361,
+      "name": "Library: React InstantSearch ≥ 7"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 2
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1457102",
+        "id": 1457102,
+        "login": "sixers",
+        "type": "User"
+      },
+      "body": "Hey, I reported this bug a month ago, do you have any update?",
+      "date": 1671532127,
+      "reactions": {},
+      "id": 1363059326
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "This is a complicated edge case, a bit of a chicken-and-egg problem.\r\n\r\n1. createURL called by the widget is createURL called by the connector\r\n2. the result of createURL depends on what the current UI state + mounted widgets is\r\n3. when you call createURL, in an initial render (like on server side rendering) the widgets aren't yet mounted\r\n\r\nThis problem also happens when you aren't doing server side rendering, but as the second render is right after the first one, it never commits the incomplete URL.\r\n\r\nAt this point I'm not yet sure what the solution would be.\r\n\r\nEDIT: I believe I found an option which would still need to be polished if it proves to work, see #5408, which you can try via codesandbox if you feel like it :)\r\nEDIT2: that approach doesn't work in all cases, we'd need to find something else",
+      "date": 1672746216,
+      "reactions": {},
+      "id": 1369674613
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "I have the same problem, it also still exists in version 6.38.2",
+      "date": 1673026969,
+      "reactions": {},
+      "id": 1373945928
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "Still present in 6.39.2",
+      "date": 1675246661,
+      "reactions": {},
+      "id": 1411813401
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Yes, we have not found a method to solve this problem yet.",
+      "date": 1675246942,
+      "reactions": {},
+      "id": 1411819717
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "@Haroenv any update on this?",
+      "date": 1682248140,
+      "reactions": {},
+      "id": 1519037087
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Unfortunately not. A workaround could be to add all widgets that have an effect to the URL early \"virtualised\", like this:\r\n\r\n```jsx\r\nconst VirtualPagination = (props) => { usePagination(props) }\r\n\r\nconst App = () => (\r\n  <InstantSearch>\r\n    <VirtualPagination />\r\n    <Pagination />\r\n  </InstantSearch>\r\n)\r\n```",
+      "date": 1682321624,
+      "reactions": {},
+      "id": 1519538294
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "Hi @Haroenv we have that already but the SSR code contains empty links on pagination until page becomes active.",
+      "date": 1682326685,
+      "reactions": {},
+      "id": 1519659669
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/10588097",
+        "id": 10588097,
+        "login": "avremel",
+        "type": "User"
+      },
+      "body": "@Haroenv \r\n\r\nWe are using NextJS with SSR and ran into this issue when implementing `useRefinementList`. To improve our SEO, we want to render links for each filter (but default to client side navigation once JS loads). We are blocked because `createURL` only runs on the client.\r\n\r\n> This is a complicated edge case, a bit of a chicken-and-egg problem.\r\n> \r\n> 1. createURL called by the widget is createURL called by the connector\r\n> 2. the result of createURL depends on what the current UI state + mounted widgets is\r\n> 3. when you call createURL, in an initial render (like on server side rendering) the widgets aren't yet mounted\r\n\r\nIs this actually a limitation when running `InstantSearchSSRProvider` ([docs](https://www.algolia.com/doc/api-reference/widgets/ssr-provider/react-hooks/))?\r\n\r\nI'm running `getServerState` ([docs](https://www.algolia.com/doc/api-reference/widgets/server-state/react-hooks/)) in `getServerSideProps` _before_ SSR begins. At this point, we don't care if `createURL` returns nothing. At the next stage, we begin SSR knowing the UI state. Why can't `createURL` know the correct URL?",
+      "date": 1685328072,
+      "reactions": {},
+      "id": 1566414241
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi everyone ! 👋\r\n\r\nThis is being addressed right now.\r\nA fix should be released either next week or the one after.\r\n\r\nThank you for your patience 🙏",
+      "date": 1688110855,
+      "reactions": {},
+      "id": 1614259894
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "@Haroenv createURL from the usePagination hook is not starting at 0 but at 1.\r\n\r\nFor example:\r\n\r\n```\r\nconst { canRefine, pages, refine } = usePagination(props);\r\n\r\ncreateURL(0) => Gives another url as refine(0)\r\ncreateURL(1) => Gives another url as refine(1)\r\n\r\n```",
+      "date": 1690952355,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1661497457
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Just opened https://github.com/algolia/instantsearch/issues/5797 to deal with this, thanks @DB-Alex ",
+      "date": 1690990142,
+      "reactions": {},
+      "id": 1662420762
+    }
+  ]
+}

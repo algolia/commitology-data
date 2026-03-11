@@ -1,0 +1,159 @@
+{
+  "number": 2315,
+  "title": "Loading indicator",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/393765",
+    "id": 393765,
+    "login": "bobylito",
+    "type": "User"
+  },
+  "body": "When the search has latency it is pretty hard to understand why the results don't update. It's especially true when the search happens on mobile (where there are a lot of latency even on good network). One way to tell the user that something is happening is to display a spinner.\r\n\r\nThe good thing is that the JS Helper now implements a flag and an event to notify that the search has been completed.\r\n\r\nWhat I propose is a standalone `loading` connector and an implementation in the searchbox (so that we can replace the magnifying glass with a spinner)",
+  "date": 1504794612,
+  "labels": [
+    {
+      "color": "fbca04",
+      "id": 620214278,
+      "name": "Scope: Widgets"
+    },
+    {
+      "color": "fbca04",
+      "id": 620214751,
+      "name": "Scope: Connectors"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 1
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "We should definitely have a reasonable delay (like 200ms) before showing the spinner. ",
+      "date": 1504799449,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 327841914
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "I have done a [PoC implementation in the playlistFinder](https://github.com/bobylito/playlistFinder/blob/d4559ac156cac5bf36dd7b099386d326f4048bee/web/js/app.js#L100-L106). What I ended up doing is binding the search and searchQueueEmpty. What I propose for the integration of this in our searchbox is the following:\r\n\r\n#### widget\r\n\r\nAdd a parameter `showLoading: {boolean|{delay: number = 200}} = false`\r\n\r\n#### connector\r\n\r\nAdd two hooks for when there is a search and when the search queue is empty. Since we want to implement the best practice by default, the search hook will implement the debounce. I don't know if the other hook should be any smarter.\r\n\r\n`onStalledSearch: (function) => undefined`\r\n`onSearchQueueEmpty: (function) => undefined`",
+      "date": 1507902521,
+      "reactions": {},
+      "id": 336457490
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      },
+      "body": "Looks like a good solution! 👍 \r\n\r\nJust for the widget parameters part, I think it's easier to handle / configure with two options rather than one:\r\n- one for enable or not the loader\r\n- one for configure or not the loader\r\n\r\nFor the user the name of the parameter could indicate that it can only pass a boolean attribute, but it can be an object too. For the implementation it's easier to reason about a parameter who have only one type than many types :)\r\n\r\nWDYT ?",
+      "date": 1507903594,
+      "reactions": {},
+      "id": 336462297
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "I'm wondering how this could be extended to be used in other context. For instance, you might not want to have this logic on the search box but on a button when modifying a refinement list (common pattern on mobile for instance). \r\n\r\nShould we add this showLoading options on every widget/connectors? Can it be an autonomous widget? ",
+      "date": 1507903660,
+      "reactions": {},
+      "id": 336462660
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "> For the user the name of the parameter could indicate that it can only pass a boolean attribute, but it can be an object too. For the implementation it's easier to reason about a parameter who have only one type than many types :)\r\n\r\nThis kind of API is instantsearch.js signature style. The problem with standalone parameters is that you can end up with inconsistent set of options. When grouped liked that you can use the easy one with the default by using just `true` or go deep and fill in the object.\r\n\r\n\r\n\r\n> Should we add this showLoading options on every widget/connectors? Can it be an autonomous widget?\r\n\r\nI don't think it makes sense to have it everywhere because I don't see the point in a refinement list for example. However I see a use case on hits for fading the results until the search is complete (PoC to try, out of Q4 scope).\r\n\r\nThe autonomous widget is a great idea. We were just discussing it with @ronanlevesque . Glad you came up with it. However it should not be hard to implement it with the connectSearchBox connector proposed (and not care about the `refine`)",
+      "date": 1507904071,
+      "reactions": {},
+      "id": 336464856
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "I'm gonna move on with this proposal unless you have something to add @mthuret @samouss? (cc @iam4x @Haroenv @vvo @ronanlevesque)",
+      "date": 1508228698,
+      "reactions": {
+        "👍️": 3
+      },
+      "id": 337156283
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      },
+      "body": "Works for me 👍",
+      "date": 1508229761,
+      "reactions": {},
+      "id": 337161102
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "> I don't think it makes sense to have it everywhere because I don't see the point in a refinement list for example.\r\n\r\nI think on mobile it can happen in more spaces than just the searchbox and the hits. I mentioned the stats widget earlier, that's because your have screens that do not necessarily include the searchbox or the hits. However I must admit that's very mobile oriented.\r\n\r\nI'm good to start with the SearchBox though. \r\n\r\nAlso a note for later: on `react-instantsearch` they'll probably something to look after regarding the `connectStateResults` connector (that today contain the loading boolean info).\r\n\r\n\r\n\r\n",
+      "date": 1508243975,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 337218122
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Ok thanks @mthuret I'll be careful",
+      "date": 1508244118,
+      "reactions": {},
+      "id": 337218727
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Done ✅ ",
+      "date": 1518105405,
+      "reactions": {},
+      "id": 364156397
+    }
+  ]
+}

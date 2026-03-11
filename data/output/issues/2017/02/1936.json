@@ -1,0 +1,220 @@
+{
+  "number": 1936,
+  "title": "[Question] Clear All an also the query",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/2096101",
+    "id": 2096101,
+    "login": "Kikobeats",
+    "type": "User"
+  },
+  "body": "I'm trying to create a button for reset the current search query and current refinement selected.\r\n\r\nLike `<ClearAll />` but also for clear the query. \r\n\r\nIn the `<Searchbox />` I did that with `refine('')`. I see that `<ClearAll />` have a different refine behavior.\r\n\r\nCould be possible do the same actions? any tip?",
+  "date": 1486030336,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 403422447,
+      "name": "Type: Question"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "Hi @Kikobeats,\r\n\r\nHaving a button that clear both the query and the refinements is something that we thought about including in our default widgets set. \r\n\r\nNonetheless, you can already achieve it like this: \r\n\r\n```js\r\nconst ClearQuery = ({refine}) => {\r\n  const onClick = ev => {\r\n    refine('');\r\n    ev.stopPropagation();\r\n  };\r\n  return <div onClick={onClick}><ConnectedClearAllRefinements/></div>;\r\n};\r\n\r\nconst ClearAllRefinements = ({refine, items}) => {\r\n  const onClick = () => refine(items);\r\n  return <button onClick={onClick}>ClearAll</button>;\r\n};\r\n\r\nconst ClearQueryAndRefinements = connectSearchBox(ClearQuery);\r\nconst ConnectedClearAllRefinements = connectCurrentRefinements(ClearAllRefinements);\r\n```\r\n\r\nand use it like: \r\n\r\n```js\r\n<ClearQueryAndRefinements />\r\n```",
+      "date": 1486041721,
+      "reactions": {},
+      "id": 276955266
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "Thanks! The code is a little tricky but it works 😄",
+      "date": 1486158288,
+      "reactions": {},
+      "id": 277370531
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "Update: Just the query is cleared ☹️\r\n\r\n![](https://d17oy1vhnax1f7.cloudfront.net/items/0s2e1o35252y0P371Y0Q/Screen%20Recording%202017-02-04%20at%2012.00%20am.gif?v=133aa331)",
+      "date": 1486162852,
+      "reactions": {},
+      "id": 277386356
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "I tested it inside our storybook and it worked. \r\n\r\nAny chance you have more information? Did you try to debug calls? Does both `refine` function gets called with right parameters?",
+      "date": 1486220147,
+      "reactions": {},
+      "id": 277450968
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "I copy paste your code and doesn't work, but maybe I'm doing something bad. \r\n\r\nThe implementation is here: https://github.com/windtoday/windtoday-marketplace/blob/master/src/app/Logo/index.js\r\n\r\nAnd using it: https://github.com/windtoday/windtoday-marketplace/blob/master/src/app/AppBar/index.js#L30\r\n\r\n🤔 ",
+      "date": 1486220268,
+      "reactions": {},
+      "id": 277451107
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "The onClick for the searchBox should be on an element wrapping the `<ConnectedLogoWrapper/>`. ",
+      "date": 1486221218,
+      "reactions": {},
+      "id": 277452139
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "So here's an update of why it's working on my side and not on yours: it's working only if you are using React InstantSearch in an uncontrolled mode. Because you're using the `searchState` and `onSearchStateChange` props, then you are in controlled mode, and this tricks can't work.\r\n\r\nI keep you updated about the development of a solution for this use case. ",
+      "date": 1486402110,
+      "reactions": {},
+      "id": 277752418
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "Thanks for the reply and your effor, is awesome how algolia dev team interacts with the community!\r\n\r\n🥇",
+      "date": 1486406093,
+      "reactions": {},
+      "id": 277771377
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "Finally I implement that using `ClearAll` component with `clearsQuery` option.\r\n\r\nhttps://github.com/windtoday/windtoday-marketplace/commit/59f6d7228c3550dc22d7bd0bedf1c3e401634ddc#commitcomment-20978203\r\n\r\nI'm using it with `SearchBox` component for detect if the user has typed something for be cleaned and make an animation.\r\n\r\nThis means, when the user type something at `SearcBox`, the `query` parameter has the value and I'm using it as boolean for do or not a shake animation.\r\n\r\nEven \"it works\", I detected that `query` parameter always is undefiend, while `items` parameter is correct.\r\n\r\nI didn't write this before becase I thought that is a little bug and will be fixed soon but I decide comment now for know if I'm still doing something wrong or wat 😢\r\n\r\nLooks like `ClearAll` is capturing the `query` parameter and avoiding the propagation?\r\n",
+      "date": 1487696928,
+      "reactions": {},
+      "id": 281409281
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "Hi @Kikobeats,\r\n\r\nThe `query` is undefined if the props `clearsQuery` doesn't exist. \r\n\r\nHere's a working example: when you use the searchbox, it display the content on an extra-div: \r\n\r\n```js\r\n<InstantSearch>\r\n    <SearchBox/>\r\n    <CustomClearAll clearsQuery/>\r\n</InstantSearch>\r\n\r\nconst CustomClearAll = connectCurrentRefinements(({query}) => <div>{query}</div>);\r\n```",
+      "date": 1487699775,
+      "reactions": {},
+      "id": 281423901
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2096101",
+        "id": 2096101,
+        "login": "Kikobeats",
+        "type": "User"
+      },
+      "body": "oh thanks for the tip, now is working 🎉 ",
+      "date": 1487709256,
+      "reactions": {},
+      "id": 281471599
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/12236062",
+        "id": 12236062,
+        "login": "cmarabate",
+        "type": "User"
+      },
+      "body": "> So here's an update of why it's working on my side and not on yours: it's working only if you are using React InstantSearch in an uncontrolled mode. Because you're using the `searchState` and `onSearchStateChange` props, then you are in controlled mode, and this tricks can't work.\r\n> \r\n> I keep you updated about the development of a solution for this use case.\r\n\r\nIs there a solution for this yet?\r\n\r\nI am using `searchState` and `onSearchStateChange` to add query params to my URL based on `searchState` and I am able to get the Clear All button clear the params from the URL but finding it impossible to have it also clear out what is typed the searchbox at the same time. It is driving me crazy that after clicking the button my users will also have to clear out what they typed in the search before searching for something else. I really wish this was the default behavior in all cases regardless if using `searchState` or not. I can't think of any case where I would not want the reset button to also clear the searchbox.\r\n\r\nThanks,\r\n\r\nChris",
+      "date": 1628891103,
+      "reactions": {},
+      "id": 898735485
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      },
+      "body": "@cmarabate Did you check out the [`clearsQuery`](https://www.algolia.com/doc/api-reference/widgets/clear-refinements/react/#widget-param-clearsquery) prop on the `ClearRefinements` component?",
+      "date": 1629099348,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 899291382
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/12236062",
+        "id": 12236062,
+        "login": "cmarabate",
+        "type": "User"
+      },
+      "body": "> @cmarabate Did you check out the [`clearsQuery`](https://www.algolia.com/doc/api-reference/widgets/clear-refinements/react/#widget-param-clearsquery) prop on the `ClearRefinements` component?\r\n\r\nYes, that is what I am using to get it to clear the params from the URL.\r\n\r\nIt DOES clear the search value from the params but it It does NOT clear the value entered in the search box. So if a user wanted to clear all their selected filters and clear what they typed into the searchbox, they would need to click the button to clear all the filters and queries and then they would still need to manually remove what they typed into the searchbox themselves.",
+      "date": 1629138383,
+      "reactions": {},
+      "id": 899724929
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1172479",
+        "id": 1172479,
+        "login": "cesarvarela",
+        "type": "User"
+      },
+      "body": "~~This is also happening to me, my component using `connectSerchBox` doesn't get updated when the query is emptied.~~\r\nI was missing am `useEffect`, still trying to use this library as a controlled component has been kind of nightmarish, in this case, the way the `clearsQuery` component works is too obscure. The way the `query` params appears in the list of items is soo wtf.\r\n\r\nAdding a note [here](https://www.algolia.com/doc/api-reference/widgets/clear-refinements/react/#connector-param-provided-items) woudln't hurt I think.",
+      "date": 1636183205,
+      "reactions": {},
+      "id": 962411003
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "That's indeed a good place to add a note about clearsQuery, does this sound good?\r\n\r\n> Note that `clearsQuery`(link) needs to be enabled for the query to be part of these items.\r\n\r\nOr should the note rather be on `refine`. What do you think @cesarvarela? ",
+      "date": 1636364293,
+      "reactions": {},
+      "id": 962972239
+    }
+  ]
+}

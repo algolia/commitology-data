@@ -1,0 +1,74 @@
+{
+  "number": 877,
+  "title": "disjuntivefacets with nested data",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/2465014",
+    "id": 2465014,
+    "login": "harrisminer",
+    "type": "User"
+  },
+  "body": "Below is a user, I need to set a disjunctive facet on Skills.SkillName (eg where Skills.SkillName = 'SQL' OR 'Accounting')\n\n {\"FirstName\" : \"John\",\n  \"LastName\" : \"Smith\",\n  \"JobFunction\" : \"Information Technology\",\n  \"Skills\" : [{\n      \"SkillID\" : \"2vRdiqCOE2XBDS3nsS1LA\",\n      \"SkillName\" : \"SQL\",\n      \"SkillRating\" : 3\n    }, {\n      \"SkillID\" : \"WEPMtg3JkU2xlpmgmvkYQ\",\n      \"SkillName\" : \"Accounting\",\n      \"SkillRating\" : 4\n    }, {\n      \"SkillID\" : \"d9c514035a554a5d8d99c411e43b683d\",\n      \"SkillName\" : \"Leadership\",\n      \"SkillRating\" : 4\n    }]}\n\nIve attempted a lot of different things, but here is what I think makes sense:\n\n`var preselectedCategories = ['SQL', 'Accounting'];\nvar search = instantsearch({\n    appId: 'appid',\n    apiKey: 'api',\n    indexName: 'UserActivity',\n    searchParameters: {\n        disjunctiveFacetsRefinements: {\n            Skills: {\n                SkillName: preselectedCategories\n            }\n        }\n    }\n});`\n\nDocumentation is definitely lacking on this so any help will be greatly appreciated. Thanks!\n",
+  "date": 1456531369,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 238751637,
+      "name": "Type: Needs Investigation"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Can you try with:\n\n``` js\n \"disjunctiveFacetsRefinements\": {\n    \"Skills.SkillName\": ['SQL', 'Accounting']\n  }\n```\n",
+      "date": 1456766709,
+      "reactions": {},
+      "id": 190299633
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2465014",
+        "id": 2465014,
+        "login": "harrisminer",
+        "type": "User"
+      },
+      "body": "This worked, but however when we log the hit it doesnt retrieve the records. \n`var preselectedCategories = ['Data', 'SQL'];\nvar search = instantsearch({\n    appId: '1VPDOL194L',\n    apiKey: 'a1c4dfaccd605139795a6ba19a46cf56',\n    indexName: 'UserActivity',\n    searchParameters: {\n        \"disjunctiveFacetsRefinements\": {\n           \"Skills.SkillName\": preselectedCategories\n        }\n    }\n});`\n\nThen adding the widget:\n`search.addWidget(\n  instantsearch.widgets.hits({\n      container: '#hits',\n      hitsPerPage: 10,\n      templates: {\n          empty: noResultsTemplate,\n          item: newTemplate\n      },             \n      transformData: function (hit) {\n          hit.stars = [];\n          for (var i = 1; i <= 5; ++i) {\n              hit.stars.push(i <= hit.rating);\n          }          \n          console.log(hit);\n          return hit;\n      }\n  })\n);`\n\nHere are the results in the console:\n![disjunctive](https://cloud.githubusercontent.com/assets/2465014/13402971/b729f500-dee0-11e5-830e-04625e49cf58.png)\n",
+      "date": 1456767471,
+      "reactions": {},
+      "id": 190304364
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2465014",
+        "id": 2465014,
+        "login": "harrisminer",
+        "type": "User"
+      },
+      "body": "this issue is pretty much resolved, but taking this one step further how do you do:\n\nwhere Skills.SkillName = 'SQL' OR 'Accounting' OR ToUser.Email = 'john@email.com'\n\nthis does not work as it is essentially doing:\nwhere Skills.SkillName = 'SQL' OR 'Accounting' AND ToUser.Email = 'john@email.com'\n\n var search = instantsearch({\n        appId: '1VPDOL194L',\n        apiKey: 'a1c4dfaccd605139795a6ba19a46cf56',\n        indexName: 'UserActivity',\n        searchParameters: {\n            \"disjunctiveFacetsRefinements\": {\n\n```\n            \"Skills.SkillName\": preselectedCategories, \"ToUser.EmailAddress\": emailaddress\n\n        }\n    }\n});\n```\n\nHow can we do this? Thanks!\n",
+      "date": 1456778083,
+      "reactions": {},
+      "id": 190375164
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "This is not possible with the underlying component of instantsearch called algoliasearch-helper. I created an issue https://github.com/algolia/instantsearch/issues/5727\n",
+      "date": 1456848108,
+      "reactions": {},
+      "id": 190784720
+    }
+  ]
+}

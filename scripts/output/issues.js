@@ -18,8 +18,10 @@ import { datePath } from '../../lib/helper.js';
  * @returns {object} The normalized user object with avatar, id, login, and type properties
  */
 function normalizeUser(rawUser) {
+  const { avatar_url } = rawUser;
+  const avatar = _.split(avatar_url, '?')[0];
   return {
-    avatar: rawUser.avatar_url,
+    avatar,
     id: rawUser.id,
     login: rawUser.login,
     type: rawUser.type,
@@ -33,6 +35,19 @@ function normalizeUser(rawUser) {
  */
 function normalizeDate(rawDate) {
   return dayjs(rawDate).unix();
+}
+
+/**
+ * Normalizes raw reaction data by mapping reaction types to a standardized format
+ * @param {object} rawReactions - Raw reaction data object containing reaction counts
+ * @param rawLabels
+ * @returns {object} Normalized reaction object with standardized property names
+ */
+function normalizeLabels(rawLabels) {
+  return _.map(rawLabels, (rawLabel) => {
+    const { color, id, name } = rawLabel;
+    return { id, name, color };
+  });
 }
 
 /**
@@ -53,24 +68,33 @@ function normalizeState(rawIssue) {
  * @returns {object} Normalized reaction object with standardized property names
  */
 function normalizeReactions(rawReactions) {
-  return {
-    confused: rawReactions.confused,
-    eyes: rawReactions.eyes,
-    heart: rawReactions.heart,
-    hooray: rawReactions.hooray,
-    laugh: rawReactions.laugh,
-    minus: rawReactions['-1'],
-    plus: rawReactions['+1'],
-    rocket: rawReactions.rocket,
+  const allowedReactions = {
+    confused: '😕',
+    eyes: '👀',
+    heart: '❤️',
+    hooray: '🎉',
+    laugh: '😄',
+    '-1': '👎️',
+    '+1': '👍️',
+    rocket: '🚀',
   };
+  const reactions = {};
+  _.each(allowedReactions, (reactionEmoji, reactionName) => {
+    const reactionCount = rawReactions[reactionName];
+    if (!reactionCount) {
+      return;
+    }
+    reactions[reactionEmoji] = reactionCount;
+  });
+  return reactions;
 }
 
 /**
- * Normalizes comments for a given issue by reading raw comment data from a JSON file
+ * Normalizes comments for a given issue by reading raw comment data and transforming it into a standardized format
  * @param {object} normalizedIssue - The normalized issue object containing date and number properties
- * @param {Date|string} normalizedIssue.date - The date associated with the issue
- * @param {number|string} normalizedIssue.number - The issue number identifier
- * @returns {Promise<void>} Promise that resolves when comments are processed and logged
+ * @param {string} normalizedIssue.date - The date of the issue
+ * @param {number} normalizedIssue.number - The issue number
+ * @returns {Promise<Array<object>>} Array of normalized comment objects with id, user, body, date, and reactions properties
  */
 async function normalizeComments(normalizedIssue) {
   const commentsPath = absolute(
@@ -101,9 +125,10 @@ async function normalizeComments(normalizedIssue) {
  * @returns {Promise<object>} A normalized issue object with structured data including comments
  */
 async function normalizeIssue(rawIssue) {
-  const { number, title, body, labels } = rawIssue;
+  const { number, title, body } = rawIssue;
   const user = normalizeUser(rawIssue.user);
   const date = normalizeDate(rawIssue.created_at);
+  const labels = normalizeLabels(rawIssue.labels);
   const state = normalizeState(rawIssue);
   const reactions = normalizeReactions(rawIssue.reactions);
   const issue = {
@@ -136,7 +161,7 @@ function normalizePath(issue) {
   return absolute(dataOutputIssuesPath, datePath(date), `${number}.json`);
 }
 
-const rawIssuePaths = await glob('./**/99.json', { cwd: dataInputIssuesPath });
+const rawIssuePaths = await glob('./**/*.json', { cwd: dataInputIssuesPath });
 const progress = spinner(rawIssuePaths.length);
 await pMap(
   rawIssuePaths,

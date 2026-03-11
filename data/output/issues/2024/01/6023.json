@@ -1,0 +1,83 @@
+{
+  "number": 6023,
+  "title": "combinedAnswers.attributesToDisplay?.filter is not a function",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/1851344",
+    "id": 1851344,
+    "login": "omanikhi",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\r\n\r\nIn a custom template, we used to be able to send in a dictionary as the `attributesToDisplay` in order to provide some additional attributes for the template engine to display. The referenced line breaks that possibility.\r\n\r\nhttps://github.com/algolia/instantsearch/blob/c8411331353d700fab508849c7e93f782f37e4e6/packages/create-instantsearch-app/src/cli/postProcessAnswers.js#L68\r\n\r\nHere's en example of how our config looks like:\r\n```json\r\n    \"attributesToDisplay\": {\r\n        \"title\": {\r\n            \"href\": \"url\",\r\n            \"text\": \"hierarchy.lvl2\",\r\n            \"highlight\": true\r\n        },\r\n        \"subtitle\": {\r\n            \"text\": \"hierarchy.lvl1\"\r\n        },\r\n    },\r\n```\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Use a dictionary as the value of `attributesToDisplay` parameter.\r\n2. Run `create-instantsearch-app`.\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/devbox/lh2cmc\r\n\r\n### 💭 Expected behavior\r\n\r\nRun `./create` in a terminal and witness the error.\r\n\r\n### Package version\r\n\r\n4.64.2 \r\n\r\n### Operating system\r\n\r\nmacOS 14.2.1\r\n\r\n### Browser\r\n\r\nFirefox 122.0\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1706616234,
+  "labels": [
+    {
+      "color": "7e01b7",
+      "id": 851262543,
+      "name": "Type: Feature"
+    },
+    {
+      "color": "E1805A",
+      "id": 4916856840,
+      "name": "Library: Create InstantSearch App"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "attributesToDisplay is meant to be an array of strings, I wonder if what you're looking for is a separate data-bag to store these more \"static\" information. Would that help your use case?\r\n\r\nSomething along the lines of:\r\n\r\n```json\r\n{\r\n  // ... other configuration\r\n  \"attributesToDisplay\": [],\r\n  \"data\": {\r\n    \"hit\": {\r\n      \"title\": {\r\n        \"href\": \"url\",\r\n        \"text\": \"hierarchy.lvl2\",\r\n        \"highlight\": true\r\n      },\r\n      \"subtitle\": {\r\n        \"text\": \"hierarchy.lvl1\"\r\n      }\r\n    }\r\n  }\r\n}\r\n```\r\n\r\nIf you're interested in that, we'd be happy to see a PR adding a new `data` field from config that's copied over to the template variables.\r\n",
+      "date": 1706628755,
+      "reactions": {},
+      "id": 1917233828
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1851344",
+        "id": 1851344,
+        "login": "omanikhi",
+        "type": "User"
+      },
+      "body": "Thanks for the response @Haroenv. Well the benefit of being able to use a dictionary rather than an array is extending its usability which also eliminates the need for a loop when it comes to using them in the template. Unless there is an easier way to know whether `attributesToDisplay` contains `title` for example which seems to be a handlebars shortcoming. Consider this usage:\r\n\r\n```html\r\n{{#if attributesToDisplay.title}}\r\n{{#if attributesToDisplay.title.href}}\r\n<a class=\"text-decoration-none\" href=\"\\{{attributesToDisplay.title.href}}\">{{attributesToDisplay.title}}</a>\r\n{{/if}}\r\n{{/if}}\r\n```\r\n\r\nThe attributesForFaceting seems to tolerate non-array structures:\r\n\r\n```javascript\r\n{\r\n    attributesForFaceting:\r\n        Array.isArray(combinedAnswers.attributesForFaceting) &&\r\n        combinedAnswers.attributesForFaceting.filter(\r\n            (attribute) => attribute !== 'ais.dynamicWidgets'\r\n        ),\r\n}\r\n```",
+      "date": 1706640166,
+      "reactions": {},
+      "id": 1917671791
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I see your use case, but `attributesForFaceting` also doesn't tolerate non-array shapes, it in fact completely ignores the value and will put `false` if you put anything but an array of strings. I'm still happy to approve a purpose-built feature though. You're right that attributesForFaceting and attributesToDisplay are inconsistent, so I'll make a fix to reject non-arrays in both in the same way.",
+      "date": 1706695321,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1918775098
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1851344",
+        "id": 1851344,
+        "login": "omanikhi",
+        "type": "User"
+      },
+      "body": "@Haroenv Perfect! Since I'm using it in a custom template, I can live with that for now. Thank you :) ",
+      "date": 1706784416,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1921033339
+    }
+  ]
+}

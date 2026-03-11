@@ -1,0 +1,92 @@
+{
+  "number": 817,
+  "title": "new searchBox option: queryHook",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/123822",
+    "id": 123822,
+    "login": "vvo",
+    "type": "User"
+  },
+  "body": "``` js\nsearchBox({\n  // called everytime we would do a search request\n  queryHook: function(inputValue, search) {\n    return true; // do the search request\n    // return false; // don't do the search request\n    // search(); // you can call this to do the search with the provided query that would have done a search request\n  }\n});\n```\n\nThis will solve #776.\n\n@hkdobrev I am not sure to get the use case of being able to replace the query when calling search() as you proposed in https://github.com/algolia/instantsearch.js/issues/776#issuecomment-173373658.\n\nCan you tell us more about the use case? I am not talking about https://github.com/algolia/instantsearch.js/issues/4#issuecomment-173337033\n",
+  "date": 1454419042,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/506129",
+        "id": 506129,
+        "login": "hkdobrev",
+        "type": "User"
+      },
+      "body": "@vvo I may need to implement something with instant search which is not set in stone yet, but here is an overview:\n- A visitor searches with the term \"chair\" typed in.\n- Then they search for a brand by appending the brand name \"Acme\".\n- The search term is \"chair Acme\" now.\n- We can detect that and recognise it as a brand name and trigger a search for the term \"chair\", but filtered by the \"Acme\" brand.\n\nThis way we would filter by the brand with certainty, instead of showing chairs which are not from the Acme brand down the search results when these results include the \"Acme\" word in the description. We have the unfortunate scenario where search by brand name is pretty important, but at the same time we have a lot of brands named after objects, colours and materials such as \"wood\", \"blank\", \"red\" etc. and the worst - one-letter brand names.\n",
+      "date": 1454428699,
+      "reactions": {},
+      "id": 178652970
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Ok so for this particular use case, do you think #823 could do it more easily?\n",
+      "date": 1454429445,
+      "reactions": {},
+      "id": 178659052
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "Do we even need to return anything ? (I find it weird to mix both return values and callbacks)\n\n``` js\nreturn inputValue.length > 3;\n```\n\nvs\n\n``` js\nif (inputValue.length > 3) search();\n```\n\nOtherwise, :+1: !\n",
+      "date": 1454494351,
+      "reactions": {},
+      "id": 179144261
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> I find it weird to mix both return values and callbacks\n\nMe too!\n\nIndeed your solution is better, thanks!\n",
+      "date": 1454494414,
+      "reactions": {},
+      "id": 179145019
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/506129",
+        "id": 506129,
+        "login": "hkdobrev",
+        "type": "User"
+      },
+      "body": "@vvo Yes, #823 would be great!\n\nHowever I think `queryHook` and `beforeSearch` hooks could be combined. They would be triggered at the same stage, correct? So we could have only one hook which could either cancel or modify the search or do nothing.\n",
+      "date": 1454494424,
+      "reactions": {},
+      "id": 179145142
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "I think they are somehow different, queryHook allows you to decide to do or to not do a search given a keypress.\n\nbeforeSearch allows you to modify the search state before it is sent, but you can't cancel the search completely.\n\nIf we make beforeSearch able to decide to not do any request then it would mean that as soon as you use beforeSearch, you wil be responsible for calling helper.search(). That's doable but wonder if it's easier. What do you think?\n",
+      "date": 1454494873,
+      "reactions": {},
+      "id": 179148184
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "number": 5890,
+  "title": "NextJs APP router instantsearch hooks rendering problem",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/38532331",
+    "id": 38532331,
+    "login": "wesleyjanse",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\n\nUsing the experimental `InstantSearchNext`, I sometimes seem to get weird behaviour during rendering. In which not all of the content is directly rendered from the server, you will always see a flash of no content, followed by the hits rendering and then the refinements rendering, which gives a lot of CLS. \r\n\r\nThere is a codesandbox setup below, which reproduces the issue. \r\n\r\nVideo as proof of result: \r\nhttps://github.com/algolia/instantsearch/assets/38532331/31dfcc65-1040-4c7a-ad32-e3408f55947d\r\n\r\n\n\n### 🔍 Steps to reproduce\n\n1. Go to the live codesandbox example\r\n2. Press a brand page\r\n3. Go back\r\n4. Press another brand page\r\n5. Notice that the layout is jumping around and not everyting is rendered correctly at the same time.\r\n\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/dank-hooks-t4w5d8\n\n### 💭 Expected behavior\n\nAll content is SSR'd correctly.\n\n### Package version\n\n    \"react-instantsearch\": \"^7.2.0\",   \"react-instantsearch-nextjs\": \"^0.1.2\", \n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1697193727,
+  "labels": [
+    {
+      "color": "5319E7",
+      "id": 4913597511,
+      "name": "triage"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {
+    "👍️": 1
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/14188358",
+        "id": 14188358,
+        "login": "alexphiev",
+        "type": "User"
+      },
+      "body": "I can confirm a similar behavior when refining the results. For me, it almost always jumps back to default unrefined results. Is that the same for you? My `searchClient` is properly defined outside the component. \r\n\r\nUsing the `react-instantsearch-router-nextjs` like so: \r\n```typescript\r\n<InstantSearch\r\n      searchClient={searchClient}\r\n      indexName={index}\r\n      insights={false}\r\n      future={{\r\n        preserveSharedStateOnUnmount: true,\r\n      }}\r\n      routing={{\r\n        router: createInstantSearchRouterNext({ singletonRouter }),\r\n      }}\r\n    >\r\n      <SearchView />\r\n</InstantSearch>\r\n```",
+      "date": 1697551553,
+      "reactions": {},
+      "id": 1766492940
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/371844",
+        "id": 371844,
+        "login": "mverissimo",
+        "type": "User"
+      },
+      "body": "I'm facing the same problem, using hooks and components that depend on the context, eg: `auto-complete-core`, `useSearchBox`, `useDynamicWidgets` etc.",
+      "date": 1697552880,
+      "reactions": {},
+      "id": 1766535455
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38532331",
+        "id": 38532331,
+        "login": "wesleyjanse",
+        "type": "User"
+      },
+      "body": "I have solved the initial loading issues/flickering, using \"VirtualWidgets\", for the dynamicWidgets. But I don't know if this has any downsides looking at requests, since I'm instantiating a virtual widget and a real widget for the refinementlits and dynamicwidgets. ",
+      "date": 1697611622,
+      "reactions": {},
+      "id": 1767779395
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/371844",
+        "id": 371844,
+        "login": "mverissimo",
+        "type": "User"
+      },
+      "body": "@wesleyjanse this approach doesn't have any downside(I think), do you have a sandbox with your solution?",
+      "date": 1697639883,
+      "reactions": {},
+      "id": 1768609207
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38532331",
+        "id": 38532331,
+        "login": "wesleyjanse",
+        "type": "User"
+      },
+      "body": "I need to free up some time for it, pretty stacked for now on work..\n\nBut i just created some virtual widgets, that use the hooks and return null.\n\nAnd then imported those in the HOC. Seems to solve these issues for me.",
+      "date": 1697793676,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1772381844
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @wesleyjanse,\r\n\r\nWhen you are navigating, the rendering is done client-side, you can check in the network tab it does not request documents and no HTML is received from the server.\r\nThis is normal for CSR to flicker as queries are being made, [React InstantSearch's default example does it](https://codesandbox.io/s/github/algolia/instantsearch/tree/templates/react-instantsearch?file=/src/App.tsx)\r\n\r\nWe would need to see with Next.js if it's possible to force server-side rendering on navigation, or perhaps for a way to transition only when requests are done",
+      "date": 1698748594,
+      "reactions": {},
+      "id": 1786948495
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/371844",
+        "id": 371844,
+        "login": "mverissimo",
+        "type": "User"
+      },
+      "body": "Hi @aymeric-giraudet you're right, this is expected behavior in CSR environment, but not in SSR(is my case), right?",
+      "date": 1699536549,
+      "reactions": {},
+      "id": 1803835095
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/75290989",
+        "id": 75290989,
+        "login": "fcasibu",
+        "type": "User"
+      },
+      "body": "Seems like this issue is still open and I'm having the same problem so might as well:\r\n\r\nUsing react-instantsearch-nextjs@0.2.4\r\n\r\nIssue: Delayed rendering with client side navigation. As an example navigating from `Home` -> `Search`, Algolia does not seem to have any results yet for a bit of time, but going directly to Search has results immediately, so this seems to only happen through client side navigation\r\n\r\nRepo: https://github.com/fcasibu/algolia-test\r\n\r\nIs this a known problem with the app router? Is there a way to fix this because ideally we want immediate results after navigation. (Using `a` tag for hard navigation instead of `Link` is not an option)\r\n\r\nSolved this by just searching once in the server:\r\n```js\r\n    const initialSearchResult = await helper.searchOnce({\r\n      // stuff\r\n    });\r\n   <Component initialSearchResult={JSON.parse(JSON.stringify(initialSearchResult.content))} /> // JSON.parse(JSON.stringify()) so it works with passing the object from server -> client components\r\n```\r\nand using it as follows:\r\n```js\r\n  const { results: r } = useHits();\r\n  const results =\r\n    r.hits.length // not really ideal of a condition\r\n      ? r\r\n      : initialSearchResult;\r\n```\r\nBut is this really ideal?\r\n\r\nI missed this reply:\r\n\r\n> Hi @wesleyjanse,\r\n> \r\n> When you are navigating, the rendering is done client-side, you can check in the network tab it does not request documents and no HTML is received from the server. This is normal for CSR to flicker as queries are being made, [React InstantSearch's default example does it](https://codesandbox.io/s/github/algolia/instantsearch/tree/templates/react-instantsearch?file=/src/App.tsx)\r\n> \r\n> We would need to see with Next.js if it's possible to force server-side rendering on navigation, or perhaps for a way to transition only when requests are done\r\n\r\nDo you perhaps have any updates on this? @aymeric-giraudet ",
+      "date": 1716406882,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 2125617687
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/18752451",
+        "id": 18752451,
+        "login": "sefai",
+        "type": "User"
+      },
+      "body": " #6275 may have resolved this, what do you think @aymeric-giraudet?",
+      "date": 1721243290,
+      "reactions": {},
+      "id": 2234048149
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/75290989",
+        "id": 75290989,
+        "login": "fcasibu",
+        "type": "User"
+      },
+      "body": "Latest changes made it worse for me where it does not even render in the server anymore 😓 ",
+      "date": 1721287592,
+      "reactions": {},
+      "id": 2235813032
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@fcasibu \r\n\r\nSorry about this, may I get a reproduction to see what goes wrong ?\r\n\r\nRegarding the CSR issue, I've seen your solution and while this works **if** you know params ahead of time, we can't integrate this into the library as there is no way to infer query params from the React tree in a server component.\r\nOn our end we have to make `use` work on the browser, meaning a big overhaul on how we instantiate promises, React core team has started documenting a bit more about how to do that but we won't be able to ship a proper solution until React 19 ships.",
+      "date": 1721288704,
+      "reactions": {},
+      "id": 2235844898
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/75290989",
+        "id": 75290989,
+        "login": "fcasibu",
+        "type": "User"
+      },
+      "body": "Thanks for the fast response @aymeric-giraudet I'll try to create a reproducible example when I get some time.",
+      "date": 1721290359,
+      "reactions": {},
+      "id": 2235898650
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/147552159",
+        "id": 147552159,
+        "login": "lpkobamn",
+        "type": "User"
+      },
+      "body": "guys, any news?",
+      "date": 1729305827,
+      "reactions": {},
+      "id": 2423522921
+    }
+  ]
+}

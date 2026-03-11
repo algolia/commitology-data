@@ -1,0 +1,142 @@
+{
+  "number": 4543,
+  "title": "hierarchical menu is not returning sub level data",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/2632229",
+    "id": 2632229,
+    "login": "jonadeline",
+    "type": "User"
+  },
+  "body": "## 🐛 Bug description\r\n\r\nI'm implementing a custom hierarchical menu with Svelte  leveraging the connectHierarchicalMenu connector.\r\nI'm able to display the first level of the menu but not the second when I click on a first level entry. \r\nAt init, I'm getting the following error :\r\n\r\n```\r\nUncaught (in promise) TypeError: Cannot read property 'data' of undefined\r\n    at Object.render (connectHierarchicalMenu.js:182)\r\n    at index.js:372\r\n    at Array.forEach (<anonymous>)\r\n    at Object.render (index.js:364)\r\n    at InstantSearch.js:105\r\n    at defer.js:24\r\n```\r\n\r\nAnd when I'm console.log the items returned by Algolia, the data property is always null whereas I guess it should be filled with the information of the sub level if relevant. \r\nHere is a console.log exemple below after clicking on Vegetables (root level entry). I assume that data should be filled with the sub level information. \r\n\r\n```\r\n0: {count: 11, isRefined: false, exhaustive: true, data: null, label: \"Baby Food\", …}\r\n1: {count: 2, isRefined: false, exhaustive: true, data: null, label: \"Bakery\", …}\r\n2: {count: 21, isRefined: false, exhaustive: true, data: null, label: \"Beverages\", …}\r\n3: {count: 74, isRefined: false, exhaustive: true, data: null, label: \"Eggs & Dairy\", …}\r\n4: {count: 69, isRefined: false, exhaustive: true, data: null, label: \"Fruits\", …}\r\n5: {count: 7, isRefined: false, exhaustive: true, data: null, label: \"Meat & Fish\", …}\r\n6: {count: 117, isRefined: false, exhaustive: true, data: null, label: \"Pantry\", …}\r\n7: {count: 137, isRefined: true, exhaustive: true, data: null, label: \"Vegetables\", …}\r\n``` \r\n\r\n\r\n## Additional context\r\n\r\nHere is my component code \r\n\r\n```\r\n//hierarchical-menu.svelte\r\n\r\n<script>\r\n  import { connectHierarchicalMenu } from \"instantsearch.js/es/connectors\";\r\n  import HierarchicalList from \"./hierarchical-list.svelte\";\r\n  import { onMount } from \"svelte\";\r\n\r\n  let items = [];\r\n  let isShowingMore;\r\n  let refine;\r\n  let toggleShowMore;\r\n  let createURL;\r\n  let widgetParams;\r\n  let containerEl;\r\n\r\n  const renderHierarchicalMenu = (renderOptions, isFirstRender) => {\r\n    items = renderOptions.items;\r\n    isShowingMore = renderOptions.isShowingMore;\r\n    refine = renderOptions.refine;\r\n    toggleShowMore = renderOptions.toggleShowMore;\r\n    createURL = renderOptions.createURL;\r\n    widgetParams = renderOptions.widgetParams;\r\n\r\n    console.log(items);\r\n  };\r\n\r\n  const algoliaHierarchicalMenu = connectHierarchicalMenu(\r\n    renderHierarchicalMenu\r\n  );\r\n\r\n  onMount(async () => {\r\n    const algoliaModule = await import(\"../../modules/algolia\");\r\n    const { algoliaSearch } = algoliaModule;\r\n    algoliaSearch.addWidgets([\r\n      algoliaHierarchicalMenu({\r\n        container: containerEl,\r\n        attributes: [\r\n          \"hierarchical_categories_en.lvl0\",\r\n          \"hierarchical_categories_en.lvl1\",\r\n        ],\r\n      }),\r\n    ]);\r\n  });\r\n</script>\r\n\r\n<div bind:this={containerEl}>\r\n  <HierarchicalList {items} {createURL} {refine} />\r\n</div>\r\n``` \r\n\r\n```\r\n//hierarchical-list.svelte\r\n\r\n<script>\r\n  export let items = [];\r\n  export let refine;\r\n  export let createURL;\r\n\r\n  const handleClick = (event) => {\r\n    refine(event.target.dataset.value);\r\n  };\r\n</script>\r\n\r\n<ul>\r\n  {#each items as item}\r\n    <li>\r\n      <a\r\n        href={createURL(item.value)}\r\n        on:click={handleClick}\r\n        data-value={item.value}\r\n        class:font-medium={item.isRefined}>\r\n        {item.label} ({item.count})\r\n      </a>\r\n      {#if item.data}\r\n        <div class=\"pl-2\">\r\n          <svelte:self items={item.data} {createURL} {refine} />\r\n        </div>\r\n      {/if}\r\n    </li>\r\n  {/each}\r\n</ul>\r\n```\r\n\r\nAnd here is how are stored the hierarchical categories on Algolia : \r\n```\r\n{\r\n  \"hierarchical_categories_en\": {\r\n    \"lvl0\": \"Vegetables\",\r\n    \"lvl1\": \"Vegetables > Mediterranean\"\r\n  }\r\n}\r\n```\r\n I also activated the facets  in the dashboard. \r\n\r\nI'm using instantsearch v4.7.2",
+  "date": 1603359455,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Hey! could you make this in a sandbox, I think this might possibly be related to how you are mounting the widget. There's a svelte starter here: https://codesandbox.io/s/svelte-forked-enk4e?file=/App.svelte",
+      "date": 1603364094,
+      "reactions": {},
+      "id": 714411133
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "However note that the sub-level will only be filled once the item is refined, since we can not fetch _all possible_ facets on every query, only those relevant to this current query, otherwise this would need exponentially more requests",
+      "date": 1603364148,
+      "reactions": {},
+      "id": 714411541
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2632229",
+        "id": 2632229,
+        "login": "jonadeline",
+        "type": "User"
+      },
+      "body": "hi @Haroenv,\r\nThanks for your quick feedback.\r\nAfter further testing, it happens that some times it works (but most of the time its not) but Im not able to figure out why. \r\nAnd yes I noticed that the sub-level should be filled once a first level value is refined.\r\n\r\nAlso I forget to mention that Im using the onMount svelte hook cause I'm in a SSR environment with Sapper and as instantsearch.js is not supporting SSR, I have to import it only on the frontend side which is done by the onMount. \r\n\r\nI come back to you with a sandbox ;) Thanks again. \r\n",
+      "date": 1603366838,
+      "reactions": {},
+      "id": 714434929
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2632229",
+        "id": 2632229,
+        "login": "jonadeline",
+        "type": "User"
+      },
+      "body": "Here is the sandbox @Haroenv : \r\nhttps://codesandbox.io/s/svelte-forked-13ymr",
+      "date": 1603368624,
+      "reactions": {},
+      "id": 714449589
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2632229",
+        "id": 2632229,
+        "login": "jonadeline",
+        "type": "User"
+      },
+      "body": "I get ride of the JS error I mentioned by delaying the initialisation of Algolia Search. \r\nBut still struggling to get sub-level data 🤔 and I cannot reproduce in the sandbox 😭",
+      "date": 1603372824,
+      "reactions": {},
+      "id": 714489177
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I was just going to suggest calling start after the widget has been mounted. Something seems to go wrong tick-wise with this set of tools together where you add a hierarchical widget and it seems like the `render` is called before the widget is added / before the result of its call is in. It can be solved by doing:\r\n\r\n```\r\nsetTimeout(() => {\r\n  search.start();\r\n}, 0);\r\n```\r\n\r\nNote also you need to `preventDefault` the click on the event: https://codesandbox.io/s/svelte-forked-5e9d3?file=/hierarchical-list.svelte",
+      "date": 1603374326,
+      "reactions": {},
+      "id": 714504821
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2632229",
+        "id": 2632229,
+        "login": "jonadeline",
+        "type": "User"
+      },
+      "body": "Ok finally figured out the problem.\r\nIt's because I have on the same view a menu widget (the single level one) using the same attribute (hierarchical_categories_en.lvl0) than the hierarchical menu. \r\nIs that a bug or is it my UX implementation that shouldn't exist having those 2 widgets in parallel  😅 ? ",
+      "date": 1603374349,
+      "reactions": {},
+      "id": 714505076
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "ah yes unfortunately using both in the same view will cause an error if they have a different value, since they use the same parameter (we have an open issue somewhere to throw an error when an attribute is used more than once, but it used to be hard to throw, I think it might be possible now)",
+      "date": 1603374472,
+      "reactions": {},
+      "id": 714506487
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2632229",
+        "id": 2632229,
+        "login": "jonadeline",
+        "type": "User"
+      },
+      "body": "Ok I see. I close the issue.\r\nThanks for the quick support @Haroenv. 🤙",
+      "date": 1603374789,
+      "reactions": {
+        "❤️": 1
+      },
+      "id": 714510041
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Excited to see your svelte InstantSearch, don't hesitate to share on https://discourse.algolia.com once you're done!",
+      "date": 1603376086,
+      "reactions": {},
+      "id": 714524430
+    }
+  ]
+}

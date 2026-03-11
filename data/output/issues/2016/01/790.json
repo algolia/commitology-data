@@ -1,0 +1,98 @@
+{
+  "number": 790,
+  "title": "urlSync bug with base attribute",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/961573",
+    "id": 961573,
+    "login": "alexandremeunier",
+    "type": "User"
+  },
+  "body": "Hello,\n\nThere is a bug happening when `urlSync: true` and the html page has a `base` attribute which is different from the current URL. It will instantly replace the URL with the `base` url, to which is appended the instantsearch.js state as a query string\n\nDemo: http://url-syncbug.surge.sh/test\n\nThe base attribute is: \n\n``` html\n<base href=\"http://url-syncbug.surge.sh\">\n```\n\nThe page URL is instantly changed to http://url-syncbug.surge.sh/?q=rake&hPP=6&idx=Version_development&p=0&is_v=1\n\nOne solution could be to replace the entire URI path instead of just the query params part\n",
+  "date": 1453475451,
+  "labels": [
+    {
+      "color": "d93f0b",
+      "id": 238751632,
+      "name": "Type: Bug"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Working on this, got a fix (use the full url). The underlying issue is that as soon as you use a base href,  when you push relative things inside pushState or location.href then they are resolved to the base href tag.\n\nWhich can either:\n- result in a full page load (when using #)\n- result in a security issue (when using pushState)\n",
+      "date": 1456929371,
+      "reactions": {},
+      "id": 191262092
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1979087",
+        "id": 1979087,
+        "login": "GabrielDelepine",
+        "type": "User"
+      },
+      "body": "This is my fix (really really durty)\n\nBe carefull, it's durty.\n\n...\n\nDid I told you it's durty ? Yes ?\n\n``` javascript\ninstantsearch.widgets.durtyFixPagination = function() {\n    return {\n        render: function render(options) {\n\n            setTimeout(function() {\n            var matches = document.querySelectorAll(\"#pagination a[href]\");\n            var urlBegin = window.location.protocol + '//' + window.location.hostname;\n            var urlSearchBegin = urlBegin + '/?';\n            angular.forEach(matches, function(a) {\n            if (urlSearchBegin === a.href.substr(0, urlSearchBegin.length)) {\n                a.href = urlBegin + window.location.pathname + a.href.substr(urlSearchBegin.length - 1);\n            }\n            });\n            console.info('pagination fix done');\n            }, 800);\n\n        }\n    };\n};\n\nsearch.addWidget(instantsearch.widgets.durtyFixPagination());\n```\n",
+      "date": 1458926808,
+      "reactions": {},
+      "id": 201377425
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@GabrielDelepine this should already be fixed in latest version, wonder why did you had to fix it? Are you on latest version?\n",
+      "date": 1458927612,
+      "reactions": {},
+      "id": 201381830
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1979087",
+        "id": 1979087,
+        "login": "GabrielDelepine",
+        "type": "User"
+      },
+      "body": "Hi @vvo \n\nThe fix is in the master branch. I am waiting for the release `1.4.3`.\n",
+      "date": 1459241058,
+      "reactions": {},
+      "id": 202780637
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@GabrielDelepine The fix was done and is available in 1.4.2, that's why I am wondering. See https://github.com/algolia/instantsearch.js/commit/e58aadcd9aae77165b802b46a7d3de5864569e1e\n",
+      "date": 1459251890,
+      "reactions": {},
+      "id": 202845103
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Please open a new issue if you still have problems with urlSync and base tag\n",
+      "date": 1459251908,
+      "reactions": {},
+      "id": 202845224
+    }
+  ]
+}

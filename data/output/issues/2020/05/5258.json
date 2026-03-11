@@ -1,0 +1,66 @@
+{
+  "number": 5258,
+  "title": "Sort refinementList values before sending HTTP request (so request caching works as expected)",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/41795874",
+    "id": 41795874,
+    "login": "websocket98765",
+    "type": "User"
+  },
+  "body": "_Deleting my OP to not cause confusion. See my two posts below for the remaining issue, which is refinement list values should probably be sorted before building HTTP request string._\r\n\r\n**Environment:**\r\n\r\n - OS: Mac\r\n - Browser: Chrome (Reproduced in Firefox & Safari too)\r\n - Version: `\"react-instantsearch-dom\": \"^6.5.0\",`\r\n\r\n",
+  "date": 1590712855,
+  "labels": [
+    {
+      "color": "61dafb",
+      "id": 4926236951,
+      "name": "Library: React InstantSearch < 7"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/41795874",
+        "id": 41795874,
+        "login": "websocket98765",
+        "type": "User"
+      },
+      "body": "Fixed by two things: \r\n1. updating `algoliasearch` from `3.x` to  `4.2.0`.\r\n2. For my custom refinement, I now sort the values before calling `refine(values)`, otherwise the first request (triggered via `onExternalStateUpdate()`) would sometimes have facet values for this refinement listed in order `foo bar`, but when `onWidgetsUpdate()` was invoked, these values are reordered alphabetically to `bar foo` (to paraphrase, this isn't direct from the request URL), causing the cache to miss.\r\n\r\nI'm leaving this issue open for team to consider if the lib should sort refinement values before creating the request URL, to ensure the HTTP cache will hit properly.",
+      "date": 1591060101,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1363060957
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      },
+      "body": "Hi @websocket98765 \r\nThanks for the detail in this issue.\r\nI'm sorry but I couldn't reproduce it. I may not understand the issue correctly.\r\n\r\nhttps://codesandbox.io/s/optimistic-carson-ep7z1?file=/src/App.js:1736-1850\r\n\r\nI tried a little bit there. If you don't mind, could you update it to reproduce the issue?",
+      "date": 1591101439,
+      "reactions": {},
+      "id": 1363060974
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/41795874",
+        "id": 41795874,
+        "login": "websocket98765",
+        "type": "User"
+      },
+      "body": "This one is honestly a lot of work to build a demo to repro. Just ignore my OP in this thread, since I identified the cause in the 2nd comment, which is: \r\n\r\nYou may want to consider sorting values in a refinement list before building the HTTP request to be sent. Otherwise, if a user has a custom refinement and calls `refine(value)` with a *non-alphabetical* order, e.g. where value is `['wide','narrow']`, algolia will send 2 http requests--the first containing the non-alphabetized refinement list items (initiated via `onExternalStateUpdate()`) and the 2nd containing the list now alphabetized (initiated via `onWidgetsUpdate()`). \r\n\r\nThe first request contains:\r\n```\r\nfacetFilters: [\"foo:wide\",\"foo:narrow\"]\r\n```\r\nand the 2nd contains the same but is alphabetized:\r\n```\r\nfacetFilters: [\"foo:narrow\",\"foo:wide\"]\r\n```\r\n**The takeaway is that, because the ordering is different in the request URL, the request cache will miss, even though the URL is the same otherwise**, thus causing 2x requests to Algolia when any UI element is changed and this condition exists.\r\n\r\n**The solution in my code**: use  `refine(values.sort())` in my custom refinement.\r\n**Suggested solution**: consider sorting refinement list values alphabetically in the lib before building the request URL\r\n\r\nI have this fixed in my code, so no worries on that, just depends if you think this affects others or not.",
+      "date": 1591114407,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1363060985
+    }
+  ]
+}

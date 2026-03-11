@@ -1,0 +1,68 @@
+{
+  "number": 2582,
+  "title": "Website: long delays before instantsearch works",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/5886398",
+    "id": 5886398,
+    "login": "orlando21",
+    "type": "User"
+  },
+  "body": "I'm implementing instantsearch.js in vanilla JavaScript in a way very similar to the e-commerce (2nd) example in https://community.algolia.com/instantsearch.js/v1/examples/\r\n\r\nWhen it works, it works brilliantly. But often when I click in the search bar nothing happens. I must reload the page a few times and wait. Usually then somehow instantsearch begins to work.\r\n\r\nI thought maybe it was a promise issue so I implemented that (see code below). This seems to have no effect however.\r\n```\r\n            window.onload = function() {\r\n                let loadSearchPromise = search.start();\r\n                document.getElementById('search__input').onclick = function() {\r\n                    loadSearchPromise.then(() => {\r\n                      document.getElementById('show-result').style.display = 'block';\r\n                    })\r\n                }\r\n            }\r\n```\r\nIt's frustrating when clicking in the search bar and reloading the first few times doesn't work, so I have some general questions:\r\n- What could be causing this delay, and if so what can be done about it?\r\n- Does a promise implementation for instantsearch.js make sense?\r\n\r\nThere are no slow network issues on my end.",
+  "date": 1511019797,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Hey, could you try replicating that in a jsFiddle, that’s not normal behaviour. @vvo, you experimented in similar behaviour improvemets, no? ",
+      "date": 1511035841,
+      "reactions": {},
+      "id": 345467893
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5886398",
+        "id": 5886398,
+        "login": "orlando21",
+        "type": "User"
+      },
+      "body": "Ok, I've isolated the problem. My web app uses both Algolia instantsearch and Firebase. Both of these are loaded by two different .js files and I've tried to keep the functionality of both apart. However both files have separate `onload()` functions: the Algolia file uses the code above (`windows.onload`) and the Firebase file uses `document.ready`).\r\n\r\n1. Are there any known issues to using both instantsearch and Firebase in the same app?\r\n2. Might it be more feasible to combine the functions of these two files into one file, for example to combine the instantiation of both instantsearch and Firebase inside one `window.onload`?",
+      "date": 1511084108,
+      "reactions": {},
+      "id": 345503740
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5886398",
+        "id": 5886398,
+        "login": "orlando21",
+        "type": "User"
+      },
+      "body": "After some careful debugging, the answer is yes, instantsearch and Firebase can coexist in the same app. `search.start()` was activated within `window.onload` which seemed to load after Firebase. When I instead put `search.start()` inside of `$(document).ready` then instantsearch works alongside Firebase.",
+      "date": 1511144270,
+      "reactions": {},
+      "id": 345574051
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "The issue here was probably more to do with the fact of mixing document.ready and window.only since they'll be called at the same time almost, but not exactly, which might cause some undefined behaviour. If you have a project somewhere with this situation, it would be nice to see if we can work around the problem without changing your code",
+      "date": 1511164641,
+      "reactions": {},
+      "id": 345617555
+    }
+  ]
+}

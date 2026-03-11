@@ -1,0 +1,128 @@
+{
+  "number": 4641,
+  "title": "InstantSearch.js slows down the site",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/50487083",
+    "id": 50487083,
+    "login": "blogi-kriptovalyut",
+    "type": "User"
+  },
+  "body": "Hello.\r\n\r\ni use [minimal-mistakes](https://github.com/mmistakes/minimal-mistakes) jekyll theme.\r\n\r\nInstantSearch.js loads 20 (!) images for quick search. But it slows down lighthouse and google core web vitals.\r\nCan this feature be removed or configured so that images are requested only at the moment of clicking on the search?\r\n\r\nOr maybe there is an opportunity to tell him to load not 20, but 5 images?\r\n\r\nsource: https://github.com/mmistakes/minimal-mistakes/blob/d6444412c63aea5e47241ef536509fb1bfef4830/_includes/search/algolia-search-scripts.html\r\n\r\n\r\nmy blog page: [https://bitkoinblog.ru/novye-kriptovalyuty/dogecoin/](https://bitkoinblog.ru/novye-kriptovalyuty/dogecoin/)\r\n\r\n<a href=\"https://ibb.co/r5q3Lcg\"><img src=\"https://i.ibb.co/TPJ1nbZ/img-2021-01-29-19-50-37.png\" alt=\"img-2021-01-29-19-50-37\" border=\"0\"></a>\r\n\r\n> The ideal solution would be to defer the load of InstantSearch until the moment the user clicks on the search.\r\nOr postpone rendering of images until the window.onload event is fully fired.\r\nIt might be possible to do just loading-lazy, but Lazy-load plugin does not take images from InstantSearch, so they are loaded on the main thread anyway.\r\n\r\nHowever, 90% of my users will never click on search. So yes, I think we need to think of something.\r\n\r\n",
+  "date": 1612375549,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "if you want less images to load, you can use `configure({ hitsPerPage: 5 })` to show only five hits, is that what you want? \r\n\r\nOtherwise if you're looking for lazy-loading, InstantSearch isn't opinionated around that, there's many solutions that exist for it that, even one builtin to the browser now (loading=lazy on the image) https://web.dev/browser-level-image-lazy-loading/",
+      "date": 1612376903,
+      "reactions": {},
+      "id": 772723410
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50487083",
+        "id": 50487083,
+        "login": "blogi-kriptovalyut",
+        "type": "User"
+      },
+      "body": "> if you want less images to load, you can use `configure({ hitsPerPage: 5 })` to show only five hits, is that what you want?\r\n> \r\n> Otherwise if you're looking for lazy-loading, InstantSearch isn't opinionated around that, there's many solutions that exist for it that, even one builtin to the browser now (loading=lazy on the image) https://web.dev/browser-level-image-lazy-loading/\r\n\r\nI don’t understand in which file you need to register this?\r\n`loading=lazy` doesn't work in my case because the plugin does not substitute lazy value for js content.\r\n\r\nThe ideal solution would be to defer the load of InstantSearch  **until the moment the user clicks on the search**.\r\n",
+      "date": 1612423581,
+      "reactions": {},
+      "id": 773094884
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "if you wait to call `search.start()` until the user shows intent to search, it will not do any requests early, is that what you're looking for? ",
+      "date": 1612425743,
+      "reactions": {},
+      "id": 773112785
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50487083",
+        "id": 50487083,
+        "login": "blogi-kriptovalyut",
+        "type": "User"
+      },
+      "body": "> if you wait to call `search.start()` until the user shows intent to search, it will not do any requests early, is that what you're looking for?\r\n\r\nYes, how can I use this with [minimal-mistakes](https://github.com/mmistakes/minimal-mistakes) jekyll theme?",
+      "date": 1612462317,
+      "reactions": {},
+      "id": 773505355
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I don't know, can you not change the JavaScript code?",
+      "date": 1612467632,
+      "reactions": {},
+      "id": 773557113
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50487083",
+        "id": 50487083,
+        "login": "blogi-kriptovalyut",
+        "type": "User"
+      },
+      "body": "> I don't know, can you not change the JavaScript code?\r\n\r\nI can, \r\nI see an inline script on the page, do I need to add something here?\r\n```\r\n<script>\r\n--\r\n// Instanciating InstantSearch.js with Algolia credentials\r\nconst search = instantsearch({\r\nappId: 'myid',\r\napiKey: 'mykey',\r\nindexName: 'myindex',\r\nsearchParameters: {\r\nrestrictSearchableAttributes: [\r\n'title',\r\n'content'\r\n]\r\n}\r\n});\r\n \r\nconst hitTemplate = function(hit) {\r\nconst url = hit.url;\r\nconst title = hit._highlightResult.title.value;\r\nconst content = hit._highlightResult.html.value;\r\n \r\nreturn `\r\n<div class=\"list__item\">\r\n<article class=\"archive__item\" itemscope itemtype=\"https://schema.org/CreativeWork\">\r\n<h2 class=\"archive__item-title\" itemprop=\"headline\"><a href=\"${url}\">${title}</a></h2>\r\n<div class=\"archive__item-excerpt\" itemprop=\"description\">${content}</div>\r\n</article>\r\n</div>\r\n`;\r\n}\r\n \r\n// Adding searchbar and results widgets\r\nsearch.addWidget(\r\ninstantsearch.widgets.searchBox({\r\ncontainer: '.search-searchbar',\r\npoweredBy: true,\r\nplaceholder: 'Введите поисковый запрос...'\r\n})\r\n);\r\nsearch.addWidget(\r\ninstantsearch.widgets.hits({\r\ncontainer: '.search-hits',\r\ntemplates: {\r\nitem: hitTemplate\r\n}\r\n})\r\n);\r\n \r\n// Starting the search\r\nsearch.start();\r\n</script>\r\n```",
+      "date": 1612510883,
+      "reactions": {},
+      "id": 773856833
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "in that code you have `search.start` at the end, which can be done at a different time",
+      "date": 1612523434,
+      "reactions": {},
+      "id": 773967347
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50487083",
+        "id": 50487083,
+        "login": "blogi-kriptovalyut",
+        "type": "User"
+      },
+      "body": "> in that code you have `search.start` at the end, which can be done at a different time\r\n\r\nand what needs to be written to postpone the appearance of the search?",
+      "date": 1612544240,
+      "reactions": {},
+      "id": 774155948
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "you put `myButtonThatTriggersTheSearch.addEventListener('click', () => search.start())` (or whatever other condition)",
+      "date": 1612547691,
+      "reactions": {},
+      "id": 774188797
+    }
+  ]
+}

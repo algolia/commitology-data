@@ -1,0 +1,122 @@
+{
+  "number": 5384,
+  "title": "Vite + vite-ssg : Uncaught (in promise) TypeError: r.read is not a function",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/38226400",
+    "id": 38226400,
+    "login": "alex-galey",
+    "type": "User"
+  },
+  "body": "**Bug 🐞**\r\n\r\n### What is the current behavior?\r\nInstantSearch works in vite dev mode `vite --port 3333 --open` but not when built `vite-ssg build` : https://7c6dee15.site-596.pages.dev/experts\r\n```\r\nUncaught (in promise) TypeError: r.read is not a function\r\n    at Proxy.subscribe (index.f1298e7a.js:17:13706)\r\n    at index.f1298e7a.js:17:22534\r\n    at Proxy.forEach (<anonymous>)\r\n    at Proxy.value (index.f1298e7a.js:17:22495)\r\n    at Proxy.<anonymous> (index.f1298e7a.js:29:761)\r\n```\r\n\r\nIt comes from : \r\n```\r\nvar Zc = function() {\r\n    var t = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {}\r\n      , n = t.router\r\n      , r = n === void 0 ? Yc() : n\r\n      , i = t.stateMapping\r\n      , a = i === void 0 ? xc() : i;\r\n    return function(s) {\r\n        var o = s.instantSearchInstance;\r\n        function c(h) {\r\n            var f = Object.keys(h).reduce(function(v, m) {\r\n                return Lt(Lt({}, v), {}, Gi({}, m, h[m]))\r\n            }, o.mainIndex.getWidgetUiState({}))\r\n              , d = a.stateToRoute(f);\r\n            return r.createURL(d)\r\n        }\r\n        o._createURL = c;\r\n        var u = void 0\r\n          , l = o._initialUiState;\r\n        return {\r\n            onStateChange: function(f) {\r\n                var d = f.uiState\r\n                  , v = a.stateToRoute(d);\r\n                (u === void 0 || !ir(u, v)) && (r.write(v),\r\n                u = v)\r\n            },\r\n            subscribe: function() {\r\n// HERE : \r\n                o._initialUiState = Lt(Lt({}, l), a.routeToState(r.read())),\r\n                r.onUpdate(function(f) {\r\n                    o.setUiState(a.routeToState(f))\r\n                })\r\n            },\r\n            started: function() {},\r\n            unsubscribe: function() {\r\n                r.dispose()\r\n            }\r\n        }\r\n    }\r\n};\r\n```\r\n\r\n### Make a sandbox with the current behavior\r\n\r\nTemplate: https://codesandbox.io/s/github/algolia/create-instantsearch-app/tree/templates/vue-instantsearch\r\n\r\n### What is the expected behavior?\r\nInstantSearch to work with vite-ssg\r\n\r\n### Does this happen only in specific situations?\r\nBuilt project doesn't work while dev project is working\r\n\r\n### What is the proposed solution?\r\n\r\n### What is the version you are using?\r\nA subset of dependencies I am using :\r\n```\r\n\"dependencies\": {\r\n    \"algoliasearch\": \"^4.14.2\",\r\n    \"vue\": \"3.2.41\",\r\n    \"vue-instantsearch\": \"^4.6.0\",\r\n    \"vue-router\": \"4.1.5\"\r\n},\r\n\"devDependencies\": {\r\n    \"@vitejs/plugin-vue\": \"3.1.2\",\r\n    \"@vue/compiler-sfc\": \"3.2.41\",\r\n    \"@vue/server-renderer\": \"3.2.41\",\r\n    \"vite\": \"3.1.8\",\r\n    \"vite-ssg\": \"0.21.1\",\r\n    \"webpack\": \"5.74.0\"\r\n}\r\n```\r\n\r\nAny idea how to make this work ?",
+  "date": 1666608413,
+  "labels": [
+    {
+      "color": "41b883",
+      "id": 4938934657,
+      "name": "Library: Vue InstantSearch"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Do you have the code that generates this? it seems like routing was partially applied only,",
+      "date": 1666612033,
+      "reactions": {},
+      "id": 1367968720
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38226400",
+        "id": 38226400,
+        "login": "alex-galey",
+        "type": "User"
+      },
+      "body": "What's quite incredible is I am [not able to reproduce the issue here](https://github.com/matchersteam/BugBuild/) as I am not even able to import the component the same way I did in my project : \r\n`import InstantSearch from 'vue-instantsearch/vue3/es/src/components/InstantSearch'`\r\n\r\nHere the error for the import from the [build log](https://github.com/matchersteam/BugBuild/actions/runs/3315842733/jobs/5476939073) :\r\n```\r\nError [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/runner/work/BugBuild/BugBuild/vue-instantsearch-vue3/node_modules/vue-instantsearch/vue3/es/src/components/InstantSearch' imported from /home/runner/work/BugBuild/BugBuild/vue-instantsearch-vue3/.vite-ssg-temp/main.mjs\r\n```\r\n\r\nI can give you access to the main project which produces the initial issue if you want ?",
+      "date": 1666642721,
+      "reactions": {},
+      "id": 1367968722
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "The file you should import is `InstantSearch.vue` I think, as vite doesn't automatically add the extension. A minimal reproduction would still be best here",
+      "date": 1666685324,
+      "reactions": {},
+      "id": 1367968723
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38226400",
+        "id": 38226400,
+        "login": "alex-galey",
+        "type": "User"
+      },
+      "body": "Yes, I am still working on a minimal reproduction of the issue.\r\n\r\n`Error: [vite]: Rollup failed to resolve import \"vue-instantsearch/vue3/es/src/components/InstantSearch.vue\" from \"src/App.vue\"`\r\n\r\nThere is no InstantSearch.vue, only InstantSearch.js :\r\n`find node_modules/vue-instantsearch/. | grep InstantSearch`\r\n```\r\nnode_modules/vue-instantsearch/./vue3/es/src/util/createInstantSearchComponent.js.map\r\nnode_modules/vue-instantsearch/./vue3/es/src/util/createInstantSearchComponent.js\r\nnode_modules/vue-instantsearch/./vue3/es/src/components/InstantSearch.js\r\nnode_modules/vue-instantsearch/./vue3/es/src/components/InstantSearch.js.map\r\nnode_modules/vue-instantsearch/./vue3/es/src/components/InstantSearchSsr.js.map\r\nnode_modules/vue-instantsearch/./vue3/es/src/components/InstantSearchSsr.js\r\nnode_modules/vue-instantsearch/./vue2/es/src/util/createInstantSearchComponent.js.map\r\nnode_modules/vue-instantsearch/./vue2/es/src/util/createInstantSearchComponent.js\r\nnode_modules/vue-instantsearch/./vue2/es/src/components/InstantSearch.js\r\nnode_modules/vue-instantsearch/./vue2/es/src/components/InstantSearch.js.map\r\nnode_modules/vue-instantsearch/./vue2/es/src/components/InstantSearchSsr.js.map\r\nnode_modules/vue-instantsearch/./vue2/es/src/components/InstantSearchSsr.js\r\nnode_modules/vue-instantsearch/./src/util/createInstantSearchComponent.js\r\nnode_modules/vue-instantsearch/./src/components/InstantSearch.js\r\nnode_modules/vue-instantsearch/./src/components/__tests__/InstantSearch.js\r\nnode_modules/vue-instantsearch/./src/components/__tests__/__snapshots__/InstantSearch.js.snap\r\nnode_modules/vue-instantsearch/./src/components/__tests__/InstantSearch-integration.js\r\nnode_modules/vue-instantsearch/./src/components/__tests__/InstantSearchSsr.js\r\nnode_modules/vue-instantsearch/./src/components/InstantSearchSsr.js\r\n```\r\n\r\nI also tried to import with the .js extenstion, that's the issue : \r\n```\r\nError [ERR_MODULE_NOT_FOUND]: Cannot find package 'instantsearch.js' imported from /home/alex/Documents/AA-Matchers/Dev-Site/BugBuild/vue-instantsearch-vue3/.vite-ssg-temp/main.mjs\r\nDid you mean to import instantsearch.js@4.48.1_algoliasearch@4.14.2/node_modules/instantsearch.js/es/connectors/index.js?\r\n```\r\n\r\n\r\n- Should I use createInstantSearchComponent to instanciate an InstantSearch component ?\r\n- Does it make sense to use SSR approach in this SSG context ?",
+      "date": 1666691361,
+      "reactions": {},
+      "id": 1367968725
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "If you could share an empty repository with this failing import, we'll be able to investigate further where this error is actually coming from :) ",
+      "date": 1666698207,
+      "reactions": {},
+      "id": 1367968727
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38226400",
+        "id": 38226400,
+        "login": "alex-galey",
+        "type": "User"
+      },
+      "body": "Sure, it's indeed the repo here in a previous comment, with the build log attached. Do you have an access ?\r\n\r\n> What's quite incredible is I am [not able to reproduce the issue here](https://github.com/matchersteam/BugBuild/) as I am not even able to import the component the same way I did in my project : `import InstantSearch from 'vue-instantsearch/vue3/es/src/components/InstantSearch'`\r\n> \r\n> Here the error for the import from the [build log](https://github.com/matchersteam/BugBuild/actions/runs/3315842733/jobs/5476939073) :\r\n> \r\n> ```\r\n> Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/runner/work/BugBuild/BugBuild/vue-instantsearch-vue3/node_modules/vue-instantsearch/vue3/es/src/components/InstantSearch' imported from /home/runner/work/BugBuild/BugBuild/vue-instantsearch-vue3/.vite-ssg-temp/main.mjs\r\n> ```\r\n> \r\n> I can give you access to the main project which produces the initial issue if you want ?",
+      "date": 1666700012,
+      "reactions": {},
+      "id": 1367968730
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/38226400",
+        "id": 38226400,
+        "login": "alex-galey",
+        "type": "User"
+      },
+      "body": "@Haroenv have you been able to check the reproduction of the failed import on the repository ?",
+      "date": 1666963891,
+      "reactions": {},
+      "id": 1367968732
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I've been able to reproduce it, but not what the cause is unfortunately, it seems that the rules of which files are imported are different. Sorry!",
+      "date": 1666965277,
+      "reactions": {},
+      "id": 1367968733
+    }
+  ]
+}

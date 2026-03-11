@@ -1,0 +1,185 @@
+{
+  "number": 5658,
+  "title": "TypeError with TS@5.1.3: Property 'hitsPerPage' does not exist on type 'IntrinsicAttributes & PlainSearchParameters'",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/39120423",
+    "id": 39120423,
+    "login": "jcwillox",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\n\nSo this might be a bug with typescript, but it's the only library that broke when updating it so I'm going to create the bug report here.\r\n\r\nWhen running with version `5.1.3` of `typescript` and `react-instantsearch-hooks-web` I get a type error on the `Configure` component, it appears it's no longer inferring the `SearchOptions` correctly. Downgrading to version `5.0.4` of `typescript` fixes the issue.\r\n\r\n```tsx\r\n> tsc --noEmit\r\n\r\ncomponents/SearchApp/SearchApp.tsx:28:18 - error TS2322: Type '{ hitsPerPage: number; filters: string | undefined; }' is not assignable to type 'IntrinsicAttributes & PlainSearchParameters'.\r\n  Property 'hitsPerPage' does not exist on type 'IntrinsicAttributes & PlainSearchParameters'.\r\n\r\n28       <Configure hitsPerPage={hitsPerPage} filters={filters} />\r\n                    ~~~~~~~~~~~\r\n```\n\n### 🔍 Steps to reproduce\n\n1. Install the following packages `react-instantsearch-hooks-web@6.44.1 typescript@5.1.3`\r\n2. Create a component with\r\n```tsx\r\n<InstantSearch searchClient={searchClient} indexName={indexName}>\r\n  <Configure hitsPerPage={hitsPerPage} filters={filters} />\r\n  {children}\r\n</InstantSearch>\r\n```\r\n4. Run `tsc --noEmit`\r\n\r\n```\r\n> tsc\r\n\r\ncomponents/SearchApp/SearchApp.tsx:28:18 - error TS2322: Type '{ hitsPerPage: number; filters: string | undefined; }' is not assignable to type 'IntrinsicAttributes & PlainSearchParameters'.\r\n  Property 'hitsPerPage' does not exist on type 'IntrinsicAttributes & PlainSearchParameters'.\r\n\r\n28       <Configure hitsPerPage={hitsPerPage} filters={filters} />\r\n                    ~~~~~~~~~~~\r\n\r\n```\r\n\r\nOr checkout this repro https://stackblitz.com/edit/algolia-ts-bug-2mfs3u?file=app%2FSearchApp.tsx and run `npm run typecheck` in the terminal.\n\n### Live reproduction\n\nhttps://stackblitz.com/edit/algolia-ts-bug-2mfs3u?file=app%2FSearchApp.tsx\n\n### 💭 Expected behavior\n\nThere should be no typescript error as with previous versions of typescript.\n\n### Package version\n\nreact-instantsearch-hooks-web@6.44.1, typescript@5.1.3\n\n### Operating system\n\nWindows, Linux\n\n### Browser\n\nChrome\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1685931647,
+  "labels": [
+    {
+      "color": "d93f0b",
+      "id": 238751632,
+      "name": "Type: Bug"
+    },
+    {
+      "color": "e6ea0e",
+      "id": 1741374788,
+      "name": "Scope: TypeScript"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👀": 2
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I wonder if this is caused by PlainSearchParameters being extended from SearchOptions, but not manually retyping those keys? https://github.com/algolia/algoliasearch-helper-js/blob/develop/index.d.ts#L394\r\n\r\n",
+      "date": 1685959097,
+      "reactions": {},
+      "id": 1576491809
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/39120423",
+        "id": 39120423,
+        "login": "jcwillox",
+        "type": "User"
+      },
+      "body": "It seems the editor/typescript has trouble picking up the type of `SearchOptions` even when directly imported from `algoliasearch-helper/types/algoliasearch` and including it as a dependency. When importing `SearchOptions` directly from `@algolia/client-search` it does have the correct types but that's not surprising.\r\n\r\n![image](https://github.com/algolia/instantsearch/assets/39120423/cea11ea6-b624-4a25-a354-e420cd59f730)\r\n\r\nSo perhaps its something to do with that `PickForClient` magic?",
+      "date": 1686194850,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1581834750
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/39120423",
+        "id": 39120423,
+        "login": "jcwillox",
+        "type": "User"
+      },
+      "body": "Currently, I'm just re-exporting the `Configure` component and including the `SearchOptions` type directly, which side-steps the issue without having to use `@ts-ignore` or type assertions.\r\n\r\n```tsx\r\nimport { SearchOptions } from \"@algolia/client-search\";\r\nimport {\r\n  Configure as ConfigureAlgolia,\r\n  ConfigureProps,\r\n} from \"react-instantsearch-hooks-web\";\r\n\r\nexport const Configure = (props: ConfigureProps & SearchOptions) => (\r\n  <ConfigureAlgolia {...props} />\r\n);\r\n```",
+      "date": 1686195670,
+      "reactions": {
+        "👍️": 4
+      },
+      "id": 1581842211
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Thanks for listing this workaround, we didn't find that option yet!",
+      "date": 1686214100,
+      "reactions": {},
+      "id": 1582160818
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50205066",
+        "id": 50205066,
+        "login": "RobinSCU",
+        "type": "User"
+      },
+      "body": "Hi @Haroenv,\r\n\r\nthanks for the fix! Do you have an ETA for a release where the fix is included?\r\n\r\nHave a great day!",
+      "date": 1686688270,
+      "reactions": {},
+      "id": 1589980059
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I've just released the fix in the helper, so if you re-update the dependencies, you will no longer have this issue.",
+      "date": 1686729598,
+      "reactions": {},
+      "id": 1590676696
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/50205066",
+        "id": 50205066,
+        "login": "RobinSCU",
+        "type": "User"
+      },
+      "body": "Thank you!",
+      "date": 1686733865,
+      "reactions": {},
+      "id": 1590806784
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "@g-mero, are you on the latest version of everything? This issue was fixed a couple months ago downstream ",
+      "date": 1695112682,
+      "reactions": {},
+      "id": 1725067808
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5693633",
+        "id": 5693633,
+        "login": "Jorundur",
+        "type": "User"
+      },
+      "body": "@Haroenv \r\n\r\nI've got a similar issue after migrating from v6 to v7.\r\n\r\nPackages:\r\n\r\n```json\r\n  \"react-instantsearch\": \"^7.4.1\",\r\n  \"react-instantsearch-core\": \"^7.4.1\",\r\n```\r\n\r\nRemoved `@types` packages as per migration guide.\r\n\r\nIn a component I've got:\r\n\r\n```tsx\r\nimport { Configure, InstantSearch, useInfiniteHits } from 'react-instantsearch'\r\n```\r\n\r\n(previously this was imported from `react-instantsearch-hooks-web`)\r\n\r\nrender:\r\n\r\n```tsx\r\nreturn (\r\n    <div>\r\n      <InstantSearch searchClient={searchClient} indexName={algoliaIndex}>\r\n        <Configure filters={`productType:\"${parentExpedition.productType}\"`} hitsPerPage={4} />\r\n        {/* irrelevant code removed */}\r\n      </InstantSearch>\r\n    </div>\r\n  )\r\n```\r\n\r\n![Screenshot 2023-12-14 at 11 29 37](https://github.com/algolia/instantsearch/assets/5693633/d4ea2077-dc98-4cc0-b963-ff1fafc52222)\r\n\r\nAs mentioned above - the props type is `PlainSearchParameters` which doesn't have `filters`. Although `PlainSearchParameters` extends `SearchOptions`, `SearchOptions` doesn't have anything for `filters` either as far as I can see but I could be misunderstanding the `PickForClient` code.\r\n\r\nAny ideas how to get this to work? I can see that the latest version (3.16.0) of `algoliasearch-helper` is being used.",
+      "date": 1702554440,
+      "reactions": {},
+      "id": 1855700877
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I can't reproduce this in our examples, `filters` is correctly picked from `algoliasearch` (v4 and v3), we even have tests for it. If you can reproduce this consistently in a standalone environment, please create a sandbox, GitHub repo or similar and we can try to find the root cause @Jorundur ",
+      "date": 1702557656,
+      "reactions": {},
+      "id": 1855780660
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5693633",
+        "id": 5693633,
+        "login": "Jorundur",
+        "type": "User"
+      },
+      "body": "@Haroenv I just fixed this.\r\n\r\nHad this warning when `yarn`-ing which I hadn't noticed:\r\n\r\n> \"react-instantsearch > instantsearch.js@4.62.0\" has unmet peer dependency \"algoliasearch@>= 3.1 < 6\".\r\n\r\nAdding `algoliasearch` fixed this.\r\n\r\nI didn't know that was required - it wasn't before when using v6 at least. So maybe it should be added to the migration guide? (Perhaps it's already there and I missed it).",
+      "date": 1702559012,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1855814416
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "It always was required, but in v6 there was no typescript types builtin. I believe v6 on DefinitelyTyped had a dependency on algoliasearch possibly though",
+      "date": 1702561081,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1855870386
+    }
+  ]
+}

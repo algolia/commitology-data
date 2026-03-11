@@ -1,0 +1,92 @@
+{
+  "number": 1489,
+  "title": "document is not defined",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/275206",
+    "id": 275206,
+    "login": "kievechua",
+    "type": "User"
+  },
+  "body": "I'm trying to tun react-instantsearch with server side rendering.\r\nAnyway to get around this?\r\nCurrently trying to run it through, https://github.com/zeit/next.js",
+  "date": 1477926679,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 403422447,
+      "name": "Type: Question"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 1
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@kievechua for now we do not support server side rendering or react-native, we are working on it actively though. Thanks.\n",
+      "date": 1478010781,
+      "reactions": {},
+      "id": 257581531
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/275206",
+        "id": 275206,
+        "login": "kievechua",
+        "type": "User"
+      },
+      "body": "My current issue is document.something get called when I `import instantSearch from 'react-instantsearch`.\nCan it delay the call so I can do something like this?\n\n```\nconst App = () => {\n  let content;\n\n  if (isClient) {\n    content = (<InstantSearch\n      appId={appId}\n      apiKey={apiKey}\n      indexName={indexName}\n    >\n       // The instantsearch components will go here\n    </InstantSearch>)\n  }\n\n  return <div>{content}</div>;\n}\n```\n\nAlso, I can't seem to find the source code, is it release yet?\nOr I just too blind to see haha\n",
+      "date": 1478053116,
+      "reactions": {},
+      "id": 257754165
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1509662",
+        "id": 1509662,
+        "login": "devwax",
+        "type": "User"
+      },
+      "body": "@kievechua React's [componentDidMount()](https://facebook.github.io/react/docs/react-component.html#componentwillmount) lifecycle method isn't called on the server during server-side rendering, so you could remove the `(IsClient)` conditional and use `componentDidMount` to render the client-side only components there.\n\nThe problem is that you will likely get an error / warning in the console from react stating that the rendered components sent from the server don't match the client rendered components, thereby defeating the purpose of server side rendering.\n\nThe way I get around that is by keeping track of a reactive variable _(I'm using Meteor)_ called `initialRender`. It's set to `true` by default, and then I set it to `false` in the main App component's `componentDidMount` method. Then that triggers another render after the initial render which renders the client-side only components.\n\nExample:\n\n``` javascript\nconst App = ({initialRender}) => {\n  componentDidMount() {\n    // if it's true set it to false\n    (initialRender === true) && AppState.set({initialRender: false})\n  }\n\n  render() {\n    // (...)\n  }\n```\n\nThen I can check the state of `initialRender` with `AppState.get('initialRender')` in any other components that need it. (the top-most component's `componentDidMount` fires last, so we can count on all the other components having been already rendered at that point)\n\nAdmittedly, it's a bit of a mess compared to using universal javascript that can render on the server.\n",
+      "date": 1478150444,
+      "reactions": {},
+      "id": 258066341
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "@kievechua We didn't dig completely on this part :( But we're planning on writing a proper guide for the final release about server side rendering.\n",
+      "date": 1478767887,
+      "reactions": {
+        "👍️": 2
+      },
+      "id": 259634258
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "We removed themeable that was causing this error and we tested using next and we're happy to let you know that the latest version (beta 20) is working out of the box.",
+      "date": 1481117134,
+      "reactions": {
+        "❤️": 1
+      },
+      "id": 265446200
+    }
+  ]
+}

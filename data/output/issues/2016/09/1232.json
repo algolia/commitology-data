@@ -1,0 +1,263 @@
+{
+  "number": 1232,
+  "title": "Allowing user to exclude facets from search using refinementList",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/2924381",
+    "id": 2924381,
+    "login": "billvieux",
+    "type": "User"
+  },
+  "body": "I want to support a scenario where a user can exclude tags from the search. Ideally, it would be using the existing refinementList (or extending it). \n\nHere is a CodePen that basically behaves I want. For example, click the red 'x' next to 'Used' to exclude records tagged 'Used'.\n[http://codepen.io/billvieux/pen/QKWWqy](http://codepen.io/billvieux/pen/QKWWqy)\n\nHowever, this is a terrible implementation. I modified the refinementList item template to include a link in the label along with the tag name. Then I get the tag name during the click:\n`$(document).on('click','.ais-refinement-list--label a', function(e){\n    search.helper.addFacetRefinement('tags', '-' + $(e.target)[0].dataset.tag);\n    search.helper.search();\n  });`\n\nI had to use the `-tagname` syntax with `addFacetRefinement` to ensure that the tag was removed from the refinementList. When I tried to use `addFacetExclusion` the hits were correct, but the refinementList and currentRefinementValues widgets didn't work as expected.\n\nI also had to keep the link inside the `<label>` as moving it outside the label seemed to always result in both the `tagname` and `-tagname` refinements being added. (I saw refinementList has to do some work as-is to avoid double responding to a click.)\n\n_Cons_: This uses a global document bind to watch for click events, has a small target area to click for exclusions (and that link can't be outside the `<label>`, and currently allows the user to select a tag & then exclude it, thus getting 0 search results.\n\nFor a scenario like this, I would really welcome any suggestions on better ways to approach the implementation or achieve this kind of behavior. \n",
+  "date": 1472711206,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 403422447,
+      "name": "Type: Question"
+    },
+    {
+      "color": "e01167",
+      "id": 753506812,
+      "name": "Feedback"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Hi @billvieux \n\nThanks for posting this issue. And your codepen is very helpful too :)\n\nThis kind of behaviour should be in the API as it is kinda tricky to implement over existing widgets. Maybe have an option to be able to activate this kind of exclusion link when using `and` as an operator? WDYT @vvo \n",
+      "date": 1472718422,
+      "reactions": {},
+      "id": 244011013
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Yes it could be in the API (the instantsearch.js API), but should a refinementList widget allows users to both refine and remove (exclude)? The codepen demo has both actions in the same widget, it's powerful but is it easy to understand?\n",
+      "date": 1472720242,
+      "reactions": {},
+      "id": 244018311
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2924381",
+        "id": 2924381,
+        "login": "billvieux",
+        "type": "User"
+      },
+      "body": "Thanks for quick response! \n\nIn my scenario, I could live with a 2nd refinementList widget on the page that called `addFacetExclusion` for any facet that was checked. In some ways that could be more confusing for the user. It certainly takes more screen real estate as I would have both a \"Tags\" and an \"Excluded Tags\" refinementList being displayed.\n\nIn my codepen implementation, I use a currentRefinedValues widget, so the user can see what has been removed. In an instantsearch.js API-level implementation (in the refinementList), I would think you'd want to implement this feature in a way that wouldn't require the currentRefinedValues widget for the user to keep track of exclusions. Ideally, I think the excluded facet would still show in the refinementList, but support being styled differently (e.g., strikethrough). \n\nDo you have any suggestions / concerns about they way I used `-tagname` syntax with `addFacetRefinement` instead of directly using `addFacetExclusion`? I wasn't seeing the expected behavior when I used `addFacetExclusion`.\n",
+      "date": 1472759616,
+      "reactions": {},
+      "id": 244192649
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "`AddFacetExclusion` is using the - syntax are you: https://github.com/algolia/algoliasearch-helper-js/blob/develop/src/requestBuilder.js#L188-L192 . So this is weird to experience a different behaviour.\n\nThe way you did the prototype is not really orthodox :) And leads to some weird behaviour. This is likely to be cause by the way this widget is implemented. There are two alternatives here, either you [create a proper custom widget](https://community.algolia.com/instantsearch.js/documentation/#custom-widgets) or you wait for such a feature to be implemented, given our bandwidth and the complexity of making a nice API for that, I'm not sure that we will implement it in the coming days. \n\nI'm pretty confident that you can make a straightforward refinement list custom widget that will fit your need.\n",
+      "date": 1472829216,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 244403425
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2924381",
+        "id": 2924381,
+        "login": "billvieux",
+        "type": "User"
+      },
+      "body": "Thanks @bobylito. Regarding the custom widget - is there anyway recommended way to extend the refinementList widget? It seems a shame to copy that entire widget just to support an `addFacetExclusion` mode. Also, the current custom widget documentation is pretty sparse for building something as complicated as a refinementList widget from scratch. \n",
+      "date": 1472830633,
+      "reactions": {},
+      "id": 244409982
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@billvieux I detailed a bit more doing a custom widget in another thread: https://github.com/algolia/instantsearch.js/issues/868#issuecomment-188206988.\n\nOnce you get the three methods, the helper and you are able to do a bit of JS/jQuery you should be good.\n\nAsk any other question in other issues about building custom widgets if you have.\n\nThanks!\n",
+      "date": 1472831358,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 244413147
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "@billvieux What solution did you end up with? I am currently facing the same problem.",
+      "date": 1509375880,
+      "reactions": {},
+      "id": 340472534
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2924381",
+        "id": 2924381,
+        "login": "billvieux",
+        "type": "User"
+      },
+      "body": "Not the cleanest, but I just added another link next to the refinement with a red 'x' and when clicked, it excludes that refinement.\r\n\r\nWhen creating the widget, I specify the item template as follows\r\n```\r\n    templates: {\r\n        item: '<label class=\"{{cssClasses.label}}\">' +\r\n        '<input type=\"checkbox\" class=\"{{cssClasses.checkbox}}\" value=\"{{value}}\" {{#isRefined}}checked{{/isRefined}} />{{value}} {{#helpers.formatExclusion}}{{value}}{{/helpers.formatExclusion}}' +\r\n        '<span class=\"{{cssClasses.count}}\">{{#helpers.formatNumber}}{{count}}{{/helpers.formatNumber}}</span></label>'\r\n      }\r\n```\r\n\r\nMy `formatExclusion` helper adds the link with a data attribute storing the name of the tag\r\n```\r\nsearch.templatesConfig.helpers.formatExclusion = function(text, render) {\r\n    return ' <a class=\"ais-refinement-list--exclude\" href=\"#\" data-tag=\"' + text + '\">x</a> '\r\n  };\r\n```\r\n\r\nWhen that link is clicked, I pull the data attribute and add a facet refinement and re-do the search.\r\n```\r\n  $(document).on('click','.ais-refinement-list--label a', function(e) {\r\n    search.helper.addFacetRefinement('_tags', '-' + $(e.target)[0].dataset.tag);\r\n    search.helper.search();\r\n  });\r\n```\r\n\r\nI also have a `currentRefinedValues` widget with a custom item template that can display the word NOT in front of excluded refinements.\r\n\r\nLooks like this:\r\n![image](https://user-images.githubusercontent.com/2924381/32189297-9df1dbc2-bd67-11e7-8dda-eb444daab619.png)\r\n",
+      "date": 1509389056,
+      "reactions": {},
+      "id": 340545243
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "@billvieux I tried doing what you're doing in codepen, but I think something changed in instantsearch v2 and clicking on label gets caught before your custom click listener, and thus it does not work :(",
+      "date": 1509389169,
+      "reactions": {},
+      "id": 340545793
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2924381",
+        "id": 2924381,
+        "login": "billvieux",
+        "type": "User"
+      },
+      "body": "My solution requires clicking directly on the red `x` to exclude. Clicking on the label just selects the label for inclusion. My scenario required that users be able to choose to include or exclude. I'm using v2.",
+      "date": 1509389317,
+      "reactions": {},
+      "id": 340546538
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "Yeah I was clicking on the 'x', it still didn't catch the click, not sure why. I basically have the same scenario as you do.",
+      "date": 1509389384,
+      "reactions": {},
+      "id": 340546830
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Can you open a new issue with the problems you have @xPaw ",
+      "date": 1509448221,
+      "reactions": {},
+      "id": 340730918
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "I decided to look at this again, and there's still no easy way of achieving this.\r\n\r\nCan you re-open this issue because I think `refinementList` should have a proper way of excluding items.",
+      "date": 1574765682,
+      "reactions": {},
+      "id": 558575702
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Hi @xPaw, this issue is very old, and I have lost the context. Do you want to prevent an item from being shown (if so, filter in transformItems), or it still to be shown, but not refine (map in transformItems where you remove the 'value' on the item)",
+      "date": 1574779865,
+      "reactions": {},
+      "id": 558664331
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "I want to exclude items from search results (refine with `-`)\r\n\r\nFor example, if you look on https://steamdb.info/sales/ and click 'Filter by user tags', you can see [+] and [-]. Right now `refinementList` acts only as a [+] when refining, and there's no way of excluding items from the search results.\r\n\r\nThe example above doesn't use Algolia, you can see the refinement widget here: https://steamdb.info/instantsearch/",
+      "date": 1574779937,
+      "reactions": {},
+      "id": 558664889
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "ah okay, exclusion in this way. You can create the custom UI with connectRefinementList, and call either `refine(value)` or `refine('-'+value)`\r\n\r\nAn example here does something similar, although _only_ excludes, not a mix https://codesandbox.io/s/4xvz9wmj00",
+      "date": 1574781447,
+      "reactions": {},
+      "id": 558677069
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "I think I can get it working with the example, yeah. As I understand it, `refine` toggles, but is there a way to disable/enable refiniment instead of just toggling based on current state?\r\n\r\nAlso, do you think it's worth investigating whether this feature should be added to instantsearch.js? I think it's an important filtering mechanism.",
+      "date": 1574783164,
+      "reactions": {},
+      "id": 558690031
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Can you open a fresh issue with the full use case you have? Old issues like this aren't really monitored. thanks!",
+      "date": 1574846635,
+      "reactions": {},
+      "id": 559002883
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/613331",
+        "id": 613331,
+        "login": "xPaw",
+        "type": "User"
+      },
+      "body": "> Can you open a fresh issue with the full use case you have?\r\n\r\nI think this issue explains the use case well, no reason to duplicate it. Can you simply reopen it?\r\n\r\nHere's another issue I ran into with my exclusions widget that I think would be possible to solve if implemented properly:\r\n\r\nIf you want to do `OR` searches, but make exclusions still work, they would have to be applied as `AND`. For example `-windows AND (macos OR linux)`.\r\n\r\nEDIT: Forgot I made a discussion for this: https://github.com/algolia/instantsearch.js/discussions/4754",
+      "date": 1643575605,
+      "reactions": {},
+      "id": 1025227376
+    }
+  ]
+}

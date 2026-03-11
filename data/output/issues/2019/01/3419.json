@@ -1,0 +1,47 @@
+{
+  "number": 3419,
+  "title": "\"instantsearch.connectors\" are not available from the ES build.",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/601261",
+    "id": 601261,
+    "login": "tnylea",
+    "type": "User"
+  },
+  "body": "<!--\r\n  Thanks for participating in this project! We will try to answer as soon as possible 🙏\r\n-->\r\n\r\n**Describe the bug 🐛**\r\nI'm trying to implement the AutoComplete functionality using the Vanilla JS InstantSearch. I'm using webpack and I'm getting the following error in my console:\r\n\r\n```\r\napp.js:36248 Uncaught ReferenceError: \"instantsearch.connectors\" are not available from the ES build.\r\n\r\nTo import the connectors:\r\n\r\nimport { connectSearchBox } from 'instantsearch.js/es/connectors'\r\n```\r\n\r\nI've already done as described:\r\n\r\n```\r\nimport { connectSearchBox } from 'instantsearch.js/es/connectors'\r\n```\r\n\r\nbut the error still exists.\r\n\r\nHere is my code:\r\n\r\n```\r\nimport algoliasearch from 'algoliasearch/lite';\r\nimport instantsearch from 'instantsearch.js/es'\r\nimport { searchBox, hits } from 'instantsearch.js/es/widgets';\r\nimport { connectAutocomplete } from 'instantsearch.js/es/connectors';\r\n\r\n\r\nconst search = instantsearch({\r\n  indexName: 'posts',\r\n  searchClient: algoliasearch(\r\n    'XH97EKBGNS',\r\n    'ffd2b688a4c9d620a2ee506cd4f340e4'\r\n  ),\r\n});\r\n\r\nsearch.start();\r\n\r\n\r\n// Helper for the render function\r\nconst renderIndexListItem = ({ label, hits }) => `\r\n  <li>\r\n    Index: ${label}\r\n    <ol>\r\n      ${hits\r\n        .map(\r\n          hit =>\r\n            `<li>${instantsearch.highlight({ attribute: 'name', hit })}</li>`\r\n        )\r\n        .join('')}\r\n    </ol>\r\n  </li>\r\n`;\r\n\r\n// Create the render function\r\nconst renderAutocomplete = (renderOptions, isFirstRender) => {\r\n  const { indices, currentRefinement, refine, widgetParams } = renderOptions;\r\n\r\n  if (isFirstRender) {\r\n    const input = document.createElement('input');\r\n    const ul = document.createElement('ul');\r\n\r\n    input.addEventListener('input', event => {\r\n      refine(event.currentTarget.value);\r\n    });\r\n\r\n    widgetParams.container.appendChild(input);\r\n    widgetParams.container.appendChild(ul);\r\n  }\r\n\r\n  widgetParams.container.querySelector('input').value = currentRefinement;\r\n  widgetParams.container.querySelector('ul').innerHTML = indices\r\n    .map(renderIndexListItem)\r\n    .join('');\r\n};\r\n\r\n// Create the custom widget\r\nconst customAutocomplete = instantsearch.connectors.connectAutocomplete(\r\n  renderAutocomplete\r\n);\r\n\r\n// Instantiate the custom widget\r\nsearch.addWidget(\r\n  customAutocomplete({\r\n    container: document.querySelector('#searchBox'),\r\n    indices: [\r\n      { label: 'Featured', value: 'bestbuy' },\r\n      { label: 'Price (desc)', value: 'instant_search_price_desc' },\r\n    ],\r\n  })\r\n);\r\n\r\n```\r\n\r\nI have copied and pasted the example from this page: https://www.algolia.com/doc/api-reference/widgets/autocomplete/js/ and I'm still getting that error\r\n\r\n**Environment:**\r\n - OS: Mac OS Mojave\r\n - Browser: Chrome\r\n - Version: Latest\r\n\r\n**Additional context**\r\nI would really appreciate any assistance on this. I've been digging around the docs and the github issues without any luck. Thanks 🙏\r\n",
+  "date": 1548265691,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/601261",
+        "id": 601261,
+        "login": "tnylea",
+        "type": "User"
+      },
+      "body": "And... I got it figured out 10 minutes after posting this.\r\n\r\nI needed to include the autocomplete import like so:\r\n\r\n```\r\nimport { connectAutocomplete } from 'instantsearch.js/es/connectors';\r\n```\r\n\r\nThen I needed to call the renderAutocomplete like so:\r\n\r\n```\r\nconst customAutocomplete = connectAutocomplete(\r\n  renderAutocomplete\r\n);\r\n```\r\n\r\nThe docs currently show to use it like this:\r\n\r\n```\r\nconst customAutocomplete = instantsearch.connectors.connectAutocomplete(\r\n  renderAutocomplete\r\n);\r\n```\r\n\r\nWhich was not working for me, so make sure to call `connectAutocomplete` by itself. Thought I would post my solution here in case anyone else ran into the same issue 👍 ",
+      "date": 1548266485,
+      "reactions": {
+        "❤️": 1,
+        "👍️": 13
+      },
+      "id": 456904373
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/20090030",
+        "id": 20090030,
+        "login": "brootle",
+        "type": "User"
+      },
+      "body": "this error still in docs, see https://www.algolia.com/doc/api-reference/widgets/configure/js/#connector-param-render-refine\r\n\r\nneed to import connectConfigure, this fix below worked for me\r\n\r\n`import { connectConfigure } from 'instantsearch.js/es/connectors';`\r\n\r\n`const customConfigure = connectConfigure(\r\n  renderConfigure,\r\n  () => {}\r\n);`",
+      "date": 1624574171,
+      "reactions": {},
+      "id": 867998502
+    }
+  ]
+}

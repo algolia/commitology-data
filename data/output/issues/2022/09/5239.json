@@ -1,0 +1,91 @@
+{
+  "number": 5239,
+  "title": "Cache for useInfiniteHits is not working correctly in certain situations",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/15219142",
+    "id": 15219142,
+    "login": "Sartonon",
+    "type": "User"
+  },
+  "body": "## 🐛 Bug description\r\n\r\n`useInfiniteHits` cache functionality breaks when hooks are used in a certain way for custom search UI components. With components from instantsearch library everything works fine.\r\n\r\nCache `read` callback is called multiple times and initially state doesn't include all the facets when coming back to search page and it doesn't match with what is in cache before `write` is called and cache resets.\r\n\r\n```javascript\r\n return cache && isEqual(cache.state, getStateWithoutPage(state)) ? cache.hits : null;\r\n```\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/infiniteHitsCache/sessionStorage.ts#L29\r\n\r\nExample includes custom cache where it is easy to see that `read` function is called multiple times and state is not up to date until later and `write` gets called before state gets matched from session storage:\r\n\r\n```javascript\r\nconst customCache = {\r\n  write: ({ hits, state }) => {\r\n    console.log(\"WRITE\");\r\n    sessionStorage.setItem(\r\n      KEY,\r\n      JSON.stringify({\r\n        state: getStateWithoutPage(state),\r\n        hits: hits\r\n      })\r\n    );\r\n  },\r\n  read: ({ state }) => {\r\n    console.log(state);\r\n    var cache = JSON.parse(sessionStorage.getItem(KEY));\r\n    return cache && dequal(state, getStateWithoutPage(state))\r\n      ? cache.hits\r\n      : null;\r\n  }\r\n};\r\n```\r\n\r\nConsole logs when coming back from product page\r\n\r\n<img width=\"993\" alt=\"Screenshot 2022-09-12 at 12 45 12\" src=\"https://user-images.githubusercontent.com/15219142/189624431-9830a0a4-7371-46fe-b1b3-f99402ee8b2c.png\">\r\n\r\nIn the logs you can see that disjunctiveFacets is empty array at first and it won't match with the one in cache. `write`gets called and cache basically resets.\r\n\r\n`<InstantSearchFilters />` can be uncommented to check working functionality\r\n\r\n```javascript\r\n <div>\r\n        <CustomInfiniteHits />\r\n        {/* <InfiniteHits hitComponent={Hit} cache={cache} /> */}\r\n      </div>\r\n      <div>\r\n        {/* Cache resets when custom components with hooks is used */}\r\n        <CustomFilters attributesToRender={attributesToRender} />\r\n        {/* Cache works correctly with ready made UI components */}\r\n        {/* <InstantSearchFilters /> */}\r\n </div>\r\n```\r\n\r\n## 🔍 Bug reproduction\r\n\r\n**Steps to reproduce the behavior:**\r\n\r\n1. Go to https://codesandbox.io/s/musing-cori-g9895q\r\n2. Click \"Show more\"\r\n3. Click product to go to product page\r\n4. Go back to search page\r\n5. Results should have 40 items but has only 20.\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/musing-cori-g9895q\r\n\r\n## 💭 Expected behavior\r\n\r\nWhen more products have been fetched with \"Show more\" button and user navigates to a product page and back, search results should still have all the previously fetched products visible.\r\n\r\n## Environment\r\n\r\n- React InstantSearch Hooks version: 6.32.1\r\n- React version:  18.2.0\r\n- Browser: Chrome 104.0.5112.79\r\n- OS: macOS\r\n",
+  "date": 1662977692,
+  "labels": [
+    {
+      "color": "1d76db",
+      "id": 4936474361,
+      "name": "Library: React InstantSearch ≥ 7"
+    }
+  ],
+  "state": {
+    "reason": null,
+    "value": "open"
+  },
+  "reactions": {
+    "👀": 5,
+    "👍️": 6
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2159694",
+        "id": 2159694,
+        "login": "felipe-muner",
+        "type": "User"
+      },
+      "body": "Hello,\r\n\r\nHave u fixed it? Im having some typescript issues...",
+      "date": 1670445923,
+      "reactions": {},
+      "id": 1363059527
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/11416255",
+        "id": 11416255,
+        "login": "rodrigo-arias",
+        "type": "User"
+      },
+      "body": "Experiencing the same with react-instantsearch 7.1.0",
+      "date": 1696524124,
+      "reactions": {},
+      "id": 1749289338
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1888761",
+        "id": 1888761,
+        "login": "timhonders",
+        "type": "User"
+      },
+      "body": "This is still a issue with react-instantsearch 7.7.0\r\n\r\nWhen using this with Nextjs with app router this causesthat the hits array first gets filled with the date fetched fromt the server, then de hits array gets cleared and filled again.\r\n\r\nThis can cause u see a empty list flashing\r\n\r\nWe worked around this filling out own hits array outside of useInfiniteHits and clearing it when needed, this is not ideal but it works.",
+      "date": 1709735536,
+      "reactions": {},
+      "id": 1981002731
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/149019",
+        "id": 149019,
+        "login": "keighl",
+        "type": "User"
+      },
+      "body": "I think the problem here is mainly with the store using the entire state object as the cache key. That object can change a lot, especially during initial page load. For example, `disjunctiveFacets` configured at aloglia are loaded async and change the state object. It's a guaranteed cache miss and broken back-button UX unless it's a super simple situation like https://instantsearchjs.netlify.app/stories/js/?path=/story/results-infinitehits--with-sessionstorage-cache-enabled. \r\n\r\nWhat I've done is implement a custom cache that keys by only the aspects of state that should cause a hit/miss. For my needs those are `index` `optionalFilters` and refinements. \r\n\r\n```ts\r\nimport { SearchParameters } from 'algoliasearch-helper';\r\nimport { getRefinements } from 'instantsearch.js/es/lib/utils';\r\n\r\ntype CacheState = {\r\n  hits: InfiniteHitsCachedHits<Product>;\r\n  key: string;\r\n};\r\n\r\nconst cache: InfiniteHitsCache = {\r\n  read({ state }) {\r\n    const searchParams = SearchParameters.make(state);\r\n    const refinements = getRefinements({}, searchParams);\r\n    const key = JSON.stringify([\r\n      state.index,\r\n      state.optionalFilters,\r\n      refinements,\r\n    ]);\r\n\r\n    const item = sessionStorage.getItem('_infiniteHits');\r\n\r\n    const hitsCache = item\r\n      ? (JSON.parse(item) as CacheState)\r\n      : null;\r\n\r\n    return key === hitsCache?.key\r\n      ? hitsCache.hits\r\n      : null;\r\n  },\r\n\r\n  write({ state, hits }) {\r\n    const searchParams = SearchParameters.make(state);\r\n    const refinements = getRefinements({}, searchParams);\r\n    const key = JSON.stringify([\r\n      state.index,\r\n      state.optionalFilters,\r\n      refinements,\r\n    ]);\r\n\r\n    sessionStorage.setItem(\r\n      '_infiniteHits',\r\n      JSON.stringify({\r\n        key,\r\n        hits,\r\n      })\r\n    );\r\n  },\r\n};",
+      "date": 1722272430,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 2256448262
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "If you only want to use the hits, you could also consider using `result.queryId` as the cache key, although that changes if the queries are different.",
+      "date": 1722322712,
+      "reactions": {},
+      "id": 2257609255
+    }
+  ]
+}

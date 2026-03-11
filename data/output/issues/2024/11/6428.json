@@ -1,0 +1,114 @@
+{
+  "number": 6428,
+  "title": "\"Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously later calls tries to update the component. Move this work to useEffect instead.\"",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/22443382",
+    "id": 22443382,
+    "login": "Ra0R",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\r\n\r\nWhen using InstantSearchNext `(\"react-instantsearch-nextjs\": \"0.3.17\"),`  and `▲ NextJs 14.2.17` switching from one page that has InstantSearchNext-Component to another will throw an error.\r\n\r\nError: `Warning: Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously later calls tries to update the component. Move this work to useEffect instead.\r\nHits@webpack-internal:///(app-pages-browser)/./node_modules/react-instantsearch/dist/es/widgets/Hits.js:31:20\r\ndiv\r\ndiv\r\nContent\r\nInstantSearch@webpack-internal:///(app-pages-browser)/./node_modules/react-instantsearch-core/dist/es/components/InstantSearch.js:17:18\r\nInstantSearchSSRProvider@webpack-internal:///(app-pages-browser)/./node_modules/react-instantsearch-core/dist/es/components/InstantSearchSSRProvider.js:23:18\r\nInstantSearchNext@webpack-internal:///(app-pages-browser)/./node_modules/react-instantsearch-nextjs/dist/es/InstantSearchNext.js:30:18\r\ndiv\r\ndiv\r\nSearch\r\nPage (Server)\r\nInnerLayoutRouter@webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:244:18\r\nRedirectErrorBoundary@webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9\r\nRedirectBoundary@webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:24\r\nNotFoundBoundary@webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:62\r\n....\r\n`\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n- Click link to open search\r\n- Open console\r\n- Enter something into the search box\r\n- Quickly switch to /page2\r\n\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/github/Ra0R/bug-repro/master\r\n\r\n### 💭 Expected behavior\r\n\r\nShould not throw an error. Probably there is some useEffect firing that tries to update the component before mounting.\r\n\r\n### Package version\r\n\r\n \"react-instantsearch\": \"^7.13.7\",    \"react-instantsearch-nextjs\": \"^0.3.17\"\r\n\r\n### Operating system\r\n\r\n_No response_\r\n\r\n### Browser\r\n\r\n_No response_\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1731250517,
+  "labels": [
+    {
+      "color": "5319E7",
+      "id": 4913597511,
+      "name": "triage"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 3
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/22443382",
+        "id": 22443382,
+        "login": "Ra0R",
+        "type": "User"
+      },
+      "body": "@Haroenv I think the problem lies within \"InitializePromise\"-Component. Somehow when navigating from page A to page B, the subscription to `waitForResults` is renewed and resolves on the old page (`Page A`) - which at that point is unmounted.\r\n\r\n",
+      "date": 1731321980,
+      "reactions": {},
+      "id": 2467855527
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/22443382",
+        "id": 22443382,
+        "login": "Ra0R",
+        "type": "User"
+      },
+      "body": "Any update on this? It is costing us money (since we had to do a workaround rendering InstantSearchNext on the server and InstantSearch on the client).",
+      "date": 1732730048,
+      "reactions": {},
+      "id": 2504480162
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9432699",
+        "id": 9432699,
+        "login": "louisfisch",
+        "type": "User"
+      },
+      "body": "I ran into the same issue using [`react-instantsearch-nextjs@0.3.20`](https://github.com/algolia/instantsearch/releases/tag/react-instantsearch-nextjs%400.3.20) and it looks like it was coming from `reactStrictMode: false` in my `next.config.mjs` file. I cannot confirm though.",
+      "date": 1734020225,
+      "reactions": {},
+      "id": 2539408162
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/22443382",
+        "id": 22443382,
+        "login": "Ra0R",
+        "type": "User"
+      },
+      "body": "This also happens in production builds for me, where strict mode is disabled.",
+      "date": 1734284698,
+      "reactions": {},
+      "id": 2543972414
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/14860360",
+        "id": 14860360,
+        "login": "DusanDragulaGR",
+        "type": "User"
+      },
+      "body": "@Ra0R I have the same issue. I thought the problem was in my implementation of custom widgets with hooks (Next.js App Router application + custom routing), but after a whole day of reworking, it still happens sometimes. But it happens also when I'm navigating faster between page with instant search instance and page without (simple page).",
+      "date": 1737743974,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 2613161935
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/22443382",
+        "id": 22443382,
+        "login": "Ra0R",
+        "type": "User"
+      },
+      "body": "@DusanDragulaGR @louisfisch  Did you find a workaround? \nOr is there any update on the issue? @Haroenv \n\nWe ended up doing this:\n```typescript\n<div suppressHydrationWarning={true}>\n\t{!isClient && (\n\t\t<InstantSearchNext\n\t\t\tsearchClient={searchClient}\n\t\t\tindexName={index}>\n\t\t</InstantSearchNext>\n\t)}\n\n\n\t{isClient && (\n\t\t<InstantSearch\n\t\t\tsearchClient={searchClient}\n\t\t\tindexName={index}\n\t\t\t}>\n\t\t\t{Children}\n\t\t</InstantSearch>\n\t)}\n</div>\n```\n\nBut this solution has the drawback that the index is hit twice. Additionally, the CLS (cumulativ layout shift) is increased.",
+      "date": 1740414213,
+      "reactions": {},
+      "id": 2678991430
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/22443382",
+        "id": 22443382,
+        "login": "Ra0R",
+        "type": "User"
+      },
+      "body": "Seems to be fixed with the latest version of react-instantsearch-nextjs",
+      "date": 1748931576,
+      "reactions": {},
+      "id": 2933647587
+    }
+  ]
+}

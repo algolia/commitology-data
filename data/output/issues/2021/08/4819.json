@@ -1,0 +1,114 @@
+{
+  "number": 4819,
+  "title": "Hits widget transformItems is called twice, receives already-transformed items",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/4944185",
+    "id": 4944185,
+    "login": "QuakeMatt",
+    "type": "User"
+  },
+  "body": "## 🐛 Bug description\r\n\r\nIt appears that the [transformItems](https://www.algolia.com/doc/api-reference/widgets/hits/js/#widget-param-transformitems) function of the hits widget is being called twice for a single search invocation, and is receiving the already-transformed items on the second run.\r\n\r\n## 🔍 Bug reproduction\r\n\r\n**Steps to reproduce the behavior:**\r\n\r\n1. Add a `transformItems` callback to the hits widget that returns transformed items.\r\n2. Add a `console.log` notification somewhere inside the transformation function.\r\n3. Reload the page and look for notifications in the console.\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/fervent-frost-bbzb5?file=/src/app.js\r\nhttps://codesandbox.io/s/stupefied-frog-c2krg?file=/src/instantsearch.ts\r\n\r\nIncluding two examples here, one based on `create-instantsearch-app` and another based on the instantsearch sandbox from the main documentation. The latter already included a `transformItems` call, so required fewer additions on my part.\r\n\r\n## 💭 Expected behavior\r\n\r\n`transformItems` is called only once for a single search invocation, and is never passed already-transformed items.\r\n\r\n## Environment\r\n\r\n- OS: Windows\r\n- Browser: Firefox, Edge, Chrome\r\n- Version: 4.25.2\r\n\r\n## Additional context\r\n\r\nI've run into this bug while upgrading from an older 4.3.1 install to the latest 4.25.2 release. However, experimenting via codesandbox.io reveals that the bug was likely introduced in the 4.9 branch, as 4.9.2 is the earliest release I tested that allowed me to replicate it.\r\n\r\nIt particularly affects us because our transformed items cannot be safely transformed a second time, leading to an unexpected runtime error rather than it silently continuing.\r\n\r\nPossibly related to [this issue](https://github.com/algolia/vue-instantsearch/issues/707) in the vue-instantsearch repo? ",
+  "date": 1627914092,
+  "labels": [
+    {
+      "color": "d93f0b",
+      "id": 238751632,
+      "name": "Type: Bug"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2982512",
+        "id": 2982512,
+        "login": "tkrugg",
+        "type": "User"
+      },
+      "body": "Hi, thanks for reaching out. \r\nThis is a behaviour we are aware of. It was indeed introduced in https://github.com/algolia/instantsearch.js/pull/4525/.\r\nIt's related to the fact we call twice in the render phase: once in [getRenderState](https://github.com/algolia/instantsearch.js/blob/21b6c53d4b1a3f3dd3a2375a5cfe0a31bef6ded6/src/connectors/hits/connectHits.ts#L118) to compute the `hits` commited to the state, and another in [render](https://github.com/algolia/instantsearch.js/blob/21b6c53d4b1a3f3dd3a2375a5cfe0a31bef6ded6/src/connectors/hits/connectHits.ts#L106). This brings some consistency in the way we handle the state in various connectors.\r\n\r\n@algolia/instantsearch-for-websites I think a lot of users expect transformItems to apply only to the widget/connector they were defined on, so I'm wondering is we can make an exception on `transformItems` to have them computed only when executing `render`?\r\n",
+      "date": 1627918058,
+      "reactions": {},
+      "id": 891118714
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4944185",
+        "id": 4944185,
+        "login": "QuakeMatt",
+        "type": "User"
+      },
+      "body": "Ah, apologies, I did have a look through the issues, but couldn't find anything that seemed to match.\r\n\r\nFor my use-case the doubling up of the transformation is the bigger issue. If it turns out it's necessary for the transformer to be called twice, would it be feasible for it to be passed the original, un-transformed hits array in both instances?",
+      "date": 1627923013,
+      "reactions": {},
+      "id": 891175762
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2982512",
+        "id": 2982512,
+        "login": "tkrugg",
+        "type": "User"
+      },
+      "body": "Yes that would be a sensible behaviour, I'd need some time to look at the implications this change would have. \r\nIn the meantime a workaround I can suggest one of the following:\r\n- use a memoization mechanism, try picking one using an LRU cache of size 1 so you don't unecessarily store all the results,\r\n- use the connector's API:\r\n\r\n```js\r\n// instead of \r\nconst Hits = instantsearch.connectors.hits({\r\n     contrainer: \"#hits\",\r\n     transformItems: hits => myTransform(hits)\r\n})\r\n\r\n\r\n// do this\r\n\r\nconst Hits = instantsearch.connectors.connectHits((renderOptions, isFirstRender) => {\r\n  const { hits } = renderOptions;\r\n\r\n  const _hits = myTransform(hits);\r\n\r\n  document.querySelector('#hits').innerHTML = `\r\n    <ul>\r\n      ${hits\r\n        .map(\r\n          item =>\r\n            `<li>\r\n              ${instantsearch.highlight({ attribute: 'name', hit: item })}\r\n            </li>`\r\n        )\r\n        .join('')}\r\n    </ul>\r\n  `;\r\n});\r\n```\r\nsee our docs for more examples: https://www.algolia.com/doc/api-reference/widgets/hits/js/#connector-param-render-hits\r\n",
+      "date": 1627927579,
+      "reactions": {},
+      "id": 891226090
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Yes, it would be interesting to hear why there's a problem if your transformItems gets called multiple times. Which transformation do you do in it?",
+      "date": 1627975395,
+      "reactions": {},
+      "id": 891603347
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4944185",
+        "id": 4944185,
+        "login": "QuakeMatt",
+        "type": "User"
+      },
+      "body": "> In the meantime a workaround I can suggest one of the following\r\n\r\nThanks, I'll take a look.\r\n\r\n> Yes, it would be interesting to hear why there's a problem if your transformItems gets called multiple times. Which transformation do you do in it?\r\n\r\nIn our case it's a product object that gets transformed into a more view-friendly format, including image path concatenation and a price conversion into the local currency. Here's a simplfied example:\r\n\r\n```javascript\r\nfunction transformItem(product) {\r\n    return {\r\n        name: product.name,\r\n        image: THUMBNAIL_PATH + product.image,\r\n        price: toLocalCurrency(product.basePrice.gross), // e.g. 12.5 > \"€13,73\"\r\n    };\r\n}\r\n```\r\n\r\nWhen the second transformation call is made, it's passed the already-transformed items and raises an error because the `basePrice` property doesn't exist in the new output. I could technically add it to avoid the hard error, but that'll still lead to problems with e.g. the image path being doubled up.",
+      "date": 1627979932,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 891653832
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I see how that's problematic, for the time being I can only think of in transformItems *adding* new keys you plan to display instead of actually changing existing values.\r\n\r\nNot sure yet how, but I think we probably should avoid this as it could be considered a bug. I think it happens because we set the result of transformItems to `searchResults`, for mostly legacy reasons (not escaping multiple times)",
+      "date": 1627981733,
+      "reactions": {},
+      "id": 891674927
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4944185",
+        "id": 4944185,
+        "login": "QuakeMatt",
+        "type": "User"
+      },
+      "body": "> I see how that's problematic, for the time being I can only think of in transformItems adding new keys you plan to display instead of actually changing existing values.\r\n\r\nNo worries - I've got a few different workarounds that I can try, now that I have a better understanding of what's going on.\r\n\r\nThanks for all your help!",
+      "date": 1627991656,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 891784693
+    }
+  ]
+}

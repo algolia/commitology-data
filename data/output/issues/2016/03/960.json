@@ -1,0 +1,50 @@
+{
+  "number": 960,
+  "title": "Setting custom/non search parameters url attributes while refining the search",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/123822",
+    "id": 123822,
+    "login": "vvo",
+    "type": "User"
+  },
+  "body": "I have a use case where I want to:\n\n``` js\nsearch.addWidget({\n  container: document.querySelector('#custom-widget'),\n  render: function(options) {\n    var link = document.createElement('a');\n    link.innerText = 'test';\n    link.addEventListener('click', function(e) {\n      e.preventDefault();\n      history.pushState(null, '', location.search + '&isCustom=true&test_custom=false');\n      options.helper.toggleRefine('brand', 'Samsung');\n      options.helper.search();\n    });\n    this.container.innerHTML = '';\n    this.container.appendChild(link);\n  }\n});\n```\n\nSo basically, it's a simple link, that when clicked, will refine the search while setting url custom attributes.\n\nIt works when clicking but if I click on back button then `&isCustom=true&test_custom=false` will still be in the url while they should not be here. I believe it's not really a bug, just the way things are working right now.\n\nDo we need a higher level API to be able to update the current url state or am I missing something?\n\n@bobylito Could you help me on this?\n",
+  "date": 1459267088,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 238751637,
+      "name": "Type: Needs Investigation"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "It looks like bug to me. The URL is stored in the browser history. If at a previous step we didn't have the custom parameters, well they should not stay while using back. Do you have the same behavior across browsers? Maybe this could a good use case for a selenium test case :)\n",
+      "date": 1459315806,
+      "reactions": {},
+      "id": 203255019
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Ok it's only a matter of how do we update the url, here's the same widget with code fixed:\n\n``` js\nsearch.addWidget({\n  container: document.querySelector('#custom-widget'),\n  render: function(options) {\n    var link = document.createElement('a');\n    link.innerText = 'test';\n    link.addEventListener('click', function(e) {\n      e.preventDefault();\n      options.helper.toggleRefine('brand', 'Samsung');\n      history.replaceState(null, '', location.search + '&isCustom=true&test_custom=false');\n      options.helper.search();\n    });\n    this.container.innerHTML = '';\n    this.container.appendChild(link);\n  }\n});\n```\n\nSo basically, for anyone wondering, you need to do this to be able to add custom url attributes in the right way:\n\n``` js\n      options.helper.toggleRefine('brand', 'Samsung');\n      history.replaceState(null, '', location.search + '&isCustom=true&test_custom=false');\n      options.helper.search();\n```\n\nIn this particular order, using replaceState. Thanks @bobylito \n",
+      "date": 1459327861,
+      "reactions": {},
+      "id": 203327965
+    }
+  ]
+}

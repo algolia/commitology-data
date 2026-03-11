@@ -1,0 +1,74 @@
+{
+  "number": 3163,
+  "title": "Question on the page \"connectMenu\"",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/16866481",
+    "id": 16866481,
+    "login": "alishanster",
+    "type": "User"
+  },
+  "body": "Hi! I have a documentation issue on InstantSearch.js. I could not find what I was looking for on the page \"[connectMenu](https://community.algolia.com/instantsearch.js/v2/connectors/connectMenu.html)\".\r\n\r\n<!-- Describe what you're looking for here. -->\r\n\r\nHello! I am using Algolia search in my WordPress website, however apparently wp plugin doesnot support menuSelect widget, yet. So I tried to create connectMenu using example [here](https://community.algolia.com/instantsearch.js/v2/connectors/connectMenu.html#example). It worked perfectly, however I would like to add a select option that will clear current selected refine value, just what menuSelect does (something similar to 'see all' default option).  \r\nP.S. I also tried to create custom template and enqueue latest instantsearch.js files from cdn, yet menuSelect widget didnot work, not sure what could go wrong there. I disabled algolia front-end search in plugin settings. \r\nThank you.",
+  "date": 1538478023,
+  "labels": [
+    {
+      "color": "cccccc",
+      "id": 638956515,
+      "name": "Version: 1.x"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "On the Wordpress plugin, you'll first need to update to InstantSearch v2. It comes with InstantSearch v1 which doesn't have that feature",
+      "date": 1538487429,
+      "reactions": {},
+      "id": 426276370
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16866481",
+        "id": 16866481,
+        "login": "alishanster",
+        "type": "User"
+      },
+      "body": "Thanks for the reply, could you hint me how to update InstantSearch to v2? I did enqueue (include) latest instantsearch.js file from [cdn](https://community.algolia.com/instantsearch.js/v2/getting-started.html#from-a-cdn) in my functions file, and it does load (can be found in view source code of the page). \r\n",
+      "date": 1538540291,
+      "reactions": {},
+      "id": 426506735
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I'm not super familiar with how wordpress works, but changing the cdn to be v2, and changing the few things in the widgets is indeed what needs to be done. Can you give the code and error you're getting somehow?",
+      "date": 1538558641,
+      "reactions": {},
+      "id": 426569129
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16866481",
+        "id": 16866481,
+        "login": "alishanster",
+        "type": "User"
+      },
+      "body": "\r\nThis in footer: \r\n```html\r\n<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/instantsearch.js@2.10.2'></script>\r\n<script type=\"text/javascript\">\r\njQuery(function() {\r\n  if (jQuery(\"#algolia-search-box\").length > 0) {\r\n    if (\r\n      algolia.indices.searchable_posts === undefined &&\r\n      jQuery(\".admin-bar\").length > 0\r\n    ) {\r\n      alert(\r\n        \"It looks like you haven't indexed the searchable posts index. Please head to the Indexing page of the Algolia Search plugin and index it.\"\r\n      );\r\n    }\r\n\r\n    /* Instantiate instantsearch.js */\r\n    var search = instantsearch({\r\n      appId: algolia.application_id,\r\n      apiKey: algolia.search_api_key,\r\n      indexName: algolia.indices.searchable_posts.name,\r\n      urlSync: {\r\n        mapping: { q: \"s\" },\r\n        trackedParameters: [\"query\"]\r\n      },\r\n      searchParameters: {\r\n        facetingAfterDistinct: true,\r\n        highlightPreTag: \"__ais-highlight__\",\r\n        highlightPostTag: \"__/ais-highlight__\",\r\n        filters: 'wpml.locale:\"' + current_locale + '\"'\r\n      }\r\n    });\r\n\r\n    /* Search box widget */\r\n    search.addWidget(\r\n      instantsearch.widgets.searchBox({\r\n        container: \"#algolia-search-box\",\r\n        placeholder: \"Search for...\",\r\n        wrapInput: false,\r\n        poweredBy: algolia.powered_by_enabled\r\n      })\r\n    );\r\n\r\n    /* Stats widget */\r\n    search.addWidget(\r\n      instantsearch.widgets.stats({\r\n        container: \"#algolia-stats\"\r\n      })\r\n    );\r\n\r\n    /* Hits widget */\r\n    search.addWidget(\r\n      instantsearch.widgets.hits({\r\n        container: \"#algolia-hits\",\r\n        hitsPerPage: 9,\r\n        templates: {\r\n          empty: 'No results were found for \"<strong>{{query}}</strong>\".',\r\n          item: wp.template(\"instantsearch-hit\")\r\n        },\r\n        transformData: {\r\n          item: function(hit) {\r\n            function replace_highlights_recursive(item) {\r\n              if (item instanceof Object && item.hasOwnProperty(\"value\")) {\r\n                item.value = _.escape(item.value);\r\n                item.value = item.value\r\n                  .replace(/__ais-highlight__/g, \"<em>\")\r\n                  .replace(/__\\/ais-highlight__/g, \"</em>\");\r\n              } else {\r\n                for (var key in item) {\r\n                  item[key] = replace_highlights_recursive(item[key]);\r\n                }\r\n              }\r\n              return item;\r\n            }\r\n\r\n            hit._highlightResult = replace_highlights_recursive(\r\n              hit._highlightResult\r\n            );\r\n            hit._snippetResult = replace_highlights_recursive(\r\n              hit._snippetResult\r\n            );\r\n\r\n            return hit;\r\n          }\r\n        }\r\n      })\r\n    );\r\n\r\n    /* Pagination widget */\r\n    search.addWidget(\r\n      instantsearch.widgets.pagination({\r\n        container: \"#algolia-pagination\"\r\n      })\r\n    );\r\n\r\n    search.addWidget(\r\n      instantsearch.widgets.menuSelect({\r\n        container: \"#aligolia-condition\",\r\n        attributeName: \"taxonomies.condition\",\r\n        limit: 10,\r\n        templates: {\r\n          header: '<h3 class=\"widgettitle\">Condition</h3>'\r\n        }\r\n      })\r\n    );\r\n  }\r\n});\r\n</script>\r\n```\r\np.s. as a result I only have a h3 tag with Condition title, but no selec menu, no errors in console",
+      "date": 1538562733,
+      "reactions": {},
+      "id": 426587800
+    }
+  ]
+}

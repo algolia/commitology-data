@@ -1,0 +1,296 @@
+{
+  "number": 77,
+  "title": "Format numbers with delimiters",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/29529",
+    "id": 29529,
+    "login": "redox",
+    "type": "User"
+  },
+  "body": "Users in different languages will need to format the display of numbers (eg. `100000` displayed as `100,000`).\n\nWe should give them an easy way to do it in their templates.\n\nAPI proposal:\n- Define `en_EN` as the default language for the number formatting. Let users override it when instanciating `instantsearch` through the `numberLocale` option.\n- Define a `formatNumber` method that will be available both through `my_instantsearch_instance.utils.formatNumber` and inside Hogan templates through the `{{#formatNumber}}{{my_var}}{{/formatNumber}}` syntax that will format the number according to the current locale.\n## Examples\n\n``` javascript\nvar search = instantsearch('latency', '6be0576ff61c053d5f9a3225e2a90f76', 'instant_search', {\n  numberLocale: 'fr_FR'\n});\n\nsearch.addWidget(\n  instantsearch.widgets.stats({\n    container: '#stats',\n    template: function(options) {\n      return '<div>' + search.utils.formatNumber(options.nbHits) + ' results</div>';\n    }\n  })\n);\n\nsearch.addWidget(\n  instantsearch.widgets.stats({\n    container: '#stats2',\n    template: '<div>{{#formatNumber}}{{nbHits}}{{/formatNumber}} results</div>'\n  })\n);\n\n\n\n```\n",
+  "date": 1441780913,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/29529",
+        "id": 29529,
+        "login": "redox",
+        "type": "User"
+      },
+      "body": "The `numberWithDelimiter` use-case is the one I had in mind when I created the issue but it will be the same situation in a lot of use-cases. The real question is:\n- do we want to user to pre-process (adding attributes) the hit before rendering it?\n- or do we want to have a way to \"filter/reformat\" the values at rendering time? (like [Angular.js does](https://docs.angularjs.org/guide/filter) for instance)\n",
+      "date": 1441786572,
+      "reactions": {},
+      "id": 138820541
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "So if every user is expecting to receive count etc as formatted numbers.\n\nProposal:\n- provide a way to pass the user language in which we want to translate the numbers (numberLocale: 'fr_FR'. Default to 'en_EN'. See [Number.toLocaleString()](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Number/toLocaleString). It would be a global option.\n- parse all received data to find numeric values and format them and automatically add `$attribute_number_formatted` to it\n- add an option to disable the autoFormatting of numbers. Because maybe already done by the user in his own data, maybe adding attributes is not ok with him.. Etc\n\nDoing all this work and adding attributes in a deep way (remembering the parent) should be fun.\n\nWe can try this in the instantsearch.js and if it fits move it to the helper where it should belongs I guess (everything auto formatting data seems to fit in the helper).\n",
+      "date": 1441786851,
+      "reactions": {},
+      "id": 138821834
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Adding `_formatted` items to the hits seems intrusive. As a user, I would not like my data being modified without me asking for it. I'd rather go the Hogan formatting way, but with a grain of what you suggest.\n\nProposal:\n- Define the current language as `en_EN`, but let the user override it as a `numberLocale` in `instantsearch.js`.\n- Define a Hogan function (`formatNumber`) available in all Hogan templates (so users can write `{{#formatNumber}}{{count}}{{/formatNumber}}`.\n- If a user specify its template as a function returning a string, we always assume the string is Hogan-compatible and render it through Hogan\n",
+      "date": 1441790565,
+      "reactions": {},
+      "id": 138851980
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> Adding _formatted items to the hits seems intrusive. As a user, I would not like my data being modified without me asking for it\n\nYes, so if done like this it should be deactivated by default\n\n> Define the current language as en_EN, but let the user override it as a numberLocale in instantsearch.js.\n> Define a Hogan function (formatNumber) available in all Hogan templates (so users can write {{#formatNumber}}{{count}}{{/formatNumber}}.\n\nExcactly what I wanted to add here. :100: for this proposal!\n\n> If a user specify its template as a function returning a string, we always assume the string is Hogan-compatible and render it through Hogan\n\nWhen providing a function we do not render as hogan. Template as function is the way to provide our users \"do you have another templating engine? use it!\".\n\nWe can still expose `search.utils.formatNumber` (search here being the instantsearch instance created).\n\nSo that he can reuse it.\n\n@pixelastic Can you udpate the issue + API proposal and do the PR? Looks cool\n",
+      "date": 1441874577,
+      "reactions": {},
+      "id": 139169301
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Do you think to auto formatting of numeric values through the `_formatted`-prefixed keys is still usefull if we expose the `formatNumber` method in all available templates?\n",
+      "date": 1441876566,
+      "reactions": {},
+      "id": 139178541
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> Do you think to auto formatting of numeric values through the _formatted-prefixed keys is still usefull if we expose the formatNumber method in all available templates?\n\nNo we only need to do exactly what you proposed (BUT the \"function return string is hogan\" because function as template should not be treated as hogan).\n",
+      "date": 1441876957,
+      "reactions": {},
+      "id": 139180120
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "To clarify:\n- Define the current language as en_EN, but let the user override it as a numberLocale in instantsearch.js.\n- Define a Hogan function (formatNumber) available in all Hogan templates (so users can write {{#formatNumber}}{{count}}{{/formatNumber}}.\n- expose formatNumber in the instantsearch instance (maybe under the .utils namespace) so that people can use this pre-programmed function with any other templating mode\n",
+      "date": 1441877041,
+      "reactions": {},
+      "id": 139180964
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "I updated the first comment (by @redox) already. I'll take this PR soon.\n",
+      "date": 1441959951,
+      "reactions": {},
+      "id": 139483152
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "With your proposal @pixelastic (see top description) It looks like we may need to do the full named parameters instantiation right away because with:\n\n``` js\nvar search = instantsearch('latency', '6be0576ff61c053d5f9a3225e2a90f76', 'instant_search', {\n  numberLocale: 'fr_FR'\n});\n```\n\nYou need to remember the order of 4 arguments.\nAnd also the current last argument is default searchParameters, which does not understand `numberLocale` so we might better right now do:\n\n``` js\nvar search = instantsearch(\n  appId: 'latency',\n  apiKey: '6be0576ff61c053d5f9a3225e2a90f76',\n  indexName: 'instant_search',\n  numberLocale: 'fr_FR'\n  defaultSearchParameters: {\n    hitsPerPage: 100\n  }\n);\n```\n\nThis looks to me more precise and less error prone. What do you think @algolia/javascript?\n\nThat's another issue but need to tackle it before we go public, if you agree Ill open the corresponding issue.\n",
+      "date": 1441962907,
+      "reactions": {},
+      "id": 139495739
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Oh yes, I forgot about the `searchParameters`. I'm ok for the option attribute when instanciating.\n",
+      "date": 1441979613,
+      "reactions": {},
+      "id": 139553244
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Where did you actually see that if was possible to define `{{#formatNumber}}{{count}}{{/formatNumber}}` in Hogan? The best I can do is defining a method that will have (literal) `{{count}}` as an input, not the real (`10000`) value.\n\nI'll keep trying.\n",
+      "date": 1442247136,
+      "reactions": {},
+      "id": 140128151
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Strange mustache.js readme does state this example works https://github.com/janl/mustache.js/blob/master/README.md#functions\n",
+      "date": 1442256580,
+      "reactions": {},
+      "id": 140172960
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Yep, that's what I tried. But I don't have the second argument (`render`) and `text` was actually a literal `{{name}}` string, not `Tater`. I only tested quickly, though, so I might have overlooked something.\n",
+      "date": 1442257220,
+      "reactions": {},
+      "id": 140176516
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Maybe its a hogan issue, will see\n",
+      "date": 1442257449,
+      "reactions": {},
+      "id": 140177589
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/29529",
+        "id": 29529,
+        "login": "redox",
+        "type": "User"
+      },
+      "body": "@Jerskouille can you help, I know you're used to do that.\n",
+      "date": 1442259870,
+      "reactions": {},
+      "id": 140186757
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Oh yeah https://github.com/twitter/hogan.js/issues/222 with comments from @Jerskouille :)\n",
+      "date": 1442262384,
+      "reactions": {},
+      "id": 140196275
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska",
+        "type": "User"
+      },
+      "body": "Yes, lambdas in Hogan have a big mismatch with the docs.\nI gave the basic explanation on how I \"fixed\" it in the issue linked by @vvo , but here is how I used that in Shopify : https://github.com/algolia/algolia-shopify-hook/blob/master/public/shopify/assets/javascripts/algolia_helpers.js.liquid#L159-L187 .\n\nBy the way, to answer this:\n\n> As a user, I would not like my data being modified without me asking for it.\n\nI believe it kind of is the same thing with the method, since I'm not aware of any technique to inject the method without adding it at the root of the hit object.\nWith Shopify, I ended up with a `helpers` attribute that I send with all the rendering calls.\nSo in the end, you'll probably end up reserving keywords at the root of the hit object, so going with `_XXX` doesn't seems stupid to me.\nOr, a little bit more verbose inside the templates, but respecting the rule\n\n``` js\n{\n  hit: hit,\n  helpers: {\n    formatNumber: function (text, render) { ... }\n  }\n}\n```\n",
+      "date": 1442302243,
+      "reactions": {},
+      "id": 140304892
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Thanks for the debug!\n\nSo in regard with all this new info, this is what I suggest:\n- `_formatNumber` available as a method in all Hogan templates (with the appropriate patch to Hogan templates to make that work). This way we can write `{{#_formatNumber}}{{nbHits}}{{/_formatNumber}}`\n- `data._formatNumber` available when defining a `template: function(data) { }`.\n\nI used the leading `_` to denote that this is one of the properties we added. I could have wrapped them in a `helpers` object like suggested, but this made templates very verbose (`{{#helpers.formatNumber}}{{nbHits}}{{/helpers.formatNumber}}`.\n\nI'll now need to pass this helper method all the way from the instantsearch instance to the render method.\n",
+      "date": 1442308488,
+      "reactions": {},
+      "id": 140333582
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> This way, for people doing custom templates, we do not extend the data attribute.\n\nYou're right, people already have access to the instance here, no need to add the method.\n",
+      "date": 1442308653,
+      "reactions": {},
+      "id": 140334037
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "But, this brings another point. I'll have to edit the current `_render` method of `instantsearch` to pass the relevant info to the render. \n\nI could pass the `numberLocale` config and then manage to call `utils.formatNumber` with this `numberLocale`. Or I could pass along the `formatNumber` method `bind`ed with the correct locale from the start. Or directly pass the whole `instantsearch` instance all the way to the render.\n\nThe last one one feels a bit overkill, though.\n\nIn any case, this means editing the `_render` method. I don't feel like adding a fourth attribute to `widget.render` so maybe we should change it as named parameters also. This would require updating all the widgets, so I'd rather ask what you think first.\n\n``` javascript\n// Current method\n _render(helper, results, state) {\n    forEach(this.widgets, function(widget) {\n      if (widget.render) {\n        widget.render(results, state, helper);\n      }\n    });\n  }\n\n// Suggested change\n _render(helper, results, state) {\n   var instansearch = this;\n   // or var numberLocale = this.numberLocale (en-EN)\n   // or var formatNumber = this.formatNumber (method correctly bound to en-EN)\n   // or var templateHelpers = this.templateHelpers (list of template methods, correctly bound)\n    forEach(this.widgets, function(widget) {\n      if (widget.render) {\n        widget.render({\n          instantsearch: instantsearch,\n          // or numberLocale: numberLocal\n          // or formatNumber: formatNumber\n          // or templateHelpers: templateHelpers,\n          results: results,\n          state: state,\n          helper: helper\n        });\n      }\n    });\n  }\n```\n\nNote that if we pass the whole `instantsearch`, we do not need to pass `helper` as it is available through `instantsearch.helper`. But this feels like a god object to me. I'd go with passing the `templateHelpers` object (list of methods that can be used in templates, bound to the correct values for this instance -like `en-EN`-).\n",
+      "date": 1442309460,
+      "reactions": {},
+      "id": 140336521
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> // Suggested change\n>  _render(helper, results, state) {\n>    var instansearch = this;\n>    // or var numberLocale = this.numberLocale (en-EN)\n>    // or var formatNumber = this.formatNumber (method correctly bound to en-EN)\n>    // or var templateHelpers = this.templateHelpers (list of template methods, correctly bound)\n>     forEach(this.widgets, function(widget) {\n>       if (widget.render) {\n>         widget.render({\n>           instantsearch: instantsearch,\n>           // or numberLocale: numberLocal\n>           // or formatNumber: formatNumber\n>           // or templateHelpers: templateHelpers,\n>           results: results,\n>           state: state,\n>           helper: helper\n>         });\n>       }\n>     });\n>   }\n\nMaybe just\n\n``` js\n// Suggested change\n _render(helper, results, state) {\n    forEach(this.widgets, function(widget) {\n      if (widget.render) {\n        widget.render({\n          utils: this.utils,\n          results,\n          helper,\n          state\n        });\n      }\n    }, this);\n  }\n```\n",
+      "date": 1442310125,
+      "reactions": {},
+      "id": 140339142
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "this was done and merged\n",
+      "date": 1442499852,
+      "reactions": {},
+      "id": 141102724
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "https://github.com/algolia/instantsearch.js#template-helpers\n",
+      "date": 1442499871,
+      "reactions": {},
+      "id": 141102887
+    }
+  ]
+}

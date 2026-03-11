@@ -1,0 +1,100 @@
+{
+  "number": 1587,
+  "title": "Add data attributes to sortBySelector",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/21199119",
+    "id": 21199119,
+    "login": "synonymous1984",
+    "type": "User"
+  },
+  "body": "Hi there,\r\n\r\nIs there a way to add additional **data** attributes to a **sortBySelector**? Would be nice to have this option cause this would allow you to use e.g. select2 for building the dropdown which allows to use the same styling if already implemented in a site.\r\n\r\nI´ve tried to make a workaround by **abusing the css param** but without success :)\r\n\r\nBest",
+  "date": 1479810738,
+  "labels": [
+    {
+      "color": "0052cc",
+      "id": 403422447,
+      "name": "Type: Question"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Hi @synonymous1984 thanks for this issue 👍 \r\n\r\nThe recommended way to integrate a third party library is to create a custom widget. A widget is just an object that will have up to 3 methods, like that:\r\n\r\n```js\r\nvar myCustomWidget = {\r\n  getConfiguration: function(currentSearchParameters) {},\r\n  init: function(opts) {},\r\n  render: function(opts) {}\r\n}\r\n```\r\n\r\nWhen integrating a library like select2, you are like to only need to implement the init. This method is called before the first search. It receives in the opts object the helper that will let you modify the search parameters:\r\n\r\n```js\r\n  {\r\n    init: function(opts) {\r\n      var helper = opts.helper;\r\n      var input = $('#my-searchbox');\r\n      input.click(function() { helper.setQuery(input.value).search(); });\r\n    }\r\n  }\r\n```\r\n\r\nWe have more resources about custom widgets [on the website](https://community.algolia.com/instantsearch.js/documentation/#custom-widgets). Also we have a dedicated [documentation](https://community.algolia.com/algoliasearch-helper-js/) if you want to dig in the helper with [examples](https://community.algolia.com/algoliasearch-helper-js/examples.html).\r\n\r\nLet me know if you have other questions.",
+      "date": 1479819824,
+      "reactions": {},
+      "id": 262235099
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/21199119",
+        "id": 21199119,
+        "login": "synonymous1984",
+        "type": "User"
+      },
+      "body": "Hi bobylito,\r\n\r\nThanks for your respond. I we have a misunderstandig here :) All I want to do is simply add two data-attributes to the select element of the sort-by selector. \r\n\r\nIn my case this is a proprietary solution I´m using which dynamically adjusts the layout of the select box:\r\n\r\n```\r\n<select name=\"o\" class=\"sort--field action--field\" data-auto-submit=\"true\" data-class=\"sort--select\">\r\n<option value=\"1\" selected=\"selected\">Erscheinungsdatum</option>\r\n<option value=\"2\">Beliebtheit</option>\r\n<option value=\"3\">Niedrigster Preis</option>\r\n<option value=\"4\">Höchster Preis</option>\r\n<option value=\"5\">Artikelbezeichnung</option>\r\n</select>\r\n````\r\n\r\nYou can see the data-auto and data-class attributes here. The behaviour should stay as it is with the  sortBySelector.\r\n\r\nI´m working on an [(open source) Algolia plugin for Shopware](https://github.com/synonymous1984/SwAlgolia), which is a fast growing E-Commerce solution here in Europe. So any help would be welcome :)",
+      "date": 1479826468,
+      "reactions": {},
+      "id": 262261446
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "Hi @synonymous1984 right now the instantsearch V1 API is not made to allow completely revamping the DOM output of our widgets (controlling the DOM rendering of the widgets while binding events).\r\n\r\nThat's why you will have to create your own widget for that, for now.\r\n\r\nThe example given by @bobylito is the way to go. Here's an almost working example:\r\n\r\n```html\r\n<select name=\"o\" class=\"sort--field action--field\" data-auto-submit=\"true\" data-class=\"sort--select\">\r\n  <option value=\"an_index\" selected=\"selected\">Erscheinungsdatum</option>\r\n  <option value=\"some_other_index1\">Beliebtheit</option>\r\n  <option value=\"some_other_index2\">Niedrigster Preis</option>\r\n  <option value=\"some_other_index3\">Höchster Preis</option>\r\n  <option value=\"some_other_index4\">Artikelbezeichnung</option>\r\n</select>\r\n\r\n<script>\r\nvar myCustomSelect = {\r\n  init: function(opts) {\r\n    var helper = opts.helper;\r\n    document.querySelector('#hello').addEventListener('change', function(e) {\r\n      helper.setIndex(e.target.value).search(); // change the index, do a new search\r\n    })\r\n  }\r\n};\r\n\r\ninstantsearch.addWidget(myCustomSelect);\r\n</script>\r\n```",
+      "date": 1479826829,
+      "reactions": {},
+      "id": 262263184
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Not sure there is more to say here. Let's close this for now.",
+      "date": 1504623111,
+      "reactions": {},
+      "id": 327200578
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/314653",
+        "id": 314653,
+        "login": "chadokruse",
+        "type": "User"
+      },
+      "body": "Is the above solution (e.g. custom widget) still the recommended solution in v2 of Instantsearch to initialize third party plugins? \r\n\r\nFor most of the widgets we can now use the `templates` API in v2 to handle third party plugins. However, widgets like sortBySelector do not (yet?) have this feature.\r\n\r\nFor my use case I'm using Materialize which [uses a plugin](http://materializecss.com/forms.html#select-initialization) for styling `select` elements (among others).  ",
+      "date": 1508345011,
+      "reactions": {},
+      "id": 337653200
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "You can use the connector now [`connectSortBySelector`](https://community.algolia.com/instantsearch.js/v2/connectors/connectSortBySelector.html) as explained in that example @chadokruse ",
+      "date": 1508351966,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 337688329
+    }
+  ]
+}

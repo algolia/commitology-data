@@ -1,0 +1,107 @@
+{
+  "number": 2835,
+  "title": "RFC: InfiniteHits should load previous pages",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/393765",
+    "id": 393765,
+    "login": "bobylito",
+    "type": "User"
+  },
+  "body": "When reloading a page with urlSync and page > 0, the infinite hits doesn't load the previous hence it doesn't reproduce the exact same state. We decided to close https://github.com/algolia/instantsearch.js/issues/2750 but we've had other users asking for it.\r\n\r\n### Proposed API\r\n\r\n```diff\r\nconst widget = instantsearch.widgets.infiniteHits({ \r\n  container: string|HTMLElement, \r\n  templates: [InfiniteHitsTemplates], \r\n  showMoreLabel: [string], \r\n  transformData: [InfiniteHitsTransforms], \r\n  cssClasses: [InfiniteHitsCSSClasses], \r\n  escapeHits: [boolean],\r\n+  loadPreviousPagesOnReload: [boolean=false]\r\n}: InfiniteHitsWidgetOptions);\r\n```\r\n\r\n### Behaviour\r\n\r\nThe widget is not aware of the nature of the rendering. Therefore it should check at each rendering if the current page matches the cache of results. If it doesn't it should reload the missing pages. \r\nCool side effect of that, is that it could handle the changes of hits per page.\r\n\r\n### Raise your voice ;)\r\n\r\nBecause we might have a lot of pages,  we should probably add anchors, and go directly to the current page?\r\n\r\nThe name is long but explicit 🤔 \r\n\r\nPlease comment if you see a better name or you see any other issue.",
+  "date": 1522138519,
+  "labels": [
+    {
+      "color": "5319e7",
+      "id": 466232295,
+      "name": "Design: API"
+    },
+    {
+      "color": "e01167",
+      "id": 753506812,
+      "name": "Feedback"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 6
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "I prefer to have a button to load previous pages one by one rather than possibly breaking any InstantSearch site just by going to a very far a way page",
+      "date": 1522141018,
+      "reactions": {},
+      "id": 376448653
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "> I prefer to have a button to load previous pages one by one rather than possibly breaking any InstantSearch site just by going to a very far a way page\r\n\r\nThat's interesting. Where would the results of the previous page go?",
+      "date": 1522151745,
+      "reactions": {},
+      "id": 376497798
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "This is not completely a reusable example, but my idea is this: https://codesandbox.io/s/q7mp2zyonw (toggle the defaultPage prop in `<App />` to see the behaviour I mean)",
+      "date": 1522158327,
+      "reactions": {},
+      "id": 376530555
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Met with @sashaprok and she helped us define the problem and a plan\r\n\r\nThere is not one problem but 2: \r\n - When the user go to a product page and go back to the search\r\n - When you share your URL\r\n\r\nBased on that we have two proposals: \r\n - when the browser loads the URL, load n page of previous results before the current page and display a button on top to be able to go back on the first page \"There are xxx products, see all of them\" (you load page 7 and you display 2 pages before, the button resets to page 0)\r\n - when the browser loads the URL, load n page of previous results before the current page and display a button on top to load also the page before (you load a link with page 7 and you only display 1 page before, the button let the user load page 5)\r\n - the two above loading 0 page of previous results\r\n\r\nNext steps:\r\n - [ ] build PoC's\r\n - [ ] user testing\r\n - [ ] pick one",
+      "date": 1522161722,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 376550892
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret",
+        "type": "User"
+      },
+      "body": "For the second proposal, does that mean that if you're use case 1 (product page then go back), your navigator will put you at a place that will not be the one you were on previously (because the previous results are not displayed?)\r\n\r\nNot sure to get this: the two above without loading previous pages at all\r\n",
+      "date": 1522162411,
+      "reactions": {},
+      "id": 376555221
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/37104376",
+        "id": 37104376,
+        "login": "sashaprok",
+        "type": "User"
+      },
+      "body": "We're going to test both and see what works best.\n\nOn Tue, Mar 27, 2018 at 4:53 PM, Marie-Laure Thuret <\nnotifications@github.com> wrote:\n\n> For the second proposal, does that mean that if you're use case 1 (product\n> page then go back), your navigator will put you at a place that will not be\n> the one you were on previously (because the previous results are not\n> displayed?)\n>\n> Not sure to get this: the two above without loading previous pages at all\n>\n> —\n> You are receiving this because you were mentioned.\n> Reply to this email directly, view it on GitHub\n> <https://github.com/algolia/instantsearch.js/issues/2835#issuecomment-376555221>,\n> or mute the thread\n> <https://github.com/notifications/unsubscribe-auth/AjYq-PSAPtC01j8NVM9i4PhfFRvu6qFTks5tilJtgaJpZM4S8ehc>\n> .\n>\n\n\n\n-- \n\n<https://www.algolia.com/>\n\nAlexandra (Sasha) Prokhorova\n\nProduct Designer\n\n07 69 75 89 79  <07+69+75+89+79>\n<https://www.linkedin.com/in/alexandraprokhorova>\n\n<https://www.algolia.com/>\n",
+      "date": 1522163109,
+      "reactions": {},
+      "id": 376559543
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "number": 6441,
+  "title": "getRefinements can receive null and system crashes when it does.",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/147554153",
+    "id": 147554153,
+    "login": "mmorris8",
+    "type": "User"
+  },
+  "body": "### 🐛 Current behavior\r\n\r\nFile: /node_modules/instantsearch.js/es/lib/utils/getRefinements\r\n\r\nFunction getRefinements...\r\n\r\n```javascript\r\nexport function getRefinements(results, state) {\r\n  var includesQuery = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;\r\n  var refinements = [];\r\n  var _state$facetsRefineme = state.facetsRefinements,\r\n```\r\n\r\nresults can be null. This function crashes when it is as there is no guard in the function for this possibility. Adding a guard and returning an empty array (as in, no refinements possible) the error goes away.\r\n\r\n```javascript\r\nexport function getRefinements(results, state) {\r\n  if (results === null) return []\r\n  var includesQuery = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;\r\n  var refinements = [];\r\n  var _state$facetsRefineme = state.facetsRefinements,\r\n```\r\n\r\n\r\n\r\n### 🔍 Steps to reproduce\r\n\r\nI have no clue how my code is causing a null object to be passed to this function. I just know that it is happening and a straightforward hack stops the nonsense.\r\n\r\n### Live reproduction\r\n\r\nNo sandbox should be necessary - and I honestly have no clue on how to reproduce the bug in a simplified example.\r\n\r\n### 💭 Expected behavior\r\n\r\nThrowing an unguarded error is a bug.  The API should either do the above to recover, or throw a detailed error explaining what I can do in my code to prevent a null object from getting passed into this function.\r\n\r\n### Package version\r\n\r\ninstantsearch 4.75.4\r\n\r\n### Operating system\r\n\r\nOSX Sequoia\r\n\r\n### Browser\r\n\r\nEdge Latest\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
+  "date": 1732018885,
+  "labels": [
+    {
+      "color": "5319E7",
+      "id": 4913597511,
+      "name": "triage"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Thanks for catching this, I believe the case you're ending up may be when you're having a widget that reads results (current refinements, or clear refinements probably in this case) in a root index without index name passed. The error is confusing so I've opened a PR to guard for that case and ensure that we can't have other cases of this behaviour",
+      "date": 1732021610,
+      "reactions": {},
+      "id": 2485667420
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/147554153",
+        "id": 147554153,
+        "login": "mmorris8",
+        "type": "User"
+      },
+      "body": "Hmm. I'm using a tabbed multi-index search were the query is always visible, but it isn't associated to any of the child indexes. So I'll guess that's the source point of the error.  The indexes being searched are somewhat unrelated so I didn't set a master indexName on the InstantSearch object itself, only specifying them on the children.  I'll go ahead and set one and see if the error goes away and if the presence of the keyword doesn't break anything.\r\n\r\nMy pattern is therefore something like this\r\n```html\r\n<InstantSearch>/*no indexName specified here */\r\n  <SearchMast /> /* The query box is inside this component */\r\n  <Index indexName=\"provider\">Provider searching - additional filters specific to providers here</Index>\r\n  <Index indexName=\"location\">Location searches - additional filters specific to locations here</Index>\r\n  <Index indexName=\"page\">Page searches</Index>\r\n</InstantSearch>\r\n```",
+      "date": 1732025207,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 2485817089
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Yes, this verifies that the pull request would fix your use case. What you can do to work around it as well is pass a dummy index name, and filter that out in the `search` method (and put a fake result in the response).\r\n\r\nIn SearchMast do you only have search box, or other widgets too?",
+      "date": 1732029111,
+      "reactions": {},
+      "id": 2485988621
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/147554153",
+        "id": 147554153,
+        "login": "mmorris8",
+        "type": "User"
+      },
+      "body": "I used to have the Location control up there but I've since moved it. The location control has useSortBy in it and allows the user to provide their location and order results in distance from them order.",
+      "date": 1732129237,
+      "reactions": {},
+      "id": 2489336061
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/147554153",
+        "id": 147554153,
+        "login": "mmorris8",
+        "type": "User"
+      },
+      "body": "By \"filter that out in the search method\" is this what you had in mind?\r\n\r\n```javascript\r\nconst algoliaClient = algoliasearch(appId, appKey);\r\n\r\nconst searchClient = {\r\n  ...algoliaClient,\r\n  search(requests) {\r\n    const filtered = requests.filter( request => request.indexName !== 'root')\r\n    const rootPresent = filtered.length === requests.length\r\n    const query = algoliaClient.search(filtered)\r\n    return query.then(response => {\r\n      if (rootPresent) {\r\n        response.results.push({\r\n          index: 'root',\r\n          hits: [],\r\n          nbHits: 0,\r\n          nbPages: 0,\r\n          page: 0,\r\n          processingTimeMS: 0\r\n        })\r\n      }\r\n      return response\r\n    })\r\n  }\r\n}\r\n\r\nexport default searchClient\r\n```\r\n\r\nCause it sorta works, but the child indexes aren't getting their data and all the renders fail. Still sorting out why.",
+      "date": 1732135096,
+      "reactions": {},
+      "id": 2489499521
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "the fake response needs to be in the same position as in the requests, so the unshift instead of push (and really to be more correct you'd want to splice, keep track of the index etc, but in most cases it will be first)",
+      "date": 1732180669,
+      "reactions": {},
+      "id": 2490474753
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/147554153",
+        "id": 147554153,
+        "login": "mmorris8",
+        "type": "User"
+      },
+      "body": "Since the response requests are in the same order other than the omission of the root a map is sufficient.\r\n\r\n```javascript\r\n        response.results = requests.map(request => \r\n          request.indexName === 'root' ? {\r\n            index: 'root',\r\n            hits: [],\r\n            nbHits: 0,\r\n            nbPages: 0,\r\n            page: 0,\r\n            processingTimeMS: 0\r\n          } : response.results.shift())\r\n      }\r\n```\r\n\r\nThank you for your time and support. This worked perfectly. I'm going to do a couple more refinements then start a discussion thread on this.",
+      "date": 1732197897,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 2491295070
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "Hadn't considered this approach yet, but yes it should work. The order is always the same.",
+      "date": 1732202851,
+      "reactions": {},
+      "id": 2491538822
+    }
+  ]
+}

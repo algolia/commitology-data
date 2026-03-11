@@ -1,0 +1,46 @@
+{
+  "number": 4006,
+  "title": "Error \"cannot read property query of undefined\" Angular-instant search V2.2.2 + Algoliasearch 3.30.0",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/43549638",
+    "id": 43549638,
+    "login": "ReaperTech",
+    "type": "User"
+  },
+  "body": "Trying to implement this sandbox [https://codesandbox.io/s/angular-instantsearch-app-4n4yv](url) to prevent search on an empty query using Angular Instant Search v2.2.2 + Algoliasearch 3.30.0 but I'm getting this error. The error occurs as soon as I open the component that uses the angular instant sarch. Please can you help?\r\n![image](https://user-images.githubusercontent.com/43549638/62226486-95cc6480-b3ba-11e9-8391-22159eda6493.png)\r\n![image](https://user-images.githubusercontent.com/43549638/62225383-9cf27300-b3b8-11e9-9152-0e396b0986d7.png)\r\n![image](https://user-images.githubusercontent.com/43549638/62225403-a8459e80-b3b8-11e9-83c0-4584db8e36ec.png)\r\n\r\n\r\n**Environment:**\r\n - OS: W10\r\n - Browser chrome 75.0\r\n\r\n\r\n\r\n",
+  "date": 1564587172,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      },
+      "body": "_I answered by email but also answering here for visibility._\r\n​\r\n​Mocking the request when there is no query should work.\r\n\r\n```ts\r\nconst algoliaClient = algoliasearch(\r\n  \"latency\",\r\n  \"6be0576ff61c053d5f9a3225e2a90f76\"\r\n);\r\n\r\nconst searchClient = {\r\n  search(requests) {\r\n    if (requests.every(({ params }) => !params.query)) {\r\n      return Promise.resolve({\r\n        results: requests.map(() => ({\r\n          hits: [],\r\n          nbHits: 0,\r\n          processingTimeMS: 0,\r\n        })),\r\n      });\r\n    }\r\n\r\n    return algoliaClient.search(requests);\r\n  },\r\n};\r\n```\r\n\r\nIf you only want the very first empty query to be skipped, you can add a boolean flag to ignore the check for the next searches.​",
+      "date": 1564588753,
+      "reactions": {
+        "👍️": 2
+      },
+      "id": 516912251
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/43549638",
+        "id": 43549638,
+        "login": "ReaperTech",
+        "type": "User"
+      },
+      "body": "**Solution**: My error is now gone thanks to this solution from Francois at Algolia who replied in an email thread:\r\n\r\n\"Mocking the request when there is no query\" \r\n\r\nHere is an example:\r\n```\r\nconst algoliaClient = algoliasearch(\r\n  \"latency\",\r\n  \"6be0576ff61c053d5f9a3225e2a90f76\"\r\n);\r\n\r\nconst searchClient = {\r\n  search(requests) {\r\n    if (requests.every(({ params }) => !params.query)) {\r\n      return Promise.resolve({\r\n        results: requests.map(() => ({\r\n          hits: [],\r\n          nbHits: 0,\r\n          processingTimeMS: 0,\r\n        })),\r\n      });\r\n    }\r\n\r\n    return algoliaClient.search(requests);\r\n  },\r\n};\r\n```\r\n",
+      "date": 1564589214,
+      "reactions": {},
+      "id": 516915441
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+{
+  "number": 1022,
+  "title": "Re-usable Select Field Widget",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/654547",
+    "id": 654547,
+    "login": "JonnyBR12",
+    "type": "User"
+  },
+  "body": "Hey all, been working through this post (https://github.com/algolia/instantsearch.js/issues/868) for a while now but not getting any where. Has anybody implemented a custom widget that creates a select field? My question is pretty much identical to this. \n\nI've read through both instantsearch docs and the helper docs but just not getting it. Can anyone guide me on creating this? The search form needs 6 select fields, each has 'all' a the top, must retain values so the user can then change options. \n\nAny help would be great!\n",
+  "date": 1463673119,
+  "labels": [],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {},
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Hello,\n\nIt has been a recurring demand recently. Our `menu` widget does not let users easily use a `select` to switch in between the different menu values, while this is an obvious UI choice.\n\nI'll have a go at building a custom widget that does what you're asking, and then we'll use it as a basis to discuss a potential API to include it into the core.\n\nI'll keep you informed.\n",
+      "date": 1463680589,
+      "reactions": {},
+      "id": 220402987
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "Great, thanks @pixelastic. That would be excellent!\n",
+      "date": 1463680902,
+      "reactions": {},
+      "id": 220404483
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "So I gave it a try and came up with the following:\n\n![2016-05-19_14h54m05](https://cloud.githubusercontent.com/assets/283419/15411342/1649d488-1dd4-11e6-9c89-33c436840ebb.gif)\n\nThis is a custom widget that does pretty much the same behavior than the `menu` widget, but with a different markup. I actually copy-pasted a lot of code from the original `menu` widget but changed the HTML and did with vanilla JS without React. It has less features than an official widgets (like no BEM CSS classes on the elements), but should be a good enough place to start.\n\nYou would call it like this:\n\n``` js\nsearch.addWidget(\n  instantsearch.widgets.customSelectorWidget({\n    container: '#custom-selector-widget',\n    attributeName: 'species',\n    limit: 10,\n    title: 'All'\n  })\n);\n```\n\nIt uses the same `container`, `attributeName` and `limit` options than the `menu`widget, but I also added the `title` one. This will be the name of the first value of the dropdown, used to reset it.\n\nAnd here is the complete, annotated, code of the widget. Note that I'm using a bit of ES6 syntax in here (for defining default options, fat arrow method definition, string interpolation, etc). If this is an issue for you, I can post an ES5-compatible version.\n\n``` javascript\n// Extending the instantsearch.widgets namespace, like regular widgets\ninstantsearch.widgets.customSelectorWidget = function customSelectorWidget({\n  container,\n  attributeName,\n  limit = 10,\n  title = 'All'\n}) {\n  // container should be a CSS selector, so we convert it into a DOM element\n  container = document.querySelector(container);\n  // We'll internally keep track of the <select> element\n  let selectElement = null;\n  // We'll also need to keep track of the current selected value\n  let currentlySelectedValue = null;\n\n  return {\n    // Method called at startup, to configure the Algolia settings\n    getConfiguration() {\n      // This is a copy-paste of the menu widget\n      // We use a hierarchicalFacet and not a classical facet because we want to\n      // keep the list of all possible values displayed at all times. With\n      // a classical facet we would only have the list of possible values for\n      // the current filters (which would not make any sense here)\n      return {\n        hierarchicalFacets: [{\n          name: attributeName,\n          attributes: [attributeName]\n        }]\n      };\n    },\n\n    // Called on the first instantsearch search\n    init({helper}) {\n      // We add an (empty) <select> to the specified container\n      container.innerHTML = `<select></select>`;\n      selectElement = container.querySelector('select');\n\n      // We listen to the change event on that <select>\n      selectElement.addEventListener('change', () => {\n        // Finding the newly selected value\n        let selectedIndex = selectElement.selectedIndex;\n        let selectedValue = selectElement.options[selectedIndex].value;\n\n        // If we select the first, default value, it's like we \"unchecked\" the\n        // currently selected value\n        if (selectedValue === '__EMPTY__') {\n          selectedValue = currentlySelectedValue;\n        }\n        // We toggle on/off on the selected value\n        helper.toggleRefinement(attributeName, selectedValue);\n        // And we actually start the search (to force a re-render of results)\n        helper.search();\n\n        // We keep track of what the currently selected value is\n        currentlySelectedValue = selectedValue;\n      });\n    },\n\n    // Called whenever we receive new results from Algolia\n    render({results}) {\n      // We get the list of possible values for this search and sort them in the\n      // same order everytime (most popular first)\n      let sortBy = ['count:desc', 'name:asc'];\n      let facetValues = results.getFacetValues(attributeName, {sortBy}).data;\n      // We only keep the X first elements, as defined on instanciation\n      facetValues = facetValues.slice(0, limit);\n\n      // Then we add that to the <select>\n      let innerOptions = [`<option value=\"__EMPTY__\">${title}</option>`];\n      facetValues.forEach((facetValue) => {\n        // We mark the current one as selected\n        let selected = facetValue.isRefined ? 'selected=\"selected\"' : '';\n        innerOptions.push(`<option value=\"${facetValue.name}\" ${selected}>${facetValue.name}</option>`);\n      });\n\n      // Update the rendering\n      selectElement.innerHTML = innerOptions.join('\\n');\n    }\n  }\n};\n```\n\nI must say that it helped a lot that I had a good understanding of the instantsearch internals. This is definitely not a trivial widget to implement out of the box and should find its way into the core. I'll post an API proposal about that shortly.\n\nIs this what you were looking for?\n",
+      "date": 1463697114,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 220470462
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "Thanks a lot for the super quick response and code. 👍  I've been working through it but getting a few issues so assuming at this stage it's the ES6 version. Would it be possible to post the ES5 compatible version please? \n",
+      "date": 1463733491,
+      "reactions": {},
+      "id": 220548409
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "No problem, here is an ES5 compatible version:\n\n``` javascript\n// Extending the instantsearch.widgets namespace, like regular widgets\ninstantsearch.widgets.customSelectorWidget = function customSelectorWidget(options) {\n  var container = options.container;\n  var attributeName = options.attributeName;\n  var limit = options.limit || 10;\n  var title = options.title || 'All';\n\n  // container should be a CSS selector, so we convert it into a DOM element\n  container = document.querySelector(container);\n  // We'll internally keep track of the <select> element\n  var selectElement = null;\n  // We'll also need to keep track of the current selected value\n  var currentlySelectedValue = null;\n\n  return {\n    // Method called at startup, to configure the Algolia settings\n    getConfiguration: function getConfiguration() {\n      // This is a copy-paste of the menu widget\n      // We use a hierarchicalFacet and not a classical facet because we want to\n      // keep the list of all possible values displayed at all times. With\n      // a classical facet we would only have the list of possible values for\n      // the current filters (which would not make any sense here)\n      return {\n        hierarchicalFacets: [{\n          name: attributeName,\n          attributes: [attributeName]\n        }]\n      };\n    },\n\n    // Called on the first instantsearch search\n    init: function init(options) {\n      var helper = options.helper;\n      // We add an (empty) <select> to the specified container\n      container.innerHTML = '<select></select>';\n      selectElement = container.querySelector('select');\n\n      // We listen to the change event on that <select>\n      selectElement.addEventListener('change', function() {\n        // Finding the newly selected value\n        var selectedIndex = selectElement.selectedIndex;\n        var selectedValue = selectElement.options[selectedIndex].value;\n\n        // If we select the first, default value, it's like we \"unchecked\" the\n        // currently selected value\n        if (selectedValue === '__EMPTY__') {\n          selectedValue = currentlySelectedValue;\n        }\n        // We toggle on/off on the selected value\n        helper.toggleRefinement(attributeName, selectedValue);\n        // And we actually start the search (to force a re-render of results)\n        helper.search();\n\n        // We keep track of what the currently selected value is\n        currentlySelectedValue = selectedValue;\n      });\n    },\n\n    // Called whenever we receive new results from Algolia\n    render: function render(options) {\n      var results = options.results;\n      // We get the list of possible values for this search and sort them in the\n      // same order everytime (most popular first)\n      var sortBy = ['count:desc', 'name:asc'];\n      var facetValues = results.getFacetValues(attributeName, {sortBy: sortBy}).data;\n      // We only keep the X first elements, as defined on instanciation\n      facetValues = facetValues.slice(0, limit);\n\n      // Then we add that to the <select>\n      var innerOptions = ['<option value=\"__EMPTY__\">' + title + '</option>'];\n      facetValues.forEach(function(facetValue) {\n        // We mark the current one as selected\n        var selected = facetValue.isRefined ? 'selected=\"selected\"' : '';\n        innerOptions.push('<option value=\"' + facetValue.name + '\" ' + selected + '>' + facetValue.name + '</option>');\n      });\n\n      // Update the rendering\n      selectElement.innerHTML = innerOptions.join('\\n');\n    }\n  }\n};\n```\n\nI think I removed every ES6-only features.\n",
+      "date": 1463765754,
+      "reactions": {},
+      "id": 220670038
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "Massive thanks @pixelastic - just managed to get it all set-up and almost sorted. \n\nJust a quick question though, I've got an ion rangeslider. On page loads, the slider works great, so do the select fields - however, if I move the rangeslider after using of the select fields, I get \"facetValues is null\" and the search breaks.\n\nApologies for the constant questions. Looking through the code and after reading the docs, it kinda makes sense so learning loads too, plus, I'm sure it'll help many others so thanks again.\n",
+      "date": 1463788047,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 220743458
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "No problem for the question, we'd like to have instantsearch.js as easy to use as possible, so any way to improve it great :)\n\nWould you have a test page or a repo where I could reproduce your issue?\n",
+      "date": 1463790165,
+      "reactions": {},
+      "id": 220746848
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "@pixelastic , just sent you a quick email with a dev link on it. I created a repo but thought I'd send you the actual page in action. \n\nThanks again!\n",
+      "date": 1463820772,
+      "reactions": {},
+      "id": 220766810
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "Thanks for the email and test repo. I think I managed to reproduce and fix the possible issue.\n\nWhat you have to keep in mind is that the possible values that are displayed in the various `select` depends on other filters. For example if you apply a specific price range, there might not be anymore `new` or `used` cars in that range, so the `new` or `used` values in the `select` dropdown will not show.\n\nWith a set of very narrow filters that actually do not match any results, you can end up with empty lists on the `select`. It was actually that edge case that my quickly-coded example wasn't catching. It was trying to do stuff on an empty list and failing.\n\nI \"fixed\" the code like this:\n\n``` javascript\n    // Called whenever we receive new results from Algolia\n    render: function render(options) {\n      var results = options.results;\n      // We get the list of possible values for this search and sort them in the\n      // same order everytime (most popular first)\n      var sortBy = ['count:desc', 'name:asc'];\n      var innerOptions = ['<option value=\"__EMPTY__\">' + title + '</option>'];\n      var facetValues = results.getFacetValues(attributeName, {sortBy: sortBy}).data;\n\n      if (facetValues && facetValues.length) {\n        facetValues = facetValues.slice(0, limit);\n        // Then we add that to the <select>\n        facetValues.forEach(function(facetValue) {\n          // We mark the current one as selected\n          var selected = facetValue.isRefined ? 'selected=\"selected\"' : '';\n          innerOptions.push('<option value=\"' + facetValue.name + '\" ' + selected + '>' + facetValue.name + '</option>');\n        });\n      }\n\n      // Update the rendering\n      selectElement.innerHTML = innerOptions.join('\\n');\n    }\n```\n\nThis should fix your issue, but there might be other edge-cases lurking around :). I'd really like to move this code into a real widget in the future, so let's continue to iterate on it to see if it still breaks.\n",
+      "date": 1464135747,
+      "reactions": {},
+      "id": 221440360
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "Ah, completely makes sense. After looking at it further I understand more about it so thanks for that. \n\nI suppose one way around it would be to possible update the ion range slider on change of a select (or checkbox, input etc)? I've had a look into updating these and someone raised an issue a couple of weeks back here - https://github.com/IonDen/ion.rangeSlider/issues/351\n\nDo you think this would be possible?\n",
+      "date": 1464172403,
+      "reactions": {},
+      "id": 221535246
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@pixelastic Could you publish this as a new widget here: https://github.com/instantsearch that would be awesome\n",
+      "date": 1464195733,
+      "reactions": {},
+      "id": 221640122
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      },
+      "body": "@JonnyTurnerUK The rangeSlider should update automatically whenever new results are returned from Algolia (and a new query is triggered everytime a select is changed), to it **should** already work. Is your issue linked to this one https://github.com/instantsearch/instantsearch-ion.rangeSlider/issues/6?\n\n@vvo: Yes, that's the plan. I wanted to resolve all the potential problems raised in this thread first, as a kind of beta-test, and then I'll package it into its own widget for everyone to enjoy :)\n",
+      "date": 1464216442,
+      "reactions": {},
+      "id": 221730563
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "I think we can close this issue and move the discussion to other issues if needed. There's no more support needed here.\n",
+      "date": 1464260812,
+      "reactions": {},
+      "id": 221842211
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/654547",
+        "id": 654547,
+        "login": "JonnyBR12",
+        "type": "User"
+      },
+      "body": "@pixelastic Apologies, think I posted the wrong link earlier. They've updated the ion range slider and all works perfect. BIG thanks to everyone for all the help on this. Much appreciated!\n",
+      "date": 1464273520,
+      "reactions": {},
+      "id": 221890111
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1912128",
+        "id": 1912128,
+        "login": "Maaark",
+        "type": "User"
+      },
+      "body": "@pixelastic Is it possible to make the available options sync with other filters?\n\nSo if I apply a filter (for example price) and a <option> doesn't match the shown products it isn't displayed in the <select>?\n",
+      "date": 1467383599,
+      "reactions": {},
+      "id": 229962702
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "@Maaark Can you open a new issue with your problem? That would help us avoid confusion.\n",
+      "date": 1467384641,
+      "reactions": {},
+      "id": 229967070
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1912128",
+        "id": 1912128,
+        "login": "Maaark",
+        "type": "User"
+      },
+      "body": "@vvo Ok, just opened a new issue. I thought it would be better to place it here so it would be all in 1 place. Before I found this widget I've searched all over the documentation to find something like this, the documentation could be much better. The default widgets are really cool and easy to use, but when you need something slightly different it gets really hard fast.  \n",
+      "date": 1467385696,
+      "reactions": {},
+      "id": 229971547
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      },
+      "body": "> the documentation could be much better\n\nCompletely agree with you, we are working on this.\n\n> but when you need something slightly different it gets really hard fast.\n\nYes this is also a priority for us.\n",
+      "date": 1467389582,
+      "reactions": {},
+      "id": 229986884
+    }
+  ]
+}

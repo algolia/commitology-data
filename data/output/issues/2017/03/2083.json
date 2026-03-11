@@ -1,0 +1,93 @@
+{
+  "number": 2083,
+  "title": "[Feature] Add option to open collapsible based on isRefined",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/4720300",
+    "id": 4720300,
+    "login": "julienpa",
+    "type": "User"
+  },
+  "body": "**Do you want to request a *feature* or report a *bug*?**\r\nFeature\r\n\r\n**Feature: What is your use case for such a feature?**\r\nSometimes a refinement list might be collapsed by default, but if it has been refined and the user reloads the page, it would be nice to have it opened instead of collapsed.\r\n\r\n![issue with collapsible refined](https://cl.ly/003T3V023G2r/Screen%20Recording%202017-03-29%20at%2006.17%20PM.gif)\r\n\r\n**Feature: What is your proposed API entry? The new option to add? What is the behavior?**\r\nAdd a property in the `collapsible` object, like `collapsedIfRefined` with a boolean value (default `true` to not change existing behavior).\r\nExpected usage based on current options would be something like this:\r\n```js\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    ...\r\n    collapsible: {\r\n      collapsed: true,\r\n      collapsedIfRefined: false\r\n    }\r\n  })\r\n);\r\n```\r\n\r\n**What project are you opening an issue for?**\r\n- instantsearch.js\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\nLatest\r\n",
+  "date": 1490837325,
+  "labels": [
+    {
+      "color": "fbca04",
+      "id": 620214278,
+      "name": "Scope: Widgets"
+    },
+    {
+      "color": "e01167",
+      "id": 753506812,
+      "name": "Feedback"
+    }
+  ],
+  "state": {
+    "reason": "completed",
+    "value": "closed"
+  },
+  "reactions": {
+    "👍️": 3
+  },
+  "comments": [
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3605905",
+        "id": 3605905,
+        "login": "Giovanni-Mattucci",
+        "type": "User"
+      },
+      "body": "Totally want this feature. \r\nAny kind of work around to implement this behaviour with current instantsearch? ",
+      "date": 1501516376,
+      "reactions": {},
+      "id": 319112321
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "~The problem is that for the moment InstantSearch.js only stores search related parameters in the URL and since it's a direct mapping of the internal state (only search related), it means some deep modifications.~\r\n\r\n~We can add the API proposed by @julienpa but that's external thus this will force the developer to do the integration themselves, which can be tricky.~\r\n\r\nMy bad I misread the expected behavior, it's based on wether or not it's refined so it should be ok. We're gonna try to integrate soon :)",
+      "date": 1501518231,
+      "reactions": {},
+      "id": 319123153
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4720300",
+        "id": 4720300,
+        "login": "julienpa",
+        "type": "User"
+      },
+      "body": "@bobylito what do you mean by:\r\n> this will force the developer to do the integration themselves\r\n\r\nYou mean the logic or just the style?",
+      "date": 1501520879,
+      "reactions": {},
+      "id": 319132671
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3605905",
+        "id": 3605905,
+        "login": "Giovanni-Mattucci",
+        "type": "User"
+      },
+      "body": "My solution was to create a widget that checks each refinement widget for an active state, and if it has one, open it up:\r\n```javascript\r\nconst options = this.options;\r\nlet once = true;\r\n\r\nvar openIfRefined = function openIfRefined() {\r\n  return {\r\n    render: function() {\r\n      // Check each refinement widget for an active filter and open it if so\r\n      if (once) { // Only once or this will happen each interaction with the widget\r\n        $(\".search-refine > div\").each((index, elem) => {\r\n          let refineWidget = $(elem);\r\n          let isOpen = refineWidget\r\n            .find(\".ais-refinement-list--item\")\r\n            .hasClass(\"ais-refinement-list--item__active\");\r\n          if (isOpen) {\r\n            refineWidget\r\n              .find(\".ais-root__collapsible\")\r\n              .removeClass(\"ais-root__collapsed\");\r\n            refineWidget.find(\".panel-heading\").trigger(\"click\");\r\n          }\r\n        });\r\n        once = false;\r\n      }\r\n    }\r\n  };\r\n};\r\n\r\nthis.search.addWidget(openIfRefined());\r\n```\r\nThe React component has its state set to `collapsed: true`. I don't know anything about react, is there any way to update the react component's state externally of the framework?\r\n\r\nRight now I am triggering click on load to set it to the correct state in a roundabout way:\r\n```javascript\r\n ...\r\n refineWidget.find('.panel-heading').trigger('click');\r\n ...\r\n```",
+      "date": 1501524496,
+      "reactions": {},
+      "id": 319149481
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      },
+      "body": "Related to #1543 ",
+      "date": 1524489600,
+      "reactions": {},
+      "id": 383572281
+    }
+  ]
+}
