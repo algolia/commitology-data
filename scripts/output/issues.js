@@ -6,7 +6,7 @@ import {
   dataOutputIssuesPath,
   outputIssueFieldOrder,
 } from '../../lib/config.js';
-import { datePath } from '../../lib/helper.js';
+import { datePath, isDarkColor } from '../../lib/helper.js';
 
 /**
  * Normalizes a raw user object by mapping properties to a standardized format.
@@ -38,15 +38,15 @@ function normalizeDate(rawDate) {
 }
 
 /**
- * Normalizes raw reaction data by mapping reaction types to a standardized format
- * @param {object} rawReactions - Raw reaction data object containing reaction counts
- * @param rawLabels
- * @returns {object} Normalized reaction object with standardized property names
+ * Normalizes an array of raw label objects by extracting only the id, name, and color properties.
+ * @param {Array<object>} rawLabels - Array of raw label objects to normalize
+ * @returns {Array<object>} Array of normalized label objects containing only id, name, and color properties
  */
 function normalizeLabels(rawLabels) {
   return _.map(rawLabels, (rawLabel) => {
     const { color, id, name } = rawLabel;
-    return { id, name, color };
+    const isDark = isDarkColor(color);
+    return { id, name, color, isDark };
   });
 }
 
@@ -144,6 +144,7 @@ async function normalizeIssue(rawIssue) {
 
   const comments = await normalizeComments(issue);
   return {
+    type: 'issue',
     ...issue,
     comments,
   };

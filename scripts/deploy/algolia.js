@@ -1,7 +1,11 @@
-import { _, pMap } from 'golgoth';
+import { pMap } from 'golgoth';
 import { consoleError, glob, readJson } from 'firost';
 import indexing from 'algolia-indexing';
-import { dataOutputCommitsPath, repoName } from '../../lib/config.js';
+import {
+  dataOutputCommitsPath,
+  dataOutputIssuesPath,
+  repoName,
+} from '../../lib/config.js';
 
 // Algolia
 const algoliaConfig = {
@@ -10,20 +14,16 @@ const algoliaConfig = {
     indexName: process.env.ALGOLIA_INDEX_NAME || `commitology_${repoName}`,
     apiKey: process.env.ALGOLIA_ADMIN_API_KEY,
   },
-  commitSettings: {
-    searchableAttributes: [
-      'unordered(subject)',
-      'unordered(bodyLine)',
-      'author',
-    ],
-    attributesForFaceting: ['author'],
+  settings: {
+    searchableAttributes: ['unordered(title)', 'unordered(body)', 'user.login'],
+    attributesForFaceting: ['user.id'],
     attributesToSnippet: ['body'],
     // By default, display chronologically
     customRanking: ['desc(date)'],
   },
 };
 
-const { credentials, commitSettings } = algoliaConfig;
+const { credentials, settings } = algoliaConfig;
 
 // Validate required environment variables
 if (!credentials.apiKey) {
@@ -35,24 +35,13 @@ if (!credentials.apiKey) {
 const allCommitFiles = await glob('./**/*.json', {
   cwd: dataOutputCommitsPath,
 });
+const allIssueFiles = await glob('./**/*.json', {
+  cwd: dataOutputIssuesPath,
+});
 
-// Split into one record per bodyLine
-const commitRecords = [];
-await pMap(allCommitFiles, async (commitFile) => {
-  const commitData = await readJson(commitFile);
-  const commonCommitData = {
-    hash: commitData.hash,
-    author: commitData.author,
-    subject: commitData.subject,
-    date: commitData.date,
-  };
-
-  _.each(commitData.bodyLines, (bodyLine) => {
-    commitRecords.push({
-      ...commonCommitData,
-      bodyLine,
-    });
-  });
+const allRecordFiles = [...allCommitFiles, ...allIssueFiles];
+const records = await pMap(allRecordFiles, async (recordFile) => {
+  return await readJson(recordFile);
 });
 
 indexing.verbose();
@@ -60,4 +49,4 @@ indexing.config({
   batchMaxSize: 100,
 });
 
-await indexing.fullAtomic(credentials, commitRecords, commitSettings);
+await indexing.fullAtomic(credentials, records, settings);

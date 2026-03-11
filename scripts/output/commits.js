@@ -20,6 +20,7 @@ await pMap(
     const shortHash = hash.substring(0, 7);
 
     const commitData = {
+      type: 'commit',
       hash: shortHash,
       title: subject,
       author,
