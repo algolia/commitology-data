@@ -1,6 +1,6 @@
 import { _, dayjs, pMap } from 'golgoth';
 import { absolute, sleep, spinner, writeJson } from 'firost';
-import { dataInputPath, issueFieldOrder } from '../../lib/config.js';
+import { dataInputPath, inputIssueFieldOrder } from '../../lib/config.js';
 import { getIssuesAndPulls, getIssuesAndPullsCount } from '../../lib/github.js';
 
 const ISSUES_PER_PAGE = 100;
@@ -36,7 +36,7 @@ await pMap(
         );
 
         await writeJson(itemContent, itemPath, {
-          sort: issueFieldOrder,
+          sort: inputIssueFieldOrder,
         });
       },
       { concurrency: 10 },

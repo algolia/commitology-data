@@ -1,6 +1,9 @@
 import { pMap } from 'golgoth';
 import { absolute, spinner, writeJson } from 'firost';
-import { commitFieldOrder, dataInputCommitsPath } from '../../lib/config.js';
+import {
+  dataInputCommitsPath,
+  inputCommitFieldOrder,
+} from '../../lib/config.js';
 import { getCommitData, getCommitList } from '../../lib/git.js';
 
 const commitList = await getCommitList();
@@ -19,7 +22,7 @@ await pMap(
     const commitData = await getCommitData(hash);
 
     await writeJson(commitData, commitPath, {
-      sort: commitFieldOrder,
+      sort: inputCommitFieldOrder,
     });
   },
   { concurrency: 50 },
