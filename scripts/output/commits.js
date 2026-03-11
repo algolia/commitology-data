@@ -1,4 +1,4 @@
-import { _, pMap } from 'golgoth';
+import { pMap } from 'golgoth';
 import { absolute, glob, readJson, spinner, writeJson } from 'firost';
 import {
   dataInputCommitsPath,
@@ -18,13 +18,12 @@ await pMap(
     progress.tick(subject);
 
     const shortHash = hash.substring(0, 7);
-    const bodyLines = _.split(body, '\n');
 
     const commitData = {
       hash: shortHash,
       author,
       subject,
-      bodyLines,
+      body,
       date,
     };
 
