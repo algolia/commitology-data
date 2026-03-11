@@ -21,8 +21,8 @@ await pMap(
 
     const commitData = {
       hash: shortHash,
+      title: subject,
       author,
-      subject,
       body,
       date,
     };

@@ -24,3 +24,23 @@ The `./data` folder contains all data that will ultimately be pushed to Algolia.
 Slack discussion: https://algolia.slack.com/archives/C06CVHHJM/p1770211863896809
 Video: https://www.youtube.com/watch?v=LI3VlpLHKok
 Repo: https://github.com/algolia/pr-practice-analyzer
+
+## TODO
+
+### Data
+- Push raw Issue data in same index
+- Push raw Pulls data in same index
+- Style each hit differently based on type
+
+### Commits
+- Add real links on the commit titles
+- Parse titles to parse URLS to PR/issues
+- Parse bodies to parse URLs to PR/issues
+
+- Add icons for the authors
+- Add links to the authors
+
+- Allow Copy-Pasting the hash
+
+- Add filtering by date, by author, by semantic type
+- Add sorting by date
