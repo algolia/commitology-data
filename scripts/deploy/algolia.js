@@ -1,11 +1,7 @@
 import { pMap } from 'golgoth';
 import { consoleError, glob, readJson } from 'firost';
 import indexing from 'algolia-indexing';
-import {
-  dataOutputCommitsPath,
-  dataOutputIssuesPath,
-  repoName,
-} from '../../lib/config.js';
+import { dataOutputPath, repoName } from '../../lib/config.js';
 
 // Algolia
 const algoliaConfig = {
@@ -32,17 +28,11 @@ if (!credentials.apiKey) {
 }
 
 // Generate all records from output files
-const allCommitFiles = await glob('./**/*.json', {
-  cwd: dataOutputCommitsPath,
-});
-const allIssueFiles = await glob('./**/*.json', {
-  cwd: dataOutputIssuesPath,
+const recordPaths = await glob('./**/*.json', {
+  cwd: dataOutputPath,
 });
 
-const allRecordFiles = [...allCommitFiles, ...allIssueFiles];
-const records = await pMap(allRecordFiles, async (recordFile) => {
-  return await readJson(recordFile);
-});
+const records = await pMap(recordPaths, readJson);
 
 indexing.verbose();
 indexing.config({
