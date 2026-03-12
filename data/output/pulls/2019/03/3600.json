@@ -1,0 +1,109 @@
+{
+  "body": "_This is the 2nd PR in the series \"Merchandized Query Rules\"._\r\n\r\n## Summary\r\n\r\nThis creates the `queryRuleCustomData` widget, responsible for showing custom data (`userData`) coming from Query Rules.\r\n\r\n## Current solution\r\n\r\nRight now, we can leverage the [`connectHits`](https://www.algolia.com/doc/api-reference/widgets/hits/js/#connector) connector to show a banner with InstantSearch.js.\r\n\r\n```js\r\nconst promotedResults = instantsearch.connectors.connectHits(\r\n  (options, isFirstRender) => {\r\n    const { widgetParams, results = {} } = options;\r\n    const { container } = widgetParams;\r\n\r\n    if (!results.userData) {\r\n      container.innerHTML = '';\r\n      return;\r\n    }\r\n\r\n    const [data] = results.userData;\r\n\r\n    container.innerHTML = `<img src=\"${data.banner}\" alt=\"${data.link}\">`;\r\n  }\r\n);\r\n\r\nsearch.addWidget(\r\n  promotedResults({\r\n    container: document.querySelector('#promoted-results'),\r\n  })\r\n);\r\n```\r\n\r\n[See live example →](https://codesandbox.io/s/ywy2q74rzv)\r\n\r\nThe goal of the widget is to simplify this solution.\r\n\r\n\r\n## Widget usage\r\n\r\nGiven this `userData`:\r\n\r\n```json\r\n{\r\n  \"banner\": \"https://website.com/image.png\",\r\n  \"title\": \"This is a revolution.\",\r\n  \"link\": \"https://website.com/\"\r\n}\r\n```\r\n\r\nWhen the query rule is matched, the engine returns:\r\n\r\n```json\r\n[\r\n  {\r\n    \"banner\": \"https://website.com/image.png\",\r\n    \"title\": \"This is a revolution.\",\r\n    \"link\": \"https://website.com/\"\r\n  }\r\n]\r\n```\r\n\r\nYou would use the `queryRuleCustomData` widget:\r\n\r\n```js\r\ninstantsearch.widgets.queryRuleCustomData({\r\n  container: widgetContainer,\r\n  transformItems: items => items[0],\r\n  templates: {\r\n    default({ title, banner, link }) {\r\n      if (!banner) {\r\n        return '';\r\n      }\r\n\r\n      return `\r\n        <h2>${title}</h2>\r\n\r\n        <a href=\"${link}\">\r\n          <img src=\"${banner}\" alt=\"${title}\">\r\n        </a>\r\n      `;\r\n    },\r\n  },\r\n});\r\n```\r\n\r\n## API\r\n\r\n### `transformItems`\r\n\r\n> `object[] => any` – defaults to `items => items`\r\n\r\nThe function to change the data sent by the engine before giving it to the template.\r\n\r\n### `container`\r\n\r\n> `string` | `HTMLElement` – no default\r\n\r\nThe container of the widget.\r\n\r\n### `templates`\r\n\r\n> `object` – defaults to `{ default: '' }`\r\n\r\nThe templates to display for the custom data (`userData`).\r\n\r\n## Stories\r\n\r\n[See stories →](https://deploy-preview-3600--instantsearchjs.netlify.com/stories/?path=/story/queryrulecustomdata--default)\r\n\r\n## Related\r\n\r\n- [`connectQueryRules`](https://github.com/algolia/instantsearch.js/pull/3597)\r\n- [`queryRuleContext`](https://github.com/algolia/instantsearch.js/pull/3602)\r\n- [Merchandized Query Rules RFC](https://github.com/algolia/instantsearch-rfcs/blob/master/accepted/merchandized-query-rules.md)",
+  "comments": [
+    {
+      "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit 268425970342d0399c0dcf5acfafde1c58270d5e\n\nhttps://deploy-preview-3600--instantsearchjs.netlify.com",
+      "date": 1552477367,
+      "id": 472388510,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "GitHub seems to also display the changes introduced in #3599, that's weird.",
+      "date": 1552567615,
+      "id": 472837790,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "These changes seem to be a different PR? Not sure what to review here",
+      "date": 1552570616,
+      "id": 472857155,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I think the `base` might be wrong :) ",
+      "date": 1552570633,
+      "id": 472857287,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "As said in https://github.com/algolia/instantsearch.js/pull/3600#issuecomment-472837790 I think that's a GitHub bug. You can ignore the changes related to Storybook.\r\n\r\n**Edit**: I rebased again, should be fixed!",
+      "date": 1552570798,
+      "id": 472858407,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Without custom CSS classes, the inserted `div` container is not easily customizable because nothing identifies it.\r\n\r\nI think we should create an [InstantSearch.css](https://github.com/algolia/instantsearch-specs) spec for this widget with the following markup:\r\n\r\n```html\r\n<div class=\"ais-QueryRuleCustomData\"></div>\r\n```\r\n\r\nIt would imply adding a `cssClasses` option to the widget, like in most widgets.\r\n\r\nWDYT?",
+      "date": 1553096570,
+      "id": 474892376,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "makes sense to me!",
+      "date": 1553099284,
+      "id": 474914639,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1552477152,
+  "labels": [],
+  "number": 3600,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(queryRules): add queryRuleCustomData widget",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/6137112",
+    "id": 6137112,
+    "login": "francoischalifour",
+    "type": "User"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "body": "Move from Uglify to Closure Compiler\r\n\r\n**Result**\r\n\r\n`dist/instantsearch.production.min.js: 241.09 KB/63.25 KB` => `dist/instantsearch.production.min.js: 238.58 KB/62.34 KB`\r\n\r\n",
+  "comments": [
+    {
+      "body": "Thanks for this initiative!\r\n\r\nI don't get the same size results for the Minified + GZipped bundle with [Bundlesize](https://github.com/siddharthkp/bundlesize):\r\n\r\n- Before (Uglify): 63.24 KB\r\n- After (Closure): 65.06 KB\r\n\r\nThis would mean that Uglify leads to a better GZipped bundle.\r\n\r\nIs that something that you would have expected?",
+      "date": 1578908788,
+      "id": 573580807,
+      "reactions": {
+        "😕": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "It's indeed pretty surprising. Maybe closure needs to be configured to remove more things?\r\n",
+      "date": 1579076387,
+      "id": 574547610,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Apologies for delay: here are some results with different minfiers.\r\n\r\n### Results\r\n| compiler + terser | terser | compiler | uglify |\r\n| :--- | :--- | :--- | :--- |\r\n| **62.39KB** | 63.64KB | 64.12KB | 63.24KB |\r\n\r\n**Based on this I'd recommend moving to compiler + terser**.\r\n\r\n### Future Opportunities\r\n\r\nThis configuration uses Closure Compiler with `SIMPLE_OPTIMIZATIONS` (see [documentation](https://developers.google.com/closure/compiler/docs/compilation_levels) for differences between optimization levels).\r\n\r\nWith a few tweaks I was able to build the source with `ADVANCED_OPTIMIZATIONS`, and the result was `56.17KB`. A significant improvement.\r\n\r\nTo move to `ADVANCED_OPTIMIZATIONS`, you'd want to ensure that valid Closure types or externs are present for the entire source. (This is doable, but significantly more work).\r\n\r\nFor instance, right now this fails due to invalid syntax usage in `hogan.js`. Here's the associated PR with a fix (https://github.com/twitter/hogan.js/pull/264).\r\n\r\n```\r\nif (partial.subs) {\r\n        // Make sure we consider parent template now\r\n        if (!partials.stackText) partials.stackText = {};\r\n        for (key in partial.subs) {\r\n          if (!partials.stackText[key]) {\r\n            partials.stackText[key] = (this.activeSub !== undefined && partials.stackText[this.activeSub]) ? partials.stackText[this.activeSub] : this.text;\r\n          }\r\n        }\r\n        template = createSpecializedPartial(template, partial.subs, partial.partials,\r\n          this.stackSubs, this.stackPartials, partials.stackText);\r\n      }\r\n```\r\n\r\nClosure would like `key` to be declared (`const key in ...`).",
+      "date": 1579196719,
+      "id": 575266438,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/61764",
+        "id": 61764,
+        "login": "kristoferbaxter",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Thanks for this analysis! We decided not to move forward with this solution for now because it involves some changes in our setup (dependencies, banners in the final bundles, stripping out comments, etc.) and the overall bundle size doesn't decrease significantly.\r\n\r\nI'm personally really excited that you made Google Closure Compiler accessible to Rollup users because it was a pain to integrate in a frontend library without this plugin.\r\n\r\nThank you for the PR – we'll reevaluate this tool when we plan to rework on our build script.",
+      "date": 1582039109,
+      "id": 587513115,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1578681564,
+  "labels": [],
+  "number": 4286,
+  "reactions": {
+    "👍️": 1
+  },
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "Move from uglify to closure",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/61764",
+    "id": 61764,
+    "login": "kristoferbaxter",
+    "type": "User"
+  }
+}

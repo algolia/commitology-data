@@ -1,0 +1,70 @@
+{
+  "body": "_This PR introduces a controlled mode in InstantSearch.js._\r\n\r\n## Summary\r\n\r\nIntroducing a controlled mode in InstantSearch allows more powerful state updates coming from internal events and one-time external events.\r\n\r\n> [👉 Try controlled mode in the playground](https://codesandbox.io/s/instantsearchjs-controlled-mode-o6lz0)!\r\n\r\n## Definition\r\n\r\n\"Controlled mode\" is a generic term that, in InstantSearch, is defined as:\r\n\r\n- (1) An external event can update the internal state\r\n- (2) An internal state change is delegated to a public function\r\n\r\n## Usage\r\n\r\nThere are two API additions to allow (1) and (2):\r\n\r\n1. `setUiState`: available on the search instance\r\n2. `onStateChange`: available as an `instantsearch` option\r\n\r\n```ts\r\nconst search = instantsearch({\r\n  onStateChange({ uiState, setUiState }) {\r\n    logger.info(uiState);\r\n\r\n    setUiState(uiState);\r\n  },\r\n});\r\n\r\nbutton.addEventListener('click', () => {\r\n  search.setUiState({\r\n    instant_search: {\r\n      query: 'phone',\r\n    },\r\n  });\r\n});\r\n```\r\n\r\n## Reference\r\n\r\n### `setUiState`\r\n\r\n> `(uiState: UiState | ((uiState: UiState) => UiState)) ⇒ void`\r\n\r\n#### Description\r\n\r\nThis function allows to **inject a UI state** in the search experience, **without relying on an internal event** (e.g., connector's `refine` or widget interaction). This can be used to set the internal state from an external event.\r\n\r\nNote that for the UI state to be effective, the widgets responsible for each UI state attribute need to be mounted (same behavior as `initialUiState` and `routing`).\r\n\r\n#### Usage\r\n\r\n```ts\r\nconst search = instantsearch({\r\n  /* ... */\r\n});\r\n\r\n// This can happen after an interaction outside of the InstantSearch scope.\r\nsearch.setUiState({\r\n  instant_search: {\r\n    query: 'phone',\r\n    refinementList: {\r\n      brand: ['Samsung'],\r\n    },\r\n  },\r\n});\r\n\r\n// You can compute a UI state based on a previous one with the function form.\r\nsearch.setUiState(prevUiState => ({\r\n  ...prevUiState,\r\n  instant_search: {\r\n    ...prevUiState.instant_search,\r\n    refinementList: {\r\n      brand: ['Samsung'],\r\n    },\r\n  },\r\n}));\r\n```\r\n\r\n### `onStateChange`\r\n\r\n> `(params: { uiState: UiState, setUiState(uiState: UiState): void }) ⇒ void`\r\n\r\n#### Description\r\n\r\nThis function is a hook passed to the `instantsearch` option. If it's given to the options, **the experience becomes fully controlled**. This can be used to hook some custom logic whenever the internal state changes (e.g., a logger, avoiding a specific state, etc.).\r\n\r\nIf you use it, you become responsible for setting the UI state with `setUiState`.\r\n\r\n#### Usage\r\n\r\n```ts\r\nconst search = instantsearch({\r\n  onStateChange({ uiState, setUiState }) {\r\n    logger.info(uiState);\r\n\r\n    // Sets the internal state as the uncontrolled behavior would do.\r\n    setUiState(uiState);\r\n  },\r\n});\r\n```\r\n\r\n## Implementation\r\n\r\n- The internal `onStateChange` function of the experimental middleware param `state` was renamed `uiState` for consistency.\r\n- The internal `onStateChange` was renamed `onInternalStateChange` to avoid confusion\r\n- The development warning for inconsistent UI state was moved to its own function because it's used in multiple places now (I'll send a PR later to move the warning at the InstantSearch instance level, rather than at the index level).\r\n\r\n## References\r\n\r\n- [RFC](https://github.com/algolia/instantsearch-rfcs/pull/33)\r\n- [Playground](https://codesandbox.io/s/instantsearchjs-controlled-mode-o6lz0)",
+  "comments": [
+    {
+      "body": "A \"forceUpdate\" would look like this right: `setUiState(state => state)`. I don't think we need a different paradigm for it, but just wanted to mention it. Since all helper methods send a change event I don't think there's a use case though.",
+      "date": 1584635269,
+      "id": 601277742,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I looked, and couldn't find an eslint rule to prefer types over interfaces, or the other way round :( ",
+      "date": 1584708072,
+      "id": 601680025,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@Haroenv  were you looking for something like this? https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/consistent-type-definitions.md",
+      "date": 1584969664,
+      "id": 602584825,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/13209",
+        "id": 13209,
+        "login": "yannickcr",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1584633840,
+  "labels": [
+    {
+      "color": "fbca04",
+      "id": 620214916,
+      "isDark": false,
+      "name": "Scope: Core"
+    },
+    {
+      "color": "7e01b7",
+      "id": 851262543,
+      "isDark": true,
+      "name": "Type: Feature"
+    }
+  ],
+  "number": 4362,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat: introduce controlled mode",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/6137112",
+    "id": 6137112,
+    "login": "francoischalifour",
+    "type": "User"
+  }
+}

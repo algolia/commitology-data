@@ -1,0 +1,57 @@
+{
+  "body": "### Summary\r\n\r\n#### Context\r\n\r\nThis PR fixes an issue related to the routing when using React InstantSearch Hooks with React Router.\r\n\r\n[FX-1925](https://algolia.atlassian.net/browse/FX-1925)\r\n\r\n#### Error reproduction\r\n\r\nUsing the [default state mapping function](https://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/stateMappings/simple.ts), an error is thrown only on back navigation from a refined state, when reaching the initial / unrefined state:\r\n\r\n```text\r\ndefaultStateMapping.ts:10 Uncaught TypeError: Cannot destructure property 'configure' of 'uiState' as it is null.\r\n    at getIndexStateWithoutConfigure (defaultStateMapping.ts:10:11)\r\n    at defaultStateMapping.ts:36:24\r\n    at Array.reduce (<anonymous>)\r\n    at Object.routeToState (defaultStateMapping.ts:32:38)\r\n    at createRouterMiddleware.js:45:57\r\n    at _onPopState (history.js:140:11)\r\n```\r\n\r\nCodeSandbox error reproduction: https://codesandbox.io/s/rish-with-react-router-simple-state-mapping-error-k6xqkn\r\n\r\nVideo reproduction of the error:\r\n\r\nhttps://user-images.githubusercontent.com/662153/206485747-ef4b2045-c5ac-470b-9799-45063a3d7216.mov\r\n\r\n#### Cause of the issue\r\n\r\nWhen you navigate to the `/search` route, React Router [push some history state data](https://github.com/remix-run/react-router/blob/b67538b1172c3dcf07a2e431bbe7c2eb32b06eaf/packages/router/history.ts#L591) along with the new URL:\r\n```js\r\n{ usr: null, key: '4ykrr3bq' }\r\n```\r\n\r\nIn the simple state mapping function, in the `routeToState` function, we reduce the history state assuming the key is the `indexId` and the value is the state. But using React Router, the first key is `usr`, so the corresponding value `null` is passed to the `getIndexStateWithoutConfigure` function.\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/8c68f37364f4199b9be76fa7ddd3fc1aea596d6a/packages/instantsearch.js/src/lib/stateMappings/simple.ts#L27-L35\r\n\r\nThis function then tries to deconstruct the `configure` object from the `uiState` but since it's `null`, it throws an error.\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/8c68f37364f4199b9be76fa7ddd3fc1aea596d6a/packages/instantsearch.js/src/lib/stateMappings/simple.ts#L3-L8\r\n\r\n### Result\r\n\r\nWe always read the state from the URL because the state of the history can be incorect in some cases (e.g. using React Router) so no more error is thrown.",
+  "comments": [
+    {
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/5177/builds/327206) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit b927324232504f15075d94aac4db901513d9207e:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearch-js-5nshgk)| Configuration |\n|[rish-with-react-router-simple-state-mapping-error](https://codesandbox.io/s/rish-with-react-router-simple-state-mapping-error-wmym47)| PR |\n",
+      "date": 1670518916,
+      "id": 1343023459,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]",
+        "type": "Bot"
+      }
+    },
+    {
+      "body": "It’s an interesting solution, and we probably should do this, but it makes me think again that the branch we have in onPopState of history router should probably ignore the history.state but always .read instead. It’s not so expensive and always going to be right (unlike history state that can be messed with)",
+      "date": 1670584152,
+      "id": 1344170205,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> this could be useful, but I think we should fix the read function instead. Are you taking that up @FabienMotte ?\r\n\r\nI updated the fix, test and the PR description (results section). WDYT?",
+      "date": 1671119719,
+      "id": 1353308808,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/662153",
+        "id": 662153,
+        "login": "FabienMotte",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1670518837,
+  "labels": [],
+  "number": 5177,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix: simple state mapping `routeToState` function throw an error when state is `null`",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/662153",
+    "id": 662153,
+    "login": "FabienMotte",
+    "type": "User"
+  }
+}

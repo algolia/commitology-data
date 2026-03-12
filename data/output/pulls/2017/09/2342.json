@@ -1,0 +1,155 @@
+{
+  "body": "Fix #2289\r\n\r\n**Summary**\r\n\r\nWhen we use an input as a container for the searchbox, we do not remove it but just upgrade it to look like a real instantsearch.js widget. However, we do not keep the value of the value if it is set.\r\n\r\n**Result**\r\n\r\nFor consistency, we should keep the value of the input and make it the initial value of the query in instantsearch. This PR does that.\r\n\r\nIn this screenshot, the input has an initial value and it sets the value of the query.\r\n\r\n![screen shot 2017-09-19 at 18 45 26](https://user-images.githubusercontent.com/393765/30604303-be5507b2-9d6a-11e7-9abb-53e7bd2d8a42.png)\r\n",
+  "comments": [
+    {
+      "body": "Deploy preview ready!\n\nBuilt with commit 00efee49cc6c3a905d6782e3c3c9dc2e9d53dc8b\n\nhttps://deploy-preview-2342--algolia-instantsearch.netlify.com",
+      "date": 1505839720,
+      "id": 330601572,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "This doesn't really fix the issue described in https://github.com/algolia/instantsearch.js/issues/2289, since it's a different DOM node the events will be broken.",
+      "date": 1505840847,
+      "id": 330607018,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I would love to be able to see the dev-novel examples on PR live so that we can all test the behavior.\r\n\r\n> This doesn't really fix the issue described in #2289, since it's a different DOM node the events will be broken.\r\n\r\nCan you detail a bit more this?",
+      "date": 1505893207,
+      "id": 330771150,
+      "reactions": {
+        "👍️": 2
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Basically what was described in #2289 is that the searchBox widget will create a new input once it's initialising. If you have some input put as that selector, you could have event listeners, or value on it, all before instantSearch starts. Here we're still making a new input DOM Node, and thus not actually taking that original node in account. \r\n\r\nThe only solution I see is not having the `input` as a selector, but also a `div`, just like the other widgets.",
+      "date": 1505894207,
+      "id": 330774873,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "So the exact previous was a bit different from what was described. It was not creating a new input, but was resetting the value to the one in the Helper and applying the new style. Not it reads the value of the input at init if the container is the input and overrides the state with it. This only impact the initialization phase.",
+      "date": 1505894475,
+      "id": 330775958,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@vvo can't make the dev novel deployed... So best for now is to checkout the pr and run `yarn run dev`.",
+      "date": 1505896581,
+      "id": 330784497,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I've tried to fix it and I run into the same issue as you @bobylito, we need to save the initial value somewhere in the instance of the widget in order to apply it after.\r\n\r\nRight now when you reload the page here what happens:\r\n\r\n![sep-20-2017 14-09-19](https://user-images.githubusercontent.com/893837/30642998-8274cfcc-9e0d-11e7-8d3b-4b16e1ec3f61.gif)\r\n\r\nThe other input value is removed, it's not in sync anymore.",
+      "date": 1505909472,
+      "id": 330832240,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/893837",
+        "id": 893837,
+        "login": "iam4x",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Right now when you reload the page here what happens:\r\n\r\nI saw that it sometimes happen, sometimes not. I thought it would a problem but, it's rare that there is an input with a value, and even rarer when there are 2 searchbox and with two different way of initializing them. That's why I thought that it would not be interesting to put more complexity in order to fix this sub edge case given the odds. Happy to fix it further if it happens.",
+      "date": 1505909695,
+      "id": 330833025,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Ok to sum up the discussion so far:\r\n - #2289 was created because it's inconsistent to tell the users they can use their input, and then force the original state on it even if it has a value itself\r\n - there is an edge case: when there are two searchboxes there is an inconsistent visual state. It happens when one of the searchbox is not providing an input with a value. This is an edge case in a context of an edge-case and we'd be happy to work on it if a user has the issue.\r\n\r\nAs a side note, this feature (using an input instead of container) is a very early one. Nowadays it can be done with the connectors. This should probably be removed in the next major version.\r\n\r\nCan we move forward with this PR @vvo @iam4x ?",
+      "date": 1506332484,
+      "id": 331830260,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "LGTM and\r\n\r\n> This should probably be removed in the next major version.\r\n\r\nYes, this has triggered many issues while providing very light value vs connectors today.\r\n",
+      "date": 1506373844,
+      "id": 332013889,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "🚢 ",
+      "date": 1506422976,
+      "id": 332160611,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/893837",
+        "id": 893837,
+        "login": "iam4x",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1505839570,
+  "labels": [],
+  "number": 2342,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix(searchbox): use initial input value if provided in the dom",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/393765",
+    "id": 393765,
+    "login": "bobylito",
+    "type": "User"
+  }
+}

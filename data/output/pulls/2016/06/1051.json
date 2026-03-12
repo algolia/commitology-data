@@ -1,0 +1,117 @@
+{
+  "body": "Partially fixes #1013\n\nThe goal of the PR was to make the `count` variable accessible to the\nheader template of the `refinementList` widget. This `count` is the\nnumber of active filters applied to the facet.\n\n![2016-06-03_15h47m14](https://cloud.githubusercontent.com/assets/283419/15794795/7d8339d0-29a2-11e6-98a6-73fa3dc51deb.gif)\n_(I click on the header in this demo to show that it works with `collapsible` as well)_\n\n``` javascript\n        templates: {\n          header: (data) => {\n            if (data.count === 0) {\n              return `<h3 class=\"facet--title\">Teams</h3>`;\n            }\n            return `<h3 class=\"facet--title\">Teams (${data.count})</h3>`;\n          }\n        },\n```\n\nTo do so the first step was to make the `header` template dynamic.\nBefore the PR, it was static, meaning that it was defined at the\nwidget init and never updated. I changed that part so the header\ntemplate is re-rendered on every render of its component.\n\nIt also meant that I had to remove the custom `shouldComponentUpdate`\nmethod. The method was checking if the component was collapsed or not\nbefore triggering the render. As we now always need to update the\nrender of the header, being collapsed or not, I removed the check.\nI think it might even fix #1041 as well.\n\nTo pass template data to the header, you now need to pass the\n`headerFooterData` prop to the component that is wrapped by\n`headerFooterHOC`. It's an object with a key `header` containing the\ndata you want to pass. It could also potentially have a key\n`footer`, but the footer part is not implemented yet because we had no\nneed for it.\n\nImprovements and discussions:\n- The `footer` template is still static. It would be trivial to set it\n  as dynamic, but I left it like this until we have a use-case.\n- Only the `refinementList` widget takes advantage of this feature. It\n  would not be too hard to pass dynamic data to headers in other\n  widgets, but I left that to other PRs.\n- I will tackle the other issue of adding a CSS class on the root on\n  another PR.\n",
+  "comments": [
+    {
+      "body": "By analyzing the blame information on this pull request, we identified @vvo, @redox and @Jerskouille to be potential reviewers\n",
+      "date": 1464993881,
+      "id": 223712236,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> The method was checking if the component was collapsed or not\n> before triggering the render\n\nSome websites are using collapsing widgets to be able to have a lot of widgets without messing up the display. Thus always rendering widgets was not efficient since a lot of them were collapsed.\n\n> As we now always need to update the\n> render of the header, being collapsed or not\n\nWe only need to update it when the active count has changed right? We should find a way to not render the widget if no values were updated. Unsure that's doable.\n",
+      "date": 1465206302,
+      "id": 223913653,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Do you have other naming ideas for \"count\"? Maybe \"activeFacetsValues\" or smg adding context to what is the count about.\n",
+      "date": 1465206409,
+      "id": 223914053,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Some websites are using collapsing widgets to be able to have a lot of widgets without messing up the display. Thus always rendering widgets was not efficient since a lot of them were collapsed.\n\nMaybe we should not use the `shouldComponentUpdate` for that then. Maybe just not render the `ComposedComponent` when it is collapsed.\n",
+      "date": 1465233778,
+      "id": 224026744,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Do you have other naming ideas for \"count\"? Maybe \"activeFacetsValues\" or smg adding context to what is the count about.\n\nI had the same question, but I settled for `count` because this is what we use in the `RefinementListItem`, but I'm ok changing. Especially considering this is the number of currently selected facets, not the count of hits for thoses facets. So maybe `refinedFacetsCount`? We already use `isRefined` in the `RefinementList` template.\n",
+      "date": 1465233920,
+      "id": 224027444,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> So maybe refinedFacetsCount?\n\nThis seems better yes!\n",
+      "date": 1465285763,
+      "id": 224205750,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@pixelastic small changes needed before merging\n",
+      "date": 1465563778,
+      "id": 225176070,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Merging, will do the small changes afterwards\n",
+      "date": 1465804959,
+      "id": 225513183,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1464993867,
+  "labels": [],
+  "number": 1051,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(header): Pass count of current refined filters in header",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/283419",
+    "id": 283419,
+    "login": "pixelastic",
+    "type": "User"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n## Summary\r\n\r\nThis PR fixes a regression which disabled floating numbers in rangeInput widget.\r\n\r\n**Before this PR**\r\n```js\r\n  onInput = name => event => {\r\n    this.setState({\r\n      [name]: Number(event.currentTarget.value),\r\n    });\r\n  };\r\n```\r\n\r\nWhen user wants to type \"10.34\", that callback will be fired with the following `event.currentTarget.value` values:\r\n\r\n- `1`\r\n- `10`\r\n- `10.`\r\n- `10.3`\r\n- `10.34`\r\n\r\nWhen it had \"10.\", `Number(\"10.\")` returns `10` which makes the input value back to `10`. So people never can get to \"10.3\".\r\n\r\nSo I removed `Number()` function there (which was the case before the regression). And I used `Number()` when refining.\r\n\r\n* [The working example from this branch](https://codesandbox.io/s/instantsearchjs-0d34s?file=/src/app.js:382-470)\r\n* [The failing example from master(v4.5.0)](https://codesandbox.io/s/instantsearchjs-zg1ri?file=/src/app.js)\r\n\r\n**Result**\r\n\r\nUser should be able to type floating numbers.",
+  "comments": [
+    {
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4418/builds/29226) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 4142ad711b7ae6ab2f21c896c360cc94a0bfc715:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-3g3b9)| Configuration |\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-nyu5n)| PR |\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-b40ci)| PR |\n",
+      "date": 1590414898,
+      "id": 633584445,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]",
+        "type": "Bot"
+      }
+    },
+    {
+      "body": "Nice! It would be valuable to add a test for this to avoid future regressions. You can draw inspiration from the [`SearchBox` events tests](https://github.com/algolia/instantsearch.js/blob/8195d6e92f20292229d46973b06ee55fe5bdea5d/src/components/SearchBox/__tests__/SearchBox-test.js#L186).",
+      "date": 1590484754,
+      "id": 633910731,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@francoischalifour Yesterday I tried to add a test for that, but it was hard to simulate user input like in real world.\r\nIn real world, we type and it adds each character at a time to input, but with testing-library, it just triggered an event with a value like '10.34'.\r\n\r\nToday I tried their [user-event](https://testing-library.com/docs/ecosystem-user-event) package which is supposed to give a better simulation.\r\nI ran\r\n\r\n```js\r\nawait userEvent.type(minInput, '10.34');\r\n```\r\n\r\nbut it triggered the following 5 events.\r\n\r\n- `1`\r\n- `10`\r\n- `10.`\r\n- `10.3`\r\n- `10.34`\r\n\r\nSo this obviously cannot cover this regression. I think it could be only possible with real e2e test like selenium or cypress.",
+      "date": 1590508202,
+      "id": 634111649,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Is it not possible to tell the testing library to type `10.` and to expect that the input is effectively `10.`, and not `0`?",
+      "date": 1590570180,
+      "id": 634528843,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "It turns out it's not that easy 😅\r\nhttps://github.com/testing-library/react-testing-library/issues/678",
+      "date": 1590583720,
+      "id": 634637146,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Right, let's merge this as-is then.",
+      "date": 1590670817,
+      "id": 635334783,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1590414761,
+  "labels": [],
+  "number": 4418,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix(rangeInput): fix a bug that floating number cannot be typed",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/499898",
+    "id": 499898,
+    "login": "eunjae-lee",
+    "type": "User"
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n**Summary**\r\n\r\nThis PR prevents `insights` middleware from throwing when `userToken` is not given yet.\r\n_(The previous description wasn't clear and I was confused myself too.)_\r\n\r\nAdding the `insights` middleware to InstantSearch and assigning a userToken could happen at the same time, or not. For example, although InstantSearch is loaded, the user is not logged in, so there may not be a userToken to set (let's assume this customer is not using anonymous user token from cookie).\r\n\r\nWithout this PR, we can guide like\r\n\r\n> Add the middleware only after you have a user token. Otherwise, the middleware will throw errors without the token. Oh, and when a user logs out and you want to call `aa('setUserToken', '')` to remove the user token, you need to unuse the middleware. Otherwise it will throw errors because there is no user token.\r\n\r\nBut after this PR, I'd like to guide like\r\n\r\n> Add the insights middleware once. Whenever you have a user token, call `aa('setUserToken', 'something');`. If you want to remove the userToken, then do so. The middleware will stop sending events.\r\n\r\n---\r\n\r\n~This PR fixes the `insights` middleware not to throw when `userToken` is not given yet.\r\nIt's coming from the behavior of `search-insights`, but we might still allow customers to use the `insights` middleware without setting userToken. For example, they might want to leverage the `insights` middleware to send events to third-party trackers, but not necessarily to Algolia directly. In that case `userToken` for Algolia is not needed, but they still want the middleware to work.~\r\n\r\n~Currently this PR is based on https://github.com/algolia/instantsearch.js/pull/4712, but I will rebase it on master once it's merged. So this PR shouldn't be merged until then.~\r\n",
+  "comments": [
+    {
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4724/builds/124698) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit f575533e6fad27822497c4275d4e5be148e42cbe:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-d6bsc)| Configuration |\n",
+      "date": 1617712926,
+      "id": 814088527,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]",
+        "type": "Bot"
+      }
+    },
+    {
+      "body": "> For example, they might want to leverage the `insights` middleware to send events to third-party trackers, but not necessarily to Algolia directly. In that case `userToken` for Algolia is not needed, but they still want the middleware to work.\r\n\r\nSeeing the code, this means that they'll still see a warning when using the middleware with a non-Algolia analytics integration. Should we not rather explain (e.g., with a guide) how to create a middleware to plug their own analytics solution?",
+      "date": 1617790039,
+      "id": 814787556,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Seeing the code, this means that they'll still see a warning when using the middleware with a non-Algolia analytics integration. Should we not rather explain (e.g., with a guide) how to create a middleware to plug their own analytics solution?\r\n\r\nIf they use the `insights` middleware for non-Algolia analytics integration, they must've had `onEvent` hook and go controlled mode. Then they don't end up going into that branch: https://github.com/algolia/instantsearch.js/pull/4724/files#diff-d934c60fefaa23618441fb40ed23c85dde8006e7661144b0434add680a996f62R125-R127",
+      "date": 1617802428,
+      "id": 814918296,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "↑ @francoischalifour @tkrugg ",
+      "date": 1617972299,
+      "id": 816655899,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "If they do provide `onEvent`, it will never call `insightsClient` (https://github.com/algolia/instantsearch.js/pull/4724/files#diff-d934c60fefaa23618441fb40ed23c85dde8006e7661144b0434add680a996f62L127) and therefore not throw without `userToken`, right?\r\n\r\nI'm not sure to understand why this PR exactly.",
+      "date": 1617973768,
+      "id": 816670281,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@francoischalifour you're right!\r\nYou've made me realized that users will have no exception at all when\r\n\r\n- they didn't set userToken\r\n- & they provide `onEvent`\r\n- & they don't send events with `insightsClient`\r\n\r\nThanks for pointing it out! Now we don't need this.",
+      "date": 1618218401,
+      "id": 817632054,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "~pushed a commit but it's not recognized this PR, although the commit is in the remote :(~",
+      "date": 1619188407,
+      "id": 825700976,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I've reopened this PR and updated the description above @francoischalifour @tkrugg ",
+      "date": 1619447554,
+      "id": 826883523,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1617712495,
+  "labels": [],
+  "number": 4724,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix(insights): do not throw when userToken is not given",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/499898",
+    "id": 499898,
+    "login": "eunjae-lee",
+    "type": "User"
+  }
+}

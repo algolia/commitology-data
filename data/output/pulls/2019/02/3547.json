@@ -1,0 +1,57 @@
+{
+  "body": "This POC demonstrating a possible integration between our clickAnalytics and InstantSearchJS.\r\n\r\n> How we currently do it: https://www.algolia.com/doc/guides/building-search-ui/going-further/plug-analytics/js/?language=js#using-algolia-insights-with-instantsearchjs\r\n\r\n### Test this out\r\n1. Go on https://deploy-preview-3547--instantsearchjs.netlify.com/stories/?selectedKind=ClickAnalytics&selectedStory=with%20function%20template&full=0&addons=1&stories=1&panelRight=0&addonPanel=storybook%2Factions%2Factions-panel\r\n2. open your browser console\r\n2. click on `add to cart`\r\n\r\n### How it is used\r\n\r\nFor instant search user, sending `click` events (or other events types) can be done with the following way\r\n\r\n```js\r\nimport * as analytics from \"../src/helpers/analytics\";\r\n\r\n// initialize the search-insights clients\r\naa(\"init\", {\r\n  appId: \"APPLICATION_ID\",\r\n  apiKey: \"SEARCH_API_KEY\",\r\n  userHasOptedOut: false\r\n});\r\naa(\"setUserToken\", \"xxx\");\r\n\r\nconst search = instantsearch({\r\n  indexName: \"instant_search\",\r\n  /* ... */\r\n  insightsClient: aa\r\n});\r\n\r\n// add the hits widget\r\nsearch.addWidgets([\r\n  instantsearch.widgets.configure({\r\n    clickAnalytics: true\r\n  }),\r\n  instantsearch.widgets.hits({\r\n    container,\r\n    templates: {\r\n      item: item => `\r\n        <h3> ${item.name} </h3>\r\n        <button ${analytics.clickedObjectIDsAfterSearch(item.objectID, {\r\n          eventName: \"Add to basket\"\r\n        })}>\r\n           Add to basket\r\n        </button>\r\n      `\r\n    }\r\n  })\r\n]);\r\n```\r\n\r\nThis is going to call the [clickedObjectIDsAfterSearch](https://github.com/algolia/search-insights.js#reporting-a-click-event) in the following way:\r\n\r\n```js\r\naa(\"clickedObjectIDsAfterSearch\", {\r\n  eventName: \"Add to basket\", // user provided\r\n  index: \"instant_search\", // infered from `results`,\r\n  queryID: \"***\", // infered from `results`,\r\n  objectIDs: [\"1\"], // infered from `hit`,\r\n  positions: [1] // computed and infered from `hit` and `results`,\r\n});\r\n```\r\n#### With Hogan\r\n\r\n```handlebars\r\n<button\r\n  {{#helpers.clickedObjectIDsAfterSearch}}{\r\n    eventName: 'Add to cart'\r\n  }{{/helpers.clickedObjectIDsAfterSearch}}>\r\n  Add to basket\r\n</button>\r\n```\r\n\r\n### How it works\r\n\r\nThere are three parts:\r\n\r\n- `connectHits` is using `createAnalyticsHelpers()`:\r\n  - exposes `analytics` object with methods that call the insights client directly (useful for other flavours)\r\n  - inject in every hit `hit.__analytics = { index: \"instant_search\", queryID: \"xxx\", objectIDs: [\"1\"], positions: [10] }`\r\n- helpers `analytics.clickedObjectIDsAfterSearch` are helpers generates data attributes\r\n- the `WithClickAnalyticsWrapper` wraps the Hits component and sets a click listener that reads data attribute and calls connector analytics methods\r\n\r\n### Possible improvements and unresolved questions\r\n\r\n- Conversion events are often sent outside the contexte of instantsearch. Can we help in that situation?\r\nWe expose the queryID so the user can extract the queryID in the following way:\r\n```html\r\n  <a href=\"https://mywebsite.com/?queryID=${item.__analytics.queryID}\"> Add to basket </a>\r\n```\r\n```handlebars\r\n  <a href=\"https://mywebsite.com/?queryID={{__analytics.queryID}}\"> Add to basket </a>\r\n```\r\n- This POC is intended to work on InfiniteHits as well.\r\n",
+  "comments": [
+    {
+      "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit 0094cceabec9ed9d1ffe9e6660751e1701a250f9\n\nhttps://deploy-preview-3547--instantsearchjs.netlify.com",
+      "date": 1550682633,
+      "id": 465669740,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@francoischalifour \r\n\r\n> There's a lot of assumptions in the code because we want to support multiple data types (string and objects). I think this should be stricter. It makes it confusing for the users and it makes the code hard to follow.\r\n\r\nAs I answered to your comment:\r\nI want to allow the shorthand\r\n```html\r\n<button ${analytics.clickedObjectIDsAfterSearch(item.objectID, 'Add to basket')}>\r\n    Add to basket\r\n</button>\r\n<!-- vs -->\r\n<button ${analytics.clickedObjectIDsAfterSearch(item.objectID, {eventName: 'Add to basket'})}>\r\n    Add to basket\r\n</button>\r\n```\r\nbut it's debatable and I'm not holding on it\r\n\r\n\r\n> I don't find the way the higher-order component is made intuitive in the widget. We could abstract this logic by creating a proxy hit component that uses `HitsWithAnalytics` if the `analytics` prop is passed, the basic `Hits` component otherwise.\r\n\r\nThe HOC component here acts like the \"proxy\", do I'm not sure what you mean.\r\nI wanted to keep this PR short but this same HOC will be used to add analytics on infinite-hits\r\n```js\r\nconst HitsWithAnalytics = withClickAnalytics(Hits)\r\nconst InfiniteHitsWithAnalytics = withClickAnalytics(InfiniteHits)\r\n```\r\n \r\n> Do you plan on adding tests\r\n\r\nOf course! also rewriting the new code in TS as much as possible.",
+      "date": 1551282492,
+      "id": 467914739,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2982512",
+        "id": 2982512,
+        "login": "tkrugg",
+        "type": "User"
+      }
+    },
+    {
+      "body": "closing this. Replaced by #3598 ",
+      "date": 1552326488,
+      "id": 471648155,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/2982512",
+        "id": 2982512,
+        "login": "tkrugg",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1550682085,
+  "labels": [],
+  "number": 3547,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(insights): POC click analytics integration",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/2982512",
+    "id": 2982512,
+    "login": "tkrugg",
+    "type": "User"
+  }
+}

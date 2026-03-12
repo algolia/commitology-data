@@ -1,0 +1,71 @@
+{
+  "body": "**Summary**\r\n\r\nWith the current implementation we update the source of the highlight two times:\r\n\r\n- the first time is inside the connector where we call `escapeHits` only when `escapeHTML` is provided. This operation replace the placeholder `__ais-highlight__` with the tag `mark` recursively on all the hits.\r\n- the second time is either in user-land or inside the default template with the `highlight` or `snippet` function (though the inline template or a function template). This operation replace the tag `em` with the provided `highlightedTagName`. The issue is at this point we don't have a tag `em` anymore because we replace it the first time with `mark` we escape the value. \r\n\r\nIt means that the replace inside `highlight` & `snippet` is never executed. This PR aims to fix this issue. We now have two variables:\r\n\r\n- `TAG_PLACEHOLDER`: previously called `tagConfig` (renamed for consistency)\r\n- `TAG_REPLACEMENT`: avoid to rely on string and forget to update them\r\n\r\n**Before**\r\n\r\n![screenshot 2018-12-05 at 10 55 25](https://user-images.githubusercontent.com/6513513/49505632-78231b80-f87c-11e8-8c45-79a5109cd6e5.png)\r\n\r\n**After**\r\n\r\n![screenshot 2018-12-05 at 10 55 09](https://user-images.githubusercontent.com/6513513/49505643-7e18fc80-f87c-11e8-858e-544e34c323a1.png)\r\n\r\n-----\r\n\r\n**Alternatives**\r\n\r\nThe current implementation (with or without) the fix supports both syntax the inline Mustache template form with the three braces (because we do the replacement inside the connector):\r\n\r\n```\r\n{{{ _highlightResult.name.value }}}\r\n```\r\n\r\nAnd of course we also supports the one with the helper:\r\n\r\n```\r\n{{#helpers.highlight}}{ \"attribute\": \"name\" }{{/helpers.highlight}}\r\n```\r\n\r\nWe recommend the usage of the helper but we perform useless work to support both implementation at the same time. We first transform the placeholder to `mark` and then we transform `mark` to the correct tag with the class. We might want to drop the support for the first form. One simple reason is that users don't have to care about Algolia internals. \r\n\r\nIt simplify the flow of the highlighting: we only have to replace the value inside the helper (we still have to escape the value) it's easier to follow and less error prone. One downside though is that we have to update the refinement list items data structure to allow `highlight` to work on it. WDYT?",
+  "comments": [
+    {
+      "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit f93ba1742fd456c1bd43d324bdf26d1dc760cc0f\n\nhttps://deploy-preview-3323--instantsearchjs.netlify.com",
+      "date": 1544004132,
+      "id": 444428590,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Does this mean that now the `{{{` form will not work? ",
+      "date": 1544005620,
+      "id": 444436240,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Does this mean that now the `{{{` form will not work?\r\n\r\nRight now it works because we still do the replace at the same time we escape. But in case we update the implementation to the proposal I made: no it won't work anymore. The value inside the record will still be the placeholder. Only the `highlight` function will have the knowledge to do the replacement (without mutating the original value).",
+      "date": 1544013121,
+      "id": 444469316,
+      "reactions": {
+        "🎉": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@tkrugg the implication for the other flavour are minimal because they only use the public API. Once the v3 is released we can drop those lines (the ones you linked are for the v1, but the lib doesn't use InstantSearch):\r\n\r\nhttps://github.com/algolia/vue-instantsearch/blob/b4948323b5740df541265db814e7f7c3109c9a23/src/components/Highlight.vue#L32-L51",
+      "date": 1544032754,
+      "id": 444581800,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1544003968,
+  "labels": [],
+  "number": 3323,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix(highlight): avoid to ignore highlightedTagName",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/6513513",
+    "id": 6513513,
+    "login": "samouss",
+    "type": "User"
+  }
+}

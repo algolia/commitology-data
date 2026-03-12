@@ -1,0 +1,83 @@
+{
+  "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n## Summary\r\n\r\nThis PR accepts new `initParams` at `insights` middleware for initializing `insightsClient`.\r\n\r\n```js\r\nconst middleware = createInsightsMiddleware({\r\n  insightsClient,\r\n  insightsInitParams: {\r\n    useCookie: false,\r\n  },\r\n})\r\n```\r\n\r\nIt can be used to disable cookie like above. (The `useCookie` option is being implemented at the moment in https://github.com/algolia/search-insights.js/pull/236)\r\n\r\n### An extra thought about `useCookie: false`\r\nhttps://codesandbox.io/s/instantsearchjs-forked-5wu8h?file=/src/app.js:976-1197\r\n\r\nIf user passes `useCookie: false`, the `insightsClient` won't have any token at the time of initialization (because it will skip generating an anonymous user token).\r\n\r\nWhen the insights middleware will try to send events, `insightsClient` will throw, saying userToken is missing. However in that case, it doesn't make sense to send events when userToken is not specified. So they will have to postpone adding insights middleware.\r\n\r\n```js\r\nsearch.start();\r\n\r\nconst insights = createInsightsMiddleware({\r\n  insightsClient,\r\n  insightsInitParams: {\r\n    useCookie: false,\r\n  },\r\n});\r\n\r\nsetTimeout(() => {\r\n  // Whenever a user token is ready,\r\n  // the insights middleware can be used.\r\n  // It doesn't necessarily have to be used from the beginning.\r\n  insightsClient('setUserToken', 'user-token-1');\r\n  search.use(insights);\r\n}, 3000);\r\n```",
+  "comments": [
+    {
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4608/builds/90429) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 8bbb98eed5fbc16a692db9a0098851463d840864:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-jpr10)| Configuration |\n|[InstantSearch.js (forked)](https://codesandbox.io/s/instantsearchjs-forked-7f4y1)| PR |\n",
+      "date": 1608046651,
+      "id": 745372083,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]",
+        "type": "Bot"
+      }
+    },
+    {
+      "body": "what if the events get queued until the user token is given, so they don't get forgotten (like it works with `init` & umd)? ",
+      "date": 1608195386,
+      "id": 747304477,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> what if the events get queued until the user token is given, so they don't get forgotten (like it works with `init` & umd)?\r\n\r\nbut `search-insights` throws error immediately when trying to send event without token. If we want it, we should change from `search-insights`. Otherwise, we will end up having two different experiences.\r\n\r\nAnd if we just queue it and wait for user token, it might be problematic if they forgot to set user token and the events will be missing with no error or warning.\r\n",
+      "date": 1608566113,
+      "id": 749045845,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    },
+    {
+      "body": "regardless of what I'm suggesting next, I feel like this PR makes sense, however I think we should rethink useCookie; instead we should add `userToken` to init params.\r\n\r\nIf you add a userToken to init, there's no need for the anonymous token, and thus no use for the cookie either. This doesn't solve the \"we want anonymous token but no cookie\" use case, but neither does useCookie: false today.\r\n\r\nYou could pass `userToken: magicValueWhichMeansGenerateAnonymous` (maybe that value is false, null or something like that, indicating it's unset)",
+      "date": 1608801946,
+      "id": 750821457,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "@Haroenv That is actually a good point.\r\n\r\nWith `userToken` added to init params, this whole scenario will make sense. I'll prepare a PR for that in search-insights.",
+      "date": 1610375743,
+      "id": 757990897,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1608046552,
+  "labels": [],
+  "number": 4608,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(insights): accept initParams for insightsClient",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/499898",
+    "id": 499898,
+    "login": "eunjae-lee",
+    "type": "User"
+  }
+}

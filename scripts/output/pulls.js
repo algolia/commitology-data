@@ -11,7 +11,7 @@ const progress = spinner();
 await forEachInputPull(
   async (inputPull) => {
     const { index, max, data } = inputPull;
-    progress.tick(`[${index}/${max}] ${data.subject}`);
+    progress.tick(`[${index}/${max}] ${data.title}`);
 
     const pullData = await normalizePull(data);
     const pullPath = getOutputPath(pullData);

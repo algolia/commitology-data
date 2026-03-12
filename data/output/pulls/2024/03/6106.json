@@ -1,0 +1,33 @@
+{
+  "body": "**Summary**\r\n\r\nThis should fix what @MikeIbberson talks about here : https://github.com/algolia/instantsearch/issues/6073#issuecomment-1979230739\r\n\r\nThe problem was index widgets would get added twice client-side in a Next.js App Router application.\r\nThis is due to how `useLayoutEffect` behaves on either React canary or an RSC context (not sure), before what we had was : \r\n- index gets added on render because `shouldSsr` is `true` and the parent index doesn't contain it yet, making `shouldAddWidgetEarly` be `true`\r\n- `useLayoutEffect` is called, `shouldAddWidgetEarly` is true so we don't add it again\r\n- `useLayoutEffect` dispose function would be called and set the cleanupTimer\r\n- `shouldAddWidgetEarly` is now `false` because `parentIndex` contains the child index\r\n- `useLayoutEffect` called again, with `shouldAddWidgetEarly` being false this time, but it still skips adding the widget again because the cleanup timer is defined\r\n\r\nIn React 19 canary / Next.js, the cleanup function does not get called (maybe no strict mode or a different one), which means the last point fails.\r\n\r\n**Result**\r\n\r\nWe were just using the wrong dependency in `useEffect`, we should never add the widget in an effect if `shouldSsr` is `true`, and that way the effect will run less often. \r\nOnly an index widget can have `shouldSsr` be `true` client-side\r\n",
+  "comments": [
+    {
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/6106/builds/488269) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 9e6daa9a60b0873aa4ebf7d3c891332297f93874:\n\n|Sandbox| Source |\n|--|--|\n|[react-instantsearch-app](https://codesandbox.io/s/react-instantsearch-app-t828nh)| Configuration |\n|[example-react-instantsearch-default-theme](https://codesandbox.io/s/example-react-instantsearch-default-theme-x2jf9p)| Configuration |\n|[example-react-instantsearch-next-app-dir-example](https://codesandbox.io/s/example-react-instantsearch-next-app-dir-example-qh26c4)| Configuration |\n|[example-vue-instantsearch-default-theme](https://codesandbox.io/s/example-vue-instantsearch-default-theme-sd27kc)| Configuration |\n",
+      "date": 1711531138,
+      "id": 2022284353,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]",
+        "type": "Bot"
+      }
+    }
+  ],
+  "date": 1711530954,
+  "labels": [],
+  "number": 6106,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "fix(react-instantsearch): index added twice with Next.js app router",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/9158954",
+    "id": 9158954,
+    "login": "aymeric-giraudet",
+    "type": "User"
+  }
+}

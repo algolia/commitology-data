@@ -1,0 +1,136 @@
+{
+  "body": "The panel widget adds a way to wrap other widgets to add templates (headers, footers) and utility features (collapsing and hiding the widget).\r\n\r\n## Motivation\r\n\r\nUsing headers and footers wrapping a widget is a common need to give more context to the user when interacting with the widget.\r\n\r\nReact InstantSearch provides a `Panel` widget to wrap any other InstantSearch component:\r\n\r\n```js\r\n<Panel header=\"All brands\">\r\n  <RefinementList attributes=\"brands\" />\r\n</Panel>\r\n```\r\n\r\nUp until InstantSearch.js 2, widgets had `header` and `footer` templates, in addition to [`autoHideContainer`](https://community.algolia.com/instantsearch.js/v2/widgets-common-api.html#autohidecontainer) and [`collapsible`](https://community.algolia.com/instantsearch.js/v2/widgets-common-api.html#collapsible) options. The panel widget solves these needs, deferring the responsability from the widget itself to the panel widget.\r\n\r\n## Usage\r\n\r\n```js\r\nconst refinementListWithPanel = panel({\r\n  templates: {\r\n    header: 'Header',\r\n    footer: 'Footer',\r\n    // or with functions\r\n    header: ({ results }) => `Header | ${results.nbHits} results`,\r\n  },\r\n  hidden: ({ results }) => results.nbHits === 0,\r\n})(refinementList);\r\n\r\nsearch.addWidget(\r\n  refinementListWithPanel({\r\n    attribute: 'brands',\r\n  })\r\n);\r\n```\r\n\r\nThe `hidden` property drives the `noRefinement` CSS class.\r\n\r\n## Specs\r\n\r\nhttps://instantsearch-css.netlify.com/widgets/panel/\r\n\r\n## RFC\r\n\r\nhttps://github.com/algolia/instantsearch-rfcs/pull/9\r\n\r\n## Preview\r\n\r\nhttps://deploy-preview-3253--instantsearchjs.netlify.com/stories/?selectedStory=Panel.with%20default",
+  "comments": [
+    {
+      "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit 0b23ca37d81abb1e34dec4293004964f000758dd\n\nhttps://deploy-preview-3253--instantsearchjs.netlify.com",
+      "date": 1541169353,
+      "id": 435400289,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I made the possible changes.\r\n\r\nRemaining notes are discussions that we can either do here or in person :)",
+      "date": 1542284790,
+      "id": 439023331,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "The last commit rolls back to the original behavior:\r\n\r\n- we give the full options to the templates and to the `hidden` option\r\n- the evaluated `hidden` option (`() => true`) drives the `noRefinement` CSS class.",
+      "date": 1542816471,
+      "id": 440720885,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I didn't realise from the review that we don't have access to the render options inside the Panel but only to the raw render option provided by InstantSearch not the connector. The current implem is nice but not good enough IMO. We should have access to the same set of options that the wrapped widget provide (e.g. list of facets with count). One solution proposed by @francoischalifour was a `getRenderingOptions` function implemented by all the widgets. But it's adds one (more) method to the widget API surface for a pretty small use case. Would be better to find an alternative that allow the panel to be hooked inside the widget itself.\r\n\r\nThe previous API was also convenient because the `autoHideContainer` was automatically computed. Right now it's on the user to implement it. Would be nice to have a default implementation of the that will automatically read the value from the render options (this is how React & Vue works). The magic is far from what I prefer to implement but we have to admit that it's way more convenient for the users. With this implementation I think we'll have users asking how to hide the Panel.",
+      "date": 1543852144,
+      "id": 443757718,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Indeed there's a trade off here. We provide the `hidden` method but the user must find the right boolean expression to hide the widget.\r\n\r\n> Would be better to find an alternative that allow the panel to be hooked inside the widget itself.\r\n\r\nDo you more insights on how you would see it working @samouss? AFAIK we never compute the `autoHideContainer` value anywhere for each widget.",
+      "date": 1544433860,
+      "id": 445746463,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Do you more insights on how you would see it working @samouss?\r\n\r\nWe the current architecture I have no idea how it would work. \r\n\r\n> AFAIK we never compute the autoHideContainer value anywhere for each widget.\r\n\r\nWe do compute the autoHideContainer inside each widget (see [RefinementList](https://github.com/algolia/instantsearch.js/blob/develop/src/widgets/refinement-list/refinement-list.js#L68), [Menu](https://github.com/algolia/instantsearch.js/blob/develop/src/widgets/menu/menu.js#L54), ...).",
+      "date": 1544443914,
+      "id": 445794550,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss",
+        "type": "User"
+      }
+    },
+    {
+      "body": "A solution that I see is to have a `canRefine` function implemented on all connectors that returns a boolean based on the options (`helper`, `results`, `state`). We can then [pass it to the panel](https://github.com/algolia/instantsearch.js/blob/v3/src/widgets/panel/panel.js#L99-L102).\r\n\r\nThat would however broaden the API surface. I think it might be time to create an actual connector interface documenting all these required methods.",
+      "date": 1544452712,
+      "id": 445837579,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Now that we have the concept of UI state in v4, we could pass the `uiState` to the panel so that it's easier to compute the `hidden` and other values.",
+      "date": 1575757469,
+      "id": 562891956,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour",
+        "type": "User"
+      }
+    },
+    {
+      "body": "good point @francoischalifour, open to this change",
+      "date": 1575881265,
+      "id": 563127803,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1541169130,
+  "labels": [],
+  "number": 3253,
+  "reactions": {
+    "❤️": 1,
+    "🎉": 1
+  },
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(panel): add Panel widget",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/6137112",
+    "id": 6137112,
+    "login": "francoischalifour",
+    "type": "User"
+  }
+}

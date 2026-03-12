@@ -1,0 +1,147 @@
+{
+  "body": "This PR is an alternative implementation of #2509. This is currently a PoC.\r\n\r\nAt the core of this new implementation is a change when the render part of the lifecycle of the widget. With this implementation, the render can be called when the instantsearch detects that a search is stalled. This means that they will be called more often. However, this is not likely to have a big impact on the performance as it should be the responsability of the widgets to render only when necessary.\r\n\r\nOn the implementation of the connector and the widget, the work is trivial. It is merely a question of providing the `isSearchStalled` flag to the rendering. The logic is factored in instantsearch, which means that the usage in other widgets will be as easy.\r\n\r\nHaving done this implementation, I think it's the way to go. WDYT? Happy to answer any questions.\r\n\r\nPS: this new implementation has been inspired by what can be done in react-instantsearch and vue-instantsearch. If we were to implement them using this library, this means that we need to fit their logic.\r\n\r\nPPS: this can be tested here: https://deploy-preview-2569--algolia-instantsearch.netlify.com/v2/dev-novel/?selectedStory=SearchBox.default",
+  "comments": [
+    {
+      "body": "Deploy preview ready!\n\nBuilt with commit 737d28e1687ab5fbba62f79a02ab91f2f4b7a1d6\n\nhttps://deploy-preview-2569--algolia-instantsearch.netlify.com",
+      "date": 1510254049,
+      "id": 343256530,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I like the implementation, as discussed earlier in a meeting, some questions still:\r\n\r\n> However, this is not likely to have a big impact on the performance\r\nCan you try a small manual perf test in the browser to see if there's any obvious issue/diff with this implementation?\r\n\r\n> It should be the responsability of the widgets to render only when necessary.\r\n\r\nCan you provide an example of a widget rendering that would avoid re-rendering when the widget do not care about the isSearchStalled flag? Just curious here how to do it.\r\n\r\nFinally, for reference, can you provide a small concrete example of what's happening under the hood in a scenario where this is implemented? Something like:\r\n- user types 'a'\r\n- flag becomes true\r\n- widget render once..\r\n\r\nSomething like that. So that we all understand fully what's happening. \r\n\r\n\r\n\r\n\r\n\r\n",
+      "date": 1510319771,
+      "id": 343470521,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo",
+        "type": "User"
+      }
+    },
+    {
+      "body": "This looks really nice, I think we should go this route. I guess we can add some componentShouldUpate hooks? ",
+      "date": 1510329304,
+      "id": 343510602,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "> Can you provide an example of a widget rendering that would avoid re-rendering when the widget do not care about the isSearchStalled flag? Just curious here how to do it.\r\n\r\nThat's a very speculative on my side here I guess. I can try to implement it on a widget / connector to see what happens.\r\n\r\n> Something like that. So that we all understand fully what's happening.\r\n\r\nOk I'll do a schema.\r\n\r\n> This looks really nice, I think we should go this route. I guess we can add some componentShouldUpate hooks?\r\n\r\nI don't know if that's necessary but that can be done, indeed.\r\n\r\n",
+      "date": 1510330110,
+      "id": 343514481,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "I will move on with this solution and close the other. Thanks for the feedbacks :)",
+      "date": 1510847257,
+      "id": 344964219,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "![new rendering step visually](https://user-images.githubusercontent.com/393765/32903839-57607122-caf6-11e7-953c-4ddc89572068.png)\r\n",
+      "date": 1510850925,
+      "id": 344984853,
+      "reactions": {
+        "❤️": 2
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Hello everyone,\r\n\r\nThis is the final version. Here is the API:\r\n\r\nInstantSearch constructor / factory has a new option: [stalledSearchDelay](https://deploy-preview-2569--algolia-instantsearch.netlify.com/v2/instantsearch.html#struct-InstantSearchOptions-stalledSearchDelay) which configures the time before the stalled search kicks in.\r\nAlso InstantSearch provides a new searchMetadata attribute with the options sent to the widgets at `render`. It's not provided at `init` because there is no search yet (therefore no metadata about search). The searchMetadata is an object with a single key `isSearchStalled`.\r\n\r\nWe have a new set of [options for the loading indicator](https://deploy-preview-2569--algolia-instantsearch.netlify.com/v2/widgets/searchbox#struct-SearchBoxWidgetOptions-loadingIndicator) on the search box: \r\n\r\n```js\r\n{\r\n  /* ... other searchbox options */\r\n  loadingIndicator: true,\r\n  // or\r\n  loadingIndicator: {\r\n    template,\r\n    cssClasses: {root: ''}\r\n  } \r\n}\r\n```\r\n\r\nThe connector provides a new information to the searchbox [rendering](https://deploy-preview-2569--algolia-instantsearch.netlify.com/v2/connectors/connectsearchbox#struct-SearchBoxRenderingOptions): isSearchStalled, if the search is stalled.",
+      "date": 1511542086,
+      "id": 346867496,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "CI failed cause one commit message was too long (merge 1d0aa21feba4607f456385c4606468481a5c893d) so you might need to rebase",
+      "date": 1511546272,
+      "id": 346876923,
+      "reactions": {
+        "👍️": 1
+      },
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      }
+    },
+    {
+      "body": "Thanks @Haroenv :D",
+      "date": 1511549979,
+      "id": 346883634,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    },
+    {
+      "body": "The behavior and loading indicator have been validated by @sebnvzt :D ",
+      "date": 1511788936,
+      "id": 347179709,
+      "reactions": {},
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito",
+        "type": "User"
+      }
+    }
+  ],
+  "date": 1510253847,
+  "labels": [],
+  "number": 2569,
+  "reactions": {},
+  "state": {
+    "reason": null,
+    "value": "closed"
+  },
+  "title": "feat(core): provide information about stalled search to widgets",
+  "type": "pull",
+  "user": {
+    "avatar": "https://avatars.githubusercontent.com/u/393765",
+    "id": 393765,
+    "login": "bobylito",
+    "type": "User"
+  }
+}
