@@ -1,38 +1,19 @@
-import { pMap } from 'golgoth';
-import { absolute, glob, readJson, spinner, writeJson } from 'firost';
+import { spinner, writeJson } from 'firost';
+import { outputCommitFieldOrder } from '../../lib/config.js';
 import {
-  dataInputCommitsPath,
-  dataOutputCommitsPath,
-  outputCommitFieldOrder,
-} from '../../lib/config.js';
-import { datePath } from '../../lib/helper.js';
+  forEachInputCommit,
+  getOutputPath,
+  normalizeCommit,
+} from '../../lib/helpers/commit.js';
 
-const rawCommitPaths = await glob('./**/*.json', { cwd: dataInputCommitsPath });
-const progress = spinner(rawCommitPaths.length);
+const progress = spinner();
 
-await pMap(
-  rawCommitPaths,
-  async (rawCommitPath) => {
-    const rawCommitData = await readJson(rawCommitPath);
-    const { author, subject, hash, body, date } = rawCommitData;
-    progress.tick(subject);
-
-    const shortHash = hash.substring(0, 7);
-
-    const commitData = {
-      type: 'commit',
-      hash: shortHash,
-      title: subject,
-      author,
-      body,
-      date,
-    };
-
-    const commitPath = absolute(
-      dataOutputCommitsPath,
-      datePath(date),
-      `${shortHash}.json`,
-    );
+await forEachInputCommit(
+  async (inputCommit) => {
+    const { index, max, data } = inputCommit;
+    progress.tick(`[${index}/${max}] ${data.subject}`);
+    const commitData = normalizeCommit(data);
+    const commitPath = getOutputPath(commitData);
 
     await writeJson(commitData, commitPath, {
       sort: outputCommitFieldOrder,
