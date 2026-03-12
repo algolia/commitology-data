@@ -11,7 +11,7 @@ const progress = spinner();
 await forEachInputIssue(
   async (inputIssue) => {
     const { index, max, data } = inputIssue;
-    progress.tick(`[${index}/${max}] ${data.subject}`);
+    progress.tick(`[${index}/${max}] ${data.title}`);
 
     const issueData = await normalizeIssue(data);
     const issuePath = getOutputPath(issueData);
@@ -22,4 +22,4 @@ await forEachInputIssue(
   },
   { concurrency: 50 },
 );
-progress.success('All commits generated');
+progress.success('All issues generated');
