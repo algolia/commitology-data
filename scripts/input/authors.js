@@ -1,8 +1,8 @@
 import { _, pMap } from 'golgoth';
 import { absolute, exists, readJson, spinner, writeJson } from 'firost';
 import { dataInputAuthorsPath, repo } from '../../lib/config.js';
-import { getAuthorList } from '../../lib/git.js';
-import { getCommit } from '../../lib/github.js';
+import { getAuthorList } from '../../lib/helpers/git.js';
+import { getCommit } from '../../lib/helpers/github.js';
 
 const CONCURRENCY = 5;
 const authorList = await getAuthorList();

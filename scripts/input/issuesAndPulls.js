@@ -1,7 +1,10 @@
 import { _, dayjs, pMap } from 'golgoth';
 import { absolute, sleep, spinner, writeJson } from 'firost';
 import { dataInputPath, inputIssueFieldOrder } from '../../lib/config.js';
-import { getIssuesAndPulls, getIssuesAndPullsCount } from '../../lib/github.js';
+import {
+  getIssuesAndPulls,
+  getIssuesAndPullsCount,
+} from '../../lib/helpers/github.js';
 
 const ISSUES_PER_PAGE = 100;
 

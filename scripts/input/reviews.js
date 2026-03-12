@@ -9,7 +9,7 @@ import {
   writeJson,
 } from 'firost';
 import { dataInputPullsPath, dataInputReviewsPath } from '../../lib/config.js';
-import { getReviews } from '../../lib/github.js';
+import { getReviews } from '../../lib/helpers/github.js';
 
 const CONCURRENCY = 10;
 

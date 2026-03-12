@@ -4,7 +4,7 @@ import {
   dataInputCommitsPath,
   inputCommitFieldOrder,
 } from '../../lib/config.js';
-import { getCommitData, getCommitList } from '../../lib/git.js';
+import { getCommitData, getCommitList } from '../../lib/helpers/git.js';
 
 const commitList = await getCommitList();
 const progress = spinner(commitList.length);

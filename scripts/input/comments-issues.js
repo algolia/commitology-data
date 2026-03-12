@@ -12,7 +12,7 @@ import {
   dataInputCommentsPath,
   dataInputIssuesPath,
 } from '../../lib/config.js';
-import { getComments } from '../../lib/github.js';
+import { getComments } from '../../lib/helpers/github.js';
 
 const CONCURRENCY = 10;
 
