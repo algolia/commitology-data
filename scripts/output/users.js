@@ -1,4 +1,4 @@
-import { exists, spinner, writeJson } from 'firost';
+import { spinner, writeJson } from 'firost';
 import {
   fieldOrder,
   forEachInputUser,
@@ -22,8 +22,4 @@ await forEachInputUser(
   },
   { concurrency: 50 },
 );
-
-// TODO: Handle the commits.
-// If they have a linked User, add the author as an alias in the User
-// If not, add to default user, or manually link them
 progress.success('All users generated');

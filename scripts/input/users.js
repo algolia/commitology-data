@@ -2,7 +2,7 @@ import { exists, spinner, writeJson } from 'firost';
 import { getUser } from '../../lib/helpers/github.js';
 import {
   fieldOrder,
-  forEachInputUser,
+  forEachUserInInputCommitOrIssueOrPullOrComment,
   getInputPath,
 } from '../../lib/helpers/user.js';
 
