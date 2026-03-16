@@ -410,6 +410,740 @@
       "date": 1663171243,
       "reactions": {},
       "id": 1363060328
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/7448338",
+        "id": 7448338,
+        "login": "JanKups",
+        "type": "User"
+      },
+      "body": "Following the Docs implementation of [SEO-friendly URLs ](https://www.algolia.com/doc/guides/building-search-ui/going-further/routing-urls/react-hooks/#seo-friendly-urls)also causes the issue mentioned above.\r\n\r\nInteresting to note is that it seems that \"createURL\" and \"stateToRoute\" are called on the page of the Hit/result.\r\n\r\n@dhayab Your fix including NextRouterHandler works great. I do have an edge case: using subdomains for a multi-tenant setup (https://github.com/vercel/platforms). The url send to useNextRouterHandler becomes undefined . Do you see any red flags using a subdomain?",
+      "date": 1664285689,
+      "reactions": {},
+      "id": 1363060336
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/19807029",
+        "id": 19807029,
+        "login": "ddaoxuan",
+        "type": "User"
+      },
+      "body": "@dhayab  do we have an ETA for the native support solution? by that I mean 3rd party routing going along with Algolia InstantSearch\r\n\r\nMaybe to have like an example working with NextJS, including SSG, SSR and CSR.\r\nThe user flow would be like that land on a category (SSG) => facet click to filtered category(SSR) => and for example change sorting (CSR)",
+      "date": 1665047380,
+      "reactions": {
+        "👍️": 18
+      },
+      "id": 1363060345
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/421781",
+        "id": 421781,
+        "login": "bramski",
+        "type": "User"
+      },
+      "body": "Need this. I'm pretty frustrated after 2 years of developing nextJS applications with algolia that this hasn't been addressed.",
+      "date": 1666125713,
+      "reactions": {
+        "👍️": 36
+      },
+      "id": 1363060381
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/53652902",
+        "id": 53652902,
+        "login": "haras-unicorn",
+        "type": "User"
+      },
+      "body": "I also needed this and figured out how to do this until there's official support. It's a bit hacky but it works for my use case.\r\n\r\nHere's the router code (I suggest you put it in a `.js` file):\r\n```js\r\nimport { history as InstantSearchHistory } from 'instantsearch.js/es/lib/routers';\r\nimport router from 'next/router';\r\n\r\nexport function history(url) {\r\n  const newHistory = InstantSearchHistory({\r\n    getLocation() {\r\n      if (typeof window === 'undefined') {\r\n        return new URL(url);\r\n      }\r\n\r\n      return window.location;\r\n    },\r\n  });\r\n\r\n  newHistory.write = function (routeState) {\r\n    if (typeof window === 'undefined') {\r\n      return;\r\n    }\r\n\r\n    const url = this.createURL(routeState);\r\n    const title = this.windowTitle && this.windowTitle(routeState);\r\n    if (this.writeTimer) {\r\n      clearTimeout(this.writeTimer);\r\n    }\r\n    this.writeTimer = setTimeout(() => {\r\n      if (title) {\r\n        window.document.title = title;\r\n      }\r\n      const shouldWrite = this.shouldWrite(url);\r\n      if (shouldWrite) {\r\n        router.push(url, url);\r\n        this.pushed = true;\r\n        this.latestAcknowledgedHistory = window.history.length;\r\n      }\r\n      this.inPopState = false;\r\n      this.externalChange = false;\r\n      this.writeTimer = undefined;\r\n    }, this.writeDelay);\r\n  }.bind(newHistory);\r\n\r\n  newHistory.onUpdate = function (callback) {\r\n    if (typeof window === 'undefined') {\r\n      return;\r\n    }\r\n\r\n    this._onPopState = (url) => {\r\n      if (this.writeTimer) {\r\n        clearTimeout(this.writeTimer);\r\n        this.writeTimer = undefined;\r\n      }\r\n\r\n      this.inPopState = true;\r\n\r\n      const newRoute = this.read();\r\n      callback(newRoute);\r\n    };\r\n\r\n    this._onRouteChangeComplete = (url) => {\r\n      if (this.writeTimer) {\r\n        clearTimeout(this.writeTimer);\r\n        this.writeTimer = undefined;\r\n      }\r\n\r\n      if (this.pushed) {\r\n        this.pushed = false;\r\n        return;\r\n      }\r\n\r\n      this.externalChange = true;\r\n\r\n      const newRoute = this.read();\r\n      callback(newRoute);\r\n    };\r\n\r\n    router.events.on('routeChangeComplete', this._onRouteChangeComplete);\r\n    router.beforePopState((event) => this._onPopState(event.url));\r\n  }.bind(newHistory);\r\n\r\n  newHistory.dispose = function () {\r\n    this.isDisposed = true;\r\n\r\n    if (this.writeTimer) {\r\n      clearTimeout(this.writeTimer);\r\n    }\r\n\r\n    this.write({});\r\n  }.bind(newHistory);\r\n\r\n  newHistory.shouldWrite = function (url) {\r\n    if (typeof window === 'undefined') {\r\n      return false;\r\n    }\r\n\r\n    const lastPushWasByISAfterDispose = !(this.isDisposed && this.latestAcknowledgedHistory !== window.history.length);\r\n\r\n    return !this.inPopState && !this.externalChange && lastPushWasByISAfterDispose && url !== window.location.href;\r\n  }.bind(newHistory);\r\n\r\n  return newHistory;\r\n}\r\n```\r\n\r\nUse it like so:\r\n```tsx\r\nimport { history } from '<where you put the router file>';\r\nimport { InstantSearch } from 'react-instantsearch-hooks-web';\r\nimport { useMemo } from 'react';\r\n\r\nexport const Component = ({\r\n  url,\r\n  // ...\r\n}) => {\r\n  // ...\r\n\r\n  return (\r\n    <InstantSearch\r\n      {/* ... */}\r\n      routing={useMemo(\r\n        () =>\r\n          url\r\n            ? {\r\n                router: history(url),\r\n              }\r\n            : false,\r\n        [url]\r\n      )}\r\n    >\r\n      {/* ... */}\r\n    </InstantSearch>\r\n  );\r\n};\r\n```\r\n\r\nThe `url` comes from `getServerSideProps` and is used for SSR like so:\r\n```tsx\r\nimport { Component } from '<where you put your component>';\r\nimport { getServerState } from 'react-instantsearch-hooks-server';\r\nimport { InstantSearchSSRProvider } from 'react-instantsearch-hooks-web';\r\n\r\nconst Page = ({ url, serverState, /* ... */ }) => {\r\n  // ...\r\n\r\n  return (\r\n    <InstantSearchSSRProvider {...serverState}>\r\n      <Component url={url}>\r\n        {/* ... */}\r\n      </Component>\r\n    </InstantSearchSSRProvider>\r\n  );\r\n};\r\n\r\nexport async function getServerSideProps(ctx) {\r\n  // maybe there's a better way to get the url but this works\r\n  const { req } = ctx;\r\n  const protocol = req.headers.referer?.split('://')[0] || 'https';\r\n  const serverUrl = `${protocol}://${req.headers.host}${req.url}`;\r\n  const url = serverUrl;\r\n\r\n  const serverState = await getServerState(<App Component={Page} pageProps={{ url, /* ... */ }} />);\r\n\r\n  return { props: { url, serverState, /* ... */ } };\r\n}\r\n```",
+      "date": 1669145556,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1363060456
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/110320494",
+        "id": 110320494,
+        "login": "bline108",
+        "type": "User"
+      },
+      "body": "Any progress on  a native solution?\r\nThanks!",
+      "date": 1670468650,
+      "reactions": {
+        "👍️": 9
+      },
+      "id": 1363060475
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/43289146",
+        "id": 43289146,
+        "login": "henry9207",
+        "type": "User"
+      },
+      "body": "Algolia, when will the solution be released? No one is responsible?\r\nHey, it is something critical........",
+      "date": 1671002873,
+      "reactions": {
+        "👍️": 11
+      },
+      "id": 1363060507
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/102108727",
+        "id": 102108727,
+        "login": "stephenandekian",
+        "type": "User"
+      },
+      "body": "Algolia team, just want to chime in here in the event anyone is listening to this thread. Native support for this issue really critical. Can you please provide an update on where this fix is on the roadmap and when it can be expected, if ever?",
+      "date": 1671031861,
+      "reactions": {
+        "👍️": 24
+      },
+      "id": 1363060521
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4962633",
+        "id": 4962633,
+        "login": "hussainb",
+        "type": "User"
+      },
+      "body": "Is it possible to disable InstantSearch's URL change and handle it manually? I mean, when a search is fired there should be no change in the URL.",
+      "date": 1673456689,
+      "reactions": {},
+      "id": 1379182775
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi all, we are currently working on a solution, and we came up with the idea of a package that lets you create a custom router that is compatible with Next.js and fixes the back button issue as well as the dynamic routing issue.\r\n\r\nIt needs to be its own package because it has `next` as a `peerDependency` so we can use its router.\r\n\r\nBefore moving forward we'd appreciate getting your feedback. For this we released this experimental package [`instantsearch-router-next-experimental`](https://www.npmjs.com/package/instantsearch-router-next-experimental)\r\nPlease note that as its name implies, this one should only be used for testing. If the solution is validated a new packaged with a definitive name and API will get published.\r\n\r\nTo use it, install it :\r\n```sh\r\nyarn add instantsearch-router-next-experimental\r\n# or if you're using npm\r\nnpm install instantsearch-router-next-experimental\r\n```\r\nThen you can instantiate it and pass it in the `routing` prop of the `<InstantSearch>` component :\r\n```js\r\nimport { createInstantSearchNextRouter } from 'instantsearch-router-next-experimental';\r\n\r\nexport default function Page({ serverState, url }) {\r\n  return (\r\n    <InstantSearchSSRProvider {...serverState}>\r\n      <InstantSearch\r\n        searchClient={searchClient}\r\n        indexName=\"instant_search\"\r\n        routing={{ router: createInstantSearchNextRouter({ serverUrl: url }) }}\r\n      >\r\n        {/* ... */}\r\n      </InstantSearch>\r\n    </InstantSearchSSRProvider>\r\n  );\r\n}\r\n```\r\nIf you are not using SSR therefore not having a `url` prop, you can simply call `createInstantSearchNextRouter` without any argument.\r\nAnd if you have custom routing methods such as `createUrl` or `parseUrl` you may pass them in the object argument as well. You can find more info about usage on the [npm page](https://www.npmjs.com/package/instantsearch-router-next-experimental)\r\n\r\nYou may find the source code in the package itself or on [this branch](https://github.com/algolia/instantsearch/tree/feat/experimental-next-router/packages/react-instantsearch-hooks-next-router).\r\n\r\nWe're looking forward to hearing how it works for you.\r\nIt can be a reaction to this comment if it works nicely for you, or a comment detailing which version of `next` and `react-instantsearch-hooks` you are using if it does not work ! \r\n\r\nThanks 😁",
+      "date": 1673966191,
+      "reactions": {
+        "🎉": 3,
+        "👍️": 3
+      },
+      "id": 1385522883
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4834347",
+        "id": 4834347,
+        "login": "Raesta",
+        "type": "User"
+      },
+      "body": "Hi @aymeric-giraudet,\r\n\r\nthank you for your solution, but I have a problem actually.\r\n\r\nI use :\r\n- next : 11.0.1\r\n- react-instantsearch-hooks-web 6.32.0\r\n\r\nMy problem is on the loading of InstantSearch\r\n![image](https://user-images.githubusercontent.com/4834347/213226582-12332cac-873e-4d00-b034-86cf3e123d05.png)\r\n\r\nThe understanding of this problem is probably the old version of next but currently we can not migrate.\r\n\r\nThank you in advance for your help.",
+      "date": 1674059409,
+      "reactions": {},
+      "id": 1387353079
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @Raesta,\r\n\r\nThanks for the feedback ! It is very helpful for the future, looks like we relied on a pretty new method.\r\n\r\n~~Can you try setting the `doNotOverrideBeforePopState` option to `true` ?~~\r\n~~Your routing would look like this :~~\r\n```js\r\n{\r\n  router: createInstantSearchNextRouter({ \r\n    serverUrl: url,\r\n    doNotOverrideBeforePopState: true\r\n  }) \r\n}\r\n```\r\n\r\n~~Normally it should not call `beforePopState` with this, please let me know if it works :)~~\r\n\r\n~~In the meantime I'll iterate and check if the method exists before using it and publish a newer version.~~\r\n\r\nEdit: scrap that, seems like a problem with the router singleton, I'll investigate more !\r\nEdit2: it's a problem with webpack, swc handles it fine though, which is why it works on 12+ only. Seems like using cjs instead of esm with webpack works though",
+      "date": 1674059865,
+      "reactions": {},
+      "id": 1387363451
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @Raesta,\r\n\r\nSorry for the double post but it should be fixed by now, with version `0.0.5`\r\nWhat I did is I added this line to `package.json` in `instantsearch-router-next-experimental` : \r\n```json\r\n\"exports\": {\r\n  \"webpack\": \"./dist/index.cjs\"\r\n}\r\n```\r\nTo instruct webpack to use `cjs` even if `mjs` is available, and it seems to fix things.\r\n\r\nYou can let me know if this fixes things on your end too, thanks ! :) ",
+      "date": 1674117804,
+      "reactions": {
+        "🎉": 1
+      },
+      "id": 1396623456
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4834347",
+        "id": 4834347,
+        "login": "Raesta",
+        "type": "User"
+      },
+      "body": "Hi @aymeric-giraudet work perfectly, thanks a lot for your work.\r\n\r\nWhen do you think the final package will be published?",
+      "date": 1674132517,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1396924458
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9059716",
+        "id": 9059716,
+        "login": "colis",
+        "type": "User"
+      },
+      "body": "Hi @aymeric-giraudet, and thanks for the update.\r\n\r\nI'm using `next 13.0.6` and `react-instantsearch-hooks 6.38.3` (CSR-only), unfortunately I'm still seeing the re-render issue mentioned in the first post.",
+      "date": 1674215706,
+      "reactions": {},
+      "id": 1398275691
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "@colis, please create a reproduction for that issue? I believe you may possibly not be rendering a SearchBox, which is required for the parameters to stay in the URL.",
+      "date": 1674216073,
+      "reactions": {},
+      "id": 1398281068
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9059716",
+        "id": 9059716,
+        "login": "colis",
+        "type": "User"
+      },
+      "body": "hi @Haroenv, I do use the SearchBox, along with various RefinementList components",
+      "date": 1674219061,
+      "reactions": {},
+      "id": 1398335432
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@Raesta : we want to gather as much feedback as possible to make sure it covers most issues and versions, so it should come out in around 1 month from now\r\n\r\n@colis : I can't seem to reproduce the issue on my end, there might be some specific routing ? A reproduction of the issue on codesandbox would help greatly",
+      "date": 1674222352,
+      "reactions": {
+        "👍️": 3,
+        "🚀": 1
+      },
+      "id": 1398418814
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/10588097",
+        "id": 10588097,
+        "login": "avremel",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Thank you for the package! Very helpful to inspect the route as a drop in replacement for [uiState](https://www.algolia.com/doc/api-reference/widgets/use-instantsearch/react-hooks/#widget-param-uistate) which IME is unreliable (see [here](https://github.com/algolia/instantsearch/discussions/5353#discussioncomment-4335940)).\r\n\r\nI've noticed that `windowTitle` doesn't seem to work. It flashes the new title for a second and then reverts back to the old one.\r\n\r\nI've provided custom routing functions:\r\n\r\n```js\r\n routing: {\r\n      router: createInstantSearchNextRouter({\r\n        serverUrl,\r\n        routerOptions: {\r\n          windowTitle: (routeState) => windowTitle(routeState, facetConfig),\r\n          createURL,\r\n          parseURL,\r\n        },\r\n      }),\r\n      stateMapping: {\r\n        routeToState: (params) => routeToState(params, facetConfig),\r\n        stateToRoute,\r\n      },\r\n    }\r\n```",
+      "date": 1674581980,
+      "reactions": {
+        "👀": 1
+      },
+      "id": 1402336578
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @avremel,\r\n\r\nAre you using the [`<Head>` component from `next/head`](https://nextjs.org/docs/api-reference/next/head) ?\r\nThis overrides the title when rerendered, maybe that could be it ?\r\n\r\nOtherwise I did some debugging on my side, I see that `windowTitle` runs twice but with the same `routeState`, maybe something in `facetConfig` changes in between ?",
+      "date": 1674663620,
+      "reactions": {},
+      "id": 1403874558
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/10588097",
+        "id": 10588097,
+        "login": "avremel",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet \r\n\r\nWe are using `<Head>` but the problem persists even if I remove `<title>` from Head. Maybe I need to remove Head entirely?\r\n\r\n`facetConfig` doesn't change between renders. It is an server side API call response.",
+      "date": 1674665840,
+      "reactions": {},
+      "id": 1403929314
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@avremel \r\n\r\nEven if you don't put a `<title>` tag in `<Head>` it does override with an empty value when router's `push` is called :/\r\n\r\nFor now I would suggest either removing `Head` completely if you can, otherwise with `useRef` you can store the created title in `windowTitle` and use it as a child for `<Head><title>...</title></Head>`\r\n\r\nI'll look for other solutions for the definitive package :) \r\n\r\n",
+      "date": 1674728605,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1404804737
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/26583659",
+        "id": 26583659,
+        "login": "osseonews",
+        "type": "User"
+      },
+      "body": "Thanks for the great thread. We are on Next 13 and React 18 and have 6.38.3 of instasearch hooks. We still have the back button issue mentioned above. \r\n\r\nTwo quick questions: \r\n\r\n1. Is this fixed in the instantsearch-router-next-experimental package? \r\n\r\n2. Also, my quick fix is to just use standard 'a href' on the Search page, instead of Next Link component to link to the content. This reloads the page and everything works fine. What is wrong with this approach? I mean I understand you lose some benefits by not having the Link component in search, but at least everything works and it's just the search page. We can use Link elsewhere on the site.  I really haven't seen any difference in speed or usability using classic \"a href\" to link to content from the search. So I'm curious if this is a reasonable solution if we don't care about Link component on search?",
+      "date": 1674736610,
+      "reactions": {},
+      "id": 1404941746
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/4834347",
+        "id": 4834347,
+        "login": "Raesta",
+        "type": "User"
+      },
+      "body": "~~@aymeric-giraudet ok i have a strange behaviour~~\r\n\r\n~~I search a word, apply filter in list & I click on the button which will mount a component with the instantSearch which will  redirect to /search without params.~~\r\n\r\n~~And in addition generate an error related to the push function of the index.ts file which says that newUrl is invalid (It is null)~~\r\n\r\n\r\nMy bad, another instance of instandSearch break all routing event. Good now @aymeric-giraudet sorry for my mistake",
+      "date": 1675439384,
+      "reactions": {},
+      "id": 1416054432
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@osseonews : \r\nYes this is fixed in the package ! \r\nUsing a simple `<a>` tag does work but it beats the purpose of making Single Page Apps, for example you will lose the `algoliasearch` cache so any subsequent `back` button click will trigger a request to Algolia again.\r\n\r\n@Raesta : \r\nI will need a reproduction to help please, can be a Codesandbox or a repo.\r\nAre you using a custom `createURL` ? This normally shouldn't ever return `null`. ",
+      "date": 1675440332,
+      "reactions": {
+        "👍️": 2
+      },
+      "id": 1416077032
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9059716",
+        "id": 9059716,
+        "login": "colis",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet I've been testing the package to no avail. The codebase is a bit complex and a reproduction on codesandbox might take quite some time. Is there any other way I can share the codebase with you? (it's a client's project so it's not publicly available).\r\n\r\nIn the meantime, you can see an example at this link https://mecum-auctions-develop.vercel.app/auctions/glendale-2023/lots/\r\n\r\nOn page load we initialise a RefinementList with a specific value and the URL changes accordingly. However, if you try and refresh the page, the query vars disappear from the URL and the RefinementList previously applied is removed. The same thing happens when you copy/paste the URL with the query vars or if you navigate away and then back to the search results page with the back button of the browser.",
+      "date": 1675442498,
+      "reactions": {},
+      "id": 1416120991
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/26583659",
+        "id": 26583659,
+        "login": "osseonews",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Thanks for the feedback. Do you have any idea when the new package will be available for production? We actually had to build our own search for the time being because of routing issues, and it was a complete pain. Would be amazing if Algolia just had the routing for Nextjs working out of the box, as it seems will be the case from this new package.",
+      "date": 1675443886,
+      "reactions": {},
+      "id": 1416153472
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@colis : \r\nAfter some intense debugging session I found out that when reloading the page with the initial query, `removeWidgets` gets called on the `taxonomies.auction_tax.name` refinement list which makes InstantSearch cleanup the state thus resetting the query. So you have to make sure your `<RefinementList>` or `useRefinementList` is mounted once and not unmounted later.\r\nIt most likely doesn't have anything to do with Next.js or the router.\r\nThere's something important to know when using React InstantSearch Hooks, it's that unmounting a widget component or hook cleans up its state. Which means if you do conditional rendering you have to be very careful. There's a guide for you to know more about it : https://www.algolia.com/doc/guides/building-search-ui/widgets/show-and-hide-widgets/react-hooks/\r\n\r\n@osseonews : \r\nIt's coming out this month ! We'll make an announcement on this issue when it's the case :) \r\n",
+      "date": 1675447672,
+      "reactions": {
+        "👍️": 2
+      },
+      "id": 1416222710
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1568252",
+        "id": 1568252,
+        "login": "wenche",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Thank you so much for the effort to fix this issue 👏 \r\n\r\nJust one little thing I see when we tested this in our code base (the problem might as well be at our end, but I don't quite see why 🤔 ). To be able to better see what's going on, we have added a console.log to `onStateChange` to the InstantSearch. Like this:\r\n\r\n```\r\nconst onStateChange = (params: any) => {\r\n  console.log(\"Query\", params.uiState.Data_Set_Test?.query)\r\n  params.setUiState(params.uiState)\r\n}\r\n\r\n   <InstantSearch\r\n        searchClient={isServerRendered ? searchClientServer : searchClient}\r\n        indexName=\"Data_Set_Test\"\r\n        onStateChange={onStateChange}\r\n        routing={{ router: createInstantSearchNextRouter({ serverUrl }) }}\r\n      >\r\n```\r\n\r\nMy Hit component is a link to a detail view. When I go back and forth between the search view and the detail view to verify that the browser back issue is now gone, I notice this in the console. Seems like the console.log statement is printed one more time for each back and forth? Might indicate that something is not cleaned up? \r\n![Skjermbilde 2023-02-06 kl  13 50 24](https://user-images.githubusercontent.com/1568252/216975847-47c0e61e-aaba-4108-b4f9-30c582558188.png)\r\n\r\n",
+      "date": 1675689553,
+      "reactions": {},
+      "id": 1419069558
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/12474777",
+        "id": 12474777,
+        "login": "LefanTan",
+        "type": "User"
+      },
+      "body": "Thank you for fixing the issue, but `getServerState` doesn't seem to know how to handle `router` during SSR like NextJS does?\r\n\r\nThis is the errors I'm getting on everywhere that uses next/router:\r\n```\r\nCannot read property 'query' of null\r\n```",
+      "date": 1675751363,
+      "reactions": {
+        "👀": 1
+      },
+      "id": 1420264520
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1568252",
+        "id": 1568252,
+        "login": "wenche",
+        "type": "User"
+      },
+      "body": "Unfortunately, we see some more issues when we use this new library. We have created an example repository to [highlight our findings](https://github.com/equinor/data-marketplace-algolia-test) (Let me know if you need our Algolia app id and the api key ).\r\n\r\nDisclaimer: Some of these issues might have the same root cause, but it's not easy to find a way to explain without too much confusion. That's why I tried to split it up 😅 \r\n\r\n**Steps to reproduce issue no1**\r\n1. On the front page, we have a client side link with an initial query param added. `?Data_Set%5Bquery%5D=data` Click this link named `Take me to the search!`\r\n2. Server side everything seems to be OK, but then some client side code kicks in, removes the initial query param and pushes this to the router state so that the search state is changed to the empty search \r\n3. The correct state is pushed to the router history, so on browser back everything works as expected\r\n\r\n**Steps to reproduce issue no2**\r\n1. Go to the search page with an empty search\r\n2. Hard refresh the page (cmd+r)\r\n3. Choose a filter/type something in the search box\r\n4. Some client side code will reset the search state, and we see `The UI state for the index \"Data_Set\" is not consistent with the widgets mounted.` warning in the console\r\n\r\n**Steps to reproduce issue no3**\r\n1. Go to the search page\r\n2. Search for something, like `data`\r\n3. Go to the detail page for a hit\r\n4. Go back to the search page using browser back\r\n5. Server side everything is fine, but then some client side code will reset the search state\r\n\r\n**Plot twist**\r\nIf we use the `onStateChange` function, issue no1 and no3 seems to work.\r\n\r\nThese findings are in addition to the one already mentioned above with the clean up issue 👍 \r\n",
+      "date": 1675772338,
+      "reactions": {
+        "👀": 1
+      },
+      "id": 1420682763
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@LefanTan : \r\nYes it's a known limitation of `getServerState`, since it's not rendered by Next.js it does not have access to its router so `useRouter` returns `null`. I'll make note of it for us to add disclaimers but to circumvent it you should maybe avoid using `useRouter` directly and you could maybe wrap it into a custom hook that returns a stub object when `useRouter` returns `null`.\r\n\r\n@wenche : \r\nThanks for the reproduction !\r\nI see you have `reactStrictMode: true`, these bugs indeed do happen on strict mode while in development mode. The component mounts twice, and it seems like the router middleware does not get unsubscribed on first unmount, so the router tries to `setUiState` on the first instance which is stale.\r\nI will look for a way for InstantSearch to properly recreate the router.",
+      "date": 1675779652,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1420854634
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/8094590",
+        "id": 8094590,
+        "login": "sbkl",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Works perfectly for my use case and just pushed it to production :)",
+      "date": 1675819844,
+      "reactions": {
+        "🎉": 1
+      },
+      "id": 1421791032
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1568252",
+        "id": 1568252,
+        "login": "wenche",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet  Thank you for your reply. I can confirm that things seems to work fine without `reactStrictMode`. 👍 However, I really hope that you are able to fix this as we don't see it as a good long term solution to disable this as we want our code base to work properly especially with React 18's new behaviour for useEffect locally 😃  But it's fine for a short amount of time to disable this. \r\n\r\nMight also be an idea to highlight this gotcha in the package's README since it's strongly suggested to enable this flag and for example create-next-app enables this by default. \r\n\r\nLooking forward to the final release of this package as it solves on of our main issues with using Algolia and Next  🙌 ",
+      "date": 1675860307,
+      "reactions": {},
+      "id": 1422538877
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @wenche, thanks again for the replies !\r\nI totally agree, we'll further iterate on how `InstantSearch` cleans up after unmounting, as this problem could impact other middlewares as well. It should be good by the time the official package is released :) ",
+      "date": 1675866985,
+      "reactions": {
+        "❤️": 1,
+        "🚀": 2
+      },
+      "id": 1422697583
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/34336519",
+        "id": 34336519,
+        "login": "fmekkaoui",
+        "type": "User"
+      },
+      "body": "When using the back button from a page not using InstantSearch to my InstantSearch page, every facet is removed from the url (and from the state). Is it the expected behavior ?",
+      "date": 1675872279,
+      "reactions": {
+        "👀": 1
+      },
+      "id": 1422859797
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/20769821",
+        "id": 20769821,
+        "login": "adesege",
+        "type": "User"
+      },
+      "body": "Doesn't seem to work well with dynamic paths. ",
+      "date": 1676044186,
+      "reactions": {},
+      "id": 1426001580
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "@adesege do you have a reproduction? the example in the repo is using a dynamic path",
+      "date": 1676045692,
+      "reactions": {
+        "👍️": 1
+      },
+      "id": 1426035097
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/20769821",
+        "id": 20769821,
+        "login": "adesege",
+        "type": "User"
+      },
+      "body": "@dhayab's fix works for me.\r\n\r\nMy use case requires using one of the facets as a path param. However, using instantsearch-router-next-experimental did not properly re-render the next page when the facet is selected.",
+      "date": 1676228441,
+      "reactions": {},
+      "id": 1427107518
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @adesege, do you mean that when you click on a `<Link>` from `next/link` that goes to the same dynamic route (e.g. `/search/[category]`), `InstantSearch` is not aware of the URL change ? \r\nNormally it should and that's one of the issues we meant to address, although ideally you should use `InstantSearch`'s `refine` functions to change state.\r\nCould you please send a link to a reproduction ? It would be very helpful for us to make the best solution. Thanks !\r\n",
+      "date": 1676281057,
+      "reactions": {},
+      "id": 1427623991
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/28899580",
+        "id": 28899580,
+        "login": "franciskodama",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet\r\n\r\nFirst of all, thank you, and congratulations on the work here. It's great to know that we can count on people like you here. :)\r\n\r\nI know you replied to osseonews that the **BACK BUTTON ISSUE** was resolved in this package, however, in our project, this problem persists.\r\n\r\n- In our project, we have a product listing page like any e-commerce.\r\n- If the user goes to page 2 of one of the categories of this list of products (../us/s/women/clothing/dresses?products%5Bpage%5D=2), then clicks on one of the products, and clicks on the browser's back button afterward, he/she goes back to page 1 (../us/s/women/clothing/dresses).\r\n\r\nFrom what I've read here, what's happening in our project is the same as in other people's reports.\r\n_\"Clicking back moves to /search?q=potato, but only the url changes. Page content is not updated.\"_\r\n+ Afterward, the page reloads causing us to lose the URL with the query and instead return to ../us/s/women/clothing/dresses.\r\n\r\nSo, I'm curious to know if you're still receiving reports of this Back Button Issue or if you're aware that the problem might still exist. \r\nPS.: Of course, we know that the problem could be on our end.\r\n\r\nAlso, do you have any predictions as to when the official production use package will be released? We're eagerly waiting for it, and any information you could provide would be greatly appreciated!\r\n\r\nThanks!\r\n",
+      "date": 1676403635,
+      "reactions": {},
+      "id": 1430281914
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "The production package has been released, but not yet announced as we didn't finish the documentation. In the mean time you can use the package already: https://www.npmjs.com/package/react-instantsearch-hooks-router-nextjs\r\n\r\nWe're not aware of any further issues relating to the back button, so please create a reproduction so we can debug it.\r\n",
+      "date": 1676453130,
+      "reactions": {},
+      "id": 1431005385
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @franciskodama,\r\n\r\nYou can also check out this CodeSandbox that shows the router in action : https://codesandbox.io/s/github/algolia/instantsearch/tree/master/examples/react-hooks/next-routing\r\n\r\nEven by adding a `<Pagination>` component and clicking on the next page then on the link in `<Hits>`, pressing the back button does work. \r\nYou can see before going on the article page that if you type `window.history.state` in the console you have a Next router history state. Which kind of state do you have on your app before navigating ? Do you have a custom `<Pagination>` component that handles navigation by itself ?",
+      "date": 1676453465,
+      "reactions": {},
+      "id": 1431012274
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1386506",
+        "id": 1386506,
+        "login": "JugglerX",
+        "type": "User"
+      },
+      "body": "@franciskodama I have the same problem with the back button after updating to `\"react-instantsearch-hooks-web\": \"^6.40.0\"`\r\n\r\n> So, I'm curious to know if you're still receiving reports of this Back Button Issue or if you're aware that the problem might still exist.",
+      "date": 1676594621,
+      "reactions": {},
+      "id": 1433935111
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/59691518",
+        "id": 59691518,
+        "login": "mikkio-j",
+        "type": "User"
+      },
+      "body": "@franciskodama @JugglerX have similar problem currently with `react-instantsearch-hooks-router-nextjs`.\r\n\r\n1. Going on listing page and adding a filter. e.g. `women?color=black`\r\n2. Navigating to different subcategory e.g `/women/jackets/`\r\n3. Hitting back button, url changes, moment later the content changes, and filters are cleared: `women?color=black -> /women/`",
+      "date": 1676618821,
+      "reactions": {},
+      "id": 1434226208
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/28899580",
+        "id": 28899580,
+        "login": "franciskodama",
+        "type": "User"
+      },
+      "body": "Hey everyone!\r\n@JugglerX, @mikkio-j \r\n\r\nSorry for the delay in getting back to you. We're still trying to figure out what's going on, but it seems like the package that Haroenv mentioned above is working well. We realized that the issue is something on our end and we still don't have a solution for that.\r\n\r\nI just wanted to take a moment to thank all of you for your help, @aymeric-giraudet, and @Haroenv. Your assistance has been much appreciated! ",
+      "date": 1676672851,
+      "reactions": {},
+      "id": 1435347944
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "@mikkio-j, @JugglerX, @franciskodama, does any of you have a reproduction of this issue? ",
+      "date": 1676883726,
+      "reactions": {},
+      "id": 1436578946
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "@JugglerX : \r\nDid you also install `react-instantsearch-hooks-router-nextjs` and created a new router with `createInstantSearchRouterNext` that you passed to `routing` ? Just updating `react-instantsearch-hooks` to the latest version doesn't fix it.\r\n\r\n@mikkio-j , @franciskodama : \r\nWhat happens if you select a refinement and refresh the page with F5/Cmd+R ? Does the URL get cleared too ? Or is it only when going back/forward ? A reproduction would help indeed :) ",
+      "date": 1676889635,
+      "reactions": {},
+      "id": 1436725279
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "package.json:\r\n\r\n```\r\n        \"react-instantsearch-hooks-server\": \"^6.40.0\",\r\n        \"react-instantsearch-hooks-web\": \"^6.40.0\",\r\n        \"react-instantsearch-hooks-router-nextjs\": \"^6.40.0\",\r\n```\r\n\r\nEverything works as expected until we start using sorting. As soon as we use sorting and hit a product the browser back button does not work anymore. Filtering works as expected.",
+      "date": 1676902804,
+      "reactions": {
+        "👀": 1
+      },
+      "id": 1437097976
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @DB-Alex,\r\n\r\nMay you send a reproduction please ?\r\nI tried adding a `SortBy` in our example and it works as expected : https://codesandbox.io/s/vigorous-shockley-gkvw1r?file=/pages/index.tsx\r\nIf you sort by price, click on a hit and then press the back button it does work.",
+      "date": 1676904215,
+      "reactions": {},
+      "id": 1437130761
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi @mikkio-j,\r\n\r\nI've seen a ticket you've raised to our support and checked, it's not due to routing really, it's the way Next.js, React and InstantSearch work.\r\nYou can see the issue is not just when pressing the back button but also on reload and when clicking on the links (e.g. from `category/women/socks` to `category/women?color=blue` it doesn't work either)\r\n- To fix for reload it's because you're not passing `blocks` to your component in `getServerState`.\r\n- For the back button and link clicks removing filters, it's because at this point it's doing CSR and keeping the same `InstantSearch` instance across navigation, and since you're using new keys, your `useRefinementList` hooks get unmounted and clear the state. A quick way to fix it would be to force remounting InstantSearch by setting `key={url}` in `InstantSearchSSRProvider`.\r\n\r\nI'll send back a fork of your CodeSandbox with the solution to customer support as it might be private for you :)\r\n\r\nP.S : Overall maybe this could be avoided by relying on `refine` functions from our hooks rather than Next.js `Link` I think",
+      "date": 1676978898,
+      "reactions": {},
+      "id": 1438318404
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi everyone ! 🙋‍♂️\r\n\r\nFirst of all, thank you for your patience and for providing precious feedback.\r\n\r\nOur solution for creating a Next.js compatible router for InstantSearch is now generally available and published on npm as [`react-instantsearch-hooks-router-nextjs`](https://www.npmjs.com/package/react-instantsearch-hooks-router-nextjs). It has to be a separate package as it has `next` as a `peerDependency`.\r\n\r\nIts documentation is available on the Algolia docs right there : https://www.algolia.com/doc/api-reference/widgets/instantsearch-next-router/react-hooks/\r\n\r\nYou can also see it in action on CodeSandbox : https://codesandbox.io/s/github/algolia/instantsearch/tree/master/examples/react-hooks/next-routing\r\n\r\nIf you're seeing any problem still, please __raise another issue with a reproduction__ and make sure to check that it's not just related to back button press, try to see if reloading the page raises the same issue. If you're also on a dynamic route, check that the issue is not caused by components/hooks being unmounted.\r\n\r\nThanks again to all of you !",
+      "date": 1676978989,
+      "reactions": {
+        "❤️": 3,
+        "🎉": 6
+      },
+      "id": 1438320156
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "> Hi @DB-Alex,\r\n> \r\n> May you send a reproduction please ? I tried adding a `SortBy` in our example and it works as expected : https://codesandbox.io/s/vigorous-shockley-gkvw1r?file=/pages/index.tsx If you sort by price, click on a hit and then press the back button it does work.\r\n\r\nThis was resolved by adding a key to the SSRProvider:\r\n\r\n```\r\n<InstantSearchSSRProvider\r\n\t{...serverState}\r\n\tkey={router.asPath}\r\n>\r\n```",
+      "date": 1676985619,
+      "reactions": {},
+      "id": 1438480979
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/1386506",
+        "id": 1386506,
+        "login": "JugglerX",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Thank you for working so hard on a fix for this issue. I wanted to provide an update on my solution.\r\n\r\nThe problem for me seemed to be that my `<Layout/>` component was unmounting between routes. \r\n\r\nHere is some more detail as It might help others:\r\n\r\nI needed to add the new package `react-instantsearch-hooks-router-nextjs` and implement it as per the docs. https://www.algolia.com/doc/api-reference/widgets/instantsearch-next-router/react-hooks/\r\n\r\nI was able to get a working version with a basic new Nextjs site. But when I installed the above on my existing site the back button issue continued to occur. \r\n\r\nStripping back my Nextjs site, the issue was resolved when I removed the layout component that wrapping each page. I modified my layout architecture to that suggested in the Nextjs docs here https://nextjs.org/docs/basic-features/layouts#per-page-layouts\r\n",
+      "date": 1677051666,
+      "reactions": {},
+      "id": 1439561299
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/3672692",
+        "id": 3672692,
+        "login": "VegtMedia-Alex",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet I found the issue with the back button!\r\n\r\nWorks!:\r\n\r\n- Page with Instant Search\r\n- Click on a <Link> and go to a page without Instant Search everything works as expected\r\n- Click on back button, works as expected\r\n\r\nBreaks back button:\r\n\r\n- Click on a <Link> and go to a page with Instant Search \r\n- Click on a <Link> and go to a page with Instant Search (same index in my case, don't know if it makes a difference) everything works as expected\r\n- Click on back button, page hangs. It will not go back anymore until you click another link somewhere to a page without Instant Search\r\n\r\n\r\nEven with this key:\r\n\r\n```\r\n<InstantSearchSSRProvider\r\n\t{...serverState}\r\n\tkey={router.asPath}\r\n>\r\n````",
+      "date": 1677081746,
+      "reactions": {},
+      "id": 1440312204
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9886123",
+        "id": 9886123,
+        "login": "kblizeck",
+        "type": "User"
+      },
+      "body": "@aymeric-giraudet Installed the new package and it works great with refinement, menus, clicking through to a Hit and then using the back button. However, I was previously sending url parameters to pre-set search and Menu and those are being cleared from the URL and not applied to the InstantSearch state. Any suggestions on how to tackle pre-defined url parameters?\r\n\r\nSteps to issue:\r\n- User is on a listing of categories\r\n- Clicks a category (which is a `next/link` setting `pathname` and `query`) and is sent to the InstantSearch component with url = http://localhost:3000/search?document_search%5Bmenu%5D%5Bdomain%5D=Cloud+Security\r\n- URL query parameters are cleared and not applied\r\n- Previously, with just `routing={true}`, the URL parameters passed were respected and triggered a search",
+      "date": 1677543206,
+      "reactions": {},
+      "id": 1447321610
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv",
+        "type": "User"
+      },
+      "body": "@kblizeck, could you create a reproduction and a new issue please?",
+      "date": 1677582606,
+      "reactions": {},
+      "id": 1447992130
+    },
+    {
+      "user": {
+        "avatar": "https://avatars.githubusercontent.com/u/9158954",
+        "id": 9158954,
+        "login": "aymeric-giraudet",
+        "type": "User"
+      },
+      "body": "Hi everyone ! 🙌\r\n\r\nI'm sorry but I will have to lock the issue so that people don't have to scroll up to find the solution.\r\n\r\nOur solution for creating a Next.js compatible router for InstantSearch is now generally available and published on npm as [react-instantsearch-hooks-router-nextjs](https://www.npmjs.com/package/react-instantsearch-hooks-router-nextjs). It has to be a separate package as it has next as a peerDependency.\r\n\r\nIts documentation is available on the Algolia docs right there : https://www.algolia.com/doc/api-reference/widgets/instantsearch-next-router/react-hooks/\r\n\r\nYou can also see it in action on CodeSandbox : https://codesandbox.io/s/github/algolia/instantsearch/tree/master/examples/react-hooks/next-routing\r\n\r\nIf you're seeing any problem still, please [**raise another issue with a reproduction**](https://github.com/algolia/instantsearch.js/issues/new?template=BUG_REPORT.yml&labels=triage,Library%3A%20React+InstantSearch+Hooks).\r\n\r\nThanks again to all of you !\r\n\r\n",
+      "date": 1677767898,
+      "reactions": {},
+      "id": 1451970254
     }
   ],
   "type": "issue"

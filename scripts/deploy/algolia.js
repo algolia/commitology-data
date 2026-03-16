@@ -29,10 +29,16 @@ if (!credentials.apiKey) {
 
 // Generate all records from output files
 const recordPaths = await glob('./**/*.json', {
+  // const recordPaths = await glob('./issues/**/5263.json', {
   cwd: dataOutputPath,
 });
 
-const records = await pMap(recordPaths, readJson);
+const records = [];
+await pMap(recordPaths, async (recordPath) => {
+  const output = await readJson(recordPath);
+  records.push(output);
+  // console.log(output);
+});
 
 indexing.verbose();
 indexing.config({
