@@ -29,7 +29,6 @@ await pMap(
     const pullDatePath = dayjs(created_at).format('YYYY/MM');
     const commentsPath = absolute(
       commentsDirectory,
-      'pulls',
       pullDatePath,
       `${number}.json`,
     );
