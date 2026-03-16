@@ -1,7 +1,10 @@
 import { consoleError } from 'firost';
 import indexing from 'algolia-indexing';
 import { repoName } from '../../lib/config.js';
-import { getIssuesAndPullsRecords } from '../../lib/helpers/record.js';
+import {
+  getCommitsRecords,
+  getIssuesAndPullsRecords,
+} from '../../lib/helpers/record.js';
 
 // Algolia
 const algoliaConfig = {
@@ -11,9 +14,29 @@ const algoliaConfig = {
     apiKey: process.env.ALGOLIA_ADMIN_API_KEY,
   },
   settings: {
-    searchableAttributes: ['unordered(title)', 'unordered(body)', 'user.login'],
-    attributesForFaceting: ['user.id'],
+    distinct: 3,
+    attributeForDistinct: 'distinctKey',
+
+    searchableAttributes: [
+      'unordered(title)',
+      'unordered(body)',
+      'unordered(comment.body)',
+      'user.login',
+      'comment.user.login',
+    ],
     attributesToSnippet: ['body'],
+
+    attributesForFaceting: [
+      'commit.state',
+      'date',
+      'issue.state',
+      'pull.state',
+      'type',
+      'user.login',
+      'comment.user.login',
+      'pull.label.name',
+    ],
+
     // By default, display chronologically
     customRanking: ['desc(date)'],
   },
@@ -29,7 +52,7 @@ if (!credentials.apiKey) {
 
 const records = [
   ...(await getIssuesAndPullsRecords()),
-  // ...await getCommitRecords(),
+  ...(await getCommitsRecords()),
 ];
 
 indexing.verbose();

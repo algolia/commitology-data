@@ -5,6 +5,7 @@ import {
   getGitHubUserFromAuthorName,
   getInputAuthors,
   inputPath,
+  manuallyAssignId,
 } from '../../lib/helpers/author.js';
 
 /**
@@ -33,7 +34,13 @@ const authors = await forEachRepoAuthor(
       data.id = hashedIds[name];
     } else {
       const user = await getGitHubUserFromAuthorName(name);
-      data.id = user?.id || -1;
+      data.id = user?.id;
+    }
+
+    // If there is no user linked to that author on GitHub side, we fallback to
+    // a manually crafter hashing list
+    if (!data.id) {
+      data.id = manuallyAssignId(data);
     }
 
     return data;
@@ -41,7 +48,7 @@ const authors = await forEachRepoAuthor(
   { concurrency: 50 },
 );
 
-const sortedAuthors = _.sortBy(authors, 'id');
+const sortedAuthors = _.chain(authors).keyBy('name').value();
 await writeJson(sortedAuthors, inputPath);
 
 progress.success('All authors saved');
