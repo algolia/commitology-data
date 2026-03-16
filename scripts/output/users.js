@@ -1,7 +1,7 @@
 import { exists, spinner, writeJson } from 'firost';
 import {
   fieldOrder,
-  forEachGitHubUser,
+  forEachInputUser,
   getOutputPath,
   normalizeUser,
 } from '../../lib/helpers/user.js';
@@ -9,22 +9,16 @@ import {
 const progress = spinner();
 
 await forEachInputUser(
-  async (outputUser) => {
-    const { index, max, id } = outputUser;
-    progress.tick(`[${index}/${max}] ${id}`);
-    console.log(id);
+  async (inputUser) => {
+    const { index, max, data } = inputUser;
+    progress.tick(`[${index}/${max}] ${data.login}`);
 
-    const userPath = getOutputPath(id);
-    if (await exists(userPath)) {
-      return;
-    }
+    const userData = await normalizeUser(data);
+    const userPath = getOutputPath(data.id);
 
-    const userData = await normalizeUser(id);
-    console.log({ userData });
-
-    // await writeJson(userData, userPath, {
-    //   sort: fieldOrder,
-    // });
+    await writeJson(userData, userPath, {
+      sort: fieldOrder.output,
+    });
   },
   { concurrency: 50 },
 );

@@ -11,7 +11,7 @@ const progress = spinner();
 // Get all users that ever interacted with the repo through issues, pull
 // requests or comments. For each, save a dump of their profile in
 // ./input/users.
-await forEachInputUser(
+await forEachUserInInputCommitOrIssueOrPullOrComment(
   async (outputUser) => {
     const { index, max, id } = outputUser;
     progress.tick(`[${index}/${max}] User #${id}`);
