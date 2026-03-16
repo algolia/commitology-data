@@ -1,6 +1,6 @@
 import { spinner, writeJson } from 'firost';
-import { outputPullFieldOrder } from '../../lib/config.js';
 import {
+  fieldOrder,
   forEachInputPull,
   getOutputPath,
   normalizePull,
@@ -17,7 +17,7 @@ await forEachInputPull(
     const pullPath = getOutputPath(pullData);
 
     await writeJson(pullData, pullPath, {
-      sort: outputPullFieldOrder,
+      sort: fieldOrder.output,
     });
   },
   { concurrency: 50 },

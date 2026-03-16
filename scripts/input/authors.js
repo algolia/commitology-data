@@ -1,6 +1,7 @@
 import { _, pMap } from 'golgoth';
 import { absolute, exists, readJson, spinner, writeJson } from 'firost';
-import { dataInputAuthorsPath, repo } from '../../lib/config.js';
+import { repo } from '../../lib/config.js';
+import { inputDirectory } from '../../lib/helpers/author.js';
 import { getAuthorList } from '../../lib/helpers/git.js';
 import { getCommit } from '../../lib/helpers/github.js';
 
@@ -31,7 +32,7 @@ await pMap(
     const githubLogin = githubAuthor?.login || '__UNKNOWN_GITHUB_PROFILE__';
 
     // Create or update the user json file
-    const authorPath = absolute(dataInputAuthorsPath, `${githubLogin}.json`);
+    const authorPath = absolute(inputDirectory, `${githubLogin}.json`);
 
     let authorContent = {
       github: githubAuthor,

@@ -8,15 +8,12 @@ import {
   spinner,
   writeJson,
 } from 'firost';
-import {
-  dataInputCommentsPath,
-  dataInputIssuesPath,
-} from '../../lib/config.js';
 import { getComments } from '../../lib/helpers/github.js';
+import { commentsDirectory, inputDirectory } from '../../lib/helpers/issue.js';
 
 const CONCURRENCY = 10;
 
-const allIssues = await glob('./**/*.json', { cwd: dataInputIssuesPath });
+const allIssues = await glob('./**/*.json', { cwd: inputDirectory });
 const maxIssueCount = allIssues.length;
 const progress = spinner();
 
@@ -31,7 +28,7 @@ await pMap(
 
     const issueDatePath = dayjs(created_at).format('YYYY/MM');
     const commentsPath = absolute(
-      dataInputCommentsPath,
+      commentsDirectory,
       'issues',
       issueDatePath,
       `${number}.json`,

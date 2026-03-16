@@ -1,9 +1,6 @@
 import { pMap } from 'golgoth';
 import { absolute, spinner, writeJson } from 'firost';
-import {
-  dataInputCommitsPath,
-  inputCommitFieldOrder,
-} from '../../lib/config.js';
+import { fieldOrder, inputDirectory } from '../../lib/helpers/commit.js';
 import { getCommitData, getCommitList } from '../../lib/helpers/git.js';
 
 const commitList = await getCommitList();
@@ -16,13 +13,13 @@ await pMap(
     progress.tick(subject);
 
     // Commit path
-    const commitPath = absolute(dataInputCommitsPath, datePath, `${hash}.json`);
+    const commitPath = absolute(inputDirectory, datePath, `${hash}.json`);
 
     // Commit content
     const commitData = await getCommitData(hash);
 
     await writeJson(commitData, commitPath, {
-      sort: inputCommitFieldOrder,
+      sort: fieldOrder.input,
     });
   },
   { concurrency: 50 },

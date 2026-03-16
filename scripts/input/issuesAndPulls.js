@@ -1,10 +1,14 @@
 import { _, dayjs, pMap } from 'golgoth';
 import { absolute, sleep, spinner, writeJson } from 'firost';
-import { dataInputPath, inputIssueFieldOrder } from '../../lib/config.js';
 import {
   getIssuesAndPulls,
   getIssuesAndPullsCount,
 } from '../../lib/helpers/github.js';
+import {
+  fieldOrder,
+  inputDirectory as issueInputDirectory,
+} from '../../lib/helpers/issue.js';
+import { inputDirectory as pullInputDirectory } from '../../lib/helpers/pull.js';
 
 const ISSUES_PER_PAGE = 100;
 
@@ -32,14 +36,13 @@ await pMap(
         const datePath = dayjs(created_at).format('YYYY/MM');
 
         const itemPath = absolute(
-          dataInputPath,
-          isPullRequest ? 'pulls' : 'issues',
+          isPullRequest ? pullInputDirectory : issueInputDirectory,
           datePath,
           `${number}.json`,
         );
 
         await writeJson(itemContent, itemPath, {
-          sort: inputIssueFieldOrder,
+          sort: fieldOrder.input,
         });
       },
       { concurrency: 10 },

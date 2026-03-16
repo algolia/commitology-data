@@ -8,12 +8,13 @@ import {
   spinner,
   writeJson,
 } from 'firost';
-import { dataInputPullsPath, dataInputReviewsPath } from '../../lib/config.js';
 import { getReviews } from '../../lib/helpers/github.js';
+import { inputDirectory as pullsInputDirectory } from '../../lib/helpers/pull.js';
+import { inputDirectory as reviewInputDirectory } from '../../lib/helpers/review.js';
 
 const CONCURRENCY = 10;
 
-const allPulls = await glob('./**/*.json', { cwd: dataInputPullsPath });
+const allPulls = await glob('./**/*.json', { cwd: pullsInputDirectory });
 const maxPullCount = allPulls.length;
 const progress = spinner();
 
@@ -27,7 +28,7 @@ await pMap(
 
     const pullDatePath = dayjs(created_at).format('YYYY/MM');
     const reviewsPath = absolute(
-      dataInputReviewsPath,
+      reviewInputDirectory,
       pullDatePath,
       `${number}.json`,
     );
