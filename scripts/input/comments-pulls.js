@@ -33,6 +33,7 @@ await pMap(
       pullDatePath,
       `${number}.json`,
     );
+
     if (await exists(commentsPath)) {
       progress.tick(`${tickTitle} (Already exists, skipping)`);
       return;
