@@ -8,7 +8,7 @@ import {
 
 const progress = spinner();
 
-await forEachGitHubUser(
+await forEachInputUser(
   async (outputUser) => {
     const { index, max, id } = outputUser;
     progress.tick(`[${index}/${max}] ${id}`);
