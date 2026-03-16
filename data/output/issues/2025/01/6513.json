@@ -4,12 +4,7 @@
   "title": "instantsearch.js: Add 'exports' field to package.json for proper module resolution in SSR, Jest, and other environments",
   "date": 1736192644,
   "body": "### 🐛 Current behavior\n\nCurrently, when using history router in SSR with InstantSearch.js or testing with Jest, I need to manually patch the package.json to add the \"exports\" field. The current implementation requires me to modify the package.json to include the necessary paths for require and import. Without this patch, when importing like so:\r\n\r\n```javascript\r\nimport { history } from 'instantsearch.js/es/lib/routers';\r\n```\r\n\r\n- In **SSR**, it doesn’t work because it’s trying to use the ES module (es/) path instead of the CommonJS (cjs/) path. This results in a failure to load the module.\r\n- In **Jest**, since Jest uses CommonJS by default, it fails to resolve the ES module (es/) path and cannot find the module, leading to test failures.\r\n\r\nThis issue violates current standards for Node.js and package management. Without the proper \"exports\" field, the package can fail in other scenarios, not just SSR or Jest. It may not work in certain environments or bundlers that expect explicit CommonJS and ES module paths in the exports field, leading to potential issues for other developers or integrations that rely on standard package configurations.\n\n### 🔍 Steps to reproduce\n\n1.  Install instantsearch.js in a React SSR project.\r\n\r\n2. Import the history router like so:\r\n\r\n```javascript\r\nimport { history } from 'instantsearch.js/es/lib/routers';\r\n  \r\n<InstantSearch\r\n      // ...\r\n     routing={{\r\n           router: history({\r\n               windowTitle: () => {},\r\n\t       push: () => {}\r\n           })\r\n     }\r\n >\r\n  // Content\r\n</InstantSearch>\r\n\r\n\r\n```\r\n\r\n3. Attempt to render the SSR page.\r\n \r\n4. The page will crash because it is trying to load the module from the ES path instead of the CommonJS path.\r\n \r\n5. Run Jest tests in the project.\r\n \r\n6. Jest will fail because it attempts to resolve the ES module path instead of the CommonJS path.\r\n \r\n7. Manually patch the package.json to add the \"exports\" field as follows:\r\n\r\n```json\r\n\"exports\": {\r\n    \".\": {\r\n      \"types\": \"./es/index.d.ts\",\r\n      \"require\": \"./cjs/index.js\",\r\n      \"import\": \"./es/index.js\"\r\n    },\r\n    \"./routers\": {\r\n      \"types\": \"./es/lib/routers/index.d.ts\",\r\n      \"require\": \"./cjs/lib/routers/index.js\",\r\n      \"import\": \"./es/lib/routers/index.js\"\r\n    },\r\n   // ...\r\n  }\r\n```\r\n\r\n8. After adding this patch, SSR and Jest tests work as expected.\n\n### Live reproduction\n\n.\n\n### 💭 Expected behavior\n\nThe package should define the \"exports\" field in its package.json to specify both require and import paths for CommonJS and ES module resolution. This would ensure that the module works in all environments, including SSR, Jest, and other bundlers, without needing to manually patch the package.json.\r\n\r\nThe \"exports\" field should look something like this:\r\n\r\n```json\r\n\"exports\": {\r\n    \".\": {\r\n      \"types\": \"./es/index.d.ts\",\r\n      \"require\": \"./cjs/index.js\",\r\n      \"import\": \"./es/index.js\"\r\n    },\r\n    \"./routers\": {\r\n      \"types\": \"./es/lib/routers/index.d.ts\",\r\n      \"require\": \"./cjs/lib/routers/index.js\",\r\n      \"import\": \"./es/lib/routers/index.js\"\r\n    },\r\n    \"./helpers\": {\r\n      \"types\": \"./es/lib/helpers/index.d.ts\",\r\n      \"require\": \"./cjs/lib/helpers/index.js\",\r\n      \"import\": \"./es/lib/helpers/index.js\"\r\n    },\r\n    \"./widgets\": {\r\n      \"types\": \"./es/lib/widgets/index.d.ts\",\r\n      \"require\": \"./cjs/lib/widgets/index.js\",\r\n      \"import\": \"./es/lib/widgets/index.js\"\r\n    },\r\n    \"./connectors\": {\r\n      \"types\": \"./es/lib/connectors/index.d.ts\",\r\n      \"require\": \"./cjs/lib/connectors/index.js\",\r\n      \"import\": \"./es/lib/connectors/index.js\"\r\n    },\r\n    \"./types\": {\r\n      \"types\": \"./es/types/index.d.ts\",\r\n      \"require\": \"./cjs/types/index.js\",\r\n      \"import\": \"./es/types/index.js\"\r\n    }\r\n  }\r\n```\r\n\r\nThis would resolve the issue in all environments and conform to current package management standards, making it easier for developers to use InstantSearch.js in various setups without manual modifications.\n\n### Package version\n\ninstantsearch.js 4.75.6\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/31625572",
-    "id": 31625572,
-    "login": "kevin-riveros"
-  },
+  "user": 31625572,
   "issue": {
     "labels": [
       {
@@ -29,36 +24,21 @@
     {
       "date": 1736246273,
       "body": "Sorry, this can not be done without a breaking change, or we would have to list out every single file (with and without extension).\r\n\r\nIt sounds like you're actually expecting cjs in both cases (jest and ssr), but actually authoring esm. Have you tried importing the cjs instead?\r\n\r\nHowever we are working on a next major version, where we'll be able to simplify the exports and avoid this issue.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 2574951401,
       "reactions": {}
     },
     {
       "date": 1736256091,
       "body": "> Sorry, this can not be done without a breaking change, or we would have to list out every single file (with and without extension).\r\n\r\n~~I don't think you would have to. Afaik, you'd only have to list the modules that people might want to access directly. The list that Kevin provided should be enough.~~\r\n\r\nEdit: I got it, you mean that you're concerned that some apps in the wild are importing those modules by their real path, and adding those \"exports\" would break those builds.\r\n\r\n> It sounds like you're actually expecting cjs in both cases (jest and ssr), but actually authoring esm. Have you tried importing the cjs instead?\r\n\r\nThe issue is that we would still be importing `instantsearch.js` in other places which would use the ESM version in our webpack build. So that would end up being inconsistent.\r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3777724",
-        "id": 3777724,
-        "login": "jlowcs"
-      },
+      "user": 3777724,
       "id": 2575284648,
       "reactions": {}
     },
     {
       "date": 1736256694,
       "body": "I think an alternative would be to add folders with a dedicated `package.json`. e.g. `routers/packages.json` which would have its own main/module/types properties pointing to `../cjs/` etc.\r\n\r\nIf our app were to import those folders (e.g. `'instantsearch.js/routers'`), it would then try to resolve them by looking at that new `routers/package.json` file.\r\n\r\nIt should also not break any existing app that would be importing the files directly.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3777724",
-        "id": 3777724,
-        "login": "jlowcs"
-      },
+      "user": 3777724,
       "id": 2575304269,
       "reactions": {}
     }

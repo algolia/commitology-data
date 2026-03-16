@@ -4,12 +4,7 @@
   "title": "Cannot sync filter query params with the searchState, rerouting issues.",
   "date": 1650041047,
   "body": "## 🐛 Bug description\r\n\r\n<!-- A clear and concise description of what the bug is. -->\r\n\r\n### There are 2 bugs with react instant search at the moment that impact user experience and almost make it unusable.\r\n\r\n**1.** When routing back to the search page the scrolling position restores(meaning that if you have potentially scroll all the way down to where you left off)\r\n**2.** When trying to sync the url with searchstate, clicking on a **RefinementList** components checkbox \r\n\r\n## 🔍 Bug reproduction\r\n\r\n**Steps to reproduce the behavior:**\r\nTo reproduce bug algolia/react-instantsearch#1\r\n\r\n1. Scroll down few results down\r\n3. Click on button \"Reroute\"\r\n4. After rerouting to another page click on a button \"Go back\"\r\n5. You will be back on the top of the page and not where you left off.\r\n\r\nTo reproduce bug algolia/react-instantsearch#2\r\n\r\n1. On the search page click on any filter checkbox\r\n3. You will see that it's not active\r\n4. click it multiple times\r\n5. nothing happens but url gets bloated (https://zk8t84.sse.codesandbox.io/?query=&page=1&refinementList%5Bbrand%5D%5B0%5D%5B0%5D%5B0%5D=HP&refinementList%5Bbrand%5D%5B...)\r\n\r\n<!-- A live example helps a lot! Fork the sandbox, reproduce the bug and paste the URL here: -->\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/funny-night-zk8t84\r\n\r\n## 💭 Expected behavior\r\n\r\n<!-- A clear and concise description of what you expected to happen. -->\r\n\r\nExpectation is quite simple, when going back from detail pge to search results, I want to go back to where I left off, not back at the top.\r\n\r\nI also want to be able to use filters and sync them to my search state.\r\n\r\n## 🖥 Screenshots\r\n![Screenshot 2022-04-15 at 17 38 07](https://user-images.githubusercontent.com/20464922/163596998-eca594ff-1266-4ffe-8734-87134ce58d45.png)\r\n\r\n<!-- If applicable, add screenshots to help explain your problem. -->\r\n\r\n## Environment\r\n\r\n- OS: [macOS]\r\n- Browser: [Chrome]\r\n- Version: 100.0.4896.75 (Official Build) (arm64)\r\n\r\n## Additional context\r\n\r\nI beg the team to fix these bugs, as it will help so many people using websites built with react-instantsearch, looking forward to hearing from you.\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/20464922",
-    "id": 20464922,
-    "login": "catdoglt"
-  },
+  "user": 20464922,
   "issue": {
     "labels": [
       {
@@ -27,24 +22,14 @@
     {
       "date": 1650448625,
       "body": "The correct way to integrate would be to use `router.events`, as well as making sure you don't send a Next router.push due to an InstantSearch navigation, this can be done as follows: https://codesandbox.io/s/infallible-fog-ehsvqo?file=/pages/index.js\r\n\r\n```js\r\nconst pathToSearchState = (path) =>\r\n  path.includes(\"?\") ? qs.parse(path.substring(path.indexOf(\"?\") + 1)) : {};\r\n\r\nconst createURL = (state) => `?${qs.stringify(state)}`;\r\n\r\nexport default function IndexPage() {\r\n  const searchClient = algoliasearch(\r\n    \"latency\",\r\n    \"6be0576ff61c053d5f9a3225e2a90f76\"\r\n  );\r\n  const router = useRouter();\r\n  const [searchState, setSearchState] = useState(\r\n    pathToSearchState(router.asPath)\r\n  );\r\n  const debouncedSetState = useRef();\r\n\r\n  useEffect(() => {\r\n    const listener = () => {\r\n      setSearchState(pathToSearchState(router.asPath));\r\n    };\r\n\r\n    router.events.on(\"routeChangeComplete\", listener);\r\n\r\n    return () => router.events.off(\"routeChangeComplete\", listener);\r\n  }, [router]);\r\n\r\n  return (\r\n      <InstantSearch\r\n        searchState={searchState}\r\n        searchClient={searchClient}\r\n        indexName=\"instant_search\"\r\n        onSearchStateChange={(nextSearchState) => {\r\n          clearTimeout(debouncedSetState.current);\r\n\r\n          debouncedSetState.current = setTimeout(() => {\r\n            const href = createURL(nextSearchState);\r\n\r\n            window.history.pushState(\r\n              window.history.state,\r\n              document.title,\r\n              href\r\n            );\r\n          }, 400);\r\n\r\n          setSearchState(nextSearchState);\r\n        }}\r\n      >\r\n // ...\r\n```\r\n\r\nthe debouncing of updating the URL isn't required, but recommended, as browsers tend to get slow if the query string is updated often.\r\n\r\nHope that helps!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1363059951,
       "reactions": {}
     },
     {
       "date": 1650492565,
       "body": "@Haroenv Hi, the example that you provided, still resets everything(both search input and filters).\r\n\r\nit syncs the url on the search page, but when you click on the hit, and go back it goes to base url:\r\n1. type amazon in the search input\r\n2. url becomes **https://ehsvqo.sse.codesandbox.io/?query=amazon&page=1**\r\n3. click on the hit\r\n4. click back\r\n5. url is **https://ehsvqo.sse.codesandbox.io** instead of **https://ehsvqo.sse.codesandbox.io/?query=amazon&page=1**",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/20464922",
-        "id": 20464922,
-        "login": "catdoglt"
-      },
+      "user": 20464922,
       "id": 1363059961,
       "reactions": {}
     }

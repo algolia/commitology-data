@@ -4,12 +4,7 @@
   "title": "Double Search Requests & Insights Middleware Error",
   "date": 1741112017,
   "body": "### 🐛 Current behavior\n\nWhen performing a search request, each keypress triggers **two consecutive API calls** to `/api/search` (backend search setup) . Additionally, enabling `insights={true}` causes an **insights error**.\n\n### 🔍 Steps to reproduce\n\n1. **Replace API URL** app>fetch>search.tsx[line.5] with the correct forwarded port in Codesandbox.\n   - Example: Change `http://localhost:3000/api/search` to the correct URL (e.g., `https://xyz-3000.app.codesandbox.io/api/search`).\n2. **Perform a search** in the application.\n   - Expect **hydration errors**.\n3. **Check Network Tab** in Developer Tools.\n   - Observe that each request results in **two consecutive API calls** to `/api/search`.\n4. **Enable `insights={true} `** in InstantSearchNext.\n   - Leads to [insights middleware errors](https://github.com/algolia/instantsearch/blob/872c60b7276abae251a869c673b8a2bdb7164043/src/middlewares/createInsightsMiddleware.ts#L65).\n\n### Live reproduction\n\nhttps://codesandbox.io/p/github/daryldeogracias/algolia-web-app/main\n\n### 💭 Expected behavior\n\n1. **Double query requests should be resolved.**\n2. **Insights middleware should work even when using backend search.**\n\n### Package version\n\n \"next\": \"^15.1.6\",   \"react-instantsearch\": \"^7.15.3\",  \"react-instantsearch-nextjs\": \"^0.4.4\",   \"algoliasearch\": \"^5.20.0\",   \"instantsearch.js\": \"^4.77.3\",\n\n### Operating system\n\nmacOS 15.3.1 (24D70)\n\n### Browser\n\nChrome Version 133.0.6943.142\n\n### Code of Conduct\n\n- [x] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/121419575",
-    "id": 121419575,
-    "login": "daryldeogracias"
-  },
+  "user": 121419575,
   "issue": {
     "labels": [
       {
@@ -27,72 +22,42 @@
     {
       "date": 1741168989,
       "body": "Any suggestions for insights? looks like it can't be done using the provider",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/121419575",
-        "id": 121419575,
-        "login": "daryldeogracias"
-      },
+      "user": 121419575,
       "id": 2700437436,
       "reactions": {}
     },
     {
       "date": 1741184344,
       "body": "The short version is that you’re adding `objectID` to the route state in `stateToRoute`, but then ignoring (and removing) it in `routeToState`. \nBecause your state mapping is asymmetric, the router sees “changes” and triggers a second query.\n\nConcretely, in stateToRoute:\n\n  if (typeof window !== \"undefined\") {\n    objectID =\n      new URLSearchParams(window.location.search).get(\"objectID\") || undefined;\n  }\n\n…you add objectID to the route state that’s returned.\n\nBut in routeToState:\n\nrouteToState(routeState = {} as UiState) {\n  return Object.keys(routeState).reduce(\n    (state, indexId) => ({\n      ...state,\n      [indexId]: cleanState(routeState[indexId] || {}),\n    }),\n    {} as UiState\n  );\n}\n\n…you never read that objectID key nor put it back into the returned UiState.\nConsequently, your router sees “an extra key” (objectID) vanish, so it re-syncs the route and triggers a new query.\n\nFix would be either removing that objectID logic or handling it more consistently: make routeToState store that key in uiState the same way it’s set in stateToRoute. That consistency will keep the route state stable and avoid the unwanted query.\n\nI haven't had the time to dive into insights for now but it seems like there was no initialisation of our insights library.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/17079039",
-        "id": 17079039,
-        "login": "mathougui"
-      },
+      "user": 17079039,
       "id": 2701081089,
       "reactions": {}
     },
     {
       "date": 1741185528,
       "body": "Thanks for responding @mathougui ,  tried to removed entirely the stateMapping and routing part, its still triggers two consecutive api calls \n\n\nhttps://codesandbox.io/p/github/daryldeogracias/algolia-web-app/main",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/121419575",
-        "id": 121419575,
-        "login": "daryldeogracias"
-      },
+      "user": 121419575,
       "id": 2701134761,
       "reactions": {}
     },
     {
       "date": 1741187624,
       "body": "this seems to happen  only when we do backend search",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/121419575",
-        "id": 121419575,
-        "login": "daryldeogracias"
-      },
+      "user": 121419575,
       "id": 2701230996,
       "reactions": {}
     },
     {
       "date": 1743604163,
       "body": "Mock algoliasearch client is lacking the cache object:\n```\nimport { SearchQuery } from 'algoliasearch/lite';\n\nconst requestsCache = new Map<string, Promise<Response>>();\nconst resultsCache = new Map<string, any>();\n\nfunction makeCacheKey(requests: SearchQuery[]) {\n  // You can go further here, like sorting individual values inside the requests\n  // to make sure the key is always the same for the same requests.\n  // We're keeping it simple here for the sake of the example.\n  return JSON.stringify(requests);\n}\n\nexport async function search(requests: SearchQuery[]) {\n  try {\n    const key = makeCacheKey(requests);\n    if (resultsCache.has(key)) {\n      return resultsCache.get(key);\n    }\n    let request;\n    if (requestsCache.has(key)) {\n      request = requestsCache.get(key)!;\n    } else {\n      request = fetch(`http://localhost:3001/api/search`, {\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n        },\n        body: JSON.stringify({ requests }),\n      });\n      requestsCache.set(key, request);\n    }\n    const response = await request;\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! Status: ${response.status} `);\n    }\n\n    const results = await response.json();\n\n    if (!results || !Array.isArray(results.results)) {\n      console.error('Unexpected response format:', results);\n      return { results: [] };\n    }\n\n    resultsCache.set(key, results);\n\n    return results;\n  } catch (error) {\n    console.error('Error fetching search results:', error);\n    return { results: [] };\n  }\n}\n\nexport const searchClient = {\n  search,\n  clearCache() {\n    requestsCache.clear();\n    resultsCache.clear();\n  },\n};\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/17079039",
-        "id": 17079039,
-        "login": "mathougui"
-      },
+      "user": 17079039,
       "id": 2772749894,
       "reactions": {}
     },
     {
       "date": 1743604300,
       "body": "Above fixed mine. Thanks @mathougui !",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/121419575",
-        "id": 121419575,
-        "login": "daryldeogracias"
-      },
+      "user": 121419575,
       "id": 2772756825,
       "reactions": {}
     }

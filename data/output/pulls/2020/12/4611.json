@@ -4,12 +4,7 @@
   "title": "feat(ratingMenu): Add support for floats in values",
   "date": 1608653414,
   "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n**Summary**\r\n\r\nThis PR adds the support for floats to the ratingMenu connector.\r\n\r\n***Main changes***\r\n* A new `step` option, so the user can control the step between ratings (example: `1` => `1, 2, 3, 4, 5` or `0.5` => `0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5`). Default to `1` so the original behavior is unchanged.\r\n* How the `facetValues` are calculated in the connector, taking this `step` option into account.\r\n* The widget now uses `numericRefinements` instead of `disjunctiveFacetsRefinements` since it is easier to specify a complete range of values (example: `>=3`) instead of being forced to specify all possible values manually (example: `[3, 4, 5]`) which can be very big if the range is large and/or if the steps are small (example: `[3, 3.1, 3.2, 3.3, 3.4, etc.]`). FMPOV it should not be a breaking change, but if this is the case we can still revert to `disjunctiveFacetsRefinements` (even if that's way less optimal IMHO).\r\n\r\n***Maximum facets values limitation***\r\n\r\nOne big issue with the floats support is that the user is more likely to quickly hit the limit of retrievable facets values (limited to 1000 by the API).\r\n\r\nFor example imagine you have a rating from 0 to 10 with 2 decimals (example: `2.56, 3.78, 6.48, etc.`). It means you have 10 integers and 100 values per integer = 1000 possible facets values. You reached the limit.\r\n\r\nTo avoid this issue as much as possible we need to guide the user so he can update his records and/or his configuration accordingly.\r\n\r\nSo if we detect that we enter this case where we did not retrieved enough facets the widget will display the following warning message:\r\n\r\n```bash\r\n[InstantSearch.js]: The price attribute can have 500000 different values (0 to 5000 with a maximum precision of 3 = 500000) but you retrieved only 10 facet values. Therefore the number of results that match the refinements can be incorrect.\r\nTo resolve this problem you can:\r\n- Update your records to lower the precision of the values in the \"price\" attribute (for example: 5.12 to 5)\r\n- Increase the maximum number of facet values to 1000 using the \"configure\" widget https://www.algolia.com/doc/api-reference/widgets/configure/js/ and the \"maxValuesPerFacet\" parameter https://www.algolia.com/doc/api-reference/api-parameters/maxValuesPerFacet/\r\n```\r\n\r\nThis purpose of this message is to explain what is wrong in the current configuration, what are the consequences and to give some solutions to solve the problem.\r\n\r\nAny ideas to improve this error message are welcome :wink: \r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/13209",
-    "id": 13209,
-    "login": "yannickcr"
-  },
+  "user": 13209,
   "pull": {
     "labels": [],
     "number": 4611,
@@ -20,24 +15,14 @@
     {
       "date": 1608653514,
       "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4611/builds/93650) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit d94781afaae7943a1ce9b5e362c5508371d87896:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-7388o)| Configuration |\n",
-      "user": {
-        "type": "Bot",
-        "avatar": "https://avatars.githubusercontent.com/in/38409",
-        "id": 54081388,
-        "login": "codesandbox-ci[bot]"
-      },
+      "user": 54081388,
       "id": 749625116,
       "reactions": {}
     },
     {
       "date": 1610988901,
       "body": "@Haroenv \r\n\r\n> this is still a potential breaking change\r\n\r\nThis is the last main issue imho. As we saw together it is not possible to get the correct count if you reach the limit of possible facet values. With the previous implementation the count was obviously incorrect, now with this implementation the count is \"more correct\", even if not exact. Do we consider this change of behavior as a breaking change or not? For me it is closer to a fix than something else (since the previous behavior was incorrect), therefore if should not be considered as a breaking change.\r\n\r\n(the above statement assume that the change from a `disjunctiveFacetsRefinements` to a `numericRefinements` is not a breaking change)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr"
-      },
+      "user": 13209,
       "id": 762367696,
       "reactions": {
         "👍️": 1
@@ -46,12 +31,7 @@
     {
       "date": 1611047569,
       "body": "I think for the moment, since the existing behaviour in this cases (floats) was very wrong, and it's better now, without significant impact on non-float ratings, we should put a note in the changelog, but it should be fine for the rest!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 762707614,
       "reactions": {
         "👍️": 1
@@ -60,12 +40,7 @@
     {
       "date": 1611048064,
       "body": "Haven't checked this PR lately. Can you briefly explain to me (or, give me the line numbers) how it was broken and how it's fixed?\r\nAs you all mentioned, it shouldn't have to be a breaking change IMO. After all, seeing different facet count won't literally break anything.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee"
-      },
+      "user": 499898,
       "id": 762712448,
       "reactions": {
         "👍️": 1
@@ -74,12 +49,7 @@
     {
       "date": 1611055962,
       "body": "@eunjae-lee \r\n\r\nBefore this change we were only handling integers in the rating menu.\r\n\r\nIn the previous implementation there was 2 main issues:\r\n\r\n1. We were grouping the values in the widget by rounding them ( https://github.com/algolia/instantsearch.js/pull/4611/files#diff-3ec5182253abc9786037ec058d37c2a07f7cc199ee639adfe4da638ca976bf4fL228 ) so an item with a rating of 3.9 was counted in the group \"4 stars and up\", which is incorrect. \r\n2. When sending the query we were filtering on the exact values, if you were asking for \"3 stars and up\" the `facetFilter` was `[\"rating:3\",\"rating:4\",\"rating:5\"]` so you were getting only the items with a round number of stars, excluding the items with a rating of 3.5 for example.\r\n\r\nThe first issue was fixed by not doing this rounding anymore (you can see how the new `count` is calculated here: https://github.com/algolia/instantsearch.js/pull/4611/files#diff-3ec5182253abc9786037ec058d37c2a07f7cc199ee639adfe4da638ca976bf4fR299-R302 ).\r\n\r\nThe second one by using a `numericFilter` instead of a `facetFilter`, so we ca use a range `[\"rating<=5\",\"rating>=3\"]` and get all the possible values ( https://github.com/algolia/instantsearch.js/pull/4611/files#diff-3ec5182253abc9786037ec058d37c2a07f7cc199ee639adfe4da638ca976bf4fR200-R210 ).\r\n\r\nLet me know is something is not clear and/or if the code could use some comments on a particular part :slightly_smiling_face: \r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr"
-      },
+      "user": 13209,
       "id": 762784408,
       "reactions": {
         "👍️": 1
@@ -88,12 +58,7 @@
     {
       "date": 1611065668,
       "body": "@Haroenv I removed the `step` parameter, if that's good for you I think we are good to go :slightly_smiling_face: ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr"
-      },
+      "user": 13209,
       "id": 762865596,
       "reactions": {
         "👍️": 1

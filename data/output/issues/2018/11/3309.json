@@ -4,12 +4,7 @@
   "title": "disjunctive facets change to conjunctive when I set searchParameters.facetsExcludes",
   "date": 1543298672,
   "body": "My disjunctive facets become conjunctive when I set searchParameters.facetsExcludes\r\n\r\nExample\r\n---\r\n\r\nClick the sony checkbox here:    https://codesandbox.io/s/l598wkxoy7\r\n\r\n\r\nmy code\r\n---\r\n\r\nI added this:\r\n\r\n```\r\n  excludeVendors = [\"Entity Brands\",\"JS Supplies\"];\r\n  var searchParameters = {};\r\n  if(excludeVendors && excludeVendors.length>0) {\r\n    searchParameters =  {\r\n        facets: ['vendor'],\r\n        \"facetsExcludes\": {\r\n            \"vendor\": excludeVendors\r\n        }\r\n      };\r\n  }\r\n\r\n```\r\n\r\nto this standard shopify code:\r\n\r\n```\r\n  var _ = algolia._,\r\n      $ = algolia.jQuery;\r\n\r\n  algolia.config.results_selector += ', .algolia-shopify-instantsearch';\r\n\r\n  var $hiding = $('<style>' + algolia.config.results_selector + ' { visibility: hidden }</style>');\r\n  $hiding.appendTo($('head'));\r\n\r\n  algolia.facetsWidgets.forEach(function(element) { if(!element.params.sortBy) element.params.showMore = true; });\r\n  \r\n  var instant = algolia.instantsearch = {\r\n    colors: algolia.config.colors,\r\n    distinct: !!algolia.config.show_products,\r\n    facets: {\r\n      hidden: algolia.hiddenFacets,\r\n      shown: algolia.shownFacets,\r\n      list: algolia.facets,\r\n      widgets: algolia.facetsWidgets\r\n    },\r\n    hitsPerPage: algolia.config.products_full_results_hits_per_page,\r\n    poweredBy: algolia.config.powered_by,\r\n    search: instantsearch({\r\n      appId: algolia.config.app_id,\r\n      apiKey: algolia.config.search_api_key,\r\n      indexName: '' + algolia.config.index_prefix + 'products',\r\n      searchParameters: searchParameters,\r\n      urlSync: {},\r\n      searchFunction: function (searchFunctionHelper) {\r\n        // Set query parameters here because they're not kept when someone\r\n        // presses the Back button if set in the `init` function of a custom widget\r\n        var helper = instant.search.helper;\r\n        var page = helper.getPage();\r\n        helper.setQueryParameter('highlightPreTag', '<span class=\"ais-highlight\">');\r\n        helper.setQueryParameter('highlightPostTag', '</span>');\r\n        helper.setQueryParameter('distinct', instant.distinct);\r\n        helper.setPage(page);\r\n        searchFunctionHelper.search();\r\n      }\r\n    }),\r\n    selector: algolia.config.results_selector + ', .algolia-shopify-instantsearch',\r\n    sortOrders: algolia.sortOrders,\r\n    storeName: algolia.storeName,\r\n    templates: {\r\n      currentItem: algolia.getTemplate('instant_search_current_refined_values_item'),\r\n      empty: algolia.getTemplate('instant_search_no_result'),\r\n      page: algolia.compileTemplate('instant_search'),\r\n      product: algolia.getTemplate('instant_search_product'),\r\n      stats: algolia.getTemplate('instant_search_stats'),\r\n      style: algolia.compileTemplate('instant_search.css')\r\n    }\r\n  };\r\n\r\n\r\n```\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/7961707",
-    "id": 7961707,
-    "login": "eddyparkinson"
-  },
+  "user": 7961707,
   "issue": {
     "labels": [],
     "number": 3309,
@@ -20,108 +15,63 @@
     {
       "date": 1543302302,
       "body": "Shopify version of instasearch\r\n----\r\n\r\nLooks like this is a bug in instasearch **v1**, but not in **v2** as this works: \r\n https://codesandbox.io/s/1rvmqq5jm4\r\n\r\nBut it does not work on my version. \r\n\r\n\r\nv2  {{ '//cdn.jsdelivr.net/npm/instantsearch.js@2/dist/instantsearch.min.js' | script_tag }} \r\nv1  {{ '//cdn.jsdelivr.net/instantsearch.js/1/instantsearch.min.js' | script_tag }} \r\n\r\nDocs issue v1/v2\r\n---\r\nDocs for facetsExcludes say \" Each facet must be properly defined in the facets attribute.\"\r\nSee https://community.algolia.com/algoliasearch-helper-js/reference.html#SearchParameters#facetsExcludes\r\n\r\nbut this works without  the facets attribute in v2 of instasearch :  https://codesandbox.io/s/1rvmqq5jm4\r\n\r\n\r\n```\r\n  searchParameters: {\r\n    facetsExcludes: {\r\n      brand: [\"Sony\"]\r\n    },\r\n    hitsPerPage: 8\r\n  }\r\n\r\n```\r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/7961707",
-        "id": 7961707,
-        "login": "eddyparkinson"
-      },
+      "user": 7961707,
       "id": 441950728,
       "reactions": {}
     },
     {
       "date": 1543322934,
       "body": "While this clearly is something that is going wrong, you can use `transformItems` to hide an item from a list, instead of doing it with helper parameters:\r\n\r\n```js\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    container: '#brand-list',\r\n    attributeName: 'brand',\r\n    transformItems: items => items.filter(item => item.label !== 'Sony'),\r\n  })\r\n);\r\n```\r\n\r\nhttps://codesandbox.io/s/8k9wqo53pl?module=%2Fsrc%2Fapp.js",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 442046493,
       "reactions": {}
     },
     {
       "date": 1543322972,
       "body": "Note that InstantSearch v1 is no longer supported, and since this is a feature not working rather than a bug, we will not fix it for v1",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 442046658,
       "reactions": {}
     },
     {
       "date": 1543363430,
       "body": " v1 is no longer supported\r\n---\r\n\r\n@Haroenv  I have a problem, my system is unusable for my customers.  How to upgrade to InstantSearch v2 with shopify?\r\n\r\n\r\n>Note that InstantSearch v1 is no longer supported\r\n\r\nThis is the current shopify verion. This suggests the shopify version is no longer supported.\r\n\r\nI just installed a new shopify version and it show this is the current shopify version\r\nin algolia_dependency_instantsearch-1.min.js.liquid  instantsearch.js 1.12.1\r\n\r\n\r\ntransformItems\r\n---\r\nDid not work on shopfy. While it did add widget, the transformItems part did not work on shopify.\r\n\r\n ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/7961707",
-        "id": 7961707,
-        "login": "eddyparkinson"
-      },
+      "user": 7961707,
       "id": 442266028,
       "reactions": {}
     },
     {
       "date": 1543391124,
       "body": "Sorry, I missed the part where you said it was a Shopify app, which is an exception ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 442350619,
       "reactions": {}
     },
     {
       "date": 1543396312,
       "body": "Hey @eddyparkinson , I am Alex, developer working on the Shopify Project. @Haroenv is right, we are using instant search v1 which is not supported any more. We have a conversation going on about this topic for Shopify, but this has not be defined as a goal for the following weeks / months at least. That having said, thanks for the heads up, we have more and more requests about this topic and this is exactly this type of initiative that will make us want to choose to update for IS2. Please reach out our support if you have technical question about Shopify.\r\n\r\ncc @wittydeveloper ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/10573102",
-        "id": 10573102,
-        "login": "pagealexandre"
-      },
+      "user": 10573102,
       "id": 442373893,
       "reactions": {}
     },
     {
       "date": 1543398735,
       "body": "This is the workaround I see for v1:\r\n\r\n```js\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    container: '#brand-list',\r\n    attributeName: 'brand',\r\n    // v2 version:\r\n    // transformItems: items => items.filter(item => item.label !== 'Sony'),\r\n    transformData: {\r\n      item(item) {\r\n        if (item.name === 'Sony') {\r\n          // uses a bug in InstantSearch v1,\r\n          // which will not add the classes on empty items\r\n          return {};\r\n        }\r\n        return item;\r\n      },\r\n    },\r\n  })\r\n);\r\n```\r\n\r\nThen you can hide it with css:\r\n\r\n```css\r\n.ais-refinement-list--item label:not(.ais-refinement-list--label) {\r\n  display: none;\r\n}\r\n```\r\n\r\nI updated the sandbox: https://codesandbox.io/s/8k9wqo53pl?module=%2Fsrc%2Fapp.js",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 442386405,
       "reactions": {}
     },
     {
       "date": 1543449336,
       "body": "Re-open - workaround\r\n---\r\n\r\n@Haroenv The issue is not about hiding. it is about combining disjunctive facets with excluded facets (.facetsExcludes). Please re-open, maybe someone will post a workaround.\r\n\r\nI suspect some workaround is possible. The facetsExcludes is only needed when no disjunctive facet items are selected, when a disjunctive facet item is selected facetsExcludes is not required.\r\n\r\nHide facets item\r\n---\r\nThis worked, but did not help. I was hoping it would solve another issue with \"Show More\".\r\n\"Show more\" shows the items in the facetsExcludes, which I did not want. So I just got rid of the show more for now.\r\n\r\nInstant Search v2\r\n---\r\n@pagealexandre  looking foward to IS2. Looks to fix several on my current issues.\r\n\r\nI did try switching to IS2, is it possible?. It looks like a lot of work. Am not sure if it is even possible to switch but am keen to use it. \r\n ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/7961707",
-        "id": 7961707,
-        "login": "eddyparkinson"
-      },
+      "user": 7961707,
       "id": 442652065,
       "reactions": {}
     },
     {
       "date": 1631013631,
       "body": "As using facetsExcludes is very rare, I have not seen other occurrences of this behaviour. Will close now, but if someone else needs to use excluded facets, please open a new issue with reproduction.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 914219712,
       "reactions": {}
     }

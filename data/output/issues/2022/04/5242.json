@@ -4,12 +4,7 @@
   "title": "[react-instantsearch-hooks] hits/hits.results from useInfiniteHits ",
   "date": 1650903811,
   "body": "Howdy!\r\n\r\nWe are using `useInfiniteHits` to return us a nice list with results for our overview page that has a 'load more items' option. We are doing this all client side, and aren't working with the SSR provider just yet \r\n\r\nWe started meddling with routing and controlling the UI state through the `initialUiState` prop on the `InstantSearch` component. Now let's say the state we provide in the `initialUiState` is as follows\r\n\r\n```\r\n      initialUiState={{\r\n        products: {\r\n          configure: {\r\n            hitsPerPage: 10,\r\n          },\r\n          menu: {\r\n            currency: 'euro',\r\n          },\r\n        },\r\n      }}\r\n```\r\n\r\nThe state throughout the application that is retrieved through the hooks is reflecting this initial UI state nicely - so far all good except for this one:\r\n\r\n```\r\n  const { hits, results, showMore } = useInfiniteHits(props);\r\n```\r\n\r\nThe first set of `hits` (the first 10, based on the configuration provided in `initialUiState`) seem to be _any_ hit, so: hits that are not filtered based on the `initialUiState`, but simply the first 10 of the `products` index it's default ordering.\r\n\r\nNow this is where it gets a bit funky:\r\n\r\nIn the `results` prop, the correct 10 items are actually provided - so Algolia did actually run the query and does have the correct hits. Of course, the `results.hits` are only the items of the current page, so we can't use this prop with our `showMore` set-up.\r\n\r\nOnce we initiate the `showMore`, and thus load the next 10 results (to get a total of 20 hits): the `hits` prop is still showing the first 10 items to be _any_ hit. The next 10 (page 2), are the items we would expect to show up on page 2.\r\n\r\nOnce we turn on a random facet or sorting option, and turn it back again to a state that matches the `initialUiState` as provided, everything is correct. It seems to 'trigger' something that makes the output of useInifniteHits go to the correct state (just one extra rerender that fixes it?)\r\n\r\n\r\ntl;dr: It seems to be that the first set of hits in the `hits` property of `useInifniteHits` doesn't reflect a filtered items, based on the initialUiState provided. `results.hits` actually has the correct items, but since we are implementing a 'click here to show more' scenario, we can't use this.\r\n\r\nLet me know if this makes sense, if it doesn't I'm happy to try to replicate the situation \r\n\r\n  ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/10176709",
-    "id": 10176709,
-    "login": "RobbyUitbeijerse"
-  },
+  "user": 10176709,
   "issue": {
     "labels": [
       {
@@ -29,48 +24,28 @@
     {
       "date": 1650904146,
       "body": "This seems to be a caching issue. Are you using the [`cache`](https://www.algolia.com/doc/api-reference/widgets/infinite-hits/react-hooks/#widget-param-cache) prop?\r\n\r\nIf not, it'd be helpful to get a reproduction in [this sandbox](https://codesandbox.io/s/github/algolia/react-instantsearch/tree/master/examples/hooks?file=/App.tsx).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour"
-      },
+      "user": 6137112,
       "id": 1363059762,
       "reactions": {}
     },
     {
       "date": 1650907786,
       "body": "Hey! unfortunately no, but I can see how that could have been the issue. Will create a sandbox/example tomorrow! ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/10176709",
-        "id": 10176709,
-        "login": "RobbyUitbeijerse"
-      },
+      "user": 10176709,
       "id": 1363059773,
       "reactions": {}
     },
     {
       "date": 1650962249,
       "body": "While this definitely sounds like a bug we will look into and find the root cause, I'd just like to mention that React InstantSearch hooks has a routing option that doesn't require initialUiState too. You can find the documentation for that here: https://www.algolia.com/doc/api-reference/widgets/instantsearch/react-hooks/#widget-param-routing and https://www.algolia.com/doc/guides/building-search-ui/going-further/routing-urls/js/",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1363059782,
       "reactions": {}
     },
     {
       "date": 1650971846,
       "body": "Interestingly multiple issues I was facing (including the one reported) kind of 'vanished' once I moved our application from using multiple instances of the `useInifniteHits()` (note: all instances were without any options/props) hook to just one singular instance of that function high up in the component tree, and then passing on the hits and results instead of getting them from the hook everywhere.\r\n\r\nI'm still aiming to create that repro, but I might not get to it today and wanted to let you know about this finding as it seems rather specific / interesting. Not sure what could cause the mismatch in data throughout the tree in some of the instances 🤔 \r\n\r\n**[Edit]** it also means it's actually unrelated to my initial suspect the (managing state manually), something else seems to be going on",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/10176709",
-        "id": 10176709,
-        "login": "RobbyUitbeijerse"
-      },
+      "user": 10176709,
       "id": 1363059790,
       "reactions": {
         "👍️": 1
@@ -79,24 +54,14 @@
     {
       "date": 1651045667,
       "body": "What could be interesting to see if it could be related to the nesting or multiple times calling the same hook from the same component or its children. Do you see any minimal reproduction or does this only reproduce in a more \"complex\" app for now?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1363059803,
       "reactions": {}
     },
     {
       "date": 1709717813,
       "body": "This seems similar to an issue I'm facing when programmatically calling showMore, I'm using cache as well, goal is I want to highlight a specific result by object ID so if its not on the first page I want the next and so on, but when I do this the cache doesn't update correctly.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1455933",
-        "id": 1455933,
-        "login": "mikey0000"
-      },
+      "user": 1455933,
       "id": 1980454604,
       "reactions": {}
     }

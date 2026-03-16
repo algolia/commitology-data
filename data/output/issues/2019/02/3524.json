@@ -4,12 +4,7 @@
   "title": "Avoid using eval",
   "date": 1549924797,
   "body": "<!--\r\n  Thanks for participating in this project! We will try to answer as soon as possible 🙏\r\n-->\r\n\r\n**Is your feature request related to a problem? Please describe 🙏**\r\n\r\nI am adding a Content Security Policy to a new website that's (happily) using `instantsearch.js`. I noticed that in order for search to keep working with our CSP, we have to make some exceptions:\r\n\r\n```js\r\n{\r\n  directives: {\r\n    defaultSrc: [\"'none'\"],\r\n    connectSrc: [\r\n      '*.algolia.net',\r\n      '*.algolianet.com'\r\n    ],\r\n    scriptSrc: [\r\n      \"'self'\",\r\n      \"'unsafe-eval'\" // exception for Algolia instantsearch.js\r\n    ],\r\n    styleSrc: [\r\n      \"'self'\",\r\n      \"'unsafe-inline'\"// exception for Algolia instantsearch.js\r\n    ]\r\n  }\r\n}\r\n```\r\n\r\n**Describe the solution you'd like 🤔**\r\n\r\nI would like to disallow `unsafe-eval` for scripts and `unsafe-inline` for styles in my CSP and continue using `instantsearch.js`\r\n\r\nApologies, but I have not yet looked into the specific code in this library that using `eval` or similar. Just opening this as a tracking issue and to hopefully get a conversation started. Thanks!",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/2289",
-    "id": 2289,
-    "login": "zeke"
-  },
+  "user": 2289,
   "issue": {
     "labels": [],
     "number": 3524,
@@ -20,24 +15,14 @@
     {
       "date": 1549960155,
       "body": "Related issue: https://github.com/algolia/instantsearch.js/issues/2868, it seems to be Webpack's fault actually. I wonder how this is still the case now that we are using rollup. Are you using the latest version @zeke ? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 462664881,
       "reactions": {}
     },
     {
       "date": 1549990352,
       "body": "```\r\n$ npm ls instantsearch.js\r\nhelp.github.com@0.0.1 /Users/z/git/github/help-docs\r\n└── instantsearch.js@2.10.4 \r\n```\r\n\r\nLooks like we are behind a major version. I will update to `3.1.0` and report back.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2289",
-        "id": 2289,
-        "login": "zeke"
-      },
+      "user": 2289,
       "id": 462839658,
       "reactions": {
         "👍️": 1
@@ -46,12 +31,7 @@
     {
       "date": 1549992425,
       "body": "Migration guide is available here: https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/js/?language=js#upgrade-from-v2-to-v3",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 462853167,
       "reactions": {
         "❤️": 1
@@ -60,48 +40,28 @@
     {
       "date": 1550047559,
       "body": "I've looked into it, and `eval` is definitely gone in 3.0.0+, however the `new Function` mentioned in #2868 will still be there, for Hogan templates, which accept arbitrary JS interpolation. I don't think there's a way to avoid that. Maybe something is possible with template strings, but it should be investigated further. Preferably some way which doesn't use Hogan anymore, although I haven't seen many libraries which are: small, easy templating, safe.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 463110388,
       "reactions": {}
     },
     {
       "date": 1550091465,
       "body": "Thanks for looking into it, @Haroenv \r\n\r\n> Preferably some way which doesn't use Hogan anymore, although I haven't seen many libraries which are: small, easy templating, safe.\r\n\r\nMaybe [`mustache`](https://ghub.io/mustache)?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2289",
-        "id": 2289,
-        "login": "zeke"
-      },
+      "user": 2289,
       "id": 463367316,
       "reactions": {}
     },
     {
       "date": 1550096138,
       "body": "Yes. We discussed this, and will find a solution (not now, in a while), where the templating would be an “open-ended” API instead of just a string. Mustache is better than Hogan as a replacement; but it’s a few KB bigger, and we don’t want to switch for that now. Have you been able to change your CSP with the latest version?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 463397613,
       "reactions": {}
     },
     {
       "date": 1550097126,
       "body": "> Have you been able to change your CSP with the latest version?\r\n\r\nHaven't tried it yet (not a top priority) but I will report back soon.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2289",
-        "id": 2289,
-        "login": "zeke"
-      },
+      "user": 2289,
       "id": 463402634,
       "reactions": {
         "👍️": 1
@@ -110,36 +70,21 @@
     {
       "date": 1550421443,
       "body": "We upgraded to instantsearch.js v3. Works like a charm! Unfortunately, as you predicted, it still requires the same `style-src` and `unsafe-eval` allowances. Here's what I see when I try to disable them in the CSP:\r\n\r\n```\r\nRefused to apply inline style because it violates the following Content Security Policy directive: \"style-src 'self'\". Either the 'unsafe-inline' keyword, a hash ('sha256-GPZkwLiIhsNMfLMOGEUTYsWaCrqUZGzs19r89uce84c='), or a nonce ('nonce-...') is required to enable inline execution.\r\n```\r\n\r\n```\r\nUncaught EvalError: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' data: *.google-analytics.com\".\r\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2289",
-        "id": 2289,
-        "login": "zeke"
-      },
+      "user": 2289,
       "id": 464478617,
       "reactions": {}
     },
     {
       "date": 1550477668,
       "body": "Thanks for trying it out. Unfortunately I think removing those will be a breaking change, so not something we will be able to get to for the coming months. For the styling; you can add the hash as it suggested; for `unsafe-eval`, this is likely due to the templating. I don't think it's completely trivial removing or replacing that one though. It's something that will take us at least a few months to get to. Is that okay? For now I'll close this issue, since we found out the things we have are still the same violations as described in #2868",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 464629542,
       "reactions": {}
     },
     {
       "date": 1550506797,
       "body": "Sounds good @Haroenv, thanks for following up.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2289",
-        "id": 2289,
-        "login": "zeke"
-      },
+      "user": 2289,
       "id": 464796208,
       "reactions": {
         "👍️": 1

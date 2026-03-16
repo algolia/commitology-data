@@ -4,12 +4,7 @@
   "title": "InstantSearch imports EventEmitter incorrectly",
   "date": 1518189349,
   "body": "**Do you want to request a *feature* or report a *bug*?**\r\nBug\r\n\r\n**Bug: What is the current behavior?**\r\nWe put the instantsearch.js module into our (rollup) build and got an error that internal node module \"events\" does not export `EventEmitter`.\r\n\r\nWhen I looked there is an ES6 import:\r\nhttps://github.com/algolia/instantsearch.js/blob/541699d900ca0a20e17c5624baa1a7ab085fbf9a/src/lib/InstantSearch.js#L9\r\nWhich is a named import.\r\n\r\nBut in the relevant module at `node_modules/instantsearch.js/node_modules/events/events.js`, which uses CommonJS exports, the exports is defined as such:\r\n`module.exports = EventEmitter;`\r\nWhich is a default export.\r\n\r\nI assume in your build system this got forced into resolving, but Rollup is strict with ES imports. To have the project build I quickly changed the line in InstantSearch.js to a default import:\r\n`import EventEmitter from 'events';`\r\nand it builds fine.\r\n\r\nI also found a correct, default import being used in one of your tests: https://github.com/algolia/instantsearch.js/blob/3b659783cd659f82539d97aec2e3ca1e691797f5/src/widgets/search-box/__tests__/search-box-test.js#L2\r\n\r\n**Bug: What is the proposed solution?**\r\nMake the import in InstantSearch.js a default export as shown above for correctness and consistency with the test code.",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/329445",
-    "id": 329445,
-    "login": "zenmumbler"
-  },
+  "user": 329445,
   "issue": {
     "labels": [
       {
@@ -41,60 +36,35 @@
     {
       "date": 1518192511,
       "body": "Thanks a lot, this logic definitely makes sense. Are you up for making a PR with your changes? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 364477601,
       "reactions": {}
     },
     {
       "date": 1521114624,
       "body": "I can finally replicate it (apparently only happened on a UMD build): \r\n\r\n```\r\nsrc/instantsearch.umd.js → dist/vue-instantsearch.js...\r\n[!] Error: 'EventEmitter' is not exported by node_modules/instantsearch.js/node_modules/events/events.js\r\nhttps://github.com/rollup/rollup/wiki/Troubleshooting#name-is-not-exported-by-module\r\nnode_modules/instantsearch.js/es/lib/InstantSearch.js (19:9)\r\n17: import union from 'lodash/union';\r\n18: import isPlainObject from 'lodash/isPlainObject';\r\n19: import { EventEmitter } from 'events';\r\n             ^\r\n20: import urlSyncWidget from './url-sync.js';\r\n21: import version from './version.js';\r\n```\r\n\r\nMade a PR too",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 373350359,
       "reactions": {}
     },
     {
       "date": 1522251228,
       "body": "Thanks for fixing this, we had already changed to use another Algolia component and I completely forgot about this issue, my apologies.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/329445",
-        "id": 329445,
-        "login": "zenmumbler"
-      },
+      "user": 329445,
       "id": 376930727,
       "reactions": {}
     },
     {
       "date": 1522251443,
       "body": "Which other Algolia component do you use now @zenmumbler - just out of interest!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 376932110,
       "reactions": {}
     },
     {
       "date": 1522254933,
       "body": "@Haroenv Had to check a bit as this was a while ago, but we switched from direct use of `instantsearch.js` to `vue-instantsearch` which removed the `import {...} from \"instantsearch.js\"` statement from our code and made Rollup not have to resolve it (Rollup is configured with `esnext: true` and IIFE as output, not UMD). So we didn't actually change components, just the way it was imported in the app.\r\n\r\nWe now use the `ais-index` and `ais-results` components, with a custom combobox component that uses `algoliaComponent` as a mixin. Composed like so:\r\n\r\n```\r\n<ais-index :app-id=\"...\" :api-key=\"...\" :index-name=\"...\">\r\n    <stuff>...</stuff>\r\n    <custom-combobox (template external but inlined here)>\r\n        <more-stuff>...</more-stuff>\r\n        <ais-results>\r\n            <combo-item>...</combo-item>\r\n        </ais-results>\r\n    </custom-combobox>\r\n</ais-index>\r\n```\r\n\r\nI also had to add an Object.assign (and ES Promise) polyfill as we have to support IE 11, but that worked fine with no other changes. Can't point to the repo sadly, but you can check the site here: https://suburbia.io/\r\n\r\nThanks!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/329445",
-        "id": 329445,
-        "login": "zenmumbler"
-      },
+      "user": 329445,
       "id": 376951925,
       "reactions": {
         "❤️": 1
@@ -103,12 +73,7 @@
     {
       "date": 1522271010,
       "body": "Perfect! Thanks for Giving the info :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 377035752,
       "reactions": {}
     }

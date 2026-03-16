@@ -4,12 +4,7 @@
   "title": "API: function based initial config on the Helper",
   "date": 1472137425,
   "body": "One thing that we've noticed is that modifying a SearchParameter object is much simpler that working with the raw data structure. Also implementations based on the data structure is likely to break at some point if it ever evolves, whereas with the functions of the SearchParameters we can maintain the same API while modifying the underlying structure.\n## Proposal\n\n``` js\nvar helper = algoliasearchHelper(client, index, function(params) {\n  return params.addDisjunctiveFacet('categories')\n           .addDisjunctiveFacetRefinement('categories', 'shirts');\n});\n```\n\nThis won't remove the possibility to pass an object, it's just a more friendly alternative to set the configuration and the default parameters.\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/393765",
-    "id": 393765,
-    "login": "bobylito"
-  },
+  "user": 393765,
   "issue": {
     "labels": [
       {
@@ -39,36 +34,21 @@
     {
       "date": 1472138840,
       "body": "I am trying to see if it provides a nicer API than what we have today.\n\nWith the new API:\n\n``` js\nvar helper = algoliasearchHelper(client, index, function(params) {\n  return params\n    .addDisjunctiveFacet('categories')\n    .addHierarchicalFacet('products', {separator: '<'})\n    .addDisjunctiveFacetRefinement('categories', 'shirts');\n});\n```\n\nVS the current API:\n\n``` js\nvar helper = algoliasearchHelper(client, index, {\n  facets: ['categories'],\n  hierarchicalFacets: [{\n    products: {separator: '<'}\n  }]\n});\nhelper.addDisjunctiveFacetRefinement('categories', 'shirts');\n```\n\nI feel what we could ask ourselves here is: \"What does this API brings today that cannot be done easily with the current API?\" and I am not sure to find a lot of differences.\n\nStill for sure your example feels less complex to understand: only function calls and no need to iterate on the helper multiple times.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 1631044407,
       "reactions": {}
     },
     {
       "date": 1472202034,
       "body": "> I feel what we could ask ourselves here is: \"What does this API brings today that cannot be done easily with the current API?\" and I am not sure to find a lot of differences.\n\nYou are right, for today, the benefits are thin. User wise it make only a slight difference.\n\nHowever the programmatic API is more future proof (does not rely on structure that can change) and I would like to propose this alternative in order to deprecate the object one. Also proposing this would be also a win for instantsearch.js, for which this paradigm is closer.\n\nAlso providing a function means that it can be replay. Which could also be interesting for default parameters implementation.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 1631044429,
       "reactions": {}
     },
     {
       "date": 1504875606,
       "body": "If the state is provided from somewhere else (like the URL or any cold storage like the local-storage) we would still need to have a way to provide a plain JS Object. In the case of this proposal we can still instanciate a new SearchParameters with just the JS object but this makes the implementation less straightforward.\r\n\r\n```js\r\nvar coldState = getStateFromSomewhere();\r\nvar h = algoliasearchHelper(client, index, () => new SearchParameters(coldState));\r\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 1631044446,
       "reactions": {}
     }

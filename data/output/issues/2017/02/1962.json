@@ -4,12 +4,7 @@
   "title": "RIS: Ease multi index/autocomplete like experiences and getting multiple results in a single place/event",
   "date": 1486656674,
   "body": "Use case: \r\n\r\nToday if you want to target multiple indices at the same time you need to listen to the `search state` and pass it back to each other `<InstantSearch/>` instances. Also if you want to use an external autocomplete component you need to aggregate all the data you need. \r\n\r\nAPI proposal: \r\n\r\nWe want to simplify that. Here's a little code sample for the two use cases mentioned before. \r\n\r\n**Multi Hits** \r\n\r\n```js\r\n<InstantSearch indexName=\"first\"/>\r\n      <Configure hitsPerPage={1}/> //shared between all indices\r\n      <CustomHits /> //only hits of the first index\r\n      <MultiIndexContext indexName=\"second\">\r\n          <Configure hitsPerPage={2}/>\r\n          <CustomHits /> //only hits of the second index\r\n      </MultiIndexContext>\r\n      <MultiIndexContext indexName=\"third\">\r\n          <Configure hitsPerPage={4} />\r\n          <CustomHits /> //only hits of the third index\r\n      </MultiIndexContext>\r\n</InstantSearch>\r\n```\r\n\r\n**External Usage of an Autocomplete component**\r\n\r\n```js\r\n<InstantSearch indexName=\"first\"/>\r\n      <WrapWithHits>\r\n    <AutoComplete />\r\n    <MultiIndexContext indexName=\"second\">\r\n      <VirtualAutoComplete />\r\n    </MultiIndexContext>\r\n    <MultiIndexContext indexName=\"third\">\r\n      <VirtualAutoComplete />\r\n    </MultiIndexContext>\r\n  </WrapWithHits >\r\n</InstantSearch>\r\n\r\nconst AutoComplete = connectMultiHits(({hits, query, refine}) => <Autosuggest\r\n  suggestions={hits}\r\n  multiSection={true}\r\n  onSuggestionsFetchRequested={({value}) => refine(value)}\r\n  onSuggestionsClearRequested={() => refine('')}\r\n  getSuggestionValue={hit => hit.name}\r\n  renderSuggestion={hit =>\r\n    <div>\r\n      <div>{hit.name}</div>\r\n    </div>\r\n  }\r\n  inputProps={{\r\n    placeholder: 'Type a product',\r\n    value: query,\r\n    onChange: () => {\r\n    },\r\n  }}\r\n  renderSectionTitle={section => section.index}\r\n  getSectionSuggestions={section => section.hits}\r\n/>);\r\n```\r\n\r\nBasically every widgets going under the `<MultiIndexContext/>` will override the main search parameters. Under the hood it means creating a derived helper for each new index to target. \r\nWhat `<MultiIndexContext/>` will do is add to each widget context the targeted index. If no multi context is found, then we use the `indexName` declared within `<InstantSearch/>`.\r\n\r\nAlso, in order to use an external autocomplete component we need to create a new connector that will embed all the hits, the query, and a refine function.  \r\n\r\nI pushed a branch that is far away from being prod ready but that can give you an idea. https://github.com/algolia/instantsearch.js/commit/1f0324cbfb182a30d3d3e088cf14e240f1819463\r\nYou can try the MultiIndex story, but all the others will not work. \r\n\r\nIn term of api naming we have: \r\n\r\n* MultiIndexContext\r\n* connectMultipleHits (could be connectAutoComplete)\r\n\r\nIn term of modifications: \r\n\r\n* let each connector filter the right results depending on their index context. WIth this POC, i choose to modify the `searchResults` structure to include all the results. \r\n* create all the derived helpers when getting all the `searchParameters`\r\n\r\n---\r\n\r\nI also worked on another api:\r\n\r\n```js\r\n   <InstantSearch indexName = \"first\">   \r\n      <Configure hitsPerPage={this.state.hitsPerPage}/>\r\n      <Configure index=\"second\" hitsPerPage={this.state.hitsPerPage}/> \r\n      <Configure index=\"third\" hitsPerPage={this.state.hitsPerPage}/>\r\n      <AutoComplete/>\r\n   </InstantSearch>;\r\n```\r\n\r\nI let it down for two reasons:\r\n1. you need to mess up with the configure widget in order to get the `searchParameters` for the right index.\r\n2. With this, you can't modify the search parameters using all the others widgets.  if we want to be able to use our regular widget to configure all the indices, it means that all the `getSearchParameters` function of every widgets will need to be modified and every widgets should take an \"indexName\" props, which is ugly. \r\n\r\n@vvo, @bobylito : wdyt?\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6885378",
-    "id": 6885378,
-    "login": "mthuret"
-  },
+  "user": 6885378,
   "issue": {
     "labels": [
       {
@@ -27,96 +22,56 @@
     {
       "date": 1487062598,
       "body": "Really cool! That's a huge feature :)\r\n\r\nIn terms of API, I feel like the nesting isn't really natural (although it's more elegant in terms of code). Most of the time, we want to target multiple indices with no concept of hierarchy.\r\n\r\nHere's something I had in mind, just for the sake of discussion!\r\n\r\n```\r\n<InstantSearch indexNames=\"['first', 'second', 'third']\" defaultIndex=\"first\">\r\n   <Hits/>\r\n   <Hits index=\"second\"/>\r\n<InstantSearch/>\r\n```\r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/428280",
-        "id": 428280,
-        "login": "mikaa123"
-      },
+      "user": 428280,
       "id": 279646016,
       "reactions": {}
     },
     {
       "date": 1487063946,
       "body": "Yes I agree but how do you configure each indices which specific configuration (using our widgets like Configure, Pagination, etc...?). It seems that you'll need like my first try, to add this props \"index\"  on every widgets, right? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 279651494,
       "reactions": {}
     },
     {
       "date": 1487068696,
       "body": "@mthuret my bad, I didn't pay enough attention to your first try.\r\nI don't think it's messing too much with the Configure, but it's true that it would imply supporting an \"index\" props on every widget...",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/428280",
-        "id": 428280,
-        "login": "mikaa123"
-      },
+      "user": 428280,
       "id": 279671716,
       "reactions": {}
     },
     {
       "date": 1487114054,
       "body": "> <Configure hitsPerPage={1}/> //shared between all indices\r\n>       <CustomHits /> //only hits of the first index\r\n\r\n~~It seems counter intuitive that some widgets have a multi index or single index impact here at the same level. What do you think?~~ Forget this, we are good\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 279867195,
       "reactions": {}
     },
     {
       "date": 1487114577,
       "body": "With this proposal we should be able to:\r\n- create an autocomplete experience using raw widgets\r\n- display hits from multiple indexes\r\n- connect any autocomplete like component (with connectMultiHits)\r\n\r\nThe API seems complex but I can't imagine any other nice proposal for now so let's go forward. @mikaa123 I do also like yours but I find the one from @mthuret more flexible. having to re-state the indexName everywhere is nesting (or context) but in a more repetitive way maybe..",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 279868938,
       "reactions": {}
     },
     {
       "date": 1487588579,
       "body": "I'm on the middle of developing this feature. It's quite huge as it increase the complexity of the search state because of the need to introduce an \"indices\" namespace. \r\n\r\nI also encounter some edge cases and want to give you a little update on the api I'm implementing. \r\n\r\n```js\r\n <InstantSearch\r\n    appId=\"\"\r\n    apiKey=\"\"\r\n    indexName=\"first\">\r\n    <CurrentRefinements /> // widgets that are here are parameters that will be shared among every indices. \r\n    <MultiIndexContext indexName=\"first\">\r\n      <RefinementList attributeName=\"category\" /> // widgets that are here only target first\r\n      <CustomHits />\r\n      <Configure hitsPerPage={1} />\r\n      <SortBy/>\r\n    </MultiIndexContext>\r\n    <MultiIndexContext indexName=\"second\"> \r\n      <Configure hitsPerPage={1}/> //widgets that are here only target second\r\n      <RefinementList attributeName=\"categories\" />\r\n      <CustomHits />\r\n      <SortBy/>\r\n    </MultiIndexContext>\r\n<InstantSearch/>\r\n```\r\n\r\nLet me know what you think about it. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 281050413,
       "reactions": {}
     },
     {
       "date": 1487728273,
       "body": "@mthuret From your example I do not see the edge cases your are talking about.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 281542759,
       "reactions": {}
     },
     {
       "date": 1490793803,
       "body": "Closing this one. New issues will be opened to improve it.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 290088139,
       "reactions": {}
     }

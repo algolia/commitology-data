@@ -4,12 +4,7 @@
   "title": "react-router example issuing multiple queries per search",
   "date": 1484509833,
   "body": "**Do you want to request a *feature* or report a *bug*?**\r\nBug in the react-router example\r\n\r\n**Bug: What is the current behavior?**\r\nIn the react-router example, 3 queries are sent to Algolia for each refinement of the search.\r\n\r\n**Bug: What is the expected behavior?**\r\n1 query is sent to Algolia for each refinement.\r\n\r\n**Bug: What browsers are impacted? Which versions?**\r\nAll.\r\n\r\nTo reproduce, load the react-router example inside of this repository and watch the network tab as you add one letter to the search box. You should see 3 calls to Algolia where only 1 is expected. The first search happens as expected from `<SearchBox/>` widget, the second and third searches happen because the `<App/>` component re-renders as a result of prop and state changes, from the location change and `onSearchStateChange`. I believe React-InstantSearch is behaving as expected, to re-trigger the search on each render, but I wasn't able to find a good way to implement `shouldComponentUpdate` that prevents additional renders but still allows child components to update with the new search state. Thoughts?\r\n\r\n**What project are you opening an issue for?**\r\n- react-instantsearch\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\nLatest: `486f005`\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/174777",
-    "id": 174777,
-    "login": "joshed-io"
-  },
+  "user": 174777,
   "issue": {
     "labels": [
       {
@@ -27,48 +22,28 @@
     {
       "date": 1484559108,
       "body": "Hi @dzello thanks for reporting this :)\r\n\r\nOne thing you can already do is adding the `shouldComponentUpdate` lifecycle function to not render if the `searchState` is the same between `this.state` and `nextState`. \r\n\r\nBut there's still one other request made and I still don't know why. I'll will investigate more and update the example when found. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 272812555,
       "reactions": {}
     },
     {
       "date": 1484588514,
       "body": "So in the end there is two things going on here:\r\n\r\n* There's an extra render that occur but which is not due to React InstantSearch. To fix this one, you just need to add:\r\n```js\r\nshouldComponentUpdate(nextProps, nextState) {\r\n    return !isEqual(this.state.searchState, nextState.searchState);\r\n  }\r\n```\r\n\r\n* When passing new props to widgets we were only checking for a shallow equality. In this case it's not enough because some props are arrays. \r\n\r\nYou can follow the different fixes in this PR #1840. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 272924031,
       "reactions": {}
     },
     {
       "date": 1484601335,
       "body": "Thanks for the speedy reply @mthuret, I'll follow along over there. 💯 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/174777",
-        "id": 174777,
-        "login": "joshed-io"
-      },
+      "user": 174777,
       "id": 272963749,
       "reactions": {}
     },
     {
       "date": 1484817776,
       "body": "I'm closing this since it should be ok with the 2.2.0 of RIS :) ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 273721592,
       "reactions": {}
     }

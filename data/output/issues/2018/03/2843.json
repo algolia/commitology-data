@@ -4,12 +4,7 @@
   "title": "Forward `widgetParams` to the `unmountFn` of connectors",
   "date": 1522247765,
   "body": "If we save some data, like the container node of our custom widget into `widgetParams` it would be great to have it with as param of the `unmountFn` 👍 ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/893837",
-    "id": 893837,
-    "login": "iam4x"
-  },
+  "user": 893837,
   "issue": {
     "labels": [
       {
@@ -41,36 +36,21 @@
     {
       "date": 1559852139,
       "body": "Hey @iam4x! Do you remember in which cases you needed to access the container node in the connector?\r\n\r\nUsually we specify the `unmountFn` function body in the widget, where we have the knowledge of the container node and unmounts its component.\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/9dcbdd582d082acaea0edeabdc7e5d6cd9173c51/src/widgets/menu/menu.js#L168-L170\r\n\r\nTo my knowledge, the connector nevers needs to access the container node because it only calls the `unmountFn` given by the widget:\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/9dcbdd582d082acaea0edeabdc7e5d6cd9173c51/src/connectors/menu/connectMenu.js#L228",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour"
-      },
+      "user": 6137112,
       "id": 499650321,
       "reactions": {}
     },
     {
       "date": 1561368234,
       "body": "I think the original idea here is that if you give a container to the renderfn & make elements. If you don't particularly save it on the instance, you don't have access to that selector to unmount",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 504931468,
       "reactions": {}
     },
     {
       "date": 1563371157,
       "body": "We could provide the `widgetParams`, at least users have access to some information. The use case is more about users that want to cleanup their DOM rather than our own usage. The fact that we rely on a container node is a detail of our implementation. With the `widgetParams` provided to the function users could do:\r\n\r\n```js\r\nconst makeHits = instantsearch.connectors.connectHits(\r\n  function renderHits({ hits, widgetParams }) {\r\n    $(widgetParams.container).html(hits.map(hit => JSON.stringify(hit)));\r\n  },\r\n  function unmount({ widgetParams }) {\r\n    $(widgetParams.container).remove();\r\n  }\r\n);\r\n\r\nsearch.addWidget(\r\n  makeHits({\r\n    container: \".hits\"\r\n  })\r\n);\r\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6513513",
-        "id": 6513513,
-        "login": "samouss"
-      },
+      "user": 6513513,
       "id": 512261310,
       "reactions": {
         "👍️": 1
@@ -79,12 +59,7 @@
     {
       "date": 1576851261,
       "body": "I don't think it makes even sense to have the unmount function being exposed as another argument of the connector. I believe we should rather see the render function as a side effect in vanilla JavaScript (because manipulating the DOM is a side effect), and then we should clean up the effect in a function _returned_ by the renderer.\r\n\r\nGiven your example above @samouss, that would look like:\r\n\r\n```js\r\nconst makeHits = instantsearch.connectors.connectHits(\r\n  ({ hits, widgetParams }) => {\r\n    $(widgetParams.container).html(hits.map(hit => JSON.stringify(hit)));\r\n\r\n    return () => {\r\n      $(widgetParams.container).remove();\r\n    };\r\n  }\r\n);\r\n\r\nsearch.addWidget(\r\n  makeHits({\r\n    container: '.hits',\r\n  })\r\n);\r\n```\r\n\r\nIt makes even more sense when you start attaching events to avoid memory leaks. This assumes that we get rid of the `init` hook first.\r\n\r\nI've been thinking a lot about our render API lately and I think I've got some interesting ideas that I'll share in multiple RFCs.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour"
-      },
+      "user": 6137112,
       "id": 567938401,
       "reactions": {
         "❤️": 1

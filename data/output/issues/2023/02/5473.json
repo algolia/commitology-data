@@ -4,12 +4,7 @@
   "title": "React InstantSearch HierarchicalMenu always throwing error w/ Next.js",
   "date": 1675705631,
   "body": "### 🐛 Current behavior\r\n\r\nI am working in a Next.js 13.0.4 project (TypeScript) that uses the Algolia React InstantSearch package and no matter how this HierarchicalMenu is used, it will always throw an error of:\r\n\r\n`Error: Cannot declare two hierarchical facets with the same name: '...'`\r\n\r\nHere is the source (which is as barebones as possible):\r\n\r\n```ts\r\nimport { InstantSearch, HierarchicalMenu } from 'react-instantsearch-dom';\r\nimport { SearchIndex } from '@/lib/types/algolia';\r\nimport algoliasearch from 'algoliasearch/lite';\r\nimport config from '@/config/public';\r\nimport { useState } from 'react';\r\n\r\nconst searchClient = algoliasearch(\r\n    config.algolia.application_id,\r\n    config.algolia.search_api_key,\r\n);\r\n\r\nexport default function ListingsHome() {\r\n\r\n    const [ searchIndex, setSearchIndex] = useState<SearchIndex>('xxxx');\r\n\r\n    return (\r\n        <InstantSearch\r\n            key={searchIndex}\r\n            indexName={searchIndex}\r\n            searchClient={searchClient}\r\n        >\r\n            <HierarchicalMenu\r\n                attributes={[\r\n                    'categories.grouped',\r\n                    'categories.known_as',\r\n                    'categories.specific'\r\n                ]}\r\n            />\r\n        </InstantSearch>\r\n    );\r\n\r\n}\r\n```\r\n\r\nNo matter what I change, which attributes I use, the amount of attributes I use, on load I will still get the above error. The faceting is properly setup on Algolia, it's the only other component used on this page, and the code is as simple as it gets which is why I am so confused it's throwing this error.\r\n\r\nI also created another Next.js app with updated versions:\r\n\r\n* next 13.1.6 vs 13.0.4\r\n* typescript 4.9.5 vs 4.9.3\r\n* algoliasearch 4.14.3 vs algoliasearch 4.14.2\r\n* react-instantsearch-dom 6.39.0 vs react-instantsearch-dom 6.38.2\r\n\r\nAnd the *same* error occurs w/ the same exact code above.\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Create a Next.js 13 App w/ TypeScript\r\n2. Install algoliasearch & react-instantsearch-dom\r\n3. Use a HierarchicalMenu component w/ React InstantSearch\r\n\r\n### Live reproduction\r\n\r\n(Code Above)\r\n\r\n### 💭 Expected behavior\r\n\r\nThe HierarchicalMenu component should render without any error occurring, since the code above is valid.\r\n\r\n### Package version\r\n\r\nalgoliasearch 4.14.2, react-instantsearch-dom 6.38.2\r\n\r\n### Operating system\r\n\r\nWindows 10 Pro 19044.2486\r\n\r\n### Browser\r\n\r\nChrome 109\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/101128933",
-    "id": 101128933,
-    "login": "popjmbenfield"
-  },
+  "user": 101128933,
   "issue": {
     "labels": [
       {
@@ -27,24 +22,14 @@
     {
       "date": 1675721887,
       "body": "Hi @popjmbenfield,\r\n\r\nAre you using React strict mode ? You can check in your `next.config.js` file if the option `reactStrictMode` is set to `true`.\r\nIf that's the case, this is probably the reason why, the component mounts twice so this problem happens, and we haven't updated `react-instantsearch` and `react-instantsearch-dom` to handle strict mode as they are legacy versions which will be deprecated soon in favor of the hooks version.\r\n\r\nIs there a particular reason you are using `react-instantsearch-dom` rather than the hooks version ? If you're still migrating to the newer lib I think if it's just one page with a `HierarchicalMenu` only you can probably just use `react-instantsearch-hooks-web` and it could work right off the bat, plus with Next.js doing code splitting page by page and tree shaking the bundle should stay pretty lean.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/9158954",
-        "id": 9158954,
-        "login": "aymeric-giraudet"
-      },
+      "user": 9158954,
       "id": 1419855618,
       "reactions": {}
     },
     {
       "date": 1675802567,
       "body": "@aymeric-giraudet \r\n\r\nThank you for the response, that was exactly it. I didn't expect `reactStrictMode` to affect `react-instantsearch-dom`. Also, I will be taking your advice and be using the `react-instantsearch-hooks-web` version of Algolia InstantSearch as well, since it's almost a drop-in replacement which means I can keep `reactStrictMode` set `true` for ease of debugging, along with a good bit of code. Thanks for the help!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/101128933",
-        "id": 101128933,
-        "login": "popjmbenfield"
-      },
+      "user": 101128933,
       "id": 1421419387,
       "reactions": {}
     }

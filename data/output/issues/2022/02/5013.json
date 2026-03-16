@@ -4,12 +4,7 @@
   "title": "Sending events to Insights middleware too early in connectHit",
   "date": 1645025529,
   "body": "## 🐛 Bug description\r\n\r\n<!-- A clear and concise description of what the bug is. -->\r\n\r\n## 🔍 Bug reproduction\r\n\r\n**Steps to reproduce the behavior:**\r\n\r\n1. Go to https://codesandbox.io/s/laughing-kare-d7e0bo?file=/src/app.js\r\n2. Search for `e`\r\n3. Check the console log\r\n4. When `onEvent` of Insights middleware is triggered, DOM is not updated yet, while `hits` passed from `connectHits` are up-to-date.\r\n\r\n<!-- A live example helps a lot! Fork the sandbox, reproduce the bug and paste the URL here: -->\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/laughing-kare-d7e0bo?file=/src/app.js\r\n\r\n## 💭 Expected behavior\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/9209954594b048e9db3a91490002ae75522bceb2/src/connectors/hits/connectHits.ts#L107\r\n\r\n↑ When you look at the code, the connector sends event before rendering. Although it passes the correct `hits` along with the event, but the DOM isn't up-to-date.\r\n\r\nI think it can simply be like the following.\r\n\r\n```diff\r\n-       renderState.sendEvent('view', renderState.hits);\r\n\r\n        renderFn(\r\n          {\r\n            ...renderState,\r\n            instantSearchInstance: renderOptions.instantSearchInstance,\r\n          },\r\n          false\r\n        );\r\n\r\n+       renderState.sendEvent('view', renderState.hits);\r\n```\r\n\r\nhttps://codesandbox.io/s/objective-haze-25e8fi?file=/src/app.js\r\n\r\n↑ this is a modified version, where `onEvent` is called after rendering.\r\n\r\n## Context\r\n\r\nThis was discovered in the context of Google Tag Manager. On the GTM doc, we guide to use Insights middleware as \"Hits Viewed\" hook. When it's triggered, it notifies GTM so that it can track events. However, at that time, the DOM isn't up-to-date, so it went wrong.\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/499898",
-    "id": 499898,
-    "login": "eunjae-lee"
-  },
+  "user": 499898,
   "issue": {
     "labels": [],
     "number": 5013,
@@ -22,24 +17,14 @@
     {
       "date": 1645086561,
       "body": "That sounds like a correct fix. Are you willing to make a pull request? I'm assuming this needs to be done in the other widgets (infinite hits, autocomplete) as well.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1042691987,
       "reactions": {}
     },
     {
       "date": 1645090889,
       "body": "Yeah I couldn't think of any other side effect, so I assume it's correct too. I'll send a PR whenever I have some time. Thanks in advance for the review!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee"
-      },
+      "user": 499898,
       "id": 1042753789,
       "reactions": {
         "👍️": 1

@@ -4,12 +4,7 @@
   "title": "[hitsWidget]: Provide an `onClick` handler on the hits",
   "date": 1463763892,
   "body": "We sometimes need to trigger a specific behavior when people are clicking the hits results displayed. Something like opening more details in a lightbox, or in a side panel. And we usually need context about the specific hit that was clicked. There is currently no built-in way to do that.\n\nFor example, on the [Marvel demo](https://pixelastic.github.io/marvel/) I open the side panel when you click on a result hit. I managed to do that by listening to the click event on the hits wrapper (and filtering only on event targeting the hits themselves) through and external jQuery binding (`$('.hits').on('click', '.hit', (event) => {})`). I also put the hits details in a JSON encoded form in an hidden `textarea` to get it.\n\nThis is hacky and maybe we could directly embed this into the widget. I suggest something like:\n\n``` javascript\nsearch.addWidget(\n  instantsearch.widgets.hits({\n    container: '#hits-container',\n    onClick: (event, data) => {\n      // event is the usual event, while data is the data passed to the template\n    }\n  })\n);\n```\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/283419",
-    "id": 283419,
-    "login": "pixelastic"
-  },
+  "user": 283419,
   "issue": {
     "labels": [],
     "number": 1023,
@@ -22,120 +17,70 @@
     {
       "date": 1464194661,
       "body": "This is a tricky one, we can do it but we need to remember people will then want to add any dom handler to it this way.\n\nWhat do you think of this:\n\n```\nsearch.addWidget(\n  instantsearch.widgets.hits({\n    container: '#hits-container',\n    onDomNodeAdded: (domNode, hitData) => {\n      // do anything you want\n    }\n  })\n);\n```\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 221635229,
       "reactions": {}
     },
     {
       "date": 1464217054,
       "body": "I like the idea, it gives a lot of flexibility but... is more for advanced users that want full control. I'd rather try to focus on the usual use-cases for most of our users first.\n\nIf we follow your suggestion, users will have to define a method (`onDomNodeAdded`) to add their own method to the DOM element. They might have to workaround `this` binding, event delegation, etc. I'd rather we keep this complexity internally.\n\nWe could also add an `onDomNodeAdded` later on, but for now I'd rather focus on the common use-case.\n\nWDYT?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 221732480,
       "reactions": {}
     },
     {
       "date": 1464261415,
       "body": "I am against adding onClick (only) because even if it solves the \"click\" use case, it will easily get out of control:\n- I want to listen for double click\n- I want to listen for drag event\n- I want to listen for mouseenter mouseleave\n- I want to read some data attributes I just set in my template\n- ..\n\nI do not see onDomNodeAdded as something over engineered while we can see onClick as being too narrow on the API it exposes.\n\nThe current usecase you faced might be seen at the \"only usecase\" but I fear they are more to take into account.\n\nWe need to think more and more in term of pluggable API endpoints giving power to everyone. Answering beginners question like \"How to add a click to every hit element\" belongs to a guide and not a dedicated API entry point.\n\nonDomNodeAdded is actually already doable by using React refs (those can be callbacks) https://facebook.github.io/react/docs/more-about-refs.html\n\nIf it's doable then let's do it.\n\nCareful also because neither onClick nor onDomNodeAdded will work with our \"allItems\" template.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 221844062,
       "reactions": {}
     },
     {
       "date": 1464300870,
       "body": "Makes sense, I didn't think of all those use-cases.\n\nNot sure on the naming `onDomNodeAdded`, this feels really low level. Why not `onRender` to stay consistent with our naming of events? It could still pass the DOM node and data to the function, just maybe not add a mention of \"adding a DOM node to the DOM tree\" in the naming.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 222010546,
       "reactions": {}
     },
     {
       "date": 1464340083,
       "body": "Yes we can iterate on the API option name now that we agree on the API feature\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 222098018,
       "reactions": {}
     },
     {
       "date": 1464389770,
       "body": "So what do you think of `onRender(data, node)` ?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 222270484,
       "reactions": {}
     },
     {
       "date": 1464425554,
       "body": "onRender I would expect it to represent a render event each time the hit widget is rendered. Using \"dom node\" I wanted to emphasis on the item being added but that's not good. And we need to take into account the \"allItems\" template\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 222298009,
       "reactions": {}
     },
     {
       "date": 1465202722,
       "body": "Sorry late for the party, but what about event delegation and data-\\* attributes? (it would work great in the case you describe @pixelastic \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 223900977,
       "reactions": {}
     },
     {
       "date": 1465204581,
       "body": "I use data attributes with searchstone, I end up with 12 data attributes in the tag, that's not really convenient. I like the idea to pass the hit somehow.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/976175",
-        "id": 976175,
-        "login": "Shipow"
-      },
+      "user": 976175,
       "id": 223907485,
       "reactions": {}
     },
     {
       "date": 1465204649,
       "body": "JSON.stringify in a single data attribute?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 223907729,
       "reactions": {
         "👍️": 1
@@ -144,48 +89,28 @@
     {
       "date": 1465205229,
       "body": "From the discussions I see here, I see advanced developers (= knowing how to do DOM with either jQuery or JavaScript), willing to control the full markup generated by IS (events, html).\n\nWhat if if we said and provided you something like \"Here's a render method, please do some DOM and send it back to us\", you would be able to achieve what you want without the need to add custom API entries and without the need for the advanced users to learn those API entries, and their possible restrictions.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 223909822,
       "reactions": {}
     },
     {
       "date": 1465234219,
       "body": "> Here's a render method, please do some DOM and send it back to us\n\nYou mean, like the `template` method? ;)\n\nMaybe we can allow the `template` method to return a DOM element instead of a string. That way we can bind any event with any data to hit easily. That would be really straightforward.\n\nNot sure about memory leaks and garbage collecting of that, but otherwise this feels like the easiest API.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 224028928,
       "reactions": {}
     },
     {
       "date": 1465285660,
       "body": "> Maybe we can allow the template method to return a DOM element instead of a string. That way we can bind any event with any data to hit easily. That would be really straightforward.\n\nYES! This is the ultimate \"low level\" non-leaky API that we could provide. We need to discuss this along with what are the real templating option we provide by default, will try to have a proposal soon.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 224205435,
       "reactions": {}
     },
     {
       "date": 1465567474,
       "body": "Revisiting this, given our renderers proposal, we might finally implement this in the default hits renderer since this is a common pattern in recent demos. And you don't want to render the hits yourself for such a simple usecase.\n\nMoved to #1078\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 225190737,
       "reactions": {}
     }

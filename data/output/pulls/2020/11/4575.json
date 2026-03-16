@@ -4,12 +4,7 @@
   "title": "fix(insights): do not throw when sending event right after creating insights middleware",
   "date": 1604937708,
   "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n## Summary\r\n\r\nThere is a bug where an error is thrown when sending events right after creating `insights` middleware.\r\n\r\n\r\n## Details\r\n\r\nIt happens only when:\r\n\r\n- The UMD version of `search-insights` is used.\r\n- The `search-insights` is not loaded yet at the time of creation of `insights` middleware.\r\n\r\nIn `insights` middleware, the way it intializes `insightsClient` is asynchronous. If it happens too late (normally it happens when the library itself hasn't loaded yet), sending event will throw an error saying \"the insightsClient is not intialized yet\".\r\n\r\nSo, in this PR, we change to initialize `insightsClient` synchronously without checking if it was already initialized before.\r\n\r\n## A behavioral change\r\n\r\nBefore this PR, userToken that was set before creating insights middleware was ignored. However since this PR, that has to  change, because although user has a code like the following:\r\n\r\n```js\r\naa('init', { ... });\r\naa('setUserToken', 'token-a');\r\n\r\nsearch.use(createInsightsMiddleware({ ... }));\r\n```\r\n\r\n`insights` middleware calls `aa('init', ...)` anyway. It means `aa(init', ...)` will override the token with an anonymous token. Of course, we can update `search-insights` not to override already given token with an anonymous one, but there is no guarantee that user upgrades search-insights correctly. So we cannot rely on it.\r\n\r\nSince `insights` middleware initializes `insightsClient`, we guide not to call `aa('init')` by themselves, but we cannot stop it. And if they set userToken like above, we shouldn't lose the token (although before this PR, we used to ignore the token before creating the middleware).\r\n\r\nThis behavioral change can be considered as a breaking change, but we can also consider it as a \"fix\" because it is correct to prefer a userToken that was explicitly set by user over an anonymous token.\r\n\r\n## Alternatives\r\n\r\nThere are a couple of other options requiring changes in `search-insights` side, but it's risky to have a change in InstantSearch that depends on a change in `search-insights` because we cannot guarantee users will upgrade them both.\r\n\r\n## Future task\r\n\r\nThis doesn't concern another issue we've recently discussed about, which is to provide an option to disable cookie at all. It will be dealt separately.\r\n\r\n## Result\r\n\r\n1. When UMD search-insights is not loaded yet, it doesn't throw when sending events. It stores it in the queue and send it later correctly.\r\n2. If user sets a token before creating `insights` middleware, it takes it into account. (It used to not.)",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/499898",
-    "id": 499898,
-    "login": "eunjae-lee"
-  },
+  "user": 499898,
   "pull": {
     "labels": [],
     "number": 4575,
@@ -20,12 +15,7 @@
     {
       "date": 1604937774,
       "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4575/builds/72529) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit b3e0247ce460aa4e38bf11ce19800cc59790324c:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-k4n5w)| Configuration |\n",
-      "user": {
-        "type": "Bot",
-        "avatar": "https://avatars.githubusercontent.com/in/38409",
-        "id": 54081388,
-        "login": "codesandbox-ci[bot]"
-      },
+      "user": 54081388,
       "id": 724106612,
       "reactions": {}
     }

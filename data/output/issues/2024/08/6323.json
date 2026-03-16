@@ -4,12 +4,7 @@
   "title": "Dynamically rendering Index components from arrays results in incorrect teardown on unmount",
   "date": 1723241722,
   "body": "Hello. My name's Ike 🙂 \r\n\r\n## Context\r\nI'm trying to build a UI that allows users to preview multiple facets of an index simultaneously. \r\n\r\nMy mental model for it is a folder structure, where 4 results from each folder are displayed, and nesting into a folder will show 4 results from each subfolder.\r\n\r\nThe way I've tried doing this is with a separate `<Index>` and `<Configure>` pair for each folder. The folder structure is dynamic, so I've tried rendering them using inline array mapping:\r\n\r\n```tsx\r\nconst Folder = (props: {name: string}) => (\r\n  <Index indexName=\"my_index\">\r\n    <Configure facetFilters={[`tags:${props.name}`]} hitsPerPage={4} />\r\n    <Hits />\r\n  </Index>\r\n)\r\n\r\n['A', 'B'].map(folderName => <Folder key={name} name={folderName} />\r\n```\r\n## Problem\r\nWhen I update the array, the original folders' widgets aren't disposed correctly, and an erroneous POST is sent, requesting results for both the old folders and the new ones. Then a second POST is sent, for the correct data.\r\n\r\nI discovered this doesn't happen when I hardcode the folders, but given that data is dynamic, hardcoding isn't really an option.\r\n\r\nVideo demo:\r\nhttps://github.com/user-attachments/assets/934f288f-f752-44a8-9829-7fe8c8f0ba57\r\n\r\nFor discoverabilty, I'll also include the two error messages I get on my local dev environment (though they don't occur in the sandbox)\r\n```\r\nWarning: Can't perform a React state update on an unmounted component. This is a no-op, but it indicates a memory leak in your application. To fix, cancel all subscriptions and asynchronous tasks in a useEffect cleanup function.\r\nConfigure\r\n```\r\n```\r\nWarning: Can't perform a React state update on an unmounted component. This is a no-op, but it indicates a memory leak in your application. To fix, cancel all subscriptions and asynchronous tasks in a useEffect cleanup function.\r\nHits2\r\n```\r\n\r\n### 🔍 Steps to reproduce\r\n\r\nRender an Index and Configure component by mapping through an array, then update the array so that the Index and Configure component is configured differently. Look at your network requests and see that 2 requests have been sent. One containing the old queries+the new queries, and another just containing the new queries.\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/sandbox/react-instantsearch-array-cleanup-example-wjv8j3?file=%2Fsrc%2FApp.tsx\r\n\r\n### 💭 Expected behavior\r\n\r\nUpdating the array responsible for the rendering of Index components shouldn't result in 2 queries being sent. Only 1 query, for the correct data should be sent.\r\n\r\n### Package version\r\n\r\nalgoliasearch 4.23.2, instantsearch.js 4.72.1, react-instantsearch 7.12.2\r\n\r\n### Operating system\r\n\r\nmacOs 14.5\r\n\r\n### Browser\r\n\r\nFirefox 130\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/11844404",
-    "id": 11844404,
-    "login": "ikesau"
-  },
+  "user": 11844404,
   "issue": {
     "labels": [
       {
@@ -27,24 +22,14 @@
     {
       "date": 1723842346,
       "body": "I investigated this some more today and it seems to be due to a race condition that occurs between the `index.addWidgets` and `index.dispose` calls. It doesn't always happen, but the more `<Index>` components that are being rendered, the more likely it is.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/11844404",
-        "id": 11844404,
-        "login": "ikesau"
-      },
+      "user": 11844404,
       "id": 2294287633,
       "reactions": {}
     },
     {
       "date": 1724682339,
       "body": "I've avoided the issue by building my own client using the Algolia REST API instead. Fixing this race condition seemed to rely on some pretty deep react/instantsearch internals and I couldn't imagine being able to solve that as an outsider without introducing other regressions.\r\n\r\nClosing the issue 🙂 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/11844404",
-        "id": 11844404,
-        "login": "ikesau"
-      },
+      "user": 11844404,
       "id": 2310349956,
       "reactions": {}
     }

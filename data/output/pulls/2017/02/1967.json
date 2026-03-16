@@ -4,12 +4,7 @@
   "title": "fix(Configure): use props a unique source of truth",
   "date": 1486744574,
   "body": "With this PR I removed the fact that we can read `<Configure>` parameters from the search state, as it's not easy to handle if we also provide a way to change them directly from the props. \r\n\r\nThe props passed through `Configure` will only be pushed to search state. If the parameters needs to be modified, then the props of `Configure` needs to be modified. It means that when reading from a url, then the configure parameters must be extracted and passed through the props. \r\n\r\nIf three params where passed to the `Configure` at the first rendering, and then as the second one only two props are passed, then the third one will disappear from the `search state`. ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6885378",
-    "id": 6885378,
-    "login": "mthuret"
-  },
+  "user": 6885378,
   "pull": {
     "labels": [],
     "number": 1967,
@@ -20,84 +15,49 @@
     {
       "date": 1486771379,
       "body": "> It means that when reading from a url, then the configure parameters must be extracted and passed through the props.\r\n\r\nDo we have an example on how to do that?\r\n\r\n@zackify what do you think? We believe it's tricky to have a Configure widget that read both ways (from props, from state).\r\n\r\nWhen it reads from both props and state, which one should take precedence? @mthuret Can you maybe precise exactly what were the struggles trying to support it both ways?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 279099649,
       "reactions": {}
     },
     {
       "date": 1486773226,
       "body": "I see the problem. Take from props if the props are null in\ncomponentWillReceiveProps. On initial mount take from the state if it\ndoesn't exist then try getting from the props? That might fix it\nOn Fri, Feb 10, 2017 at 19:03 Vincent Voyer <notifications@github.com>\nwrote:\n\n> It means that when reading from a url, then the configure parameters must\n> be extracted and passed through the props.\n>\n> Do we have an example on how to do that?\n>\n> @zackify <https://github.com/zackify> what do you think? We believe it's\n> tricky to have a Configure widget that read both ways (from props, from\n> state).\n>\n> When it reads from both props and state, which one should take precedence?\n> @mthuret <https://github.com/mthuret> Can you maybe precise exactly what\n> were the struggles trying to support it both ways?\n>\n> —\n> You are receiving this because you were mentioned.\n> Reply to this email directly, view it on GitHub\n> <https://github.com/algolia/instantsearch.js/pull/1967#issuecomment-279099649>,\n> or mute the thread\n> <https://github.com/notifications/unsubscribe-auth/AAbacDc62eMRCKNHSLV_qtNx0wZrwpl1ks5rbPq1gaJpZM4L9lO5>\n> .\n>\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/449136",
-        "id": 449136,
-        "login": "zackify"
-      },
+      "user": 449136,
       "id": 279103633,
       "reactions": {}
     },
     {
       "date": 1486773281,
       "body": "Sorry that wasn't explained well. On mount, take from existing state. Any\ntime componentWillReceiveProps is called, that takes precedence.\nOn Fri, Feb 10, 2017 at 19:33 Zach Silveira <zackify@gmail.com> wrote:\n\n> I see the problem. Take from props if the props are null in\n> componentWillReceiveProps. On initial mount take from the state if it\n> doesn't exist then try getting from the props? That might fix it\n> On Fri, Feb 10, 2017 at 19:03 Vincent Voyer <notifications@github.com>\n> wrote:\n>\n> It means that when reading from a url, then the configure parameters must\n> be extracted and passed through the props.\n>\n> Do we have an example on how to do that?\n>\n> @zackify <https://github.com/zackify> what do you think? We believe it's\n> tricky to have a Configure widget that read both ways (from props, from\n> state).\n>\n> When it reads from both props and state, which one should take precedence?\n> @mthuret <https://github.com/mthuret> Can you maybe precise exactly what\n> were the struggles trying to support it both ways?\n>\n> —\n> You are receiving this because you were mentioned.\n> Reply to this email directly, view it on GitHub\n> <https://github.com/algolia/instantsearch.js/pull/1967#issuecomment-279099649>,\n> or mute the thread\n> <https://github.com/notifications/unsubscribe-auth/AAbacDc62eMRCKNHSLV_qtNx0wZrwpl1ks5rbPq1gaJpZM4L9lO5>\n> .\n>\n>\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/449136",
-        "id": 449136,
-        "login": "zackify"
-      },
+      "user": 449136,
       "id": 279103739,
       "reactions": {}
     },
     {
       "date": 1486978922,
       "body": "One use case illustrating the issue: \r\n\r\nInitial: Configure props is `hitsPerPage=3`\r\n\r\nStep1: pass new props to configure to be `hitsPerPage=1`\r\n\r\nNow the `search state` has `hitsPerPage=1`. \r\n\r\nStep2: pass new props to configure to be `hitsPerPage=2`\r\n\r\nIf we look at the search state first, this will never be applied. \r\n\r\n-- \r\n\r\nOne obvious use case to read from the `search state` would be when you are loading the page and read the state from the URL. So reading from the state when the component did mount should do the trick for this case, but for now we don't have the architecture for it. \r\n\r\nBefore the PR, the way it could have worked was when unmounting systematically the `<Configure/>` widget before passing it new props. \r\n\r\nWith the PR, the search state is never taken into account, and you need to pass the right props directly to the `<Configure/>` widget. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 279337697,
       "reactions": {}
     },
     {
       "date": 1487039966,
       "body": "@mthuret Can you ensure we do have a full example doing an url synchronisation with Configure where we re-read state and apply props dynamically? I am not sure we do have that today while it's critical to users.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 279590943,
       "reactions": {}
     },
     {
       "date": 1487064102,
       "body": "@vvo I can modify our examples to include that, even if the props will not changed dynamically. \r\nI can also make a special story that can change props dynamically but will not highlight the URL part of it. \r\n\r\nOtherwise, we need to build the geo recipes with this PR. What do you think its the best? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 279652084,
       "reactions": {}
     },
     {
       "date": 1487077821,
       "body": "So I added a geo-search recipe to show how you can update search parameters and synchronize the URL. I also updated the search parameters guide. \r\n\r\nThis geo search example is very basic and only feature:\r\n\r\n* a regular search through the searchbox. \r\n* a map that when we click somewhere perform a new search. \r\n\r\nWe still need to do #1860 because with this example:\r\n\r\n* the search is not triggered when moving the map. (mostly because I didn't find a `dragEnd` event with the lib used at the moment). \r\n* No autocomplete. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 279702960,
       "reactions": {}
     }

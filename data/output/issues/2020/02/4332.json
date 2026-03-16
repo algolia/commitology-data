@@ -4,12 +4,7 @@
   "title": "Add dev warning when initialUiState is missing the index name",
   "date": 1580895889,
   "body": "<!--\r\n  Thanks for participating in this project! We will try to answer as soon as possible 🙏\r\n-->\r\n\r\n**Is your feature request related to a problem? Please describe 🙏**\r\n\r\n```js\r\ninstantsearch({\r\n  indexName: 'my_index_name',\r\n  initialUiState: {\r\n    query: 'default set query',\r\n  },\r\n})\r\n  .addWidgets([searchBox({})])\r\n  .start();\r\n```\r\n\r\nGiving this does not give a warning at all, while it should.\r\n\r\n(the correct code is:)\r\n\r\n```js\r\ninstantsearch({\r\n  indexName: 'my_index_name',\r\n  initialUiState: {\r\n    my_index_name: {\r\n      query: 'default set query',\r\n    },\r\n  },\r\n})\r\n  .addWidgets([searchBox({})])\r\n  .start();\r\n```\r\n\r\n**Describe the solution you'd like 🤔** A clear and concise description of what you want to happen.\r\n\r\nA warning somewhat like this should be thrown:\r\n\r\n```\r\n[InstantSearch]: warning! You have passed the following `indexUiState`:\r\n\r\nThis is missing one of the registered indices: ${indexIds.join(', ')}.\r\nA correct usage would be at least:\r\n\r\ninstantsearch({\r\n  // ...\r\n  indexName: '${rootIndexName}',\r\n  initialUiState: {\r\n    '${rootIndexName}': ${JSON.stringify(initialUiState, null, 2)}\r\n  }\r\n})\r\n```\r\n\r\n**Describe alternatives you've considered ✨** A clear and concise description of any alternative solutions or features you've considered.\r\n\r\n- I was thinking we could warn if the value of a root UiState is _not an object_, but that would fail with most widgets (hierarchical, refinement, menu ...) which have a key per attribute.\r\n\r\n- We could also whitelist based on known keys of widgets, however that isn't technically an error on their part, but probably the closes \r\n\r\n- We can also warn when none of the keys are a registered index (i.e. either root index name, or its child widgets (recursive)). This needs to happen at the init step probably.\r\n\r\n- I don't see how to put this in the existing warning, since that's on a per-index level, so we'd need to warn as well if _nothing_ has initialUiState, but there was a non-empty initialUiState.\r\n\r\n- we can also warn if there are multiple keys, and the root index is missing, but that could be a false positive if there _are_ other index widgets.",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6270048",
-    "id": 6270048,
-    "login": "Haroenv"
-  },
+  "user": 6270048,
   "issue": {
     "labels": [
       {
@@ -41,12 +36,7 @@
     {
       "date": 1580915459,
       "body": "Implementation of the check which probably could work:\r\n\r\n```js\r\nif (__DEV__) {\r\n  // defined in index widget\r\n  function isIndexWidget(widget: Widget): widget is Index {\r\n    return widget.$$type === 'ais.index';\r\n  }\r\n\r\n  // pretty much the same as resolveScopedResultsFromWidgets\r\n  function getIndexIds(widgets: Widget[]): string[] {\r\n    const indexWidgets = widgets.filter(isIndexWidget);\r\n  \r\n    return indexWidgets.reduce<string[]>((scopedResults, current) => {\r\n      return scopedResults.concat(\r\n        current.getIndexId(),\r\n        ...getIndexIds(current.getWidgets())\r\n      );\r\n    }, []);\r\n  }\r\n\r\n  const indexIds = Object.keys(initialUiState);\r\n  const expectedIndexIds = getIndexIds(mainIndex.getWidgets());\r\n\r\n  if (indexIds.every(id => expectedIndexIds.indexOf(id) === -1)) {\r\n    console.log('warning')\r\n  }\r\n}\r\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 582453439,
       "reactions": {}
     }

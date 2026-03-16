@@ -4,12 +4,7 @@
   "title": "InstantSearch dynamic remove/add widgets",
   "date": 1506522228,
   "body": "# InstantSearch::removeWidget\r\n\r\n> The goal is to be able to mount and unmount widgets from the instantSearch instance dynamically. With such a feature we would be able to build \"dynamic\" search experiences.\r\n\r\n## First API proposal\r\n\r\nEvery widgets are implementing a `getConfiguration()` method which is indicating what SearchParameters do we need to set before querying Algolia API.\r\n\r\nWe use this method to guess which SearchParameters we need to remove from the SearchParameters when we unmount this widget.\r\n\r\nRemoving a widget also implies some DOM operations in order to remove the widget from the page. In this solution we are attaching to the widget instance a reference to the DOM node where the widget is mounted and we \"automatically\" remove all the content of the node.\r\n\r\n**PROS**\r\n\r\n* Non-breaking changes API\r\n* Will work with most of the widgets already written, not a lot of code changes\r\n\r\n**CONS**\r\n\r\n* It's not 100% safe since we are \"guessing\" which parameters to change after removing the widget\r\n* If we run into issue, the code will have a lot of `if/else` branches and will become spaghetti\r\n* Can't remove the refined value of the `NumericRefinementList` and `SortBySelector`\r\n\r\n## Second API proposal\r\n\r\nIn the first proposal, almost everything is done into the InstantSearch class itself. Which is great for non-breaking changes update and it should work with the widgets already implemented. But it's also \"risky\" because we cannot implement a custom method for a widget behaving really differently than the others.\r\n\r\nTo avoid these potential issues, we are enhancing the connectors API. Connectors accepts a first parameters which will be the `renderFn` and now they do accept a function `unmountFn` which will be responsible to remove the widget from the DOM if it is requested to.\r\n\r\nAnd widgets have now a new method `dispose()` which takes as parameters the helper instance and the current `SearchParameters / helper.state`. The `dispose()` method will call the `unmountFn` and return the next `SearchParameters` after the widget is removed (if needed).\r\n\r\n**PROS**\r\n\r\n* Each widget is responsible for his unmount logic\r\n* We can test each `dispose()` and `unmountFn` separately\r\n\r\n**CONS**\r\n\r\n* More boilerplate code\r\n* Semi-breaking changes in the connectors & widgets API\r\n\r\n## Conclusion\r\n\r\nThe first proposal is a sexy way to do it, because it's \"automatically\" and will work most of the time and it does not require updates from the clients.\r\n\r\nBut in the end, when we will have complex cases it will become more tricky to maintain. Sometime it's better to well separate concerns and I think here it's the case. For instance with the first proposal there's no easy solution to know when to remove the refined value for the `NumericRefinementList` and the `SortBySelector`\r\n\r\nEvery own widgets should be aware of how to mount and unmount themselves: it will be easier to test and to maintain.\r\n\r\nYou can find the two PRs and the code here:\r\n\r\n* https://github.com/algolia/instantsearch.js/pull/2374 (1st proposal)\r\n* https://github.com/algolia/instantsearch.js/pull/2384 (2nd proposal)",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/893837",
-    "id": 893837,
-    "login": "iam4x"
-  },
+  "user": 893837,
   "issue": {
     "labels": [
       {
@@ -45,48 +40,28 @@
     {
       "date": 1506523686,
       "body": "I like the decentralized aspect of the second proposal. And even though it's gonna be another method to implement, it's not mandatory if you don't plan to remove the widget so we can still hack / prototype widget. Also it makes for a more explicit API.\r\n\r\nI have some questions:\r\n - do you have something planned to lower the number of search calls in case of multiple remove?\r\n - do you have an idea for the dynamic `addWidget`?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 332546219,
       "reactions": {}
     },
     {
       "date": 1506526490,
       "body": "> Do you have something planned to lower the number of search calls in case of multiple remove?\r\n\r\nThis would be easily implemented, we can enhance the API of `removeWidget()` to accept an Array of widgets instances and compute the SearchParameters for the next search before triggering it.\r\n\r\n> Do you have an idea for the dynamic addWidget?\r\n\r\nI need to do the PoC, but from the code of InstantSearch.js we can track if the search is already started and [here](https://github.com/algolia/instantsearch.js/blob/develop/src/lib/InstantSearch.js#L84-L91) call [this same function](https://github.com/algolia/instantsearch.js/blob/develop/src/lib/InstantSearch.js#L120-L123) to update the SearchParameters before triggering a new search 👍 \r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/893837",
-        "id": 893837,
-        "login": "iam4x"
-      },
+      "user": 893837,
       "id": 332561971,
       "reactions": {}
     },
     {
       "date": 1506607696,
       "body": "> This would be easily implemented, we can enhance the API of removeWidget() to accept an Array of widgets instances and compute the SearchParameters for the next search before triggering it.\r\n\r\nYes indeed that's a good improvement of the API.\r\n\r\nWhat would you think about swapping one widget for another?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 332847680,
       "reactions": {}
     },
     {
       "date": 1506608680,
       "body": ">  What would you think about swapping one widget for another?\r\n\r\nYes this is a potential usecase, but I don't really have something in mind for it now. \r\n\r\nI was also thinking of a `InstantSearch::dispose` method that will remove everything from the page, when for instance the user change page on a SPA.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/893837",
-        "id": 893837,
-        "login": "iam4x"
-      },
+      "user": 893837,
       "id": 332852801,
       "reactions": {
         "👍️": 2
@@ -95,12 +70,7 @@
     {
       "date": 1507799627,
       "body": "Merged in feat/2.3 🎉 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/893837",
-        "id": 893837,
-        "login": "iam4x"
-      },
+      "user": 893837,
       "id": 336069966,
       "reactions": {
         "🎉": 1

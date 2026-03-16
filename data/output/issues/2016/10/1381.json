@@ -4,12 +4,7 @@
   "title": "Styling API proposal",
   "date": 1475659816,
   "body": "## Use Case\n\nwe provide default themes for some of the widgets in react-instantsearch like the SearchBox. Those widgets are usable out-of-the-box but a user might want to make some small modifications about it -> ex: an obvious example would be colors.\n\nCurrently we provide an `overrideTheme` function (renamed to `mergeClassNames` in the styling PR). The goal of this function is to take a map of theme keys associated with class names and add those to the default one. \nThis works but in order to use it, you need to use either a regular css file and provide by hand the map themeKeys/classNames, or css modules (when importing the css file, you'll got the map). \n\nIMHO, it would be more reactish to have also the possibility to perform those modifications by using inline style (and so plain js object). So that you would be able to write something like this: \n\n``` js\nconst searchBoxStyle = {\n   submit: {\n     backgroundColor: '#1E9C5E  ',\n   },\n };\n return <Wrapper >\n     <div className=\"container\">\n       <SearchBox theme={extendTheme(SearchBox.defaultTheme, searchBoxStyle)}/>\n     </div>\n   </Wrapper>;\n```\n## API Proposal\n1. rename `mergeClassNames` to `extendTheme`. \n2. `extendTheme` will have those two signatures:\n   - extendTheme(theme, {themeKey: className, ...});\n   - extendTheme(theme, {themeKey: {inlineStyle}, ...});\n3. Add the complete theme (code + classNames) to our widgets instead of just classNames. \n4. Add missing state to every widgets in order to inline style to work. \n## Missing states\n\nLet's take the RangeRatings widgets as an example to illustrate. \nStars color is changing if the whole line match no item. Currently, we have a theme key `ratingLinkDisabled` that allows a user to interact with the fact that a line can be disabled. However, if I want to change the color of the star, I don't have the right key to do it by inline style. My only way would be to use descendants css selector like this:\n\n``` css\n.ratingLinkDisabled > .ratingIconEmpty:before{\n}\n```\n\nIf I would to allow inline style here, I would need to add an extra key like `ratingIconEmptyDisabledBefore`\n\nIn a more general way: currently with our theming keys, inline style can't be used for everything compared to class names: thus we need to provide those missing states\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6885378",
-    "id": 6885378,
-    "login": "mthuret"
-  },
+  "user": 6885378,
   "issue": {
     "labels": [],
     "number": 1381,
@@ -20,48 +15,28 @@
     {
       "date": 1475662953,
       "body": "@mthuret Why do we need two signatures for extendTheme?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 251637473,
       "reactions": {}
     },
     {
       "date": 1475671149,
       "body": "I change a little bit the extendTheme proposal. \n\nWe need both because we want to keep the ability to extend a theme by classNames. But we also want to be able to extend it by inline style.\nIn one case you will pass a map of themeKeys/className (string), and in the other case a map of themeKeys/inlineStyle (object).\n\nIs it clearer ?  \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 251662430,
       "reactions": {}
     },
     {
       "date": 1475673325,
       "body": "Why do we need to extend the CSS classes programmatically? As a user, why would I choose one over the other? Especially since I can just do it the CSS way, loading a custom stylesheet on the side to override a class.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 251670909,
       "reactions": {}
     },
     {
       "date": 1475680829,
       "body": "Here's my attempt to summarize our discussion with @bobylito.\n\nThe question asked was: do we really want to have different ways to extend a theme? \nSeveral ways will mean more maintenance, more debugging, and it's not clear for a user what he should do. \n\nBased on that, which way should we keep? \n\nThe first function `extendTheme(theme, {themeKey: className, ...})`(existing today under the overrideTheme name) seems to be the less needed. If a user wants to use css to extend a theme, he can already do so by using regular css. \n\nThe second function `extendTheme(theme, {themeKey: {inlineStyle}, ...});` which propose to extend a theme with inline style will allow a user to colocate his changes near the component. It also seems easier to use than having css-modules using stylesheet where class names are the theme keys name. \n\nIn the end, we would only keep the `extendTheme(theme, {themeKey: {inlineStyle}, ...});` way.\n\n@vvo: what's your opinion on the subject?  \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 251706610,
       "reactions": {
         "👍️": 1
@@ -70,12 +45,7 @@
     {
       "date": 1475683019,
       "body": "I am good with what you propose yes. We will still have the opportunity to add it if our users feels like this is really necessary and come with good usecases.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 251717407,
       "reactions": {
         "👍️": 1

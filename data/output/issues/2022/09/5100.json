@@ -4,12 +4,7 @@
   "title": "Inserting an InsightsMiddleware before widgets results in urlSynced-state being cleared on reload",
   "date": 1662566207,
   "body": "## 🐛 Bug description\r\n\r\nWhen we `createInsightsMiddleware` and insert that component before other widgets in an `<InstantSearch>` page, any state that is in urlSync gets erased on page load (such as pressing Enter or navigating from another page).\r\nCC @Haroenv with whom I discovered the root cause of the UI issue.\r\n\r\n## 🔍 Bug reproduction\r\n\r\n\r\n\r\n1. Create an insights middleware that sets some stuff\r\n2. Insert it in your `<InstantSearch routing={true}>` page _before other widgets_ (such as `<RefinementList>`)\r\n3. Click a filter to set some `urlSync`-ed parameters in the URL\r\n4. Click on your URL and press enter\r\n5. See the page reloading: the url is first kept, then erased during a second painting of the page\r\n\r\n## :curly_loop: Workaround\r\n\r\nWe realized that changing the position of the middleware in the DOM, from:\r\n```jsx\r\n<InstantSearch>\r\n  <InsightsMiddleware />\r\n  <RefinementList />\r\n  <Hits />\r\n</InstantSearch>\r\n```\r\nto\r\n```jsx\r\n<InstantSearch>\r\n  <RefinementList />\r\n  <Hits />\r\n  <InsightsMiddleware />\r\n</InstantSearch>\r\n```\r\nis enough to workaround the race condition between the middleware and the other widgets. :thinking: \r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/nameless-forest-chr25g?file=/App.tsx\r\n\r\n## 💭 Expected behavior\r\n\r\nI'd expect the middleware to not clear the other widgets' state, _regardless of where it is inserted_.",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/1821404",
-    "id": 1821404,
-    "login": "PLNech"
-  },
+  "user": 1821404,
   "issue": {
     "labels": [],
     "number": 5100,
@@ -20,24 +15,14 @@
     {
       "date": 1662623608,
       "body": "A smaller reproduction is:\r\n\r\n```ts\r\n\r\ndescribe('integration', () => {\r\n  test('does not write to the URL on load', async () => {\r\n    const router = history({\r\n      writeDelay: 0,\r\n    });\r\n    const routerWriteSpy = jest.spyOn(router, 'write');\r\n    const search = instantsearch({\r\n      indexName: 'instant_search',\r\n      searchClient: createSearchClient({\r\n        // @ts-expect-error these types are not part of \"SearchClient\", but a real client exposes it\r\n        applicationID: 'abc',\r\n        apiKey: 'def',\r\n      }),\r\n      routing: {\r\n        router,\r\n      },\r\n    });\r\n\r\n    search.start();\r\n\r\n    search.use(\r\n      createInsightsMiddleware({\r\n        insightsClient(eventName, ...args) {\r\n          if (eventName === 'onUserTokenChange') {\r\n            const [cb] = args;\r\n            cb('token');\r\n          }\r\n        },\r\n      })\r\n    );\r\n\r\n    await wait(1);\r\n\r\n    expect(routerWriteSpy).toHaveBeenCalledTimes(0);\r\n  });\r\n});\r\n```\r\n\r\nessentially what happens is there are two parts in the insights middleware which add widgets:\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/55313e4ea4105b777f3f102e9f48a7e440496d25/src/middlewares/createInsightsMiddleware.ts#L109-L112\r\nhttps://github.com/algolia/instantsearch.js/blob/55313e4ea4105b777f3f102e9f48a7e440496d25/src/middlewares/createInsightsMiddleware.ts#L115-L121\r\n\r\nIf this code happens after start (eg with React InstantSearch Hooks, where start happens immediately) the resulting addWidget triggers the change event on middleware, thus a write in the URL, even though nothing meaningfully has changed.\r\n\r\nI think a way to solve this could be to add a static configure-like widget to InstantSearch root so global parameters can be set (should this be without searching, or is that no issue?) or maybe the main index helper can be used (although that seems counter to the regular idea of \"every parameter is owned by a widget\")",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1240358619,
       "reactions": {}
     },
     {
       "date": 1662623802,
       "body": "The reason the listed workaround works is because it triggers the search with userToken and clickAnalytics *after* the first widgets have mounted (luckily the scheduling we have on searches prevents it from triggering a separate search from the other widgets mounting), and so it avoids also writing a url before other widgets are mounted.\r\n\r\nAlternatively we could add an api to React InstantSearch to add middleware before start by making `middleware` a prop to the InstantSearch component, which could use the insights middleware as it is recommended for InstantSearch.js, before start has happened.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1240361832,
       "reactions": {}
     }

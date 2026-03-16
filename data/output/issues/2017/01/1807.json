@@ -4,12 +4,7 @@
   "title": "setImmediate is not defined on Meteor + React",
   "date": 1483622280,
   "body": "react-instantsearch: 2.1.0\r\nLatest versions of Chrome and FF.\r\n\r\nHello, I've just started setup react-instantsearch on my Meteor project and have strange bug.\r\n\r\nI'm following steps from the React Instant Search Getting Started Tutorial and when I insert first widget (`<Hits />` for example) I have an error in console:\r\n\r\n```\r\nmodules.js?hash=35e875d…:110624 Uncaught ReferenceError: setImmediate is not defined\r\n    at scheduleUpdate (modules.js?hash=35e875d…:110624)\r\n    at Object.registerWidget (modules.js?hash=35e875d…:110633)\r\n    at new Connector (modules.js?hash=35e875d…:109693)\r\n    at modules.js?hash=35e875d…:11541\r\n    at measureLifeCyclePerf (modules.js?hash=35e875d…:11321)\r\n    at ReactCompositeComponentWrapper._constructComponentWithoutOwner (modules.js?hash=35e875d…:11540)\r\n    at ReactCompositeComponentWrapper._constructComponent (modules.js?hash=35e875d…:11526)\r\n    at ReactCompositeComponentWrapper.mountComponent (modules.js?hash=35e875d…:11434)\r\n    at Object.mountComponent (modules.js?hash=35e875d…:4461)\r\n    at ReactDOMComponent.mountChildren (modules.js?hash=35e875d…:10623)\r\n```\r\n\r\nIt refers to this code:\r\n```\r\nexports.default = createWidgetsManager;                                                                                // 6\r\nfunction createWidgetsManager(onWidgetsUpdate) {                                                                       // 7\r\n  var widgets = [];                                                                                                    // 8\r\n  // Is an update scheduled?                                                                                           // 9\r\n  var scheduled = false;                                                                                               // 10\r\n                                                                                                                       // 11\r\n  // The state manager's updates need to be batched since more than one                                                // 12\r\n  // component can register or unregister widgets during the same tick.                                                // 13\r\n  function scheduleUpdate() {                                                                                          // 14\r\n    if (scheduled) {                                                                                                   // 15\r\n      return;                                                                                                          // 16\r\n    }                                                                                                                  // 17\r\n    scheduled = true;                                                                                                  // 18\r\n    setImmediate(function () {                                                                                         // 19\r\n      scheduled = false;                                                                                               // 20\r\n      onWidgetsUpdate();                                                                                               // 21\r\n    });                                                                                                                // 22\r\n  }                    \r\n```\r\n\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/3371143",
-    "id": 3371143,
-    "login": "kolyasya"
-  },
+  "user": 3371143,
   "issue": {
     "labels": [
       {
@@ -27,12 +22,7 @@
     {
       "date": 1483695834,
       "body": "Hi @Kolyasya,\r\n\r\nCurrently we are using setImmediate to perform some scheduling and it seems that this function isn't available with meteor. We are going to change this code to be compatible with the largest lib, but in the meantime one thing you can do is using a `setImmediate`polyfill like this one:  https://github.com/YuzuJS/setImmediate. I tried it with a small meteor app and it seems to work fine. \r\n\r\nAlso you are going to have another issue because of the `algoliaClient` we use under the hood of `react-instantsearch`. To bypass this issue, you can retrieve the `algoliaSearch` client like describe here https://github.com/algolia/algoliasearch-client-javascript/issues/292 and use the `algoliaClient`prop on the `<InstantSearch/>` component to instantiate it. \r\n\r\nHere a working example: \r\n\r\n```js\r\nimport algoliaClient from 'algoliasearch/src/browser/builds/algoliasearch'\r\n\r\n<InstantSearch\r\n        indexName=\"xxx\"\r\n        algoliaClient={algoliaClient('appId', 'apiKey')}\r\n      >\r\n</InstantSearch>\r\n```\r\n\r\nLet me know if this help :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 270867081,
       "reactions": {
         "👍️": 1
@@ -41,48 +31,28 @@
     {
       "date": 1483773929,
       "body": "@mthuret thank you for a detailed answer, it helped :-) All works as it should now!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3371143",
-        "id": 3371143,
-        "login": "kolyasya"
-      },
+      "user": 3371143,
       "id": 271068582,
       "reactions": {}
     },
     {
       "date": 1483953550,
       "body": "That's great to hear @Kolyasya! ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 271238911,
       "reactions": {}
     },
     {
       "date": 1487946151,
       "body": "@mthuret and @Kolyasya: I'm trying to use `<InstantSearch />` in a Meteor project but suspect the fix/workaround listed above doesn't work. \r\n\r\nPassing the `algoliaClient` prop doesn't get around the problem of Meteor importing the wrong package as InstantSearch's [`dom.js`](https://github.com/algolia/instantsearch.js/blob/v2/packages/react-instantsearch/dom.js) still imports `algoliasearch` which causes the Meteor build system (any build system that doesn't understand the object form of the `browser` section of `package.json`) to import the Node version of the package. \r\n\r\nIs it possible to use InstantSearch in Meteor? \r\n\r\nWould it be possible to change `dom.js` to import `algoliasearch/src/browser/builds/algoliasearch` (or even `.../algoliasearchLite`) instead as the name `dom.js` would imply it's always going to be running in a browser?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1654191",
-        "id": 1654191,
-        "login": "damonmaria"
-      },
+      "user": 1654191,
       "id": 282302658,
       "reactions": {}
     },
     {
       "date": 1487947876,
       "body": "I can confirm that changing `import algoliasearch from 'algoliasearch'` in [`dom.js`](https://github.com/algolia/instantsearch.js/blob/v2/packages/react-instantsearch/dom.js) to import `algoliasearch/src/browser/builds/algoliasearch` instead gets this working in Meteor. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1654191",
-        "id": 1654191,
-        "login": "damonmaria"
-      },
+      "user": 1654191,
       "id": 282309945,
       "reactions": {
         "👍️": 1
@@ -91,48 +61,28 @@
     {
       "date": 1488278985,
       "body": "We are no more using setImmediate in react-instantsearch, @damonmaria what you are experiencing is due to https://github.com/algolia/instantsearch.js/issues/1024#issuecomment-221618284\r\n\r\nThis is a meteor.js issue for now. I bet you could also fix it by tuning your build tool to alias algoliasearch to build/algoliasearch somehow?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 283007155,
       "reactions": {}
     },
     {
       "date": 1488284050,
       "body": "Thanks @vvo. Yes, I knew the Meteor deficiency in handling the `package.json` `browser` field was going to be the problem. But I thought the 2nd paragraph in [this comment above](https://github.com/algolia/instantsearch.js/issues/1807#issuecomment-270867081) was referring to a way around that Meteor issue. If it is supposed to be a way around that issue then it doesn't work as the import of `algoliasearch` is still there to provide a default value. \r\n\r\nFor the moment I have forked this package and changed the `require` to use `algoliasearch/src/browser/build/algoliasearchLite.js` instead of `algoliasearch`. My further question was could this same change be done in the package itself? Or is `dom.js` used in SSR and therefore the browser specific path can't be used. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1654191",
-        "id": 1654191,
-        "login": "damonmaria"
-      },
+      "user": 1654191,
       "id": 283023791,
       "reactions": {}
     },
     {
       "date": 1488284791,
       "body": "> Or is dom.js used in SSR and therefore the browser specific path can't be used.\r\n\r\nWe do not yet have good SSR in react-instantsearch so I bet we could ultimately make this change but it won't be 100% future proof because ultimately we will get server side rendering and the fix will have to be reverted. I'd rather see meteor.js take action or someone (maybe you) do the necessary changes in meteor.js to handle the browser field on packages.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 283026064,
       "reactions": {}
     },
     {
       "date": 1488356131,
       "body": "Meteor.js fully implementing use of the `browser` field would be best. Meteor already handles a `browser` field that specifies a different main file, but it does not handle the object form of `browser` which specifies individual files to replace. I did bit of an investigation to see if it was an easy win but no. Replacing just the main file is pretty simple. Replacing individual files are they're required would be a challenge in understanding the Meteor build process that I'm not up to. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1654191",
-        "id": 1654191,
-        "login": "damonmaria"
-      },
+      "user": 1654191,
       "id": 283273895,
       "reactions": {}
     }

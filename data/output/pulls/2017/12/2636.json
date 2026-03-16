@@ -4,12 +4,7 @@
   "title": "[POC] New URLSync mechanism",
   "date": 1513974212,
   "body": "**Proof of concept** - not production ready.\r\n\r\nThis PR proposes a new API for synchronizing the search parameters with the URL. Here are the key goals of this new implementation:\r\n - deeper customization of the URL\r\n - handling the no-value / default value case and do not render any crufts\r\n - make the state more accessible\r\n - possibility to handle storages that are not URL's\r\n\r\nFirst, what does not change with this new implementation: the lifecycle itself. The URL is stored when there is a new rendering and a new search is triggered when there is an update of the URL.\r\n\r\nThis PoC is an effort to make the internals customizable. So anything that is not related to the lifecycle is externalized as API's. We will provide a default implementation that will work but may not be to the taste of everyone, hence the customization part.\r\n\r\n## UI State\r\n\r\nOne of the biggest change is that the widget can now provide UI-oriented views of the state. This is inspired by the state of react-instantsearch. This is this view that will be manipulated by the synchronization. Unlike react-instantsearch, this view is not the search parameters. If you want a widget to be synchronizable, it needs to implement two methods:\r\n - `getUIState`: this methods transforms the searchParameters into a view of the state of this widget and adds it in an object that is returned (API is like a reducer). The [implementation for the searchbox](https://github.com/algolia/instantsearch.js/blob/c7867ff4e705e009b90b22f145a7aff97340c7b0/src/connectors/search-box/connectSearchBox.js#L155-L162) reads the searchParameters and adds a key `query` in the UI state object with the value of the current query.\r\n - `getSearchParameters`: this methods does the opposite, reads a UI state and update the search parameters accordingly. Here is an [example with the searchbox](https://github.com/algolia/instantsearch.js/blob/c7867ff4e705e009b90b22f145a7aff97340c7b0/src/connectors/search-box/connectSearchBox.js#L164-L166)\r\n\r\nThis PoC implements the [synchronization for the refinementList](https://github.com/algolia/instantsearch.js/blob/c7867ff4e705e009b90b22f145a7aff97340c7b0/src/connectors/refinement-list/connectRefinementList.js#L413-L433) as well.\r\n\r\n## Storage synchronization\r\n\r\nFor the synchronization itself, there are two aspects:\r\n - the mapping\r\n - the storage\r\n\r\nThis part has been split in two so that it's always possible to customization the structure without having to reimplement the storage which may be more tedious.\r\n\r\nThe UI state mapping is an object with two methods:\r\n - `toSyncable`\r\n - `fromSyncable`\r\n\r\nThe syncable object is the simplified structure that will be used directly by the storage. The storage shall not make any changes in this structure. We have currently a [single implementation](https://github.com/algolia/instantsearch.js/blob/c7867ff4e705e009b90b22f145a7aff97340c7b0/src/lib/uiStateMapping/simple.js) that just transfers the UIState without any changes.\r\n\r\nThe storage part is inspired by both the [work on react-instantsearch](https://github.com/algolia/react-instantsearch/issues/271) for an API to transfer the state of IS into another store and the experience that we gained with the URL sync.\r\n\r\nThe storage API has 5 methods:\r\n - `write`: writes a syncable object to the storage\r\n - `read`: reads the storage and gets a syncable object\r\n - `onUpdate`: registers a callback that will be triggered when the storage is updated\r\n - `createURL`: creates a URL. May not be applicable. For now a default implemented must be provided.\r\n - `dispose`: unregister the storage adapter. Cleans up the event listeners.\r\n\r\nThis PoC offers a [single implementation](https://github.com/algolia/instantsearch.js/blob/c7867ff4e705e009b90b22f145a7aff97340c7b0/src/lib/storage/modern.js) that is based on the code from the current URL sync and it uses the [modern browser history API.](https://developer.mozilla.org/en-US/docs/Web/API/History)\r\n\r\n## Overview\r\n\r\n<img width=\"911\" alt=\"reading from the url 2x\" src=\"https://user-images.githubusercontent.com/393765/34320489-12e081ce-e804-11e7-827a-5ad59570be42.png\">\r\n<img width=\"911\" alt=\"writing to the url 2x\" src=\"https://user-images.githubusercontent.com/393765/34320494-424fe152-e804-11e7-8876-a104ed702bc7.png\">\r\n\r\n## Demos\r\n - [with default implementations based on modern history API](https://disastrous-approval.surge.sh) ([source](http://disastrous-approval.surge.sh/app.js))\r\n - [With non-trivial mappings](http://weary-plants.surge.sh/Cameras%20&%20Camcorders/Binoculars?brand=Canon), brand refinement list data is mapped to brand query string parameter and the hierarchical menu is mapped to the path name of the URL - ([source](http://weary-plants.surge.sh/app.js))\r\n - [start page count at 1 in the URL](http://nebulous-balls.surge.sh/?page=3) - ([Source](http://nebulous-balls.surge.sh/app.js))\r\n\r\n## Next steps\r\n - [x] Implement debouncing of the write. I'll try to implement this in the data storage in order to not clutter\r\n - [ ] Implement other widgets. I don't think this matter much in the context of this PoC unless you see some specific widget where it could be a problem. I'll have a look at react-instantsearch also.\r\n - [x] Try to implement a custom writer that will rewrite the path. What I have in mind is a hierarchical menu path in the URL and some custom query parameters.\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/393765",
-    "id": 393765,
-    "login": "bobylito"
-  },
+  "user": 393765,
   "pull": {
     "labels": [],
     "number": 2636,
@@ -24,72 +19,42 @@
     {
       "date": 1514466033,
       "body": "A big change is that it doesn't allow inputting arbitrary api parameters from the URL bar, which I think is a great idea, especially from a security POV, but I'm slightly wondering which usecases will be broken by not allowing refinement from arbitrary elements from the URL. \r\n\r\nDynamic widgets might also be interesting to consider, I think it's fine here, where the URL is basically the source of truth, so widgets could be created, simply by being there in the URL, others could be left empty. I think this is a step forward for that direction and won't impede future explorations regarding dynamic behaviour.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 354284911,
       "reactions": {}
     },
     {
       "date": 1514482100,
       "body": "not necessarily part of the API, but it would be good if we saved the \"default state\" of a widget as `undefined`, which won't get serialised by `qs`, as well as making page 1-indexed (rather than 0-indexed). That way `?p=2` will behave like you'd expect and will only get added once you go to the next page",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 354324474,
       "reactions": {}
     },
     {
       "date": 1514485136,
       "body": "> not necessarily part of the API, but it would be good if we saved the \"default state\" of a widget as undefined, which won't get serialised by qs, as well as making page 1-indexed (rather than 0-indexed). That way ?p=2 will behave like you'd expect and will only get added once you go to the next page\r\n\r\nThat's part of the plan. You can see that implemented [here](https://github.com/algolia/instantsearch.js/blob/3cb8b1f96ba2f077789ddbd2f9b28e0c8fe282ea/src/connectors/refinement-list/connectRefinementList.js#L415). However I'm not sure for the page because it introduce a shift of value and it's [pretty easy to implement](http://nebulous-balls.surge.sh/?page=3).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 354331599,
       "reactions": {}
     },
     {
       "date": 1514542124,
       "body": "That’s awesome ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 354425988,
       "reactions": {}
     },
     {
       "date": 1516051311,
       "body": "As suggested by @Haroenv in #933 I am trying to implement this feature and I have it half working.\r\nHere's my feedback on this:\r\n- it breaks when using `operator: 'and'` in a `refinementList` widget:\r\n> Error: facet_name is not defined in the disjunctiveFacets attribute of the helper configuration\r\n- I based my implementation on the `non-trivial mapping` example and got it working for one refinement at a time. I still cannot seem to get more that one refinement list parameter added to the URL. The previous refinement gets overwritten by the new one on the url. And example on how to implement this is more than welcome for me 😄 \r\n\r\nBut at least this is starting to allow us to get fully customizable url and title, thanks for the great job so far 👍 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5601164",
-        "id": 5601164,
-        "login": "nicogominet"
-      },
+      "user": 5601164,
       "id": 357791906,
       "reactions": {}
     },
     {
       "date": 1516054500,
       "body": "I think refinementList isn’t done in this PR yet IIRC, thanks for your feedback. Don’t hesitate to give detailed feedback on for example some of the naming ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 357801136,
       "reactions": {
         "👍️": 1
@@ -98,60 +63,35 @@
     {
       "date": 1516137347,
       "body": "@Haroenv in `urlSync`, the configuration could be as follow:\r\n```\r\nmapping: {\r\n  q: 'search',\r\n  fR: 'features',\r\n  dFR: 'choices',\r\n}\r\n```\r\nbut this is still an issue for nested values like the `dFR` one: `[url]?dFR[choice_features.Power supply][0]=Battery&dFR[choice_features.Brand][0]=Samsung`\r\n\r\nSo I was thinking similar but more nested, like:\r\n```\r\nmapping: {\r\n  q: 'search',\r\n  fR: 'features',\r\n  dFR: {\r\n    choice_features: {\r\n      'Brand': 'brand',\r\n      'Power supply': 'power-supply',\r\n    },\r\n  }\r\n}\r\n```\r\n\r\nwhich would give: `[url]?power-supply=Battery&brand=Samsung`.\r\n\r\nIs there an ETA for this PoC? If not, is this possible to customize the url and title in [vue instantseach](https://github.com/algolia/vue-instantsearch)? (the only alternative I'm willing to give a shot).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5601164",
-        "id": 5601164,
-        "login": "nicogominet"
-      },
+      "user": 5601164,
       "id": 358108394,
       "reactions": {}
     },
     {
       "date": 1516138316,
       "body": "@NicolasPK this will at least take two weeks more since @bobylito is on holiday now. With Vue InstantSearch you should be able to sync with Vue Router, see https://community.algolia.com/vue-instantsearch/advanced/vue-router-url-sync.html",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 358113409,
       "reactions": {}
     },
     {
       "date": 1516140333,
       "body": "@Haroenv ok, thanks for the ETA, much appreciated. It sounds like I have to give the Vue implementation a shot then 😟 hopefully I will be long done when @bobylito comes back from holidays.\r\nSuch a shame this is not feasible as things are, as I've spend hours to get everything working (apart from that then).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5601164",
-        "id": 5601164,
-        "login": "nicogominet"
-      },
+      "user": 5601164,
       "id": 358123174,
       "reactions": {}
     },
     {
       "date": 1516140709,
       "body": "sorry for that Nicolas",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 358124724,
       "reactions": {}
     },
     {
       "date": 1516349862,
       "body": "Some thoughts on naming:\r\n- I would call the modern storage \"history\". What may seem modern for us might just be the standard for everyone else. And that's the API being used behind\r\n- I would go for page = 1 right now so that the full UI (url, view) now has the same page, which is 1\r\n- proposal API for discussion/bike shedding:\r\n\r\n\r\n```\r\ninstantsearch({\r\n  router: {\r\n    storage: instantsearch.router.history({\r\n      windowTitle() {},\r\n      createURL() {},\r\n      parseURL() {}\r\n    }),\r\n    mapping: {\r\n      uIStateToRouteState() {}\r\n      routeStateToUiState() {}\r\n    }\r\n    // also feasible: mapping: instantsearch.router.mapping.default\r\n  }\r\n});\r\n```\r\n\r\n1. rename urlSync2 to router\r\n2. rename instantsearch.storage to instantsearch.router\r\n3. rename modern to history\r\n4. rename UIStateMapping to mapping\r\n5. rename toSyncable to routeStateToUiState\r\n6. from Syncable to uIStateToRouteState\r\n\r\nI found syncable to/from hard to grasp by default and thought this was a shared appreciation from the team in the meeting (we even made the mistake on the schemas if I remember well)\r\n\r\nAs for the storage API I have no change to propose BUT maybe \"write\", it seems to only be called at page load time, should we call it \"onInit\" rather than read? Not sure about this one, it's maybe just documentation and maybe in some situations it will be called \r\n\r\nAs for having a \"better\" default mapping as proposed by Haroen, I am sure this can come later on and live under instantsearch.router.mapping.clean.\r\n\r\n(Again, this is a proposal to discuss)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 358896539,
       "reactions": {
         "❤️": 1
@@ -160,12 +100,7 @@
     {
       "date": 1517419072,
       "body": "After discussing with @vvo, we came up with:\r\n - `routing` as the name of the feature\r\n - `router` as the name of the pluggable element that writes and read\r\n - `mapping` can be `stateMapping` (so that's it's not too generic) and the methods could be named:\r\n   - `stateToRoute`\r\n   - `routeToState`\r\n - let's keep `write`\r\n - and we keep the rest of @vvo proposal",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 362004332,
       "reactions": {
         "👍️": 1
@@ -174,36 +109,21 @@
     {
       "date": 1517419132,
       "body": "If everyone in @algolia/instantsearch-for-websites is in with the latest proposal, then I'll close this PR and open a new one.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 362004651,
       "reactions": {}
     },
     {
       "date": 1517426798,
       "body": "Thanks for the update @bobylito If this is approved, what's the ETA for the PR and following merge do you think?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5601164",
-        "id": 5601164,
-        "login": "nicogominet"
-      },
+      "user": 5601164,
       "id": 362042758,
       "reactions": {}
     },
     {
       "date": 1517479142,
       "body": "I'd keep `mapping` 😄 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 362216542,
       "reactions": {
         "👍️": 1
@@ -212,12 +132,7 @@
     {
       "date": 1517480094,
       "body": "I like stateMapping too because it's more explicit on the user will have to manipulate.\r\n\r\n@bobylito Do you also plan to have a webpage where you have the full ui state explained as a json? A bit like on react-instantsearch: https://community.algolia.com/react-instantsearch/guide/Search_state.html",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 362220529,
       "reactions": {
         "👍️": 2
@@ -226,12 +141,7 @@
     {
       "date": 1518172635,
       "body": "> Thanks for the update @bobylito If this is approved, what's the ETA for the PR and following merge do you think?\r\n\r\nI'd like to have it ready for the release of next month (2.6). Not hard guarantees here :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 364398150,
       "reactions": {
         "❤️": 1
@@ -240,12 +150,7 @@
     {
       "date": 1518453851,
       "body": "Closing this PR for now. I'll open a new one, when I reach a milestone. In the meantime, I'm pushing the current state here: https://github.com/algolia/instantsearch.js/tree/feat/routing",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 364983260,
       "reactions": {
         "👍️": 2

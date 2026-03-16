@@ -4,12 +4,7 @@
   "title": "implement searching in facet values",
   "date": 1458567149,
   "body": "For long list of facet values, it would be cool to have an option like \"valuesSearchBox: true\" that would display a searchbox and do the necessary heavy lifting on the helper to display corresponding \"current filters + user facet value query\" facet values.\n\nThis would require the user to have a custom facet values index.\n\nIt may not be that efficient to pass long list of filters to the API but we have to try.\n\ncc @pixelastic @gregquat\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/123822",
-    "id": 123822,
-    "login": "vvo"
-  },
+  "user": 123822,
   "issue": {
     "labels": [
       {
@@ -29,12 +24,7 @@
     {
       "date": 1458572699,
       "body": "For the record, here is how it's done on the [steamDB](https://steamdb.info/instantsearch/) implementation:\n\nWe first populate a secondary index (`tags_facets`) with the list of all possible `tags` values. We then create a search box to search into them. On this specific implementation, it was using autocomplete.js, but we might be able to internalize it into instantsearch.js directly.\n\nSearching into that search box works really well for the empty query, but not out-of-the-box with more advanced queries. For example, if I have already started a search on the primary index for the query `foo` and filtered by `type:game`, then my search inside the list of facets will return too many results.\n\nTo fix that, what we do is calculate the intersection between the list of tags found in `tags_facets`, and the list of `tags` already displayed in the primary query.\n\nOnce again, this works quite well, until you have a huge list of tags. If that's the case, then the intersection will only be done on the small subset (`maxValuePerFacet`) that you retrieved from the API. In the `refinementList` widget, this is handled by the `limit` options.\n\nTo workaround that, we kept the initial limit to `10`, but defined a `showMore` limit to `1000` (which is the max the API can retrieve). That way our intersection is correctly computed with as many tags as possible. It worked in our case because we only had ~300 different tags, but would have missed some values if we had more than 1000.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 199328893,
       "reactions": {}
     }

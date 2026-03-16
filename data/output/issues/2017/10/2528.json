@@ -4,12 +4,7 @@
   "title": "SearchBox Widget: Template options are janky/broken",
   "date": 1509073308,
   "body": "**Do you want to request a *feature* or report a *bug*?**\r\n*bug*\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\n2.2.1 (latest as of post)\r\n\r\nAll I want to do is override the default `magnifier` and `reset` templates (use a different SVG).\r\n\r\nThere seem to be a number of oddities. First off, the options seems structured differently than most other core widgets. Instead of having a root level `templates`, and `cssClasses` props, it instead has root props of `magnifier` and `reset`. Nothing inherently broken there, just seems inconsistent (at least with the widgets I'm familiar with).\r\n\r\nSecond, the `cssClasses` prop doesn't really seem to work.\r\n\r\n### Attempt 1:\r\nTry and render a custom template for the magnifier\r\n\r\n```\r\nsearchBox(\r\n  container,\r\n  magnifier: {\r\n    template: myCustomSearchSvg,\r\n  },\r\n);\r\n```\r\n\r\nIt rendered my svg! However, within an empty span…I was expecting it to still be wrapped by an element with an `.ais-search-box--magnifier` since, I didn't override `cssClasses`.\r\n\r\n### Oh well, Attempt 2:\r\nTry and manually add the class? \r\n\r\n```\r\nsearchBox(\r\n  container,\r\n    magnifier: {\r\n      template: myCustomSearchSvg,\r\n      cssClasses: [{root: 'ais-search-box--magnifier'}],\r\n    },\r\n);\r\n```\r\n\r\nBubkis. Same result as Attempt 1.\r\n\r\n### Attempt 3:\r\nTry and render a custom template for the reset button\r\n\r\n```\r\nsearchBox(\r\n  container,\r\n  reset: {\r\n    template: 'x',\r\n  },\r\n);\r\n```\r\nError!\r\n\r\n> Uncaught TypeError: Cannot read property 'style' of null\r\n    at search-box.js:124\r\n    at Object.init (connectSearchBox.js:105)\r\n    at InstantSearch.js:213\r\n    at arrayEach (_arrayEach.js:15)\r\n    at forEach (forEach.js:38)\r\n    at InstantSearch._init (InstantSearch.js:211)\r\n    at InstantSearch.start (InstantSearch.js:168)\r\n\r\nThen I post this and gave up. :)",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/18329",
-    "id": 18329,
-    "login": "timkelty"
-  },
+  "user": 18329,
   "issue": {
     "labels": [
       {
@@ -35,72 +30,42 @@
     {
       "date": 1509094527,
       "body": "Thanks for this bug report @timkelty 👍 ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 339914144,
       "reactions": {}
     },
     {
       "date": 1511116251,
       "body": "I've been able to reproduce what you describe. We'll be able to fix the bug that prevent you from usage a custom reset button and add some css classes. However we won't be able to change the structure nor make span divs, even though that's an error on our hand when adding the new searchbox in v2.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 345538617,
       "reactions": {}
     },
     {
       "date": 1511180463,
       "body": "Thanks @bobylito, will you queue up those breaking changes for v3 then?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/18329",
-        "id": 18329,
-        "login": "timkelty"
-      },
+      "user": 18329,
       "id": 345680256,
       "reactions": {}
     },
     {
       "date": 1511181991,
       "body": "I'm wondering how much of these changes are really important, here. These are the changes I'm thinking about:\r\n - make `<span>` into  `<div>`. I'm not  convinced it makes a huge difference.\r\n - use the root css class for configuring the containers (`<span>` or later maybe `<div>`). That one disturbs me, I would see it go through\r\n - use the main templates attribute for everything template, and not have them nested in the suboption. That one is in my opinion better kept the way it is right now, this way you can't setup a new magnifier without activating the option first.\r\n\r\nWDYT @timkelty ? Happy to have your opinions too @vvo :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 345685597,
       "reactions": {}
     },
     {
       "date": 1511183074,
       "body": "> make `<span>` into `<div>`\r\n\r\nYeah, this doesn't really matter much at all.\r\n\r\n> use the root css class for configuring the containers\r\n\r\nWould this make my above Attempt 1 and Attempt 2 _both_ work?\r\n\r\nThe most troubling bug was my \"Attempt 3\", where it just threw an error when to change the reset template. Do any of your changes address this?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/18329",
-        "id": 18329,
-        "login": "timkelty"
-      },
+      "user": 18329,
       "id": 345689643,
       "reactions": {}
     },
     {
       "date": 1511183372,
       "body": "> The most troubling bug was my \"Attempt 3\", where it just threw an error when to change the reset template. Do any of your changes address this?\r\n\r\nIndeed. There is an open PR for that https://github.com/algolia/instantsearch.js/pull/2585\r\n\r\n>  > use the root css class for configuring the containers\r\n\r\n> Would this make my above Attempt 1 and Attempt 2 _both_ work?\r\n\r\nYes. It would have removed the friction. The root class is used inside a template, which gets removed when using a custom template.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 345690724,
       "reactions": {}
     }

@@ -4,12 +4,7 @@
   "title": "React InstantSearch multi-index setup triggers excessive duplicate requests causing Algolia errors",
   "date": 1762351489,
   "body": "### 🐛 Current behavior\n\nWhen using React InstantSearch with a multi-index setup where `<Index> ` components are rendered dynamically, the library appears to generate multiple redundant requests per index whenever filters are applied.\n\nAs the number of sections (indexes) increases, these requests multiply rapidly — ultimately leading to Algolia API errors once the total number of subqueries exceeds the allowed request size. See; https://support.algolia.com/hc/en-us/articles/10159122160529-Why-am-I-getting-too-many-queries-in-multi-queries-request-error\n\n### 🔍 Steps to reproduce\n\n1. Create a React InstantSearch app using multiple dynamically rendered <Index> components.\nEach represents a section of the UI (e.g. category, collection, or content type).\n\n2. Add a <RefinementList> (or any other facet-based widget) on the root index.\n\n3. Select multiple (different facet) filters.\n\n4. Observe the network requests in your browser’s DevTools.\n\nWhen filters are applied, React InstantSearch generates multiple batched subqueries per index.\nEach index seems to receive a combination of queries — some to retrieve hits, others to fetch facet data — even though only one facet widget exists in the tree.\n\nExample payload:\n```[\n  {\n    \"indexName\": \"instant_search\",\n    \"facetFilters\": [[\"brand:Apple\"]],\n    \"facets\": [\"*\"]\n  },\n  {\n    \"indexName\": \"instant_search\",\n    \"analytics\": false,\n    \"facets\": \"brand\",\n    \"hitsPerPage\": 0\n  },\n  {\n    \"indexName\": \"instant_search\",\n    \"facetFilters\": [[\"brand:Apple\"]],\n    \"filters\": \"categories:\\\"TV & Home Theater\\\"\"\n  },\n  {\n    \"indexName\": \"instant_search\",\n    \"analytics\": false,\n    \"facets\": \"brand\",\n    \"hitsPerPage\": 0\n  }\n]\n```\n\nAs the number of `<Index>` components and active filters grows, the number of requests increases linearly or worse.\nEventually, Algolia responds with an error due to too many subqueries in a single multi-query request.\n\n### Live reproduction\n\nhttps://codesandbox.io/p/github/ramonvheerde-rgb/algolia-multi-request-bug/draft/black-paper\n\n### 💭 Expected behavior\n\nEach `<Index>` should only trigger the necessary query for its own hits, and React InstantSearch should avoid sending duplicate or facet-only subqueries to Algolia when filters change, because these are not relevant. \n\nWe amount of request should not grow when we apply filters or add multiple `<Index>` components\n\n### Package version\n\n\"react-instantsearch\": \"^7.13.9\"\n\n### Operating system\n\nmacOS 26.0.1 \n\n### Browser\n\nChromium Engine Version 142.0.7444.60\n\n### Code of Conduct\n\n- [x] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/242008349",
-    "id": 242008349,
-    "login": "ramonvheerde-rgb"
-  },
+  "user": 242008349,
   "issue": {
     "labels": [
       {
@@ -27,12 +22,7 @@
     {
       "date": 1762505654,
       "body": "There no optimisation cache queries that have already been done within a single request, the cache is done at the whole request level.\n\nOnce you refine, there's no distinction made whether a refinement list is displayed in that index or a parent index, and we need to do an extra query for a refined refinement list that's set up as disjunctive (OR), as the default facet count is conjunctive.\n\nA solution for this could be to make a custom cache for the search client which:\n1. split the request per query\n2. cache each query individually\n3. skip doing subqueries that have already been done\n\nThat can be done entirely user land.\n\n\nMaybe there are also other more creative solutions possible that prevent the disjunctive facet count query for indices that don't have a refinement, but unfortunately it's currently inherently linked that a disjunctive refinement needs to have the facets ready for potential display.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 3501359074,
       "reactions": {}
     }

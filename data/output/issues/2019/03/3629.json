@@ -4,12 +4,7 @@
   "title": "The URL and widgets out of sync",
   "date": 1553600512,
   "body": "**Describe the bug 🐛**\r\n\r\nCurrently, the URL and the state of the UI became out of sync after a page refresh.\r\n\r\n**To Reproduce 🔍**\r\n\r\nSteps to reproduce the behavior:\r\n\r\n1. Go to https://87b2c.codesandbox.io/\r\n2. Search for \"Phone\"\r\n3. Click on \"Speck\"\r\n4. Click on \"OtterBox\"\r\n5. Reload the page\r\n6. Click on the browser back button\r\n7. Click on the browser back button\r\n8. The state of the URL is not synced with the widgets\r\n\r\nThe `refinementList` contains two refinements but the URL only contains the `query`. The URL should drive the search and the UI but it's not the case. The issue occurs for two reasons:\r\n\r\n1. We're not able to compute the parameters of a widget with only `getWidgetSearchParameters` function. We also depend on the `getConfiguration` lifecycle. That's why we use [the state of the first render](https://github.com/algolia/instantsearch.js/blob/ca8ae5018b93b98e663b623c2ba829b01a7f2861/src/lib/RoutingManager.js#L60-L64) to create the new `SearchParameters` on `router.update` (`popstate`). Note that we capture it on the first render and we never update it. It leads to issue once we remove a refinement that was part of this initial state. We could always use the latest up to date state (`helper.state`) but it won't completely solve the issue because of the point below.\r\n2. The function `getWidgetSearchParameters` don't use the `uiState` as source of truth. At step 8 the `uiState` does not contain anything related to the `refinementList` [so we return the `SearchParameters` untouched](https://github.com/algolia/instantsearch.js/blob/ca8ae5018b93b98e663b623c2ba829b01a7f2861/src/connectors/refinement-list/connectRefinementList.js#L412). Since we get the state of a previous render the refinements are still applied on the `SearchParameters`. We should [clear the refinement](https://github.com/algolia/instantsearch.js/blob/develop/src/connectors/refinement-list/connectRefinementList.js#L418) for the attribute in any cases and re-apply the refinement from the values in the `uiState`. \r\n\r\n**Ideas to fix the issue:**\r\n\r\nAn intermediate solution to fix this issue is to:\r\n\r\n1. always use the latest state inside the `router.update` callback (like we already do inside [`onHistoryChange`](https://github.com/algolia/instantsearch.js/blob/ca8ae5018b93b98e663b623c2ba829b01a7f2861/src/lib/RoutingManager.js#L162))\r\n2. update the `getWidgetSearchParameters` lifecycle to clear the previous state of the part that is controlled by the widget. We can safely then re-apply the refinement with the value stored inside the `uiState`.\r\n\r\nThe optimal solution would be to have a `getWidgetSearchParameters` that is self-contained. Right now it's not the case, the widget depends on `getConfiguration` + `getWidgetSearchParameters` to compute the `SearchParameters`. But with a self-contained function we could compute the `SearchParameters` from a fresh state and avoid the issue describe above (which also means that we can get rid of `getConfiguration` at the same time). It requires a breaking change.\r\n\r\n**Environment:**\r\n\r\nThe issue occurs with all the version of InstantSearch that supports `routing`.",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6513513",
-    "id": 6513513,
-    "login": "samouss"
-  },
+  "user": 6513513,
   "issue": {
     "labels": [
       {
@@ -35,12 +30,7 @@
     {
       "date": 1576847003,
       "body": "This is fixed in v4, since we redesigned connectors to be self-contained with getWidgetSearchParameters & getWidgetState.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 567917395,
       "reactions": {}
     }

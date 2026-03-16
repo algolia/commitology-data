@@ -4,12 +4,7 @@
   "title": "fix(onStateChange): propagate change to middleware",
   "date": 1624623266,
   "body": "This wrong behaviour was originally introduced in https://github.com/algolia/instantsearch.js/pull/4699 by removing onInternalStateChange, since I assumed the helper state change event would call the middleware, but it doesn't happen in all cases.\r\n\r\nThis means that now onInternalStateChange gets called one more time in certain situations, but that's not really an issue, as it's deferred anyway.\r\n\r\nI've checked and the integration test written by @tkrugg indeed starts failing on #4699 \r\n\r\nFixes #4795 ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6270048",
-    "id": 6270048,
-    "login": "Haroenv"
-  },
+  "user": 6270048,
   "pull": {
     "labels": [],
     "number": 4796,
@@ -20,84 +15,49 @@
     {
       "date": 1624623324,
       "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4796/builds/145039) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 89ca17f9c2c5c0937ca45d7f784ed026d1e36979:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-hxcpz)| Configuration |\n",
-      "user": {
-        "type": "Bot",
-        "avatar": "https://avatars.githubusercontent.com/in/38409",
-        "id": 54081388,
-        "login": "codesandbox-ci[bot]"
-      },
+      "user": 54081388,
       "id": 868457448,
       "reactions": {}
     },
     {
       "date": 1624628630,
       "body": "that's more of a side-effect of what actually was the wrong behaviour (middleware weren't called), the onInternalStateChange could change without breaking the behaviour @tkrugg, we shouldn't have a test on the solution, but on the problem it solves",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 868509862,
       "reactions": {}
     },
     {
       "date": 1624631654,
       "body": "> that's more of a side-effect of what actually was the wrong behaviour (middleware weren't called), the onInternalStateChange could change without breaking the behaviour @tkrugg, we shouldn't have a test on the solution, but on the problem it solves\r\n\r\nI think we agree on the idea but disagree on what we call side-effect and behaviour. \r\nI'm really speaking from the `setUiState` point of view (because that's where I think we should add a test).\r\nThe behaviour of this public function is \"change uiState and notify everybody with uiState has changed\".\r\nThe regression happened because the second part of this responsibility was removed, and there was nothing that could have prevented it. Such a test would have made it very clear.\r\n\r\nmiddleware being notified *is* the side-effect. If at some point we decide middleware will be notified by another mean, setUiState test doesn't have to know about it, it's not its responsibility. I don't think we can ever go wrong by having a test clearly checking the behaviour of a public function is preserved, and here its behaviour is not \"it should call middleware\", it's \"it should notify others of UI State update\". That's why I think we're missing a test.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2982512",
-        "id": 2982512,
-        "login": "tkrugg"
-      },
+      "user": 2982512,
       "id": 868544218,
       "reactions": {}
     },
     {
       "date": 1624633401,
       "body": "There's actually already two tests here, but they passed with the bug already, do you have any idea what's missing in the condition @tkrugg? https://github.com/algolia/instantsearch.js/blob/e8329aecb386755a039cf10850e394d0d71f29f4/src/lib/__tests__/InstantSearch-test.tsx#L1769-L1856",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 868563682,
       "reactions": {}
     },
     {
       "date": 1624633933,
       "body": "The new 2 test cases make sense to me. Which scenario do you think we should test more? @tkrugg ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee"
-      },
+      "user": 499898,
       "id": 868569697,
       "reactions": {}
     },
     {
       "date": 1624636512,
       "body": "I was thinking one that would check onInternalStateUpdate is called when setUIState is, because that's the \"notify everybody state has changed\" part of the implem.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2982512",
-        "id": 2982512,
-        "login": "tkrugg"
-      },
+      "user": 2982512,
       "id": 868663450,
       "reactions": {}
     },
     {
       "date": 1624870207,
       "body": "> I was thinking one that would check onInternalStateUpdate is called when setUIState is, because that's the \"notify everybody state has changed\" part of the implem.\r\n\r\nyeah, but also the implementation can change while the end result stays the same.\r\n\r\nThe contract we have is \r\n\r\n> when `setUiState` is called(A), the middlewares' onStateChange gets called(B).\r\n\r\nIt's not important what happens between (A) and (B). We trigger (A) and see if (B) is achieved. By testing this way, we have a room to refactor , even rename or do whatever with the internal implementations.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee"
-      },
+      "user": 499898,
       "id": 869499170,
       "reactions": {
         "👍️": 2

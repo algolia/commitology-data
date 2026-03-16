@@ -4,12 +4,7 @@
   "title": "Large bundle size with ES module",
   "date": 1671544082,
   "body": "### 🐛 Current behavior\r\n\r\nI have just created a new Svelte project using Vite.\r\n\r\nCreated a super simple page without any templating and no added widgets.\r\n\r\nThre result is a large bundle size that includes alot of unused packages.\r\n![main_full (2)](https://user-images.githubusercontent.com/7306904/208679088-8d7469ab-8d35-4d70-a77a-45998a46d70b.png)\r\n\r\nSome examples of unused code (maybe?):\r\n- Hogan.js\r\n- @algolia/events\r\n- all connectors in the picture\r\n- all components in the picture\r\n\r\nSee this for rollup: https://codesandbox.io/s/dawn-waterfall-sbvly9?file=/index.html\r\n\r\nI think the reason for this is because of inproper imports. Examples:\r\n- https://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/InstantSearch.ts#L2\r\n- https://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/InstantSearch.ts#L3\r\n\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n```\r\n$ npm init vite\r\n$ cd new-vite-project\r\n$ yarn add algoliasearch instantsearch.js\r\n```\r\n\r\ninit instantsearch without adding any widgets\r\n```\r\n<script lang=\"ts\">\r\n  import algoliasearch from \"algoliasearch/lite\";\r\n  import instantsearch from \"instantsearch.js/es\";\r\n  const searchClient = algoliasearch('APP_ID', 'APP_KEY');\r\n  const search = instantsearch({\r\n    indexName: 'INDEX',\r\n    searchClient,\r\n  });\r\n  search.start();\r\n\r\n</script>\r\n\r\n<main>\r\n    <p>EMPTY PAGE</p>\r\n</main>\r\n```\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/s/dawn-waterfall-sbvly9?file=/index.html\r\n\r\n### 💭 Expected behavior\r\n\r\nHogan.js should not be bundled and the same with unused connectors, widgets and templates.\r\n\r\n### Package version\r\n\r\nalgoliasearch 4.14.3, instantsearch.js 4.49.2, vite 4.0.0, svelte 3.54.0\r\n\r\n### Operating system\r\n\r\nUbuntu\r\n\r\n### Browser\r\n\r\nChrome\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/7306904",
-    "id": 7306904,
-    "login": "xXCalleManXx"
-  },
+  "user": 7306904,
   "issue": {
     "labels": [
       {
@@ -27,72 +22,42 @@
     {
       "date": 1671547655,
       "body": "We'll look more in detail, but a first quick answer around helper and events is that they are required for InstantSearch to function, so can't be tree-shaken. \r\n\r\nHogan could be aliased to empty module if you know you aren't using any string templates, we might be able to make that an option/entry point, but I'm not sure how yet\r\n\r\nThe widgets and connectors should not have been included, I'm not sure what causes them to be imported, as the /es entry point purposely avoids adding it, but I wonder if vite somehow resolves the source instead of the dist files",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1359491803,
       "reactions": {}
     },
     {
       "date": 1671548580,
       "body": "What tool did you use to show the build output? I did the same steps and in the build output I can't find any artefacts of the non-imported items (yet?) https://codesandbox.io/s/rdsufj\r\n\r\nIf I add for example a searchbox, I can see the bundlesize change, meaning the package is correctly tree shaken I think ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1359526521,
       "reactions": {}
     },
     {
       "date": 1671549090,
       "body": "@Haroenv Thanks for quick reply!\r\n\r\nI used `rollup-plugin-visualizer`.\r\n\r\nAdd `rollup-plugin-visualizer`: `yarn add -D rollup-plugin-visualizer`\r\n\r\nIf you edit your `vite.config.ts` file so it looks like this:\r\n```\r\nimport { defineConfig } from 'vite'\r\nimport { svelte } from '@sveltejs/vite-plugin-svelte'\r\nimport { visualizer } from \"rollup-plugin-visualizer\";\r\n\r\n// https://vitejs.dev/config/\r\nexport default defineConfig({\r\n  plugins: [\r\n    svelte(),\r\n    visualizer({\r\n      filename: 'stats/index.html',\r\n      emitFile: true\r\n    })\r\n  ],\r\n})\r\n```\r\n\r\n\r\nthen run `yarn build` and you will have the html file inside the newly created stats folder",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/7306904",
-        "id": 7306904,
-        "login": "xXCalleManXx"
-      },
+      "user": 7306904,
       "id": 1359540946,
       "reactions": {}
     },
     {
       "date": 1671549838,
       "body": "Hm, there must be something else going on, as the bundle is different for me:\r\n\r\n<img width=\"1388\" alt=\"Screenshot 2022-12-20 at 16 23 32\" src=\"https://user-images.githubusercontent.com/6270048/208702602-ea97970a-d0f6-41c0-9336-d40e6d94b4df.png\">\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1359559379,
       "reactions": {}
     },
     {
       "date": 1671550309,
       "body": "Oh.. wow.. I'm an idiot 😂🤦‍♂️\r\nI was looking at an old html file. The connectors are gone now.\r\n\r\nI think that it's still weird that genereate-hierarchical-tree.js and RefinementList.js is bundled, but I guess that's something releated to algoliasearch-helper using CommonJS",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/7306904",
-        "id": 7306904,
-        "login": "xXCalleManXx"
-      },
+      "user": 7306904,
       "id": 1359569693,
       "reactions": {}
     },
     {
       "date": 1671550737,
       "body": "Yes, more than it being CommonJS, it's written in a way that doesn't allow for tree shaking, with a single class being in charge of all functionality. We have future plans of changing that, but it's very complicated (lots of legacy code in that part).\r\n\r\nGlad tree shaking isn't broken!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1359580467,
       "reactions": {}
     }

@@ -4,12 +4,7 @@
   "title": "Proposal: improve `connectRange()` behavior",
   "date": 1516972494,
   "body": "### Improve the [`refine()` documentation](https://community.algolia.com/instantsearch.js/v2/connectors/connectRange.html#struct-RangeRenderingOptions)\r\n\r\nWhen you create a calendar widget (to refine with date ranges), you sometimes need to specify a lower bound without any upper bound (let's say \"*Display all events from 26/01/2018*\"). A way to do so is to pass `undefined` as the upper bound:\r\n\r\n```js\r\nrefine([start, undefined])\r\n```\r\n\r\n**I don't think we've documented passing `undefined` anywhere ([see `refine()` doc](https://community.algolia.com/instantsearch.js/v2/connectors/connectRange.html#struct-RangeRenderingOptions)).**\r\n\r\n##### Actions:\r\n\r\n* Document that `refine()` accepts `undefined` as an unlimited bound\r\n\r\n### Consider supporting `Infinity`\r\n\r\nFor now, the `refine()` method only takes finite values. Passing `-Infinity` or `Infinity` to a range made sense at first to me (`typeof Infinity === 'number'`). It is however ignored by `refine()` and doesn't trigger any refinements when provided. I think it should be supported since it is a number and should fall back to `undefined` internally.\r\n\r\n**The documentation doesn't state that `refine()` only supports finite numbers.**\r\n\r\n##### Actions:\r\n\r\n* Specify in the `refine()` doc that it filters only with finite values *OR*\r\n* Support infinite values (process them as `undefined` internally)\r\n* (?) Log warnings when the refinement isn't triggered\r\n\r\n### Future API improvements\r\n\r\nAs discussed with @samouss, it might be interesting to change `refine(Array<number, number>)` to an object `refine({ min: number, max: number})` in a next major release. A reason behind this is that both values are optional. It also feels more natural to pass an object rather than a tuple (see [`range`](https://community.algolia.com/instantsearch.js/v2/connectors/connectRange.html#struct-RangeRenderingOptions)). If we decide to do so, we should also change the `start` method to a similar object.\r\n\r\n---\r\n\r\nDo you think these inputs are relevant? Should we take action?\r\n\r\n#### TL;DR\r\n\r\n* `refine()` accepting `undefined` is not documented\r\n* `refine()` only accepts finite values (not `Infinity` and `-Infinity`)\r\n* `Infinity` and `-Infinity` should behave like `undefined`\r\n* We should consider passing an object to `refine()` instead of an array in the future\r\n\r\n#### Related\r\n\r\n* #2309",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6137112",
-    "id": 6137112,
-    "login": "francoischalifour"
-  },
+  "user": 6137112,
   "issue": {
     "labels": [
       {
@@ -59,48 +54,28 @@
     {
       "date": 1516979366,
       "body": "First of all, thanks for the propositions! \r\n\r\n> `refine()` accepting `undefined` is not documented\r\n\r\nAgree we should document that.\r\n\r\n> `Infinity` and `-Infinity` should behave like `undefined`\r\n\r\nAdding the support for `Infinity` doesn't make much sense to me. Right now when you pass a value to the refine function it's either a finite `number` or `undefined`. At the end when you pass a `number` the client will query the API with the provided value. When you omit the value (aka `undefined`) the message is clear you didn't want to pass the value to the API. As a user with `Infinity` I might expect that since I'm passing a value, it will be send to the API. But at the end it will not be the case. I agree that the current signature with the tuple isn't very intuitive `[undefined, 1000]` but with an object the intent is way clearer `{ max: 1000 }`.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6513513",
-        "id": 6513513,
-        "login": "samouss"
-      },
+      "user": 6513513,
       "id": 360809826,
       "reactions": {}
     },
     {
       "date": 1516980358,
       "body": "@samouss I think the support for `Infinity` is linked to the fact that it is provided in the base values (`start`) that as an implementer you want to reuse because it is previous state and you only ever update one part of the range per user interaction.\r\n\r\nThis `start` variable shouldn't contain values that are not compatible with refine. Therefore, another option could be that the start contains only `number|undefined` values.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 360814614,
       "reactions": {}
     },
     {
       "date": 1516980516,
       "body": "The tuple vs object problem is mainly good for consistency as we have now two kinds of structure for the same kind of values and it has a slightly better readability, even though it is less explicit. I'm ok to do the change in the next major version.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 360815392,
       "reactions": {}
     },
     {
       "date": 1516983561,
       "body": "@bobylito Yes but IIRC when we worked on the `connectRange` recently we kept the `Infinity` value only for backward compatibility. At some point we should get rid of the `Infinity` initialisation for `undefined`. Because inside the rendering we don't use those values, we transform them before the component creation.\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/35a1da173a99decec253aa985b2ff8e60f9c872a/src/widgets/range-input/range-input.js#L42-L45\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/3b659783cd659f82539d97aec2e3ca1e691797f5/src/widgets/range-slider/range-slider.js#L43-L53",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6513513",
-        "id": 6513513,
-        "login": "samouss"
-      },
+      "user": 6513513,
       "id": 360830401,
       "reactions": {
         "👍️": 1
@@ -109,12 +84,7 @@
     {
       "date": 1517217745,
       "body": "Both arguments for supporting (or not) `Infinity` are valid. Dropping or adding complete support for infinite values is something we should consider in a next major release if it is to add breaking changes then.\r\n\r\nI'm going to document the usage of `undefined` as a \"no bound\" value for `refine()` since this is a priority 🙂",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour"
-      },
+      "user": 6137112,
       "id": 361185462,
       "reactions": {
         "👍️": 1
@@ -123,12 +93,7 @@
     {
       "date": 1517243363,
       "body": "@samouss I agree with you that eventually we should get rid of the references to `Infinity`. However in the mean time, this is a value provided by the API (`start`) so we ought to support it, to make sure that the noop works: `refine(start)`.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 361302224,
       "reactions": {}
     }

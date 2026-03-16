@@ -12,7 +12,7 @@ await forEachInputCommit(
   async (inputCommit) => {
     const { index, max, data } = inputCommit;
     progress.tick(`[${index}/${max}] ${data.subject}`);
-    const commitData = normalizeCommit(data);
+    const commitData = await normalizeCommit(data);
     const commitPath = getOutputPath(commitData);
 
     await writeJson(commitData, commitPath, {

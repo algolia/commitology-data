@@ -4,12 +4,7 @@
   "title": "instantsearch.js and AMD (requirejs & almond)",
   "date": 1476740484,
   "body": "Does instantsearch provide support for AMD?\n\nThe reason I am asking this is that in my implementation using requirejs and almond, I am getting the following error from Almond: `Uncaught Error: See almond README: incorrect module build, no module name`\n[Here is an explanation of it.](https://github.com/requirejs/almond/blob/master/README.md#incorrect-module-build-no-module-name)\n\nIn the instantsearch.js code, the module is defined here:\n\n```\nif(typeof exports === 'object' && typeof module === 'object')\n        module.exports = factory();\n    else if(typeof define === 'function' && define.amd)\n        define([], factory);\n    else if(typeof exports === 'object')\n        exports[\"instantsearch\"] = factory();\n    else\n        root[\"instantsearch\"] = factory();\n```\n\nIf I modify this and give `define([], factory);` a name like `define('instantsearch', [], factory);` then everything is fine.\n\nHas anyone had success implementing instantsearch using Almond.js?\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/3605905",
-    "id": 3605905,
-    "login": "Giovanni-Mattucci"
-  },
+  "user": 3605905,
   "issue": {
     "labels": [
       {
@@ -27,84 +22,49 @@
     {
       "date": 1476791057,
       "body": "Hi @Giovanni-Mattucci I guess the option we should use then in webpack (we use webpack to build) is this: http://webpack.github.io/docs/configuration.html#output-umdnameddefine\n\nWhat do you think?\n\nAlso, do you think you could try to build not from the dist file but from the raw sources (available in npm)? \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 254483515,
       "reactions": {}
     },
     {
       "date": 1476812638,
       "body": "@vvo that is in the right direction. Not naming the define() is the right way to go, I believe it is necessary for webpack, and has caused people some grief: https://github.com/webpack/webpack/issues/989\nThey fixed this when using webpack with the command you mentioned.\n\nI just need to figure out how to have my compiled js detect unnamed defines, and give them names at compile. I am not sure how to do this using requirejs. :(\n\nIn the future I will be migrating to webpack but for now I am using requirejs + almond.\n\nI've yet to try building from the source.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3605905",
-        "id": 3605905,
-        "login": "Giovanni-Mattucci"
-      },
+      "user": 3605905,
       "id": 254584057,
       "reactions": {}
     },
     {
       "date": 1476815608,
       "body": "Unfortunately I've had to resort to doing this for the time being:\n\n```\nrequirejs: {\n      compile: {\n        options: {\n          baseUrl: '<%= config.jsDir %>',\n          mainConfigFile: '<%= config.jsDir %>/config.js',\n          name: 'main',\n          out: '<%= config.distDir %>/<%= config.jsDir %>/main.js',\n          paths: {\n            'jquery': 'empty:'\n          },\n          optimize: 'uglify2',\n          generateSourceMaps: true,\n          preserveLicenseComments: false,\n          onBuildRead: function (id, path, contents) {\n              if (id.indexOf('instant-search') === 0) {\n                  return contents.replace(/define\\(\\[\\], factory\\)/i, 'define(\"instant-search\", [], factory)');\n              } else {\n                  return contents;\n              }\n          }\n        }\n      }\n    }\n```\n\nI'm doing a string replace on build of instantsearch's define().\n\nEventually when I migrate to webpack this will be a non-issue, but I wish I could figure out how to make requirejs notice instantsearch and name it appropriately on build.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3605905",
-        "id": 3605905,
-        "login": "Giovanni-Mattucci"
-      },
+      "user": 3605905,
       "id": 254598193,
       "reactions": {}
     },
     {
       "date": 1476864898,
       "body": "@Giovanni-Mattucci I was more proposing you to name the module in our UMD build for AMD, but maybe that's not the right choice? I must say I never use AMD so I blindy trust webpack to do the right thing.. :D\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 254744904,
       "reactions": {}
     },
     {
       "date": 1476864968,
       "body": "> Not naming the define() is the right way to go\n\nI thought what you wanted was us to NAME it, I wonder if naming our AMD define by using http://webpack.github.io/docs/configuration.html#output-umdnameddefine inside our own build step would make it easier for you? And also if it would break any existing website.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 254745191,
       "reactions": {}
     },
     {
       "date": 1481660642,
       "body": "@vvo well naming it would fix my current implementation, but that would make your module less portable so says require.js documentation :) http://requirejs.org/docs/api.html#modulename generally the optomization tool should do this, but in my case it wasn't adding names for unnamed modules.\r\n\r\nWith many people moving to webpack though, in the future I'll be using that as well and this will be less of an issue. My above solution is working though going forward :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/3605905",
-        "id": 3605905,
-        "login": "Giovanni-Mattucci"
-      },
+      "user": 3605905,
       "id": 266851289,
       "reactions": {}
     },
     {
       "date": 1481729184,
       "body": "Nice! Thanks for getting back here",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 267062807,
       "reactions": {}
     }

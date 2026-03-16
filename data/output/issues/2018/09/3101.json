@@ -4,12 +4,7 @@
   "title": "Float values in refinement list don't sort properly.",
   "date": 1536571132,
   "body": "**Describe the bug 🐛**\r\nFloat values in refinement list don't sort properly.\r\n\r\n**To Reproduce 🔍**\r\nSteps to reproduce the behavior:\r\n1. Pick a test index\r\n2. Add `size` attribute and put values like 9, 9.5, 10, 10.5, 11…\r\n3. Add `size` as a facet filter\r\n4. Add refinement list to your page:\r\n\r\n```\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    container: '#brand-list',\r\n    attributeName: 'size',\r\n    sortBy: ['size:asc'],\r\n  })\r\n);\r\n```\r\n\r\nhttps://codesandbox.io/s/420yp9lyn0\r\n\r\n**Expected behavior 💭**\r\nShould be sorted 9, 9.5, 10. It's 9, 10, 9.5 instead.\r\n\r\n**Screenshots 🖥**\r\n![image](https://user-images.githubusercontent.com/1834312/45288514-26702c80-b4eb-11e8-8440-6c2f15d6a318.png)\r\n\r\n**Environment:**\r\n - OS: Mac\r\n - Browser: Chrome\r\n - Version 68.0.3440.106\r\n\r\n**Additional context**\r\nPlease ping me back when it's solved so I can contact the customer who reported it.\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/1834312",
-    "id": 1834312,
-    "login": "noclat"
-  },
+  "user": 1834312,
   "issue": {
     "labels": [
       {
@@ -27,12 +22,7 @@
     {
       "date": 1536572496,
       "body": "Thanks @noclat that's indeed an annoying problem and definetely unexpected. We should be able to do better.\r\n\r\nLooking at a response from Algolia, we can notice two things:\r\n - the facet values are strings whatever the number they are in the engine\r\n - if the values are numbers, the facet stats will give us some statistics which is a strong signal about the type.\r\n\r\n```json\r\n{\r\n  \"results\": [\r\n    {\r\n      \"hits\": [...],\r\n      \"nbHits\": 15297,\r\n      \"page\": 0,\r\n      \"nbPages\": 50,\r\n      \"hitsPerPage\": 20,\r\n      \"processingTimeMS\": 11,\r\n      \"facets\": {\r\n        \"price\": {\r\n          \"39.99\": 731,\r\n          \"49.99\": 699,\r\n          \"19.99\": 680,\r\n          \"29.99\": 624,\r\n          \"99.99\": 590,\r\n          \"59.99\": 454,\r\n          \"24.99\": 404,\r\n          \"34.99\": 354,\r\n          \"199.99\": 342,\r\n          \"79.99\": 342\r\n        }\r\n      },\r\n      \"facets_stats\": {\r\n        \"price\": {\r\n          \"min\": 1,\r\n          \"max\": 4999.99,\r\n          \"avg\": 258.651,\r\n          \"sum\": 3956580\r\n        }\r\n      },\r\n      \"exhaustiveFacetsCount\": true,\r\n      \"exhaustiveNbHits\": true,\r\n      \"query\": \"h\",\r\n      \"params\": \"query=h&maxValuesPerFacet=10&page=0&facets=%5B%22price%22%5D&tagFilters=\",\r\n      \"index\": \"instant_search\"\r\n    }\r\n  ]\r\n}\r\n```\r\n\r\nWe should be able to leverage that information to infer the type of the facet and apply a correct sort but it implies a lot of magic behind the scene.\r\n\r\nOn the other hand, the user knows better and could easily implement a custom sort function:\r\n\r\n```js\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    container: '#brand-list',\r\n    attributeName: 'price',\r\n    sortBy: function(a, b) {\r\n      return Number.parseFloat(a.name) - Number.parseFloat(b.name);\r\n    },\r\n  })\r\n);\r\n```",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 419852562,
       "reactions": {
         "👍️": 3
@@ -41,48 +31,28 @@
     {
       "date": 1536572721,
       "body": "@bobylito I think this issue should be addressed in the [JavaScript helper](https://github.com/algolia/algoliasearch-helper-js) since we leverage the `getFacetValues()` method in `connectRefinementList` ([see corresponding line →](https://github.com/algolia/instantsearch.js/blob/694c82b9a2230b160f6f5a47bb7da355066cdf85/src/connectors/refinement-list/connectRefinementList.js#L336)).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour"
-      },
+      "user": 6137112,
       "id": 419853698,
       "reactions": {}
     },
     {
       "date": 1536573029,
       "body": "> @bobylito I think this issue should be addressed in the JavaScript helper since we leverage the getFacetValues() method in connectRefinementList (see corresponding line →).\r\n\r\nYes that seems to be the place to fix 👍\r\n\r\nLet's keep this issue for keeping track of the implementation at the IS.js level. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito"
-      },
+      "user": 393765,
       "id": 419855165,
       "reactions": {}
     },
     {
       "date": 1536757828,
       "body": "Thanks for the effort in handling this folks! I understand, super clear answers 🙌.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1834312",
-        "id": 1834312,
-        "login": "noclat"
-      },
+      "user": 1834312,
       "id": 420642190,
       "reactions": {}
     },
     {
       "date": 1629726761,
       "body": "This can be solved by using sortBy with a parseFloat (otherwise it sorts alphabetically). As using numerical values for facets is not the main use case (because it usually will explode quickly in number of values, making a range more interesting), I'll close this issue for now. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 903790795,
       "reactions": {}
     }

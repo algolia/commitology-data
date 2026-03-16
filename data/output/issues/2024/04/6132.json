@@ -4,12 +4,7 @@
   "title": "When root indexName is absent, `scopedResults` are empty",
   "date": 1712867755,
   "body": "### 🐛 Current behavior\n\nIf I create a `<InstantSearch indexName={undefined}>` element (as enabled by #5590 a year ago), with several `<Index>` components inside it, and then want to access `useInstantSearch()`'s `scopedResults` element, I find that it will always be (essentially) empty.\n\n### 🔍 Steps to reproduce\n\nSee the repro link below; click the checkbox at the very top and see how the available `indexId`s change.\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/algolia-no-root-index-scopedresults-w2jfvl?file=%2Fsrc%2FApp.tsx\n\n### 💭 Expected behavior\n\nI should find entries in `scopedResults` for all sub-indexes, as is the case if a root index name is given.\n\n### Package version\n\nAlgolia for JavaScript (4.23.3); Browser (lite); instantsearch.js (4.66.1); react (18.1.0); react-instantsearch (7.7.1); react-instantsearch-core (7.7.1); JS Helper (3.17.0)\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/2641501",
-    "id": 2641501,
-    "login": "marcelgerber"
-  },
+  "user": 2641501,
   "issue": {
     "labels": [
       {
@@ -27,12 +22,7 @@
     {
       "date": 1712869531,
       "body": "So, I could trace this down to these lines just now:\r\nhttps://github.com/algolia/instantsearch/blob/1b683c5ebbcae4a77a43ff2034da406c9eb0dbc4/packages/react-instantsearch-core/src/lib/useSearchResults.ts#L26-L35\r\n\r\nIn the above case, `results` is always `null` (makes sense, I guess), but `searchIndex.getScopedResults()` is not. But because of this if-statement, it is never updated.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2641501",
-        "id": 2641501,
-        "login": "marcelgerber"
-      },
+      "user": 2641501,
       "id": 2050545237,
       "reactions": {
         "👍️": 1
@@ -41,24 +31,14 @@
     {
       "date": 1713194814,
       "body": "That's a good point, although I'm not sure how to change this condition without then also making people deal with `null` for the initial render (which people usually don't have to care about, and otherwise destructures badly). An option could be a way to go, but isn't that nice. Do you have a solution in mind?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 2057133793,
       "reactions": {}
     },
     {
       "date": 1713250061,
       "body": "Hm, I don't know about the internals of InstantSearch and when results are arriving, but can we detect that there is no main index present?\r\nIn that case, `results` will always be `null` (and has always been), and it makes sense to update `scopedResults` directly.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2641501",
-        "id": 2641501,
-        "login": "marcelgerber"
-      },
+      "user": 2641501,
       "id": 2058356353,
       "reactions": {
         "👍️": 1
@@ -67,36 +47,21 @@
     {
       "date": 1713256694,
       "body": "Yes, that's a good point, so in that case the condition could be:\r\n\r\n```js\r\nif (results !== null) {\r\n  setSearchResults({\r\n    results,\r\n    scopedResults: searchIndex.getScopedResults(),\r\n  });\r\n} else if (search.mainIndex.getIndexName() === undefined) {\r\n  setSearchResults({\r\n    results: getIndexSearchResults(searchIndex),\r\n    scopedResults: searchIndex.getScopedResults(),\r\n  });\r\n}\r\n```\r\n\r\nIf you're interested in seeing this through, we'd be happy to accept a pull request with this feature and new tests :) ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 2058549560,
       "reactions": {}
     },
     {
       "date": 1714478095,
       "body": "Hi, we just released react-instantsearch@7.7.3 and react-instantsearch-core@7.7.3 which include a fix for this issue.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/154633",
-        "id": 154633,
-        "login": "dhayab"
-      },
+      "user": 154633,
       "id": 2085126377,
       "reactions": {}
     },
     {
       "date": 1714639754,
       "body": "Thank you @dhayab, works perfectly and flawlessly!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2641501",
-        "id": 2641501,
-        "login": "marcelgerber"
-      },
+      "user": 2641501,
       "id": 2089927708,
       "reactions": {}
     }

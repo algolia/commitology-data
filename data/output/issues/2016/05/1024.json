@@ -4,12 +4,7 @@
   "title": "Usage in meteor",
   "date": 1463929048,
   "body": "I am having this error (Chrome 50.0.2661.102 / Meteor 1.3). Any idea ?\n\n![screen shot 2016-05-22 at 11 33 46 pm](https://cloud.githubusercontent.com/assets/329887/15456601/b356d0fc-2075-11e6-9573-8560cb025c40.png)\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/329887",
-    "id": 329887,
-    "login": "gwendall"
-  },
+  "user": 329887,
   "issue": {
     "labels": [],
     "number": 1024,
@@ -20,36 +15,21 @@
     {
       "date": 1463947904,
       "body": "Hello,\n\nI recently had another customer on support with a similar issue. In the end I feel like this is not coming from instantsearch (I checked all the source code, and we are never setting the `connection`, `accept-encoding` or `content-length` headers).\n\nI think it has something to do with the way Meteor now handles npm modules, but I'm afraid that's the more I can help.\n\nFrom what I understand, something, somewhere, on the Meteor side, is setting new headers to the queries the Algolia JavaScript client is doing. Because those headers are custom, and because the request is done to a domain different than the one where the page is hosted, then the CORS systems kicks in. It will then ask for a \"preflight\" `OPTIONS` call to our servers, that will fail because we are not configured to accept those custom headers.\n\nCould you check in your network tabs the exact request that is sent to our API? I'm pretty sure the issue is not coming from our side but the way Meteor handles stuff.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 220853405,
       "reactions": {}
     },
     {
       "date": 1463954568,
       "body": "@pixelastic actually the OPTIONS calls passes on our servers, see https://www.alittlemarket.com/.\n@gwendall I think you simply have a CORS issue here, this answer might help: http://stackoverflow.com/a/19744754\nRegarding the unsafe headers, you should let your browser handle these, otherwise it introduces security issues. I guess you'll have to find where they are set in your code or library and remove them according to http://stackoverflow.com/questions/7210507/ajax-post-error-refused-to-set-unsafe-header-connection.\n\nHope this helps!\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5570853",
-        "id": 5570853,
-        "login": "rayrutjes"
-      },
+      "user": 5570853,
       "id": 220859251,
       "reactions": {}
     },
     {
       "date": 1464023413,
       "body": "@rayrutjes I think that when an `XMLHttpRequest` is done with the `withCredentials` flag, it sends the `Basic Auth` informations along with the request. And in that case, the server must reply with an exact url in the `Access-Control-Allow-Origin`, but we always respond with a wildcard `*`, which fails.\n\nSo, I'm pretty sure another library is adding those headers to requests done to our servers.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 221034027,
       "reactions": {
         "👍️": 1
@@ -58,12 +38,7 @@
     {
       "date": 1464029681,
       "body": "Reproduction: https://github.com/gwendall/meteor-algolia-instantsearch-bug\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/329887",
-        "id": 329887,
-        "login": "gwendall"
-      },
+      "user": 329887,
       "id": 221061885,
       "reactions": {
         "👍️": 2
@@ -72,168 +47,98 @@
     {
       "date": 1464037545,
       "body": "Thanks for the repo. I managed to repro on my side, issue seems to have something to do with the `request.js` file that is weirdly called on every of our own `XMLHttpRequest`, like it whole object got extended...\n\nI'm not experienced enough in Meteor to tackle that, I've asked a bit of help from @dustincoates, @SachaG and @acemtp\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 221096106,
       "reactions": {}
     },
     {
       "date": 1464041622,
       "body": "Sorry, I don't know much about that aspect of Meteor. You should ask someone who knows more about it, like @gwendall for example. Oh wait…\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/358832",
-        "id": 358832,
-        "login": "SachaG"
-      },
+      "user": 358832,
       "id": 221111939,
       "reactions": {}
     },
     {
       "date": 1464042360,
       "body": "In the Algolia JavaScript client, we have two paths. One for the front-end and one for the back-end (which is a valid separation in a non-Meteor context). They both share the same common core, but have a few special cases to handle in each environment. Like CORS for example. Back-end code does not care about CORS.\n\nFrom what we understand, Meteor is trying to use the back-end build in the front-end (through `browserify`), while it should use the specific front-end build to do that. I have no idea how Meteor handles this kind of things...\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic"
-      },
+      "user": 283419,
       "id": 221114539,
       "reactions": {}
     },
     {
       "date": 1464077170,
       "body": "I spoke with @vvo about how instantsearch.js determines whether to use the front-end build or the back-end build. It's using browserify's [package.json `browser` field spec](https://github.com/defunctzombie/package-browser-field-spec) as you can [see here](https://github.com/algolia/algoliasearch-client-js/blob/7d4b7b15ab664bcf9fa45399fbc22304499a1f8f/index.js).\n\nAt a bit of a wall now. Current understanding is that Meteor is seeing the require on the server, not in the browser. Will try to look more into whether/how that can be overridden.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1909592",
-        "id": 1909592,
-        "login": "dustincoates"
-      },
+      "user": 1909592,
       "id": 221195686,
       "reactions": {}
     },
     {
       "date": 1464110466,
       "body": "Meteor doesn't have any special support for the browser field. But you can certainly just require whichever file you like on the client side. So you could write something like\n\n```\n// Assuming that `client-require.js` was in the \"browser\" field of package.json\nconst instantsearch = require('instantsearch.js/client-require.js')\n```\n\nI can see that this issue comes from deeper in the dependency tree than that, so it's a little tricky, but that basic approach should lead to a solution I hope.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/132554",
-        "id": 132554,
-        "login": "tmeasday"
-      },
+      "user": 132554,
       "id": 221342666,
       "reactions": {}
     },
     {
       "date": 1464191184,
       "body": "This is an issue on the meteor side unfortunately for now we cannot easily fix it: https://github.com/meteor/meteor/issues/6890\n\nMeteor does support the browser field but only when it's a single string, we have an object because we shim some weird dependency: https://github.com/algolia/algoliasearch-client-js/blob/870bee09e03908a3e7790f01d7d02278c496c0a8/package.json#L6\n\nThis might be fixable on the long run but meteor will have trouble since the browser \"spec\" is allowing objects so a lot of npm packages will fail: https://github.com/defunctzombie/package-browser-field-spec\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 221618284,
       "reactions": {}
     },
     {
       "date": 1464191454,
       "body": "We might be able to fix it if we get this merged: https://github.com/rauchg/ms.js/pull/40, thats the root cause of us having to add an object to our JS client.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 221619852,
       "reactions": {}
     },
     {
       "date": 1464192286,
       "body": "What about using `algoliasearch/lite` in the [instantsearch package](https://github.com/algolia/instantsearch.js/blob/6291bfc47e9b91a0c8ea947355c9f68851187d20/src/lib/InstantSearch.js#L1) ?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/329887",
-        "id": 329887,
-        "login": "gwendall"
-      },
+      "user": 329887,
       "id": 221624111,
       "reactions": {}
     },
     {
       "date": 1464192947,
       "body": "@gwendall yep that would work, I just need to put browse and browseFrom in the lite package because we have some tutorials using it.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 221627300,
       "reactions": {}
     },
     {
       "date": 1465555868,
       "body": "Thanks for documenting the fix (a rarity I've found!). I've managed to replicate this fix locally (by temporarily amending where my shrink-wrap references an amended node_module; however, when do you expect this fix to make it to the published npm version?\n\nI'm just wondering whether I freeze the dependancy to my custom version for now?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5637895",
-        "id": 5637895,
-        "login": "jamiedumont"
-      },
+      "user": 5637895,
       "id": 225152456,
       "reactions": {}
     },
     {
       "date": 1465558628,
       "body": "Just did a release for that @jamiedumont, let me know how it goes! 1.5.2 on npm, jsDelivr in 30 minutes will be up\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 225160037,
       "reactions": {}
     },
     {
       "date": 1465559782,
       "body": "Excellent, cheers! Perfect timing! Saw your other issue #920 that you're looking into some React Components. Would you want an extra set of hands to help with that? Finishing a massive release at the moment, but could spare a few hours a week after that to help out?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/5637895",
-        "id": 5637895,
-        "login": "jamiedumont"
-      },
+      "user": 5637895,
       "id": 225163276,
       "reactions": {}
     },
     {
       "date": 1465560829,
       "body": "> Would you want an extra set of hands to help with that?\n\nWe did not started that work yet, any help is welcomed. If you happen to create reusable React Components mimicking the instantsearch.js API then it would be awesome.\n\nWe will start building React components like instantsearch.js early july.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 225166257,
       "reactions": {}
     },
     {
       "date": 1467561741,
       "body": "@yonidej This look like a different issue.\n\nCan you please create a new issue and provide the code you are using (both html and JavaScript).\n\nThanks\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 230160587,
       "reactions": {}
     }

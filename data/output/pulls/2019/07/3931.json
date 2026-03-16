@@ -4,12 +4,7 @@
   "title": "refactor(test): POC integration tests",
   "date": 1562601471,
   "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n**Summary**\r\n\r\n<!--\r\n  Explain the **motivation** for making this change.\r\n  What existing problem does the pull request solve?\r\n  Are there any linked issues?\r\n-->\r\n\r\nOur current test suite is way too close to the implementation details and the actual widgets usage is not truthfully tested, making it harder for us to be confident in the test suite. Any change in the codebase can potentially break multiple tests even if we did not break anything in reality. And at the same time its \"freezing\" some projects details making internal changes more complicated than it should be.\r\n\r\nIMHO it would benefit us to write less unit tests and more integration tests, closer on how our widgets and connectors are used by real users.\r\n\r\nThis PR is a POC to use [Testing Library](https://testing-library.com) on InstantSearch.js to write such integration tests.\r\n\r\nFor this POC I tested only one flavor but the same tools and principles can be applied on other flavors as well.\r\n\r\n## Guiding principles\r\n\r\n> The more your tests resemble the way your software is used, the more confidence they can give you. - Testing Library guiding principles\r\n\r\n### Widgets\r\n\r\n* **Usage**: The widget must be used the same way a user will use it. It means initializing an `instantsearch` instance, using the `addWidget` method then calling the `start` method).\r\n* **Interactions**: Changes are only triggered using simulated user interactions (using [Testing Library events API](https://testing-library.com/docs/dom-testing-library/api-events).\r\n* **Multiple widgets**: Multiple widgets can be initialized in a test to see if a particular widget interact correctly with another one.\r\n* **Validation**: Results must only be tested by checking the widget output (DOM) or, in some cases, the potential side effects (API request).\r\n\r\n### Connectors\r\n\r\n* **Usage**: The connector must be used the same way a user will use it. It means calling `instantsearch.connectors.connect*` with a custom render function (a [Jest mock function](https://jestjs.io/docs/en/jest-object#jestfnimplementation) for our case).\r\n* **Interactions**: Changes are only triggered using methods passed to the rendering function (captured using our [Jest mock function](https://jestjs.io/docs/en/jest-object#jestfnimplementation)).\r\n* **Multiple widgets**: Multiple widgets can be initialized in a test to see if a particular widget interact correctly with another one.\r\n* **Validation**: Results must only be tested by checking parameters passed to the rendering function or, in some cases, the potential side effects (API request).\r\n\r\nUsing theses principles we limit ourselves to use and interact with our widgets/connectors like a real user, limiting the needs for mocking and the risk to rely on internals for testing.\r\n\r\nResources:\r\n * [Testing Library](https://testing-library.com)\r\n * [jest-dom](https://github.com/testing-library/jest-dom)\r\n * [Kent C. Dodds – Write tests. Not too many. Mostly integration](https://www.youtube.com/watch?v=Fha2bVoC8SE)\r\n\r\n**PS**: Other tests are failing since I removed the `preact-compat` -> `react` alias in the Babel configuration. Both test suites can coexists but I did not take the time to tweak the configuration for this POC.\r\n",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/13209",
-    "id": 13209,
-    "login": "yannickcr"
-  },
+  "user": 13209,
   "pull": {
     "labels": [],
     "number": 3931,
@@ -20,60 +15,35 @@
     {
       "date": 1562601713,
       "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit 53fe6833a014cb48295cc456268acf76ccdf327b\n\nhttps://deploy-preview-3931--instantsearchjs.netlify.com",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/16079583",
-        "id": 16079583,
-        "login": "algobot"
-      },
+      "user": 16079583,
       "id": 509287349,
       "reactions": {}
     },
     {
       "date": 1562605062,
       "body": "Looks really good.\r\n\r\nit's still not a real browser, so still not as close as what we ship to the end user but will definitely catch a lot of bugs!\r\n\r\nI see there is a certain level of compatibility with react and vue. It'd be be nice to check we can reach the same level of feature coverage in every flavour we have. \r\nThere is nothing for angular but maybe we can work something out with puppeteer or cypress.\r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/2982512",
-        "id": 2982512,
-        "login": "tkrugg"
-      },
+      "user": 2982512,
       "id": 509307256,
       "reactions": {}
     },
     {
       "date": 1562682182,
       "body": "@tkrugg \r\n\r\n> I see there is a certain level of compatibility with react and vue. It'd be be nice to check we can reach the same level of feature coverage in every flavour we have.\r\n\r\nIt should be pretty similar but I can try to reproduce these tests in react/vue/angular to compare the different solutions.\r\n\r\n> There is nothing for angular but maybe we can work something out with puppeteer or cypress.\r\n\r\nThere is also an [Angular Testing Library](https://testing-library.com/docs/angular-testing-library/intro)\r\n\r\n@francoischalifour \r\n\r\n> Did you spot some cases where this strategy hits limitation compared to the way we currently test our exposed API?\r\n\r\nNot yet, but I only tested a very simple widget for now. Do you have something in mind?\r\n\r\n@Haroenv \r\n\r\n> I think this is useful, but it needs a document where we write which kind of tests should be tested in which way to have a consistent experience\r\n\r\nYes, I think it could be documented the same way @francoischalifour  did for our [current testing guidelines](https://docs.google.com/document/d/1EUi72bcz9RzrlNrRrkIsLNDjsygpD0yN9ptjp8v57Hc/edit?pli=1).",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr"
-      },
+      "user": 13209,
       "id": 509663484,
       "reactions": {}
     },
     {
       "date": 1562762436,
       "body": "> Last year, I took this class from Kent C. Dodds.\r\n\r\nLucky you! I'd love to take that class. :slightly_smiling_face: \r\n\r\nWe can also test directly the production build with the integration tests (tested it [here](https://github.com/algolia/instantsearch.js/pull/3931/commits/5d91e78f7fbfb2eda8be7bf491d3e64adb8a9111)) but we need to see how to make it works with tests running during development.\r\n\r\nAgree for E2E tests, but it asks more efforts to be put in place so I see it more like a second step to do after the integration tests. \r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr"
-      },
+      "user": 13209,
       "id": 510043945,
       "reactions": {}
     },
     {
       "date": 1562768047,
       "body": "> Agree for E2E tests, but it asks more efforts to be put in place so I see it more like a second step to do after the integration tests.\r\n\r\nSure, e2e test is way out of the scope for now :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee"
-      },
+      "user": 499898,
       "id": 510079075,
       "reactions": {}
     }

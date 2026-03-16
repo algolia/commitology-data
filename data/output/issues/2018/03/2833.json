@@ -4,12 +4,7 @@
   "title": "Using autocomplete.js as InstantSearch.js searchbox",
   "date": 1521635244,
   "body": "## copy of https://github.com/algolia/autocomplete.js/issues/216 by @SchmidtDawid\r\n\r\nHi i want to implement autocomplete but i can't make it work with instantsearch. \r\nWhen i have 2 inputs - one is for searchBox widget and the second is for autocomplete, everything works great (but of course autocomplete doesn't have impact on hits). \r\nBut when autocomplete and searchbox pointing on same input i have an error. \r\n```\r\nUncaught TypeError: Cannot read property 'style' of null\r\n    at search-box.js:130\r\n    at Object.render (connectSearchBox.js:136)\r\n    at InstantSearch.js:317\r\n    at n (_arrayEach.js:15)\r\n    at r (forEach.js:37)\r\n    at t.value (InstantSearch.js:313)\r\n    at r.n.emit (events.js:84)\r\n    at algoliasearch.helper.js:1245\r\n    at n (_arrayEach.js:15)\r\n    at r (forEach.js:37)\r\n```\r\nerror pointing on this line:    ` resetButton.style.display = query && query.trim() ? 'block' : 'none';`.\r\n\r\nThis is my script list:\r\n```\r\n  <script src=\"https://cdn.jsdelivr.net/npm/instantsearch.js@2.3/dist/instantsearch.min.js\"></script>\r\n  <script src=\"/js/algolia_search.js\"></script>\r\n  <script src=\"https://cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js\"></script>\r\n  <script src=\"https://cdn.jsdelivr.net/autocomplete.js/0/autocomplete.min.js\"></script>\r\n```\r\nI tried every possible configuration, but is doesn't matter. \r\n\r\nI don't have idea how to solve it. Can you help? ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6270048",
-    "id": 6270048,
-    "login": "Haroenv"
-  },
+  "user": 6270048,
   "issue": {
     "labels": [],
     "number": 2833,
@@ -20,48 +15,28 @@
     {
       "date": 1521635310,
       "body": "relevant line is https://github.com/algolia/instantsearch.js/blob/c6ac146890ee1f34c644940ff7eb5a665d594048/src/widgets/search-box/search-box.js#L126",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 374920248,
       "reactions": {}
     },
     {
       "date": 1521635902,
       "body": "@SchmidtDawid, can you show how you wrote the widget and templates? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 374922503,
       "reactions": {}
     },
     {
       "date": 1521636480,
       "body": "algolia_search.js\r\n```js\r\nsearch.addWidget(\r\n    instantsearch.widgets.searchBox({\r\n      container: '.pw_st_search_search',\r\n      placeholder: '',\r\n    })\r\n  );\r\n```\r\nin php template:\r\n```html\r\n<script>\r\n    var client = algoliasearch('correct key', 'correct api');\r\n    var index = client.initIndex('correct index');\r\n    autocomplete('.pw_st_search_search',\r\n    { hint: true }, {\r\n    source: autocomplete.sources.hits(index, {hitsPerPage: 5}),\r\n    displayKey: 'name',\r\n    templates: {\r\n        suggestion: function(suggestion) {\r\n          //console.log(suggestion);\r\n          return '<span>' + suggestion._highlightResult.name.value + '</span><span>';\r\n        }\r\n    }\r\n});\r\n</script>\r\n```\r\nI cant show you our original input because it is too dynamically generated but with this input is the same issue:\r\n```html\r\n<div class=\"aa-input-container\" id=\"aa-input-container\">\r\n      <input type=\"search\" id=\"\" class=\".pw_st_search_search aa-input-search\" placeholder=\"Search \" name=\"search\" autocomplete=\"on\" />\r\n</div>\r\n```\r\n\r\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/26749479",
-        "id": 26749479,
-        "login": "SchmidtDawid"
-      },
+      "user": 26749479,
       "id": 374924895,
       "reactions": {}
     },
     {
       "date": 1521642351,
       "body": "@SchmidtDawid, here's an example on how to combine both autocomplete an instantsearch, using connectors: \r\n\r\nhttps://codesandbox.io/s/x7v977n2mz",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 374955390,
       "reactions": {
         "❤️": 1
@@ -70,36 +45,21 @@
     {
       "date": 1521642369,
       "body": "Hmm i make it work but i don't know why ;). I move this part to our header, and autocomplete start working.\r\n```\r\n<script src=\"https://cdn.jsdelivr.net/algoliasearch/3/algoliasearch.min.js\"></script>\r\n\t <script src=\"https://cdn.jsdelivr.net/autocomplete.js/0/autocomplete.min.js\"></script>\r\n\t <script>\r\n\t\tvar client = algoliasearch('NNWYKHZ90Y', 'd052c2a715d25707636e3a29d145e9e9');\r\n\t\tvar index = client.initIndex('prod_query_suggestions');\r\n\t\tautocomplete('.pw_st_search_search',\r\n\t\t{ hint: true }, {\r\n\t\tsource: autocomplete.sources.hits(index, {hitsPerPage: 5}),\r\n\t\tdisplayKey: 'query',\r\n\t\ttemplates: {\r\n\t\t\tsuggestion: function(suggestion) {\r\n\t\t\t  console.log(suggestion);\r\n\t\t\t  return '<span>' + suggestion._highlightResult.query.value + '</span>';\r\n\t\t\t}\r\n\t\t\t}\r\n\t\t});\r\n\t</script>\r\n```\r\nBut search box stop working. Then I change widget container to another class of input like this:\r\n```\r\nsearch.addWidget(\r\n    instantsearch.widgets.searchBox({\r\n      container: '.aa-input',\r\n      placeholder: '',\r\n    })\r\n  );\r\n```\r\nAnd now work autocomplete and searching simultaneously ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/26749479",
-        "id": 26749479,
-        "login": "SchmidtDawid"
-      },
+      "user": 26749479,
       "id": 374955515,
       "reactions": {}
     },
     {
       "date": 1521642426,
       "body": "@SchmidtDawid did you see my comment? ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 374955861,
       "reactions": {}
     },
     {
       "date": 1521642575,
       "body": "Yes we write comments almost in same time. I'll try your solution tomorrow because in my solution selecting autocomplete items by arrows doesn't change input value. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/26749479",
-        "id": 26749479,
-        "login": "SchmidtDawid"
-      },
+      "user": 26749479,
       "id": 374956751,
       "reactions": {
         "👍️": 1
@@ -108,48 +68,28 @@
     {
       "date": 1521708749,
       "body": "Hi. We cant use new jquery. We still have old solutions with jquery 1.7 and some of them crashes when I use ver3.3.1. But even ignoring it for a while it doesn't work anyway, but i don't get any error. \r\n\r\non start I got error like \"suggestionsIndex is not defined\". I do somethink like that:\r\n```\r\nconst client = algoliasearch(opts.appId, opts.apiKey);\r\nconst suggestionsIndex = client.initIndex(\"just_query_suggestions\");\r\n```\r\nI don't get any errors but search and autocomplete doesn't' work. \r\n\r\nThen i disconnect jquery 3.3.1 and change $ to jQuery in autocompleteWidget. Ant there is same situation. No errors and no working widget. ",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/26749479",
-        "id": 26749479,
-        "login": "SchmidtDawid"
-      },
+      "user": 26749479,
       "id": 375222221,
       "reactions": {}
     },
     {
       "date": 1521712920,
       "body": "you need to use the [query suggestions connector](https://www.algolia.com/doc/guides/analytics/query-suggestions/) to make an index to use it for the autocomplete first @SchmidtDawid. Regarding jQuery, you’ll need to change the usage yourself in `autocompleteWidget.js`",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 375241640,
       "reactions": {}
     },
     {
       "date": 1522401050,
       "body": "Thank you very much for helping. It helps a lot. Now autocomplete works very well :)",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/26749479",
-        "id": 26749479,
-        "login": "SchmidtDawid"
-      },
+      "user": 26749479,
       "id": 377484443,
       "reactions": {}
     },
     {
       "date": 1522401459,
       "body": "Awesome!",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 377485657,
       "reactions": {}
     }

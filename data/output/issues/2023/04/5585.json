@@ -4,12 +4,7 @@
   "title": "InstantSearchSSRProvider makes nested InstantSearch queries global",
   "date": 1680892688,
   "body": "### 🐛 Current behavior\n\nWe have multiple nested `<InstantSearch />` to handle scenarios like carousels with specific filters and a typeahead function displaying hits before search query submission.\r\n\r\nWe use `<Configure />` (`useConfigure` in some cases) to handle these cases.\r\n\r\nWhen we implemented `<InstantSearchSSRProvider />`, things started to get strange. For example, when users start inputing a search query, the route changes and apply the query with the global `<InstantSearch />`, even though its closest `<InstantSearch />` has no routing defined.\r\n\r\nIn the sandbox attached it's possible to see that ssr.tsx only differs on having `<InstantSearchSSRProvider />` wrapping the app.\n\n### 🔍 Steps to reproduce\n\n1. In the Sandbox, search for \"Nike\" on the left panel and \"Adidas\" on the right\r\n2. Confirm both columns are displaying independent hits\r\n3. Open the SSR variation and repeat the same process\r\n4. Notice that now both input fields are in sync, while they should not\n\n### Live reproduction\n\nhttps://codesandbox.io/s/delicate-cache-y2dj5v\n\n### 💭 Expected behavior\n\nNested `<InstantSearch />` should set its children's components/hooks behaviors.\n\n### Package version\n\n\"react-instantsearch-hooks-router-nextjs\": \"6.42.1\",     \"react-instantsearch-hooks-server\": \"6.42.1\",     \"react-instantsearch-hooks-web\": \"6.42.1\"\n\n### Operating system\n\nmacOS 12.6\n\n### Browser\n\nBrave 1.50.114\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/1450564",
-    "id": 1450564,
-    "login": "fmedinac"
-  },
+  "user": 1450564,
   "issue": {
     "labels": [
       {
@@ -27,24 +22,14 @@
     {
       "date": 1680893287,
       "body": "In the code sandbox (need to test on actual app), I was able to make it work by adding an `<InstantSearchSSRProvider  initialResults={{}} />` (`initialResults` required) wrapping the nested `<InstantSearch />`, is that expected?\r\n\r\nI mean, Is it required to have an `InstantSearchSSRProvider` wrapping every `InstantSearch` even though I only care about hydrating the one at the top level?",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/1450564",
-        "id": 1450564,
-        "login": "fmedinac"
-      },
+      "user": 1450564,
       "id": 1500543853,
       "reactions": {}
     },
     {
       "date": 1681199736,
       "body": "Before looking more in detail, I'd like to already say that InstantSearchSSRProvider is designed for one having a single InstantSearch component as its child. We should have a warning (or maybe even error) if there are multiple, as they will share the states.\r\n\r\nThe pattern you may be looking for could be \"multiple root indices\":\r\n\r\n```jsx\r\nconst searchClient = algoliasearch();\r\nsearchFn = searchClient.search;\r\nsearchClient.search = (queries) => {\r\n  queries.shift();\r\n  return searchFn(queries).then(({ results }) => ({\r\n    results: [\r\n      {\r\n        hits: [],\r\n        nbHits: 0,\r\n        nbPages: 0,\r\n        page: 0,\r\n        processingTimeMS: 0,\r\n        hitsPerPage: 0,\r\n        exhaustiveNbHits: false,\r\n        query: '',\r\n        params: '',\r\n      },\r\n      ...results,\r\n    ],\r\n  }));\r\n};\r\n\r\nfunction App() {\r\n  return (\r\n    <InstantSearch indexName=\"_root_index_\" searchClient={searchClient}>\r\n      <Index indexName=\"1\" />\r\n      <Index indexName=\"2\" />\r\n    </InstantSearch>\r\n  );\r\n}\r\n```\r\n\r\nIndex 1 and index 2 will not share any state in this setup.",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv"
-      },
+      "user": 6270048,
       "id": 1502860567,
       "reactions": {
         "👍️": 1

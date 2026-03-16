@@ -4,12 +4,7 @@
   "title": "connectCurrentRefinements API",
   "date": 1478772531,
   "body": "This connector is used to be able to display the current refinements, and also to be able to clear them (one by one or every refinements).\r\n\r\nTo do that, the user has access to a prop called items, which follow this structure: `array.<{clear: function, label: string}>. The label follow the format 'facetName: facetValue'.`\r\n\r\nSo let's say we have a refinementList with three colors checked, you will have something like:\r\n`[{\"label\":\"colors: Black\"},{\"label\":\"colors: White\"},{\"label\":\"colors: Black-brown\"}]` (stringify version, each object has also the clear function). \r\n\r\nThe format 'facetName: facetValue' corresponds to the one declared in the refinementList metadata. \r\n\r\nWhile it's fine if the CurrentRefinements widget display the label directly this way (if we think it's the best way to display them), I think that for the connector, it's maybe not the easiest structure to manipulate. What I suggest, is that we don't provide a label and instead have a new key `values` with a structure like:  \r\n\r\n`array.<{clear: function, values: array.<facetName: string, facetValues: array<string>}>.`\r\n\r\nAlso, the clear function is used internally by the refine function of the connector. If the user look at the item structure it may be confused and try to use that instead of the refine function to clear the refinements. Maybe we could rename it to '_clear', to make it clear that it's private? \r\n\r\nWhat do you think? ",
-  "user": {
-    "type": "User",
-    "avatar": "https://avatars.githubusercontent.com/u/6885378",
-    "id": 6885378,
-    "login": "mthuret"
-  },
+  "user": 6885378,
   "issue": {
     "labels": [
       {
@@ -27,72 +22,42 @@
     {
       "date": 1479131207,
       "body": "@bobylito @vvo any opinion ? :)\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 260338101,
       "reactions": {}
     },
     {
       "date": 1479135304,
       "body": "Thanks for summing it up, what about we provide: `[{attributeName, currentRefinement, _clear}]` so that we are in line with the connector API?\n\nAbout the `clear` method, denoting private is already a good move, I wonder if we could go further and not pass it down somehow. But given the current search state internals this might not be feasible.\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 260355816,
       "reactions": {}
     },
     {
       "date": 1479135638,
       "body": "With your structure it means that we can have several objects with the same attributeName right? \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 260357271,
       "reactions": {}
     },
     {
       "date": 1479155762,
       "body": "Do we want to completely remove the `label`? All our `items` based connectors always provide `label` as a way to convey \"This is what we recommend displaying by default\"\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 260454722,
       "reactions": {}
     },
     {
       "date": 1479196976,
       "body": "Indeed I add the label back. _clear must be for each currentRefinement. So in the end, currentRefinement is an object with a label (the currentRefinement value), and a _clear function. \nIs `label` right ? Or maybe `value` ? \n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret"
-      },
+      "user": 6885378,
       "id": 260573544,
       "reactions": {}
     },
     {
       "date": 1479198336,
       "body": "A bit lost here can you put an example object so it's easier to understand where we are going?\n\nAs for `label` vs `value`, our rule for now is that anything that we consider \"for display\" is named `label`, `value` being a value to refine.\n\nThis is the connectRefinementList data structure:\n\n``` js\n{\nitems: [{\n  label: 'Black',\n  count: ..\n  value // state to be triggered, don't care about the internal value, just call refine(value)\n}],\nrefine,\ncurrentRefinement\n}\n```\n\nSo ultimately even for CurrentRefinement, if value was a function, we could have the exact same structure and add some metadata for the user to recompose the label if he wants to?\n\nproposal data structure for connectCurrentRefinements:\n\n``` js\n{\n  items: [{\n    label // we consider and use this for display\n    value // this is a function that you will pass to refine(value), you actually do not care about the internal representation\n    attributeName // metadata for the user\n    currentRefinement // metadata for the user\n  }],\n  refine\n}\n```\n\nWith this we have something in line with the other list connectors. What do you think?\n",
-      "user": {
-        "type": "User",
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo"
-      },
+      "user": 123822,
       "id": 260577588,
       "reactions": {}
     }
