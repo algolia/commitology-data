@@ -1,231 +1,234 @@
 {
+  "type": "pull",
+  "distinctKey": "pull:2829",
+  "title": "feat(routing): provide a mechanism to synchronize the search",
+  "date": 1521478043,
   "body": "This PR provides a new implementation API for a URL Synchronisation.\r\n\r\nThis PR is followup on the PoC done here: https://github.com/algolia/instantsearch.js/pull/2636\r\n\r\n# Motivation\r\n\r\nThe previous system for implementing the synchronization with the URL `urlSync` has several issues:\r\n - it relies on concepts from the helper which are not friendly enough because the user will be at the very beginning of their learning of the Algolia JS Stack\r\n - it is not customizable enough: users don't have a complete control over the form of the URL (can't change the path) or the display of the filters\r\n\r\n# Solution\r\n\r\nThis new implementation is based on the idea that a better way of thinking about the state of the search with InstantSearch is based on the UI and more specifically the widgets. Here the widgets will be responsible to provide their view of the search state so that it can be transformed (with stateMappings) and then serialized (with routers)\r\n\r\n# Benefits\r\n - default values are not serialized\r\n - customization of the URL (path)\r\n - pluggable output\r\n - mapping / simplification of the parameters in the output using mappings\r\n - widget based serialized UI state\r\n\r\n# API\r\n\r\n## Core elements\r\n - RoutingManager: widget that handles the sync of the widgets and the storage (hiden inside the core of InstantSearch)\r\n - Router: parts that actually writes / reads and listen to the storage\r\n - StateMapping: adapter between the UI state and the datastructure saved in the router\r\n\r\n## IS.js library API\r\n - routing: boolean | {}\r\n   - router: Router instance\r\n   - stateMapping: StateMapping instance\r\n\r\n## new Widget methods\r\n - getWidgetState: `(fullState: UIState, {state: SearchParameters, helper: Helper}) => UIState` \r\n - getWidgetSearchParameters: `(searchParam: SearchParameters, {uiState: UIState}) => SearchParameters`\r\n\r\nShould be mindful about new objects (no new unnecessary new objects). Should be aware of empty values and default values as they should not be present in the UIState.\r\n\r\n```javascript\r\ngetWidgetState(fullState, { state }) {\r\n  return {\r\n    ...fullState,\r\n     /* sub UI state for the widget here */\r\n  };\r\n},\r\n\r\ngetWidgetSearchParameters(searchParam, { uiState }) {\r\n  // Modify and return the searchParam based on uiState\r\n  // return searchParam.setQueryParameter('page', 0);\r\n},\r\n```\r\n\r\n## Router interface\r\n - read()\r\n - write()\r\n - onUpdate\r\n - createURL\r\n - dispose()\r\n\r\n## StateMapping API\r\n - stateToRoute: SearchParameters => object\r\n - routeToState: object => SearchParameters\r\n\r\n## Namespaces (and bundled implementations)\r\n - instantsearch.**routers**.history() : url based\r\n - instantsearch.**stateMappings**.simple() : \r\n\r\n## History Router API (this has to be instanciated, and there are specific options that can customized)\r\n - windowTitle: () => string\r\n - writeDelay: number\r\n - createURL: (qsModule, object) => string\r\n - parseURL: (qsModule, location) => object\r\n\r\n## Simple mapping  \r\n\r\nNo API\r\n\r\n# Overview\r\n\r\n<img width=\"911\" alt=\"routing - reading 2x\" src=\"https://user-images.githubusercontent.com/393765/37665434-8cf6c4bc-2c5d-11e8-8264-c51950ef0089.png\">\r\n<img width=\"911\" alt=\"routing - writing 2x\" src=\"https://user-images.githubusercontent.com/393765/37665435-8d1c59fc-2c5d-11e8-8c24-8aacd34f019a.png\">\r\n\r\n# Demos (from the previous PR)\r\n\r\n - [with default implementations based on modern history API](https://disastrous-approval.surge.sh) ([source](http://disastrous-approval.surge.sh/app.js))\r\n - [With non-trivial mappings](http://weary-plants.surge.sh/Cameras%20&%20Camcorders/Binoculars?brand=Canon), brand refinement list data is mapped to brand query string parameter and the hierarchical menu is mapped to the path name of the URL - ([source](http://weary-plants.surge.sh/app.js))\r\n - [start page count at 1 in the URL](http://nebulous-balls.surge.sh/?page=3) - ([Source](http://nebulous-balls.surge.sh/app.js))\r\n\r\n# Next steps (in new PR's)\r\n\r\n - Find a place in the reference documentation\r\n - Test the core of the feature\r\n - See if we miss some feature\r\n - Write a thorough guide on how to use the feature\r\n\r\n# Reviews\r\n\r\n - [x] hierarchical-menu/\r\n - [x] hits-per-page/\r\n - [x] menu/\r\n - [x] numeric-refinement-list/\r\n - [x] numeric-selector/\r\n - [x] pagination/\r\n - [x] price-ranges/\r\n - [x] range/\r\n - [x] refinement-list/\r\n - [x] search-box/\r\n - [x] sort-by-selector/\r\n - [x] star-rating/\r\n - [x] toggle/\r\n - [x] instantsearch.js + router + stateMappings\r\n\r\n## Guidelines for reviewing (as a team)\r\n\r\nThe list just above will let us track what has been reviewed :)\r\n\r\nFor the review of the widgets, there are two main elements to check:\r\n - the tests, they will also give an idea of the kind of the behavior we expect (see spec above). There is a part of copy paste there, so be sure to check if the descriptions are good too.\r\n - the widget implementation. See if it complies to the spec and check if you see some **meaningful** improvements to be done.\r\n\r\nThe core part is not tested in this PR. But the code is ready 😁 Check if you see some dead code that was backported from the previous implementation for no reason. Check if you see some meaningful improvements. This part should be jsdocced so see if it's ok.",
+  "user": {
+    "type": "User",
+    "avatar": "https://avatars.githubusercontent.com/u/393765",
+    "id": 393765,
+    "login": "bobylito"
+  },
+  "pull": {
+    "labels": [],
+    "number": 2829,
+    "reactions": {
+      "❤️": 2
+    },
+    "state": "merged"
+  },
   "comments": [
     {
-      "body": "DocumentationJS causes the docs [build](https://app.netlify.com/sites/algolia-instantsearch/deploys/5aafe99c7b6ee81563efc779) to fail: \r\n\r\n```\r\n5:50:32 PM: (node:1844) UnhandledPromiseRejectionWarning: Unhandled promise rejection (rejection id: 2): TypeError: Cannot read property 'name' of null\r\n```\r\n\r\ncommits 75b0bdf6ec69a8b362438b53994db8b26fe6eb53, b396d123847850c89fc2b225749b3823f80c4340, e38af89cbc3c2bcab223ffcb6387eb3519398835, ba1729e041b585eb433891cd39cfca40a6453b40, 285a26e5f2c1d0848cf073812bad47d89e13ebd9, 0df05a8cf88f0e96a4a70a0f96138d5536ff3dc4, d8b6372cfd68feea48a5859ce3d0a7571fb9b5e6, afdff777eed0336cebc8e491a32f905f4400a246, c7bd05d4405ecbb7ddad1efb00862835e1ef84a1, 6d88dd03afe2759dba1ccff5875bee1bfea19a37, 7685a2826f0250c46c1d95b39c6e492a1e47941d, d7e1c94a8c6a037115d41a89a091978f0285a4ca, 82c60cb3bb73254cbd091266ef616bb217f05155, 4c0a92b698905c0fc8a7fd86586a0692b23d5a27, 297f37f4a1be5f3e2b8e583d353a671bba7c201d, 2423b3b1a25d641267f1cb80dd88ea09234f245e, 489acc0c46631d7e65f8677e691bbc8c88fcbd46, 4f136a802592d978e777f36fea5f43dfb88533b9 are wrong according to commit lint. I've said it before, but since we squash PRs, I don't see much value in having correct titles for PR commits. The script should still run on develop though",
       "date": 1521561027,
+      "body": "DocumentationJS causes the docs [build](https://app.netlify.com/sites/algolia-instantsearch/deploys/5aafe99c7b6ee81563efc779) to fail: \r\n\r\n```\r\n5:50:32 PM: (node:1844) UnhandledPromiseRejectionWarning: Unhandled promise rejection (rejection id: 2): TypeError: Cannot read property 'name' of null\r\n```\r\n\r\ncommits 75b0bdf6ec69a8b362438b53994db8b26fe6eb53, b396d123847850c89fc2b225749b3823f80c4340, e38af89cbc3c2bcab223ffcb6387eb3519398835, ba1729e041b585eb433891cd39cfca40a6453b40, 285a26e5f2c1d0848cf073812bad47d89e13ebd9, 0df05a8cf88f0e96a4a70a0f96138d5536ff3dc4, d8b6372cfd68feea48a5859ce3d0a7571fb9b5e6, afdff777eed0336cebc8e491a32f905f4400a246, c7bd05d4405ecbb7ddad1efb00862835e1ef84a1, 6d88dd03afe2759dba1ccff5875bee1bfea19a37, 7685a2826f0250c46c1d95b39c6e492a1e47941d, d7e1c94a8c6a037115d41a89a091978f0285a4ca, 82c60cb3bb73254cbd091266ef616bb217f05155, 4c0a92b698905c0fc8a7fd86586a0692b23d5a27, 297f37f4a1be5f3e2b8e583d353a671bba7c201d, 2423b3b1a25d641267f1cb80dd88ea09234f245e, 489acc0c46631d7e65f8677e691bbc8c88fcbd46, 4f136a802592d978e777f36fea5f43dfb88533b9 are wrong according to commit lint. I've said it before, but since we squash PRs, I don't see much value in having correct titles for PR commits. The script should still run on develop though",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
       "id": 374649132,
       "reactions": {
         "❤️": 1,
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
       }
     },
     {
-      "body": "Those are old commits :(",
       "date": 1521640456,
+      "body": "Those are old commits :(",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
       "id": 374944410,
       "reactions": {
         "😕": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
       }
     },
     {
-      "body": "Thanks for the PR! Can you give some guidelines as for reviewing every widget, what should we be looking for/paying attention to in those code changes?\r\n\r\nThis is a nice feature, with some good code addition, so releasing a beta and testing it out on multiple already existing websites is very important. So we get a sense of any issue that might happen.\r\n\r\nFor example, what happens if:\r\n- I am using urlSync and upgrade to the latest, will something break?\r\n- I developed a custom widget and now I will use routing, will something break?\r\n\r\nAlso worth considering:\r\n- Do we start deprecating urlSync in favour of routing?\r\n- If so, let's provide an easy upgrade guide for users of urlSync (link to doc from the code)\r\n\r\n> Find a place in the reference documentation\r\n\r\nI would put the reference into InstantSearch.js component doc if technically that's the easiest. Otherwise you'll have to create a specific page for an option of instantsearch(), maybe not easy. But keep it short in the component, and use the guide as a more complete way to create your own router.\r\n\r\nThen about creating your own router or using the feature, I would detail that in two guides, or one guide with two distinct sections:\r\n- routing\r\n  - usage\r\n  - advanced (more details on the API, semantics, behaviour)",
       "date": 1521648095,
+      "body": "Thanks for the PR! Can you give some guidelines as for reviewing every widget, what should we be looking for/paying attention to in those code changes?\r\n\r\nThis is a nice feature, with some good code addition, so releasing a beta and testing it out on multiple already existing websites is very important. So we get a sense of any issue that might happen.\r\n\r\nFor example, what happens if:\r\n- I am using urlSync and upgrade to the latest, will something break?\r\n- I developed a custom widget and now I will use routing, will something break?\r\n\r\nAlso worth considering:\r\n- Do we start deprecating urlSync in favour of routing?\r\n- If so, let's provide an easy upgrade guide for users of urlSync (link to doc from the code)\r\n\r\n> Find a place in the reference documentation\r\n\r\nI would put the reference into InstantSearch.js component doc if technically that's the easiest. Otherwise you'll have to create a specific page for an option of instantsearch(), maybe not easy. But keep it short in the component, and use the guide as a more complete way to create your own router.\r\n\r\nThen about creating your own router or using the feature, I would detail that in two guides, or one guide with two distinct sections:\r\n- routing\r\n  - usage\r\n  - advanced (more details on the API, semantics, behaviour)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
       "id": 374994240,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
+      "reactions": {}
     },
     {
-      "body": "Also I am interested in the documentation detail about the default router output (url it outputs) compared to the current urlSync.",
       "date": 1521648306,
-      "id": 374995491,
-      "reactions": {},
+      "body": "Also I am interested in the documentation detail about the default router output (url it outputs) compared to the current urlSync.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
+        "login": "vvo"
+      },
+      "id": 374995491,
+      "reactions": {}
     },
     {
-      "body": "@vvo \r\n\r\n> Can you give some guidelines as for reviewing every widget, what should we be looking for/paying attention to in those code changes?\r\n\r\nDone in the description.\r\n\r\n> I am using urlSync and upgrade to the latest, will something break?\r\n\r\nno. Worth checking for that.\r\n\r\n> I developed a custom widget and now I will use routing, will something break?\r\n\r\nno. The new methods are optional. You will not benefit from the new routing unless you implement the methods.\r\n\r\n> Do we start deprecating urlSync in favour of routing?\r\n\r\nYes. Also the previous implementation is so badly documented that with a guide, it will be pretty obvious what to choose.\r\n\r\n> If so, let's provide an easy upgrade guide for users of urlSync (link to doc from the code)\r\n\r\nYep. Next PR as for everything doc.",
       "date": 1521706822,
-      "id": 375214444,
-      "reactions": {},
+      "body": "@vvo \r\n\r\n> Can you give some guidelines as for reviewing every widget, what should we be looking for/paying attention to in those code changes?\r\n\r\nDone in the description.\r\n\r\n> I am using urlSync and upgrade to the latest, will something break?\r\n\r\nno. Worth checking for that.\r\n\r\n> I developed a custom widget and now I will use routing, will something break?\r\n\r\nno. The new methods are optional. You will not benefit from the new routing unless you implement the methods.\r\n\r\n> Do we start deprecating urlSync in favour of routing?\r\n\r\nYes. Also the previous implementation is so badly documented that with a guide, it will be pretty obvious what to choose.\r\n\r\n> If so, let's provide an easy upgrade guide for users of urlSync (link to doc from the code)\r\n\r\nYep. Next PR as for everything doc.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 375214444,
+      "reactions": {}
     },
     {
-      "body": "Bug with `&` character in the facet value:\r\n\r\n1. Go to http://disastrous-approval.surge.sh/\r\n2. Select Computers & Tablets in the menu\r\n3. Reload the page, you see in the URL everything after the \"&\" is removed",
       "date": 1522242267,
+      "body": "Bug with `&` character in the facet value:\r\n\r\n1. Go to http://disastrous-approval.surge.sh/\r\n2. Select Computers & Tablets in the menu\r\n3. Reload the page, you see in the URL everything after the \"&\" is removed",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/893837",
+        "id": 893837,
+        "login": "iam4x"
+      },
       "id": 376878948,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/893837",
-        "id": 893837,
-        "login": "iam4x",
-        "type": "User"
-      }
+      "reactions": {}
     },
     {
-      "body": "* This URL gets the `&page=2` removed: http://disastrous-approval.surge.sh/?menu[categories]=External%20Hard%20Drives&page=2\r\n* **BUT** this URL does not gets the `&page=1` removed: http://disastrous-approval.surge.sh/?menu[categories]=External%20Hard%20Drives&page=1",
       "date": 1522242487,
-      "id": 376880064,
-      "reactions": {},
+      "body": "* This URL gets the `&page=2` removed: http://disastrous-approval.surge.sh/?menu[categories]=External%20Hard%20Drives&page=2\r\n* **BUT** this URL does not gets the `&page=1` removed: http://disastrous-approval.surge.sh/?menu[categories]=External%20Hard%20Drives&page=1",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/893837",
         "id": 893837,
-        "login": "iam4x",
-        "type": "User"
-      }
+        "login": "iam4x"
+      },
+      "id": 376880064,
+      "reactions": {}
     },
     {
-      "body": "As discussed as a team, we need to encode the url values by default ([, ], &...) let's be safe since we are now fully customisable if you want cool urls like categories=sf,horror. You can. (context: https://github.com/algolia/instantsearch.js/issues/982)",
       "date": 1522244380,
+      "body": "As discussed as a team, we need to encode the url values by default ([, ], &...) let's be safe since we are now fully customisable if you want cool urls like categories=sf,horror. You can. (context: https://github.com/algolia/instantsearch.js/issues/982)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
       "id": 376890188,
       "reactions": {
         "👍️": 2
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
       }
     },
     {
-      "body": "Bugs found in http://disastrous-approval.surge.sh/:\r\n\r\n---\r\nPagination bug:\r\n- load\r\n- click on page 2\r\n- refresh\r\n- page 2 not selected and disappears from url\r\n\r\n---\r\nIndex selector bug:\r\n- load\r\n- change index to Lowest price\r\n- sortBy added to url\r\n- click on page 2\r\n- refresh\r\n- everything removed from url, selected index is lowest price still shown\r\n\r\nAlso if from there you change back the index to the \"default one\" (passed to instantsearch), now it's added to the url back\r\n\r\n---\r\n\r\nIndex selector bug 2:\r\n- load http://disastrous-approval.surge.sh/\r\n- select \"Lowest price\", it gets added to url\r\n- reload\r\n- select back \"most relevant\", it gets added to url\r\n- select back \"lowest price\", sortBy is removed to url\r\n- reload, index is now desync with what the user thought it was (edited)\r\n\r\n---\r\n\r\nThis one ^ is very close to the previous one where everything gets removed from url (both page and index) so there might be just one bug in pagination and one in sortBy",
       "date": 1522245433,
-      "id": 376896147,
-      "reactions": {},
+      "body": "Bugs found in http://disastrous-approval.surge.sh/:\r\n\r\n---\r\nPagination bug:\r\n- load\r\n- click on page 2\r\n- refresh\r\n- page 2 not selected and disappears from url\r\n\r\n---\r\nIndex selector bug:\r\n- load\r\n- change index to Lowest price\r\n- sortBy added to url\r\n- click on page 2\r\n- refresh\r\n- everything removed from url, selected index is lowest price still shown\r\n\r\nAlso if from there you change back the index to the \"default one\" (passed to instantsearch), now it's added to the url back\r\n\r\n---\r\n\r\nIndex selector bug 2:\r\n- load http://disastrous-approval.surge.sh/\r\n- select \"Lowest price\", it gets added to url\r\n- reload\r\n- select back \"most relevant\", it gets added to url\r\n- select back \"lowest price\", sortBy is removed to url\r\n- reload, index is now desync with what the user thought it was (edited)\r\n\r\n---\r\n\r\nThis one ^ is very close to the previous one where everything gets removed from url (both page and index) so there might be just one bug in pagination and one in sortBy",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
+        "login": "vvo"
+      },
+      "id": 376896147,
+      "reactions": {}
     },
     {
-      "body": "I need to add support for the geosearch widget, right? @samouss ",
       "date": 1522320488,
-      "id": 377197523,
-      "reactions": {},
+      "body": "I need to add support for the geosearch widget, right? @samouss ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 377197523,
+      "reactions": {}
     },
     {
-      "body": "travis fails because prettier isn't used :) \r\n\r\ndocumentationJS still fails for same reason as before: \r\n\r\n```\r\n12:49:03 PM: (node:1847) UnhandledPromiseRejectionWarning: Unhandled promise rejection (rejection id: 2): TypeError: Cannot read property 'name' of null\r\n```",
       "date": 1522324277,
-      "id": 377210905,
-      "reactions": {},
+      "body": "travis fails because prettier isn't used :) \r\n\r\ndocumentationJS still fails for same reason as before: \r\n\r\n```\r\n12:49:03 PM: (node:1847) UnhandledPromiseRejectionWarning: Unhandled promise rejection (rejection id: 2): TypeError: Cannot read property 'name' of null\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 377210905,
+      "reactions": {}
     },
     {
-      "body": "> travis fails because prettier isn't used :)\r\n\r\ndon't worry, by the end I will have fixed most of the issues",
       "date": 1522324442,
-      "id": 377211501,
-      "reactions": {},
+      "body": "> travis fails because prettier isn't used :)\r\n\r\ndon't worry, by the end I will have fixed most of the issues",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 377211501,
+      "reactions": {}
     },
     {
-      "body": "Deploy preview for *algolia-instantsearch* ready!\n\nBuilt with commit d5aa22c2afd7f0c923d8a27659f4577380f8e162\n\nhttps://deploy-preview-2829--algolia-instantsearch.netlify.com",
       "date": 1522481828,
-      "id": 377673822,
-      "reactions": {},
+      "body": "Deploy preview for *algolia-instantsearch* ready!\n\nBuilt with commit d5aa22c2afd7f0c923d8a27659f4577380f8e162\n\nhttps://deploy-preview-2829--algolia-instantsearch.netlify.com",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/16079583",
         "id": 16079583,
-        "login": "algobot",
-        "type": "User"
-      }
+        "login": "algobot"
+      },
+      "id": 377673822,
+      "reactions": {}
     },
     {
-      "body": "Doc is working again :)",
       "date": 1522481882,
+      "body": "Doc is working again :)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
       "id": 377673859,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+      "reactions": {}
     },
     {
-      "body": "I need to properly rewrite part of the toggle widget tests because it mocks the helper...",
       "date": 1522482195,
+      "body": "I need to properly rewrite part of the toggle widget tests because it mocks the helper...",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
       "id": 377674136,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+      "reactions": {}
     },
     {
-      "body": "Thanks all for the effort here. And especially @samouss for not giving me a push on the last part :)",
       "date": 1523272363,
-      "id": 379716978,
-      "reactions": {},
+      "body": "Thanks all for the effort here. And especially @samouss for not giving me a push on the last part :)",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 379716978,
+      "reactions": {}
     },
     {
-      "body": "Problems with previous commit and some in this PR. We'll squash anyway :)",
       "date": 1523272715,
-      "id": 379718252,
-      "reactions": {},
+      "body": "Problems with previous commit and some in this PR. We'll squash anyway :)",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 379718252,
+      "reactions": {}
     }
-  ],
-  "date": 1521478043,
-  "labels": [],
-  "number": 2829,
-  "reactions": {
-    "❤️": 2
-  },
-  "state": "merged",
-  "title": "feat(routing): provide a mechanism to synchronize the search",
-  "type": "pull",
-  "user": {
-    "avatar": "https://avatars.githubusercontent.com/u/393765",
-    "id": 393765,
-    "login": "bobylito",
-    "type": "User"
-  }
+  ]
 }

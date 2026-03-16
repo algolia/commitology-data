@@ -1,150 +1,153 @@
 {
-  "body": "So what is this PR about?\n\nIn the process of fixing #934, I tried to add a test to assert that we did not generated more urls than needed in the RefinementList component. \n\nBy doing so I discovered in the test file that we had no test to test the `showMore` feature (we had a comment saying basically \"I don't know how to test that\") and most of our tests where actually testing a whole bunch of fonctionnalities at once (using full JSX diff) instead of just tiny parts of it.\n\nThis resulted in a lot of boilerplate (we needed to copy the whole props in each tests), and made the tests very brittle because they needed both an internal knowledge of the components and were all very dependent. Adding a new prop would break all tests, even those that are not relevant.\n\nI then looked for a more granular way to test React components. At first I found [skin-deep](https://github.com/glenjamin/skin-deep) (through [this blogpost](http://simonsmith.io/unit-testing-react-components-without-a-dom/)) which in essence a set of utils to ease shallow rendering testing.\n\nThen, after discussing with @vvo, we decided that if we were to change the testing tool, we should go with [enzyme](https://github.com/airbnb/enzyme) that does the same thing, but is created by airbnb and has many more followers and stars.\n\nSo, I tried to refactor our test file with enzyme, as a POC, to see if it was wortht it. Here are my findings:\n\nThe logic we had with our custom `render` method in the tests is the same, but all the small details are now integrated into `enzyme`. We no longer need to expose global `itemProps` to pass them to each `JSX` we need to test, we can focus on defining only the props we need to test.\n\nThis is a huge win in my opinion, because we can now create, for example, 4 different tests to test the 4 different custom CSS classes we add to generated content instead of one big test testing all possible outcomes.\n\n`enzyme` provides a few utilities that help keeping the tests shorts. You start by _shallow rendering_ your component (not rendering the inner sub components). You can then do basic selection with `.find('RefinementListItem')` or `.find({isRefined: true})` to select only a few sub-nodes that you'd like to test.\n\nYou have access to the number of matching elements through the `.length` property, and you can access individual results with the `.at(index)` call. Once you have a component, you can read and write its props and state with `.props()`, `setProps()`, `.state()` and `.setState()`. This is also a big win, especially considering that updating the state does trigger all the dynamic modifications. It my example I can toggle the `state.isShowMoreOpen` from `true` to `false` and having the number of `.find(RefinementListItem).length` automatically updated.\n\n`enzyme` is also supposed to let you simulate events (click, etc). But in our case, I couldn't use it because we are using components to do the templating, so the shallow rendering does not display the content of the templates. And our click events are not bound on the template but on the root element generated **inside** the template. Long story short, I couldn't find a way to test click events with our current templating system (and trust me, I tried!).\n\nSo in the end, instead of testing that we could click on the \"Show More\" link to toggle the number of element displayed, I simply tested that a change of the state changed the number of element displayed. This is not ideal. As Vincent suggested, it might be better to extract the \"ShowMoreButton\" into its own component and test it in isolation there.\n\nI did not use the `mount` and full `render` capabilities of `enzyme`. I tried them, but shallow rendering seemed to always be a best usage in my cases.\n\nIn the end, I feel like this approach is better as it lets us do smaller tests that are in turn more readable and more robust.\n\nAll feedbacks welcome!\n",
-  "comments": [
-    {
-      "body": "By analyzing the blame information on this pull request, we identified @vvo, @bobylito and @redox to be potential reviewers\n",
-      "date": 1458660032,
-      "id": 199862122,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/16079583",
-        "id": 16079583,
-        "login": "algobot",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Yay \\o/ Travis is happy :grinning: \n",
-      "date": 1458669868,
-      "id": 199942246,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Just updated to latest develop\n",
-      "date": 1458828183,
-      "id": 200851309,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> has many more followers and stars.\n\nAnd contributors, features => looks like the promising testing solution. Skin-deep being more of a wrapper around some existing tooling\n\nJust want to avoid developers thinking we only choose projects based on stars. That's true but it's a secret :trollface: \n",
-      "date": 1458830332,
-      "id": 200866394,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Overall its very good indeed, much more focused tests. I believe we may be missing some cases but we will learn on the long run so I am :100: on this!\n\nThe previous testing strategy was very noisy, here it's a lot better.\n",
-      "date": 1458853069,
-      "id": 201017925,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "As for clicking, we will need to find a way to do it, on RefinementList that's tricky, we are using a good number of weird things (the famous label input double click issue)\n",
-      "date": 1458853399,
-      "id": 201019960,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "There's one thing I am wondering: it seems we are missing a test for the structure. If I mess up with the JSX structure I am not sure any test will fail since we are using .find(..)\n",
-      "date": 1459258217,
-      "id": 202893624,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@vvo Not sure what you mean. Could you give me an example? \n\nOnce I better understand your point I'll fix your previous comments so this PR can be merged. It has been dormant for too long :)\n",
-      "date": 1460376349,
-      "id": 208310435,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "My only last concern is this:\n\n> There's one thing I am wondering: it seems we are missing a test for the structure. If I mess up with the JSX structure I am not sure any test will fail since we are using .find(..)\n\nBasically, I am asking if I change the internal structure of the implementation by wrapping a `<div>` somewhere then the test won't fail currently, because we have no more html tree structure test. While instantsearch.js users are relying on a particular structure as soon as they use/customize it.\n\nWhat do you think?\n\nExample:\n- is this still covered: https://github.com/algolia/instantsearch.js/blob/master/src/components/RefinementList/__tests__/RefinementList-test.js#L64\n",
-      "date": 1460548718,
-      "id": 209395081,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I'm not sure that is a bad thing that the tests won't fail for that case. We will have so many React-wrapping divs in the rendered DOM that users won't be able to target specific elements, unless the one where we specified custom `ais-` classes.\n\nSo letting the test pass if we add our own wrappers or change the inner markup is ok for me, as long as we keep the correct CSS classes on the correct UI elements.\n",
-      "date": 1460647109,
-      "id": 209998009,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> as long as we keep the correct CSS classes on the correct UI elements.\n\nExactly, thanks for clarification, our API is the css classes we have, people should not rely on the number of wrappers existing.\n",
-      "date": 1460647203,
-      "id": 209998870,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1458659975,
-  "labels": [],
-  "number": 948,
-  "reactions": {},
-  "state": "merged",
-  "title": "refactor(enzyme): Moved tests of RefinementList component to enzyme",
   "type": "pull",
+  "distinctKey": "pull:948",
+  "title": "refactor(enzyme): Moved tests of RefinementList component to enzyme",
+  "date": 1458659975,
+  "body": "So what is this PR about?\n\nIn the process of fixing #934, I tried to add a test to assert that we did not generated more urls than needed in the RefinementList component. \n\nBy doing so I discovered in the test file that we had no test to test the `showMore` feature (we had a comment saying basically \"I don't know how to test that\") and most of our tests where actually testing a whole bunch of fonctionnalities at once (using full JSX diff) instead of just tiny parts of it.\n\nThis resulted in a lot of boilerplate (we needed to copy the whole props in each tests), and made the tests very brittle because they needed both an internal knowledge of the components and were all very dependent. Adding a new prop would break all tests, even those that are not relevant.\n\nI then looked for a more granular way to test React components. At first I found [skin-deep](https://github.com/glenjamin/skin-deep) (through [this blogpost](http://simonsmith.io/unit-testing-react-components-without-a-dom/)) which in essence a set of utils to ease shallow rendering testing.\n\nThen, after discussing with @vvo, we decided that if we were to change the testing tool, we should go with [enzyme](https://github.com/airbnb/enzyme) that does the same thing, but is created by airbnb and has many more followers and stars.\n\nSo, I tried to refactor our test file with enzyme, as a POC, to see if it was wortht it. Here are my findings:\n\nThe logic we had with our custom `render` method in the tests is the same, but all the small details are now integrated into `enzyme`. We no longer need to expose global `itemProps` to pass them to each `JSX` we need to test, we can focus on defining only the props we need to test.\n\nThis is a huge win in my opinion, because we can now create, for example, 4 different tests to test the 4 different custom CSS classes we add to generated content instead of one big test testing all possible outcomes.\n\n`enzyme` provides a few utilities that help keeping the tests shorts. You start by _shallow rendering_ your component (not rendering the inner sub components). You can then do basic selection with `.find('RefinementListItem')` or `.find({isRefined: true})` to select only a few sub-nodes that you'd like to test.\n\nYou have access to the number of matching elements through the `.length` property, and you can access individual results with the `.at(index)` call. Once you have a component, you can read and write its props and state with `.props()`, `setProps()`, `.state()` and `.setState()`. This is also a big win, especially considering that updating the state does trigger all the dynamic modifications. It my example I can toggle the `state.isShowMoreOpen` from `true` to `false` and having the number of `.find(RefinementListItem).length` automatically updated.\n\n`enzyme` is also supposed to let you simulate events (click, etc). But in our case, I couldn't use it because we are using components to do the templating, so the shallow rendering does not display the content of the templates. And our click events are not bound on the template but on the root element generated **inside** the template. Long story short, I couldn't find a way to test click events with our current templating system (and trust me, I tried!).\n\nSo in the end, instead of testing that we could click on the \"Show More\" link to toggle the number of element displayed, I simply tested that a change of the state changed the number of element displayed. This is not ideal. As Vincent suggested, it might be better to extract the \"ShowMoreButton\" into its own component and test it in isolation there.\n\nI did not use the `mount` and full `render` capabilities of `enzyme`. I tried them, but shallow rendering seemed to always be a best usage in my cases.\n\nIn the end, I feel like this approach is better as it lets us do smaller tests that are in turn more readable and more robust.\n\nAll feedbacks welcome!\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/283419",
     "id": 283419,
-    "login": "pixelastic",
-    "type": "User"
-  }
+    "login": "pixelastic"
+  },
+  "pull": {
+    "labels": [],
+    "number": 948,
+    "reactions": {},
+    "state": "merged"
+  },
+  "comments": [
+    {
+      "date": 1458660032,
+      "body": "By analyzing the blame information on this pull request, we identified @vvo, @bobylito and @redox to be potential reviewers\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot"
+      },
+      "id": 199862122,
+      "reactions": {}
+    },
+    {
+      "date": 1458669868,
+      "body": "Yay \\o/ Travis is happy :grinning: \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 199942246,
+      "reactions": {}
+    },
+    {
+      "date": 1458828183,
+      "body": "Just updated to latest develop\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 200851309,
+      "reactions": {}
+    },
+    {
+      "date": 1458830332,
+      "body": "> has many more followers and stars.\n\nAnd contributors, features => looks like the promising testing solution. Skin-deep being more of a wrapper around some existing tooling\n\nJust want to avoid developers thinking we only choose projects based on stars. That's true but it's a secret :trollface: \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 200866394,
+      "reactions": {}
+    },
+    {
+      "date": 1458853069,
+      "body": "Overall its very good indeed, much more focused tests. I believe we may be missing some cases but we will learn on the long run so I am :100: on this!\n\nThe previous testing strategy was very noisy, here it's a lot better.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 201017925,
+      "reactions": {}
+    },
+    {
+      "date": 1458853399,
+      "body": "As for clicking, we will need to find a way to do it, on RefinementList that's tricky, we are using a good number of weird things (the famous label input double click issue)\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 201019960,
+      "reactions": {}
+    },
+    {
+      "date": 1459258217,
+      "body": "There's one thing I am wondering: it seems we are missing a test for the structure. If I mess up with the JSX structure I am not sure any test will fail since we are using .find(..)\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 202893624,
+      "reactions": {}
+    },
+    {
+      "date": 1460376349,
+      "body": "@vvo Not sure what you mean. Could you give me an example? \n\nOnce I better understand your point I'll fix your previous comments so this PR can be merged. It has been dormant for too long :)\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 208310435,
+      "reactions": {}
+    },
+    {
+      "date": 1460548718,
+      "body": "My only last concern is this:\n\n> There's one thing I am wondering: it seems we are missing a test for the structure. If I mess up with the JSX structure I am not sure any test will fail since we are using .find(..)\n\nBasically, I am asking if I change the internal structure of the implementation by wrapping a `<div>` somewhere then the test won't fail currently, because we have no more html tree structure test. While instantsearch.js users are relying on a particular structure as soon as they use/customize it.\n\nWhat do you think?\n\nExample:\n- is this still covered: https://github.com/algolia/instantsearch.js/blob/master/src/components/RefinementList/__tests__/RefinementList-test.js#L64\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 209395081,
+      "reactions": {}
+    },
+    {
+      "date": 1460647109,
+      "body": "I'm not sure that is a bad thing that the tests won't fail for that case. We will have so many React-wrapping divs in the rendered DOM that users won't be able to target specific elements, unless the one where we specified custom `ais-` classes.\n\nSo letting the test pass if we add our own wrappers or change the inner markup is ok for me, as long as we keep the correct CSS classes on the correct UI elements.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 209998009,
+      "reactions": {}
+    },
+    {
+      "date": 1460647203,
+      "body": "> as long as we keep the correct CSS classes on the correct UI elements.\n\nExactly, thanks for clarification, our API is the css classes we have, people should not rely on the number of wrappers existing.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 209998870,
+      "reactions": {}
+    }
+  ]
 }

@@ -1,108 +1,111 @@
 {
+  "type": "pull",
+  "distinctKey": "pull:4897",
+  "title": "fix(insights): handle multiple setUserToken call before search.start()",
+  "date": 1630935065,
   "body": "**Summary**\n\nIn #4849, we introduced a regression that insights middleware throws when `setUserToken` is called twice before `search.start()`.\n\nIn the revised implementation of the insights middleware either adds a configure widget with userToken or calls `refine` function of renderState. However when instantSearchInstance is not started yet, even though configure widget is added, there is no renderState. That's why it's failing.",
+  "user": {
+    "type": "User",
+    "avatar": "https://avatars.githubusercontent.com/u/499898",
+    "id": 499898,
+    "login": "eunjae-lee"
+  },
+  "pull": {
+    "labels": [],
+    "number": 4897,
+    "reactions": {
+      "👍️": 1
+    },
+    "state": "merged"
+  },
   "comments": [
     {
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4897/builds/166809) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 767a506096d7828db202bf0205eeac9a939d94b8:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearch-js-vvg1p)| Configuration |\n",
       "date": 1630935175,
-      "id": 913654893,
-      "reactions": {},
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4897/builds/166809) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 767a506096d7828db202bf0205eeac9a939d94b8:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearch-js-vvg1p)| Configuration |\n",
       "user": {
+        "type": "Bot",
         "avatar": "https://avatars.githubusercontent.com/in/38409",
         "id": 54081388,
-        "login": "codesandbox-ci[bot]",
-        "type": "Bot"
-      }
+        "login": "codesandbox-ci[bot]"
+      },
+      "id": 913654893,
+      "reactions": {}
     },
     {
-      "body": "please also make the renderState optional so typescript will catch this in the future :) ",
       "date": 1630935219,
+      "body": "please also make the renderState optional so typescript will catch this in the future :) ",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
       "id": 913655342,
       "reactions": {
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
       }
     },
     {
-      "body": "```js\r\n// implementation #1\r\nconst setUserTokenToSearch = (userToken?: string) => {\r\n  const refineFromRenderState =\r\n    instantSearchInstance.renderState?.[instantSearchInstance.indexName]\r\n      ?.configure?.refine;\r\n\r\n  if (configureUserToken && refineFromRenderState) {\r\n    refineFromRenderState({ userToken });\r\n  } else {\r\n    if (configureUserToken) {\r\n      instantSearchInstance.removeWidgets([configureUserToken]);\r\n    }\r\n    configureUserToken = createWidget({\r\n      searchParameters: { userToken },\r\n    });\r\n    instantSearchInstance.addWidgets([configureUserToken]);\r\n  }\r\n};\r\n\r\n// implementation #2\r\nconst setUserTokenToSearch = (userToken?: string) => {\r\n  if (configureUserToken) {\r\n    instantSearchInstance.removeWidgets([configureUserToken]);\r\n  }\r\n  configureUserToken = createWidget({\r\n    searchParameters: { userToken },\r\n  });\r\n  instantSearchInstance.addWidgets([configureUserToken]);\r\n};\r\n```\r\n\r\nIn #4849, we tried to avoid \"adding/removing widget\" situation. That's why I used `refine` function from renderState once the widget is added. Now that we know renderState isn't there if instantSearchInstance is not started, it's kind of unavoidable. Does implementation #2 make sense? Or do we have another idea? cc @Haroenv ",
       "date": 1630941316,
-      "id": 913721269,
-      "reactions": {},
+      "body": "```js\r\n// implementation #1\r\nconst setUserTokenToSearch = (userToken?: string) => {\r\n  const refineFromRenderState =\r\n    instantSearchInstance.renderState?.[instantSearchInstance.indexName]\r\n      ?.configure?.refine;\r\n\r\n  if (configureUserToken && refineFromRenderState) {\r\n    refineFromRenderState({ userToken });\r\n  } else {\r\n    if (configureUserToken) {\r\n      instantSearchInstance.removeWidgets([configureUserToken]);\r\n    }\r\n    configureUserToken = createWidget({\r\n      searchParameters: { userToken },\r\n    });\r\n    instantSearchInstance.addWidgets([configureUserToken]);\r\n  }\r\n};\r\n\r\n// implementation #2\r\nconst setUserTokenToSearch = (userToken?: string) => {\r\n  if (configureUserToken) {\r\n    instantSearchInstance.removeWidgets([configureUserToken]);\r\n  }\r\n  configureUserToken = createWidget({\r\n    searchParameters: { userToken },\r\n  });\r\n  instantSearchInstance.addWidgets([configureUserToken]);\r\n};\r\n```\r\n\r\nIn #4849, we tried to avoid \"adding/removing widget\" situation. That's why I used `refine` function from renderState once the widget is added. Now that we know renderState isn't there if instantSearchInstance is not started, it's kind of unavoidable. Does implementation #2 make sense? Or do we have another idea? cc @Haroenv ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/499898",
         "id": 499898,
-        "login": "eunjae-lee",
-        "type": "User"
-      }
+        "login": "eunjae-lee"
+      },
+      "id": 913721269,
+      "reactions": {}
     },
     {
-      "body": "Another option to continue using renderState might be to somehow get access to the render state of the widget without waiting for InstantSearch to have it available. I'm not really sure, as it will expect the arguments given to init at least, but maybe there's an option? ",
       "date": 1630943553,
-      "id": 913740830,
-      "reactions": {},
+      "body": "Another option to continue using renderState might be to somehow get access to the render state of the widget without waiting for InstantSearch to have it available. I'm not really sure, as it will expect the arguments given to init at least, but maybe there's an option? ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 913740830,
+      "reactions": {}
     },
     {
-      "body": "> Another option to continue using renderState might be to somehow get access to the render state of the widget without waiting for InstantSearch to have it available. I'm not really sure, as it will expect the arguments given to init at least, but maybe there's an option?\r\n\r\nYeah that's a path. I'll look if it's possible tomorrow.",
       "date": 1630943617,
-      "id": 913741387,
-      "reactions": {},
+      "body": "> Another option to continue using renderState might be to somehow get access to the render state of the widget without waiting for InstantSearch to have it available. I'm not really sure, as it will expect the arguments given to init at least, but maybe there's an option?\r\n\r\nYeah that's a path. I'll look if it's possible tomorrow.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/499898",
         "id": 499898,
-        "login": "eunjae-lee",
-        "type": "User"
-      }
+        "login": "eunjae-lee"
+      },
+      "id": 913741387,
+      "reactions": {}
     },
     {
-      "body": "@Haroenv I hoped that `configureWidget.getWidgetRenderState(...)` would work, but it takes `helper` as an argument. At `subscribe()` of middleware, we don't have a helper yet.\r\n\r\nSince we aim to be able to attach userToken from the very first search call, I cannot think of other option.",
       "date": 1631001601,
+      "body": "@Haroenv I hoped that `configureWidget.getWidgetRenderState(...)` would work, but it takes `helper` as an argument. At `subscribe()` of middleware, we don't have a helper yet.\r\n\r\nSince we aim to be able to attach userToken from the very first search call, I cannot think of other option.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee"
+      },
       "id": 914080715,
       "reactions": {
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee",
-        "type": "User"
       }
     },
     {
-      "body": "> removing and adding a widget is heavier than refining _after_ search, but before it's the only option. LGTM\r\n\r\nyeah indeed. We could conditionally do differently between before and after search, but keeping it simple for now will help us refactor or improve it later.",
       "date": 1631003866,
-      "id": 914107207,
-      "reactions": {},
+      "body": "> removing and adding a widget is heavier than refining _after_ search, but before it's the only option. LGTM\r\n\r\nyeah indeed. We could conditionally do differently between before and after search, but keeping it simple for now will help us refactor or improve it later.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/499898",
         "id": 499898,
-        "login": "eunjae-lee",
-        "type": "User"
-      }
+        "login": "eunjae-lee"
+      },
+      "id": 914107207,
+      "reactions": {}
     }
-  ],
-  "date": 1630935065,
-  "labels": [],
-  "number": 4897,
-  "reactions": {
-    "👍️": 1
-  },
-  "state": "merged",
-  "title": "fix(insights): handle multiple setUserToken call before search.start()",
-  "type": "pull",
-  "user": {
-    "avatar": "https://avatars.githubusercontent.com/u/499898",
-    "id": 499898,
-    "login": "eunjae-lee",
-    "type": "User"
-  }
+  ]
 }

@@ -1,42 +1,45 @@
 {
-  "body": "This PR introduces the concept of `uiState` into the `index` widget. Previously the `uiState` was only present inside the `RoutingManager`. Now it's a first class citizen of InstantSearch. One of its main usage will be the computation of the `SearchParameters`.\r\n\r\nTo keep the `uiState` up-to-date at the index level each instance subscribe to the `change` event on its Helper. Each time a widget (e.g. `refine`) or an `index` (e.g. add/remove `setState`) alter the state it triggers an update of the `uiState`.\r\n\r\nThe `index` now implements the function `getWidgetState`. This function will walk down the tree on each `index` to collect the complete `uiState` for the instance. The function will be useful to get the full `uiState` from the top level InstantSearch instance.\r\n\r\nThe format of the `uiState` changed. Each indices is now scoped under its identifier which is by default the name of the index (it will change to be able to target multiple times the same index). We've made this change because it's way simpler to work with a structure like this one. We don't have to branch to detect whether or not we are at the root (versus the one inside React InstantSearch). Any other ideas/alternatives are welcome!\r\n\r\n**Edit**: With this new shape of `uiState` that would be nice to detect whether or not we are in a single/multi index context. That would allow us to preserve the current shape of URL with a single index. We can investigate when we adapt the routing mechanism.\r\n\r\n**Old format**:\r\n\r\n```\r\n{\r\n  \"refinementList\": {\r\n    \"brand\": [\"Apple\"]\r\n  }\r\n}\r\n```\r\n\r\n**New format:** non back-ward compatible\r\n\r\n```\r\n{\r\n  \"instant_search\": {\r\n    \"refinementList\": {\r\n      \"brand\": [\"Apple\"]\r\n    }\r\n  },\r\n  \"instant_search_price_asc\": {\r\n    \"query\": \"iPhone\",\r\n    \"menu\": {\r\n      \"categories\": \"Phone\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n**Alternative format:** back-ward compatible (React InstantSearch)\r\n\r\n```\r\n{\r\n  \"refinementList\": {\r\n    \"brand\": [\"Apple\"]\r\n  },\r\n  \"indices\": {\r\n    \"instant_search_price_asc\": {\r\n      \"query\": \"iPhone\",\r\n      \"menu\": {\r\n        \"categories\": \"Phone\"\r\n      }\r\n    }\r\n  }\r\n}\r\n```",
-  "comments": [
-    {
-      "body": "I like the change in the shape of uiState, because it avoids us to branch all over the place. However, I wonder if we could make the default stateMapping remove a nesting level if there's only one index.",
-      "date": 1564488557,
-      "id": 516391315,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> Since we have keys for all indices (which is the way to go IMO), how are we going to handle URL routing?\r\n> \r\n> My guess would be that when we detect there's a single index used, we keep the same structure as right now. Once there are multiple indices, we change the structure of the URL. This won't bring breaking changes, which is delicate when it comes to routing because we break all existing URLs.\r\n\r\nYes forgot to mention it inside the description (I've added it), but the idea is to be able to detect somewhere (state mapping? before the call to state mapping? This can be decided when we adapt the URLSync) that we are inside a single/multi index context. For a single index, we should keep the same shape of URL that we have today. For a multi-index then we use the default serializer. Note that if users wrote their state mapping they might have to update themselves to match the new structure (depends on the solution we choose).",
-      "date": 1564562077,
-      "id": 516753487,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6513513",
-        "id": 6513513,
-        "login": "samouss",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1564483268,
-  "labels": [],
-  "number": 3997,
-  "reactions": {},
-  "state": "merged",
-  "title": "feat(index): compute local uiState",
   "type": "pull",
+  "distinctKey": "pull:3997",
+  "title": "feat(index): compute local uiState",
+  "date": 1564483268,
+  "body": "This PR introduces the concept of `uiState` into the `index` widget. Previously the `uiState` was only present inside the `RoutingManager`. Now it's a first class citizen of InstantSearch. One of its main usage will be the computation of the `SearchParameters`.\r\n\r\nTo keep the `uiState` up-to-date at the index level each instance subscribe to the `change` event on its Helper. Each time a widget (e.g. `refine`) or an `index` (e.g. add/remove `setState`) alter the state it triggers an update of the `uiState`.\r\n\r\nThe `index` now implements the function `getWidgetState`. This function will walk down the tree on each `index` to collect the complete `uiState` for the instance. The function will be useful to get the full `uiState` from the top level InstantSearch instance.\r\n\r\nThe format of the `uiState` changed. Each indices is now scoped under its identifier which is by default the name of the index (it will change to be able to target multiple times the same index). We've made this change because it's way simpler to work with a structure like this one. We don't have to branch to detect whether or not we are at the root (versus the one inside React InstantSearch). Any other ideas/alternatives are welcome!\r\n\r\n**Edit**: With this new shape of `uiState` that would be nice to detect whether or not we are in a single/multi index context. That would allow us to preserve the current shape of URL with a single index. We can investigate when we adapt the routing mechanism.\r\n\r\n**Old format**:\r\n\r\n```\r\n{\r\n  \"refinementList\": {\r\n    \"brand\": [\"Apple\"]\r\n  }\r\n}\r\n```\r\n\r\n**New format:** non back-ward compatible\r\n\r\n```\r\n{\r\n  \"instant_search\": {\r\n    \"refinementList\": {\r\n      \"brand\": [\"Apple\"]\r\n    }\r\n  },\r\n  \"instant_search_price_asc\": {\r\n    \"query\": \"iPhone\",\r\n    \"menu\": {\r\n      \"categories\": \"Phone\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n**Alternative format:** back-ward compatible (React InstantSearch)\r\n\r\n```\r\n{\r\n  \"refinementList\": {\r\n    \"brand\": [\"Apple\"]\r\n  },\r\n  \"indices\": {\r\n    \"instant_search_price_asc\": {\r\n      \"query\": \"iPhone\",\r\n      \"menu\": {\r\n        \"categories\": \"Phone\"\r\n      }\r\n    }\r\n  }\r\n}\r\n```",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/6513513",
     "id": 6513513,
-    "login": "samouss",
-    "type": "User"
-  }
+    "login": "samouss"
+  },
+  "pull": {
+    "labels": [],
+    "number": 3997,
+    "reactions": {},
+    "state": "merged"
+  },
+  "comments": [
+    {
+      "date": 1564488557,
+      "body": "I like the change in the shape of uiState, because it avoids us to branch all over the place. However, I wonder if we could make the default stateMapping remove a nesting level if there's only one index.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 516391315,
+      "reactions": {}
+    },
+    {
+      "date": 1564562077,
+      "body": "> Since we have keys for all indices (which is the way to go IMO), how are we going to handle URL routing?\r\n> \r\n> My guess would be that when we detect there's a single index used, we keep the same structure as right now. Once there are multiple indices, we change the structure of the URL. This won't bring breaking changes, which is delicate when it comes to routing because we break all existing URLs.\r\n\r\nYes forgot to mention it inside the description (I've added it), but the idea is to be able to detect somewhere (state mapping? before the call to state mapping? This can be decided when we adapt the URLSync) that we are inside a single/multi index context. For a single index, we should keep the same shape of URL that we have today. For a multi-index then we use the default serializer. Note that if users wrote their state mapping they might have to update themselves to match the new structure (depends on the solution we choose).",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss"
+      },
+      "id": 516753487,
+      "reactions": {}
+    }
+  ]
 }

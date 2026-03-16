@@ -1,128 +1,131 @@
 {
-  "body": "**Summary**\r\nThis proposes a simple solution to support server-side rendering. The idea is to remove the need to do async actions from `<InstantSearch/>` when rendering on the server side. Instead, we let the user fetch algolia results themselves, and inject them into `<InstantSearch/>` through a new `resultsState` prop.\r\n\r\nLinks to #1687, #1531, #1869\r\n\r\n**Result**\r\nHere is a snippet from a server. `index` uses the bestbuy example:\r\n\r\n```js\r\nfunction handleRender(req, res) {\r\n  index.search('').then(state => {\r\n    const html = renderToStaticMarkup(\r\n        <InstantSearch\r\n          appId=\"latency\"\r\n          apiKey=\"3d9875e51fbd20c7754e65422f7ce5e1\"\r\n          indexName=\"bestbuy\"\r\n          resultsState={state}\r\n        >\r\n          <SearchBox/>\r\n          <Hits hitComponent={Product}/>\r\n        </InstantSearch>\r\n    )\r\n\r\n    res.send(renderFullPage(html))\r\n  })\r\n}\r\n```\r\n\r\nThe rendered result is:\r\n```html\r\n<!DOCTYPE html>\r\n<html>\r\n<head>\r\n\t<title>Server-side rendering example</title>\r\n</head>\r\n<body>\r\n\t<div id=\"root\">\r\n\t\t<div class=\"ais-InstantSearch__root\">\r\n\t\t\t<form class=\"ais-SearchBox__root\" novalidate=\"\">\r\n\t\t\t\t<svg style=\"display:none;\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t<symbol id=\"sbx-icon-search-13\" viewbox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t\t<path d=\"M26.804 29.01c-2.832 2.34-6.465 3.746-10.426 3.746C7.333 32.756 0 25.424 0 16.378 0 7.333 7.333 0 16.378 0c9.046 0 16.378 7.333 16.378 16.378 0 3.96-1.406 7.594-3.746 10.426l10.534 10.534c.607.607.61 1.59-.004 2.202-.61.61-1.597.61-2.202.004L26.804 29.01zm-10.426.627c7.323 0 13.26-5.936 13.26-13.26 0-7.32-5.937-13.257-13.26-13.257C9.056 3.12 3.12 9.056 3.12 16.378c0 7.323 5.936 13.26 13.258 13.26z\" fill-rule=\"evenodd\"></path>\r\n\t\t\t\t</symbol>\r\n\t\t\t\t<symbol id=\"sbx-icon-clear-3\" viewbox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t\t<path d=\"M8.114 10L.944 2.83 0 1.885 1.886 0l.943.943L10 8.113l7.17-7.17.944-.943L20 1.886l-.943.943-7.17 7.17 7.17 7.17.943.944L18.114 20l-.943-.943-7.17-7.17-7.17 7.17-.944.943L0 18.114l.943-.943L8.113 10z\" fill-rule=\"evenodd\"></path>\r\n\t\t\t\t</symbol></svg>\r\n\t\t\t\t<div class=\"ais-SearchBox__wrapper\" role=\"search\">\r\n\t\t\t\t\t<input autocomplete=\"off\" class=\"ais-SearchBox__input\" placeholder=\"Search here…\" required=\"\" type=\"search\" value=\"\"><button class=\"ais-SearchBox__submit\" title=\"Submit your search query.\" type=\"submit\"><svg role=\"img\">\r\n\t\t\t\t\t<use href=\"#sbx-icon-search-13\"></use></svg></button><button class=\"ais-SearchBox__reset\" title=\"Clear the search query.\" type=\"reset\"><svg role=\"img\">\r\n\t\t\t\t\t<use href=\"#sbx-icon-clear-3\"></use></svg></button>\r\n\t\t\t\t</div>\r\n\t\t\t</form>\r\n\t\t\t<div class=\"ais-Hits__root\">\r\n\t\t\t\t<div>\r\n\t\t\t\t\tWebroot SecureAnywhere Internet Security (3-Device) (1-Year Subscription) - Mac/Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tGeek Squad® - Tech Support Membership (1 Year)\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - 3.3&#x27; Lightning-to-USB 2.0 Cable\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tGoogle - Chromecast HDMI Streaming Media Player\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tKaspersky Internet Security (3-Device) (1-Year Subscription) - Mac/Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tLogitech - Marathon Mouse M705 Wireless Laser Mouse - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tToshiba - Satellite 15.6&quot; Laptop - Intel Celeron - 4GB Memory - 500GB Hard Drive - Jet Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Cruzer 16GB USB 2.0 Flash Drive - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 16GB SDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tOffice Home &amp; Student 2013 - Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - TV\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tMonthly Accidental Protection Plan - Geek Squad\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tInsignia™ - 4&#x27; Lightning Charge-and-Sync Cable\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - EarPods™ with Remote and Mic - White\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tHP - 564XL Ink Cartridge - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 32GB SDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Cruzer 32GB USB 2.0 Flash Drive - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 32GB microSDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tThe Raid 2 (2 Disc) (Unrated) (Ultraviolet Digital Copy) (Blu-ray Disc)\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tDynex™ - 6&#x27; HDMI Cable\r\n\t\t\t\t</div>\r\n\t\t\t</div>\r\n\t\t</div>\r\n\t</div>\r\n\t<script src=\"/public/vendor.bundle.js\">\r\n\t</script> \r\n\t<script src=\"/public/bundle.js\">\r\n\t</script>\r\n</body>\r\n</html>\r\n```\r\n\r\nWould love to discuss about suggestions/other ways of handling server-side rendering!",
-  "comments": [
-    {
-      "body": "Thanks @mikaa123 for this proposal 👍 \r\n\r\nI'm curious but what's behind this: `index.search('')`?",
-      "date": 1486033455,
-      "id": 276928597,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@mthuret just the good old [algoliasearch index search method](https://www.algolia.com/doc/api-client/javascript/search/#search-an-index) :)",
-      "date": 1486033712,
-      "id": 276929434,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/428280",
-        "id": 428280,
-        "login": "mikaa123",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@mikaa123 How would you handle facet filters and values?",
-      "date": 1486038592,
-      "id": 276945032,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I think even as a first step we don't want users to do their own mapping between the InstantSearch search state and the helper/client one. \r\n\r\nI think what we need is a way to perform the search before any rendering. \r\n\r\nAlso if have a props to set the results state then we need a way to get him back (could be useful for some others use cases). But what I have in mind is more a results state that will be already formatted according to widgets (like the search state). Basically, a way to get back all the provided props of connectors. ",
-      "date": 1486039205,
-      "id": 276946937,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> I think what we need is a way to perform the search before any rendering.\r\n\r\nThat's the theory for being able to create server side rendering. However with react-instantsearch we have a declarative API based on widget configuration. The whole idea is to keep the configuration definition is a single form. Having a way to configure the search before explicitly writing the widgets means to have another way of defining this configuration, right?",
-      "date": 1486113312,
-      "id": 277199920,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
-    },
-    {
-      "body": "You both have good points.\r\nI haven't tried it yet, but what about creating an `InstantSearchManager` (directly from createInstantSearchManager), perform a search on it, and inject it to an InstantSearch widget?",
-      "date": 1486113816,
-      "id": 277201492,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/428280",
-        "id": 428280,
-        "login": "mikaa123",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> I haven't tried it yet, but what about creating an InstantSearchManager (directly from createInstantSearchManager), perform a search on it, and inject it to an InstantSearch widget?\r\n\r\nThat's already the purpose of the JS Helper. I am open to discussion and ideas on how to move forward with the stack but I would prefer not to create yet another abstraction. React-instantsearch is pretty hard to grasp already and I think we should move towards less mechanics than more.\r\n\r\nThat's my 2cts and I'm open to discussing based on prototypes :)",
-      "date": 1486114306,
-      "id": 277203034,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
-    },
-    {
-      "body": "This is a nice hack that shows we are not that far from being able to do server side rendering.\r\n\r\nAs already discussed the only drawback is that it relies on client.search() (raw search results) and this would be too complex for users to determine what to do in here.\r\n\r\nAsynchronous server side rendering seems to be a common issue, see https://www.google.com/search?q=react+asynchronous+server+side+render maybe there are non-explored gems here.",
-      "date": 1486554841,
-      "id": 278307964,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Thanks for taking the time to dig into this.",
-      "date": 1486554849,
-      "id": 278307992,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1486033126,
-  "labels": [],
-  "number": 1937,
-  "reactions": {
-    "❤️": 2
-  },
-  "state": "closed",
-  "title": "feat(react-instantsearch): server-side rendering",
   "type": "pull",
+  "distinctKey": "pull:1937",
+  "title": "feat(react-instantsearch): server-side rendering",
+  "date": 1486033126,
+  "body": "**Summary**\r\nThis proposes a simple solution to support server-side rendering. The idea is to remove the need to do async actions from `<InstantSearch/>` when rendering on the server side. Instead, we let the user fetch algolia results themselves, and inject them into `<InstantSearch/>` through a new `resultsState` prop.\r\n\r\nLinks to #1687, #1531, #1869\r\n\r\n**Result**\r\nHere is a snippet from a server. `index` uses the bestbuy example:\r\n\r\n```js\r\nfunction handleRender(req, res) {\r\n  index.search('').then(state => {\r\n    const html = renderToStaticMarkup(\r\n        <InstantSearch\r\n          appId=\"latency\"\r\n          apiKey=\"3d9875e51fbd20c7754e65422f7ce5e1\"\r\n          indexName=\"bestbuy\"\r\n          resultsState={state}\r\n        >\r\n          <SearchBox/>\r\n          <Hits hitComponent={Product}/>\r\n        </InstantSearch>\r\n    )\r\n\r\n    res.send(renderFullPage(html))\r\n  })\r\n}\r\n```\r\n\r\nThe rendered result is:\r\n```html\r\n<!DOCTYPE html>\r\n<html>\r\n<head>\r\n\t<title>Server-side rendering example</title>\r\n</head>\r\n<body>\r\n\t<div id=\"root\">\r\n\t\t<div class=\"ais-InstantSearch__root\">\r\n\t\t\t<form class=\"ais-SearchBox__root\" novalidate=\"\">\r\n\t\t\t\t<svg style=\"display:none;\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t<symbol id=\"sbx-icon-search-13\" viewbox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t\t<path d=\"M26.804 29.01c-2.832 2.34-6.465 3.746-10.426 3.746C7.333 32.756 0 25.424 0 16.378 0 7.333 7.333 0 16.378 0c9.046 0 16.378 7.333 16.378 16.378 0 3.96-1.406 7.594-3.746 10.426l10.534 10.534c.607.607.61 1.59-.004 2.202-.61.61-1.597.61-2.202.004L26.804 29.01zm-10.426.627c7.323 0 13.26-5.936 13.26-13.26 0-7.32-5.937-13.257-13.26-13.257C9.056 3.12 3.12 9.056 3.12 16.378c0 7.323 5.936 13.26 13.258 13.26z\" fill-rule=\"evenodd\"></path>\r\n\t\t\t\t</symbol>\r\n\t\t\t\t<symbol id=\"sbx-icon-clear-3\" viewbox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\">\r\n\t\t\t\t\t<path d=\"M8.114 10L.944 2.83 0 1.885 1.886 0l.943.943L10 8.113l7.17-7.17.944-.943L20 1.886l-.943.943-7.17 7.17 7.17 7.17.943.944L18.114 20l-.943-.943-7.17-7.17-7.17 7.17-.944.943L0 18.114l.943-.943L8.113 10z\" fill-rule=\"evenodd\"></path>\r\n\t\t\t\t</symbol></svg>\r\n\t\t\t\t<div class=\"ais-SearchBox__wrapper\" role=\"search\">\r\n\t\t\t\t\t<input autocomplete=\"off\" class=\"ais-SearchBox__input\" placeholder=\"Search here…\" required=\"\" type=\"search\" value=\"\"><button class=\"ais-SearchBox__submit\" title=\"Submit your search query.\" type=\"submit\"><svg role=\"img\">\r\n\t\t\t\t\t<use href=\"#sbx-icon-search-13\"></use></svg></button><button class=\"ais-SearchBox__reset\" title=\"Clear the search query.\" type=\"reset\"><svg role=\"img\">\r\n\t\t\t\t\t<use href=\"#sbx-icon-clear-3\"></use></svg></button>\r\n\t\t\t\t</div>\r\n\t\t\t</form>\r\n\t\t\t<div class=\"ais-Hits__root\">\r\n\t\t\t\t<div>\r\n\t\t\t\t\tWebroot SecureAnywhere Internet Security (3-Device) (1-Year Subscription) - Mac/Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tGeek Squad® - Tech Support Membership (1 Year)\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - 3.3&#x27; Lightning-to-USB 2.0 Cable\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tGoogle - Chromecast HDMI Streaming Media Player\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tKaspersky Internet Security (3-Device) (1-Year Subscription) - Mac/Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tLogitech - Marathon Mouse M705 Wireless Laser Mouse - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tToshiba - Satellite 15.6&quot; Laptop - Intel Celeron - 4GB Memory - 500GB Hard Drive - Jet Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Cruzer 16GB USB 2.0 Flash Drive - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 16GB SDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tOffice Home &amp; Student 2013 - Windows\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - TV\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tMonthly Accidental Protection Plan - Geek Squad\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tInsignia™ - 4&#x27; Lightning Charge-and-Sync Cable\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tApple® - EarPods™ with Remote and Mic - White\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tHP - 564XL Ink Cartridge - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 32GB SDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Cruzer 32GB USB 2.0 Flash Drive - Black\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tSanDisk - Ultra Plus 32GB microSDHC Class 10 UHS-1 Memory Card\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tThe Raid 2 (2 Disc) (Unrated) (Ultraviolet Digital Copy) (Blu-ray Disc)\r\n\t\t\t\t</div>\r\n\t\t\t\t<div>\r\n\t\t\t\t\tDynex™ - 6&#x27; HDMI Cable\r\n\t\t\t\t</div>\r\n\t\t\t</div>\r\n\t\t</div>\r\n\t</div>\r\n\t<script src=\"/public/vendor.bundle.js\">\r\n\t</script> \r\n\t<script src=\"/public/bundle.js\">\r\n\t</script>\r\n</body>\r\n</html>\r\n```\r\n\r\nWould love to discuss about suggestions/other ways of handling server-side rendering!",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/428280",
     "id": 428280,
-    "login": "mikaa123",
-    "type": "User"
-  }
+    "login": "mikaa123"
+  },
+  "pull": {
+    "labels": [],
+    "number": 1937,
+    "reactions": {
+      "❤️": 2
+    },
+    "state": "closed"
+  },
+  "comments": [
+    {
+      "date": 1486033455,
+      "body": "Thanks @mikaa123 for this proposal 👍 \r\n\r\nI'm curious but what's behind this: `index.search('')`?",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret"
+      },
+      "id": 276928597,
+      "reactions": {}
+    },
+    {
+      "date": 1486033712,
+      "body": "@mthuret just the good old [algoliasearch index search method](https://www.algolia.com/doc/api-client/javascript/search/#search-an-index) :)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/428280",
+        "id": 428280,
+        "login": "mikaa123"
+      },
+      "id": 276929434,
+      "reactions": {}
+    },
+    {
+      "date": 1486038592,
+      "body": "@mikaa123 How would you handle facet filters and values?",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 276945032,
+      "reactions": {}
+    },
+    {
+      "date": 1486039205,
+      "body": "I think even as a first step we don't want users to do their own mapping between the InstantSearch search state and the helper/client one. \r\n\r\nI think what we need is a way to perform the search before any rendering. \r\n\r\nAlso if have a props to set the results state then we need a way to get him back (could be useful for some others use cases). But what I have in mind is more a results state that will be already formatted according to widgets (like the search state). Basically, a way to get back all the provided props of connectors. ",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret"
+      },
+      "id": 276946937,
+      "reactions": {}
+    },
+    {
+      "date": 1486113312,
+      "body": "> I think what we need is a way to perform the search before any rendering.\r\n\r\nThat's the theory for being able to create server side rendering. However with react-instantsearch we have a declarative API based on widget configuration. The whole idea is to keep the configuration definition is a single form. Having a way to configure the search before explicitly writing the widgets means to have another way of defining this configuration, right?",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 277199920,
+      "reactions": {}
+    },
+    {
+      "date": 1486113816,
+      "body": "You both have good points.\r\nI haven't tried it yet, but what about creating an `InstantSearchManager` (directly from createInstantSearchManager), perform a search on it, and inject it to an InstantSearch widget?",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/428280",
+        "id": 428280,
+        "login": "mikaa123"
+      },
+      "id": 277201492,
+      "reactions": {}
+    },
+    {
+      "date": 1486114306,
+      "body": "> I haven't tried it yet, but what about creating an InstantSearchManager (directly from createInstantSearchManager), perform a search on it, and inject it to an InstantSearch widget?\r\n\r\nThat's already the purpose of the JS Helper. I am open to discussion and ideas on how to move forward with the stack but I would prefer not to create yet another abstraction. React-instantsearch is pretty hard to grasp already and I think we should move towards less mechanics than more.\r\n\r\nThat's my 2cts and I'm open to discussing based on prototypes :)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 277203034,
+      "reactions": {}
+    },
+    {
+      "date": 1486554841,
+      "body": "This is a nice hack that shows we are not that far from being able to do server side rendering.\r\n\r\nAs already discussed the only drawback is that it relies on client.search() (raw search results) and this would be too complex for users to determine what to do in here.\r\n\r\nAsynchronous server side rendering seems to be a common issue, see https://www.google.com/search?q=react+asynchronous+server+side+render maybe there are non-explored gems here.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 278307964,
+      "reactions": {}
+    },
+    {
+      "date": 1486554849,
+      "body": "Thanks for taking the time to dig into this.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 278307992,
+      "reactions": {}
+    }
+  ]
 }

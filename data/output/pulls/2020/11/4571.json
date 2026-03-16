@@ -1,138 +1,141 @@
 {
-  "body": "This prevent double computation while getting the `currentIndex` in `init`",
-  "comments": [
-    {
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4571/builds/70225) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit ccb4f773bc941876064615b8c35f929e790f5efb:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-fe6bo)| Configuration |\n",
-      "date": 1604509009,
-      "id": 721851278,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/in/38409",
-        "id": 54081388,
-        "login": "codesandbox-ci[bot]",
-        "type": "Bot"
-      }
-    },
-    {
-      "body": "I know you suggested this @francoischalifour, but this is pretty much only for debugging, and it seems to make the code more complicated; I think I prefer the previous version",
-      "date": 1604509182,
-      "id": 721852952,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@Haroenv Why would it be for debugging?\r\n\r\nThe whole point is to not duplicate the logic that we have about \"current index\" (remember that this logic changed when we introduced Federated Search). In the next big refactor, we won't have to think about this logic a different places, it's all contained in `getWidgetRenderState`.\r\n\r\nNow we don't need to worry how to get the \"current index\" value because we use the API that we expose to users to retrieve this value, _and this is exactly what Render State is about_.\r\n\r\nAnd if you're concerned about the function being called at the top of the function, you shouldn't. The whole point of `getWidgetRenderState` is that it can be called whenever because it doesn't trigger side effects.",
-      "date": 1604567657,
-      "id": 722248376,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I mean that the function call seemed a bit like overkill, since `currentIndex = helper.state.index`, and the variable is only used for a dev warning",
-      "date": 1604572867,
-      "id": 722295076,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I don't have a strong opinion in either way, but it took me a little to understand why\r\n\r\n```\r\nconst currentIndex = widgetRenderState.currentRefinement; \r\n```\r\n\r\n",
-      "date": 1604592701,
-      "id": 722476338,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/499898",
-        "id": 499898,
-        "login": "eunjae-lee",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@Haroenv @francoischalifour @eunjae-lee  From a maintenance perspective it make sense to avoid multiple compute point by using the `getWidgetRenderState` function imo. For now we only have two, but if/as we keep adding features, it will be easier.\r\n\r\nI could add a little comment line above it to explain? or revert to the old solution for now?",
-      "date": 1604593003,
-      "id": 722479466,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/20689156",
-        "id": 20689156,
-        "login": "shortcuts",
-        "type": "User"
-      }
-    },
-    {
-      "body": "It lowers room for inconsistency, which is what we aim for in this codebase.\r\n\r\nI'm wondering if you're surprised because you're used to seeing this lifecycle function called only this way?\r\n\r\n```ts\r\nrenderFn(\r\n  {\r\n    ...this.getWidgetRenderState(initOptions),\r\n    instantSearchInstance,\r\n  },\r\n  true\r\n);\r\n```\r\n\r\nIt shouldn't be the only way we call it. It's a bit like if you would ban using `props` in a React component somewhere else than in its rendering `return` expression.\r\n\r\nYou could also see it that way:\r\n\r\n`props` → `getProps` (because we don't have the reactive system of React) → `getWidgetRenderState` (rename to our concept)",
-      "date": 1604595087,
-      "id": 722501085,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I was just confused because the computation isn't a computation but just a getter from the helper, so not complicated at all",
-      "date": 1604599213,
-      "id": 722542190,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
-    },
-    {
-      "body": "So, should I merge it?\r\n@yannickcr any thoughts on it?\r\n(ref: https://github.com/algolia/instantsearch.js/pull/4568#discussion_r517251970)",
-      "date": 1604651889,
-      "id": 722952254,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/20689156",
-        "id": 20689156,
-        "login": "shortcuts",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> I was just confused because the computation isn't a computation but just a getter from the helper, so not complicated at all\r\n\r\n@haroenv Yeah but this logic can change anytime (again, it changed during our Federated Search refactor)—it wasn't retrieve from the helper before. The goal is to think of it as an API, you don't have to know that it comes from the helper.",
-      "date": 1604654345,
-      "id": 722971437,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1604508940,
-  "labels": [],
-  "number": 4571,
-  "reactions": {},
-  "state": "merged",
-  "title": "fix(sortBy): get `currentIndex` from `getWidgetRenderState`",
   "type": "pull",
+  "distinctKey": "pull:4571",
+  "title": "fix(sortBy): get `currentIndex` from `getWidgetRenderState`",
+  "date": 1604508940,
+  "body": "This prevent double computation while getting the `currentIndex` in `init`",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/20689156",
     "id": 20689156,
-    "login": "shortcuts",
-    "type": "User"
-  }
+    "login": "shortcuts"
+  },
+  "pull": {
+    "labels": [],
+    "number": 4571,
+    "reactions": {},
+    "state": "merged"
+  },
+  "comments": [
+    {
+      "date": 1604509009,
+      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4571/builds/70225) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit ccb4f773bc941876064615b8c35f929e790f5efb:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-fe6bo)| Configuration |\n",
+      "user": {
+        "type": "Bot",
+        "avatar": "https://avatars.githubusercontent.com/in/38409",
+        "id": 54081388,
+        "login": "codesandbox-ci[bot]"
+      },
+      "id": 721851278,
+      "reactions": {}
+    },
+    {
+      "date": 1604509182,
+      "body": "I know you suggested this @francoischalifour, but this is pretty much only for debugging, and it seems to make the code more complicated; I think I prefer the previous version",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 721852952,
+      "reactions": {}
+    },
+    {
+      "date": 1604567657,
+      "body": "@Haroenv Why would it be for debugging?\r\n\r\nThe whole point is to not duplicate the logic that we have about \"current index\" (remember that this logic changed when we introduced Federated Search). In the next big refactor, we won't have to think about this logic a different places, it's all contained in `getWidgetRenderState`.\r\n\r\nNow we don't need to worry how to get the \"current index\" value because we use the API that we expose to users to retrieve this value, _and this is exactly what Render State is about_.\r\n\r\nAnd if you're concerned about the function being called at the top of the function, you shouldn't. The whole point of `getWidgetRenderState` is that it can be called whenever because it doesn't trigger side effects.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour"
+      },
+      "id": 722248376,
+      "reactions": {}
+    },
+    {
+      "date": 1604572867,
+      "body": "I mean that the function call seemed a bit like overkill, since `currentIndex = helper.state.index`, and the variable is only used for a dev warning",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 722295076,
+      "reactions": {}
+    },
+    {
+      "date": 1604592701,
+      "body": "I don't have a strong opinion in either way, but it took me a little to understand why\r\n\r\n```\r\nconst currentIndex = widgetRenderState.currentRefinement; \r\n```\r\n\r\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/499898",
+        "id": 499898,
+        "login": "eunjae-lee"
+      },
+      "id": 722476338,
+      "reactions": {}
+    },
+    {
+      "date": 1604593003,
+      "body": "@Haroenv @francoischalifour @eunjae-lee  From a maintenance perspective it make sense to avoid multiple compute point by using the `getWidgetRenderState` function imo. For now we only have two, but if/as we keep adding features, it will be easier.\r\n\r\nI could add a little comment line above it to explain? or revert to the old solution for now?",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/20689156",
+        "id": 20689156,
+        "login": "shortcuts"
+      },
+      "id": 722479466,
+      "reactions": {}
+    },
+    {
+      "date": 1604595087,
+      "body": "It lowers room for inconsistency, which is what we aim for in this codebase.\r\n\r\nI'm wondering if you're surprised because you're used to seeing this lifecycle function called only this way?\r\n\r\n```ts\r\nrenderFn(\r\n  {\r\n    ...this.getWidgetRenderState(initOptions),\r\n    instantSearchInstance,\r\n  },\r\n  true\r\n);\r\n```\r\n\r\nIt shouldn't be the only way we call it. It's a bit like if you would ban using `props` in a React component somewhere else than in its rendering `return` expression.\r\n\r\nYou could also see it that way:\r\n\r\n`props` → `getProps` (because we don't have the reactive system of React) → `getWidgetRenderState` (rename to our concept)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour"
+      },
+      "id": 722501085,
+      "reactions": {}
+    },
+    {
+      "date": 1604599213,
+      "body": "I was just confused because the computation isn't a computation but just a getter from the helper, so not complicated at all",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 722542190,
+      "reactions": {}
+    },
+    {
+      "date": 1604651889,
+      "body": "So, should I merge it?\r\n@yannickcr any thoughts on it?\r\n(ref: https://github.com/algolia/instantsearch.js/pull/4568#discussion_r517251970)",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/20689156",
+        "id": 20689156,
+        "login": "shortcuts"
+      },
+      "id": 722952254,
+      "reactions": {}
+    },
+    {
+      "date": 1604654345,
+      "body": "> I was just confused because the computation isn't a computation but just a getter from the helper, so not complicated at all\r\n\r\n@haroenv Yeah but this logic can change anytime (again, it changed during our Federated Search refactor)—it wasn't retrieve from the helper before. The goal is to think of it as an API, you don't have to know that it comes from the helper.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour"
+      },
+      "id": 722971437,
+      "reactions": {}
+    }
+  ]
 }

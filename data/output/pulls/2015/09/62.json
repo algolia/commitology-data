@@ -1,234 +1,237 @@
 {
-  "body": "First pass on the indexSelector widget (as discussed in #38).\n\nStill need to work on:\n- [x] `cssClass` option\n- [x] If the selected index is not one from the list, then we should throw an error.\n",
-  "comments": [
-    {
-      "body": "> allowing for custom template\n\nMaybe at some point we should allow http://wix.github.io/react-templates/ which will allow us to provide templates + data + events\n",
-      "date": 1441373539,
-      "id": 137738948,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "For now I feel the `cssClass` option for the `<select>` should be sufficient to move on\n",
-      "date": 1441373710,
-      "id": 137739543,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Do you want us to look at the PR or are you still working on it? Otherwise you can close and reopen later\n",
-      "date": 1441373760,
-      "id": 137739697,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I'd rather keep the PR open. I'll add the missing element, but that way we can discuss the current code\n",
-      "date": 1441403228,
-      "id": 137861163,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I've added support for the `cssClass` attribute, to be able to add a custom `form-control` class when using Bootstrap. Turns out that we will actually need more than that. In that case, we will also need to add a custom `id` on the select, so we can correctly set the `for` of the `label`.\n\nI don't want to explicitly list all the attributes that can be passed and that I will copy on to the inner `select`. I think the best way would be to let the user define its own template, that MUST be a `select` element and use that one if provided (this is already discussed above).\n\nThe issue is that I have no idea how to add handler (or more generally do DOM manipulation) inside React without a JSX template. I mean I'll have to import a DOM element through `dangerouslySetInnerHTML`, and then add a `onChange` handler to that element. Maybe using `React.findDOMNode`? cc @bobylito \n",
-      "date": 1441405608,
-      "id": 137871040,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "This usecase seems to be what react templates are made for. But we can also try to use a hogan template and see what we can do\n\nOnChange should bubble up to the root element so it might work.\n",
-      "date": 1441434229,
-      "id": 137914741,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@bobylito @vvo: I consider this PR over for now. Could you have a look?\n\nInstead of a template, I've allowed an `htmlAttribute` object to be passed as HTML attributes to the generated `select`.\n",
-      "date": 1441629434,
-      "id": 138285849,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Rename `htmlAttributes` to `selectAttributes` or `inputAttributes` ?\n",
-      "date": 1441632835,
-      "id": 138300923,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/29529",
-        "id": 29529,
-        "login": "redox",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Needs:\n- [x] jsdoc\n- [x] readme doc (jsdoc copy paste)\n- [x] remove quotes around keys in example app\n",
-      "date": 1441635368,
-      "id": 138309434,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "What I am worried about is that we already have four methods to set `attributes` on the html:\n- cssClass\n- rootClass\n- itemClass\n- htmlAttributes\n\nSo we need to find what is necessary and then provide it.\n\nMaybe we should just have htmlAttributes but automatically adding attributes to a namespace that is managed and used by react is maybe dangerous.\n\nFrom our discussions I understood that the need for `htmlAttributes` was motivated by the fact that to generate a `select` with the corresponding `label` we needed to provide the `id` of the select.\n\nIf `htmlAttributes` is only here to be able to add an `id` and if that's the only need we have right now. Then I would automatically add an `id` in all our widgets based on the widget name:\n\n`ais-sortIndex-1` something like that.\n\nThis should be sufficient if the only need that we can think of right now is adding an `id`. We would then see if we really need anything else like `htmlAttributes`.\n",
-      "date": 1441635951,
-      "id": 138312125,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I'm also concerned about having so many different ways to do the same thing. We need a more common method for letting user have a bit more freedom on the markup generated.\n\nFor the tests I have to do today, I only need the id, but I'm pretty sure I will need a lot more html attributes in the future and we cannot handle every specific need in our widgets. Users might need to add other custom classes, acceskey shortcuts, aria attributes for screen readers and a lot more things.\n\n`htmlAttributes` might not be the right choice, though. It is a Javascript object, and some keys (like `class` and `for`) will have to be renamed (as `cssClass` and `htmlFor`) before being actually passed to React.\n",
-      "date": 1441636273,
-      "id": 138313837,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> We need a more common method for letting user have a bit more freedom on the markup generated.\n\nWe do not have a way to do this right now. And the solution to this ultimately is full blown templates with events like `<ul><li onClick..`.\nI don't want to go too far in the \"control the generated DOM\" beside adding css classes mostly because I cannot right now think of use cases where it really makes sense.\n\n> I'm pretty sure I will need a lot more html attributes in the future\n\nIf we cannot think of any use case right now I would prefer to stick with something simpler and see in the future if we need more than that. We will have more use cases and experiences of using the instantsearch.js.\n\nI'd rather solve the `label + select` use case by adding an id rather than add an API that the user **might** use. So that we can keep the `rootClass` `itemClass`. Instead of itemHtmlAttributes, rootHtmlAttributes etc..\n\n> htmlAttributes might not be the right choice, though. It is a Javascript object, and some keys (like class and for) will have to be renamed (as cssClass and htmlFor) before being actually passed to React.\n\nAnd we do not know what are the other possible keys that will need to be renamed because attributes here are somehow managed by react.\n",
-      "date": 1441636787,
-      "id": 138315778,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "So you advocate we \"patch\" the current widget to pass the issues we currently have and wait for the complete implementation of the instant search demo and a few other integrations (magento, wordpress, etc) to see how we can find a more generic way?\n\nWorks for me, as long as we don't officially release the hackish versions\n",
-      "date": 1441636997,
-      "id": 138316257,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> So you advocate we \"patch\" the current widget to pass the issues\n\nYes I would like to be able to answer the instant search demo need. And for this demo it seems that the `id=` is not needed.\n\nI would prefer us to answer theses implementations and only them before thinking of more API needs.\n\nThen when we start integrating more deeply maybe we will need to draft and then rewrite the widgets for them to provide `htmlAttributes:{root, item}` but maybe not.\n",
-      "date": 1441637556,
-      "id": 138317685,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "My main issue with \"htmlAttributes\" is that as a user POV it's giving the idea that they could manage everything, from the attributes to the dom tagName and the dom elements which is not the case. \n\nWhile only providing them to add classes and giving them pre-computed ids seems more narrow and closes the API for now.\n\nUntil we get the need (use case) or find a complete react compatible (dom diff compatible) templating solution I would not got this way.\n",
-      "date": 1441637974,
-      "id": 138319061,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "I've remove the `htmlAttributes` in favor of `cssClass`. I've also added an automatic `id` to the select, based on the `id` of the parent element. I know this can break if the parent has no `id`, but it currently works for our demo, but we'll fix that later.\n",
-      "date": 1441707706,
-      "id": 138506516,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "@redox @vvo @bobylito: Comments? Otherwise ready to be merged.\n",
-      "date": 1441708749,
-      "id": 138510971,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/283419",
-        "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
-      }
-    },
-    {
-      "body": "LGTM :+1: \n",
-      "date": 1441708815,
-      "id": 138511122,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/29529",
-        "id": 29529,
-        "login": "redox",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1441373156,
-  "labels": [],
-  "number": 62,
-  "reactions": {},
-  "state": "merged",
-  "title": "feat: indexSelector widget",
   "type": "pull",
+  "distinctKey": "pull:62",
+  "title": "feat: indexSelector widget",
+  "date": 1441373156,
+  "body": "First pass on the indexSelector widget (as discussed in #38).\n\nStill need to work on:\n- [x] `cssClass` option\n- [x] If the selected index is not one from the list, then we should throw an error.\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/283419",
     "id": 283419,
-    "login": "pixelastic",
-    "type": "User"
-  }
+    "login": "pixelastic"
+  },
+  "pull": {
+    "labels": [],
+    "number": 62,
+    "reactions": {},
+    "state": "merged"
+  },
+  "comments": [
+    {
+      "date": 1441373539,
+      "body": "> allowing for custom template\n\nMaybe at some point we should allow http://wix.github.io/react-templates/ which will allow us to provide templates + data + events\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 137738948,
+      "reactions": {}
+    },
+    {
+      "date": 1441373710,
+      "body": "For now I feel the `cssClass` option for the `<select>` should be sufficient to move on\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 137739543,
+      "reactions": {}
+    },
+    {
+      "date": 1441373760,
+      "body": "Do you want us to look at the PR or are you still working on it? Otherwise you can close and reopen later\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 137739697,
+      "reactions": {}
+    },
+    {
+      "date": 1441403228,
+      "body": "I'd rather keep the PR open. I'll add the missing element, but that way we can discuss the current code\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 137861163,
+      "reactions": {}
+    },
+    {
+      "date": 1441405608,
+      "body": "I've added support for the `cssClass` attribute, to be able to add a custom `form-control` class when using Bootstrap. Turns out that we will actually need more than that. In that case, we will also need to add a custom `id` on the select, so we can correctly set the `for` of the `label`.\n\nI don't want to explicitly list all the attributes that can be passed and that I will copy on to the inner `select`. I think the best way would be to let the user define its own template, that MUST be a `select` element and use that one if provided (this is already discussed above).\n\nThe issue is that I have no idea how to add handler (or more generally do DOM manipulation) inside React without a JSX template. I mean I'll have to import a DOM element through `dangerouslySetInnerHTML`, and then add a `onChange` handler to that element. Maybe using `React.findDOMNode`? cc @bobylito \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 137871040,
+      "reactions": {}
+    },
+    {
+      "date": 1441434229,
+      "body": "This usecase seems to be what react templates are made for. But we can also try to use a hogan template and see what we can do\n\nOnChange should bubble up to the root element so it might work.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 137914741,
+      "reactions": {}
+    },
+    {
+      "date": 1441629434,
+      "body": "@bobylito @vvo: I consider this PR over for now. Could you have a look?\n\nInstead of a template, I've allowed an `htmlAttribute` object to be passed as HTML attributes to the generated `select`.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 138285849,
+      "reactions": {}
+    },
+    {
+      "date": 1441632835,
+      "body": "Rename `htmlAttributes` to `selectAttributes` or `inputAttributes` ?\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/29529",
+        "id": 29529,
+        "login": "redox"
+      },
+      "id": 138300923,
+      "reactions": {}
+    },
+    {
+      "date": 1441635368,
+      "body": "Needs:\n- [x] jsdoc\n- [x] readme doc (jsdoc copy paste)\n- [x] remove quotes around keys in example app\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 138309434,
+      "reactions": {}
+    },
+    {
+      "date": 1441635951,
+      "body": "What I am worried about is that we already have four methods to set `attributes` on the html:\n- cssClass\n- rootClass\n- itemClass\n- htmlAttributes\n\nSo we need to find what is necessary and then provide it.\n\nMaybe we should just have htmlAttributes but automatically adding attributes to a namespace that is managed and used by react is maybe dangerous.\n\nFrom our discussions I understood that the need for `htmlAttributes` was motivated by the fact that to generate a `select` with the corresponding `label` we needed to provide the `id` of the select.\n\nIf `htmlAttributes` is only here to be able to add an `id` and if that's the only need we have right now. Then I would automatically add an `id` in all our widgets based on the widget name:\n\n`ais-sortIndex-1` something like that.\n\nThis should be sufficient if the only need that we can think of right now is adding an `id`. We would then see if we really need anything else like `htmlAttributes`.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 138312125,
+      "reactions": {}
+    },
+    {
+      "date": 1441636273,
+      "body": "I'm also concerned about having so many different ways to do the same thing. We need a more common method for letting user have a bit more freedom on the markup generated.\n\nFor the tests I have to do today, I only need the id, but I'm pretty sure I will need a lot more html attributes in the future and we cannot handle every specific need in our widgets. Users might need to add other custom classes, acceskey shortcuts, aria attributes for screen readers and a lot more things.\n\n`htmlAttributes` might not be the right choice, though. It is a Javascript object, and some keys (like `class` and `for`) will have to be renamed (as `cssClass` and `htmlFor`) before being actually passed to React.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 138313837,
+      "reactions": {}
+    },
+    {
+      "date": 1441636787,
+      "body": "> We need a more common method for letting user have a bit more freedom on the markup generated.\n\nWe do not have a way to do this right now. And the solution to this ultimately is full blown templates with events like `<ul><li onClick..`.\nI don't want to go too far in the \"control the generated DOM\" beside adding css classes mostly because I cannot right now think of use cases where it really makes sense.\n\n> I'm pretty sure I will need a lot more html attributes in the future\n\nIf we cannot think of any use case right now I would prefer to stick with something simpler and see in the future if we need more than that. We will have more use cases and experiences of using the instantsearch.js.\n\nI'd rather solve the `label + select` use case by adding an id rather than add an API that the user **might** use. So that we can keep the `rootClass` `itemClass`. Instead of itemHtmlAttributes, rootHtmlAttributes etc..\n\n> htmlAttributes might not be the right choice, though. It is a Javascript object, and some keys (like class and for) will have to be renamed (as cssClass and htmlFor) before being actually passed to React.\n\nAnd we do not know what are the other possible keys that will need to be renamed because attributes here are somehow managed by react.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 138315778,
+      "reactions": {}
+    },
+    {
+      "date": 1441636997,
+      "body": "So you advocate we \"patch\" the current widget to pass the issues we currently have and wait for the complete implementation of the instant search demo and a few other integrations (magento, wordpress, etc) to see how we can find a more generic way?\n\nWorks for me, as long as we don't officially release the hackish versions\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 138316257,
+      "reactions": {}
+    },
+    {
+      "date": 1441637556,
+      "body": "> So you advocate we \"patch\" the current widget to pass the issues\n\nYes I would like to be able to answer the instant search demo need. And for this demo it seems that the `id=` is not needed.\n\nI would prefer us to answer theses implementations and only them before thinking of more API needs.\n\nThen when we start integrating more deeply maybe we will need to draft and then rewrite the widgets for them to provide `htmlAttributes:{root, item}` but maybe not.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 138317685,
+      "reactions": {}
+    },
+    {
+      "date": 1441637974,
+      "body": "My main issue with \"htmlAttributes\" is that as a user POV it's giving the idea that they could manage everything, from the attributes to the dom tagName and the dom elements which is not the case. \n\nWhile only providing them to add classes and giving them pre-computed ids seems more narrow and closes the API for now.\n\nUntil we get the need (use case) or find a complete react compatible (dom diff compatible) templating solution I would not got this way.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 138319061,
+      "reactions": {}
+    },
+    {
+      "date": 1441707706,
+      "body": "I've remove the `htmlAttributes` in favor of `cssClass`. I've also added an automatic `id` to the select, based on the `id` of the parent element. I know this can break if the parent has no `id`, but it currently works for our demo, but we'll fix that later.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 138506516,
+      "reactions": {}
+    },
+    {
+      "date": 1441708749,
+      "body": "@redox @vvo @bobylito: Comments? Otherwise ready to be merged.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/283419",
+        "id": 283419,
+        "login": "pixelastic"
+      },
+      "id": 138510971,
+      "reactions": {}
+    },
+    {
+      "date": 1441708815,
+      "body": "LGTM :+1: \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/29529",
+        "id": 29529,
+        "login": "redox"
+      },
+      "id": 138511122,
+      "reactions": {}
+    }
+  ]
 }

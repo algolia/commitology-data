@@ -1,158 +1,161 @@
 {
+  "type": "pull",
+  "distinctKey": "pull:2831",
+  "title": "fix(removeWidget): check for widgets.length on next tick",
+  "date": 1521556942,
   "body": "I'm using the `removeWidget` API for Angular InstantSearch when the app need to unmount a widget.\r\n\r\nIf the page is unmounting all the widgets, it will call `removeWidget()` for every widget present on the page and this will result of make multiple requests to Algolia even thought we are unmounting the whole page.\r\n\r\nIn order to workaround this issue, I'm deferring the execution of the condition `this.widgets.length > 0` on the next tick so every widgets would have been removed.\r\n\r\nThis is an easy-fix for now until we can maybe think about a better API with InstantSearch core 👍 ",
+  "user": {
+    "type": "User",
+    "avatar": "https://avatars.githubusercontent.com/u/893837",
+    "id": 893837,
+    "login": "iam4x"
+  },
+  "pull": {
+    "labels": [],
+    "number": 2831,
+    "reactions": {
+      "👍️": 2
+    },
+    "state": "merged"
+  },
   "comments": [
     {
-      "body": "Deploy preview for *algolia-instantsearch* ready!\n\nBuilt with commit 1d344f157680b4ed9ab86adf832d50839df85fa5\n\nhttps://deploy-preview-2831--algolia-instantsearch.netlify.com",
       "date": 1521557135,
-      "id": 374624250,
-      "reactions": {},
+      "body": "Deploy preview for *algolia-instantsearch* ready!\n\nBuilt with commit 1d344f157680b4ed9ab86adf832d50839df85fa5\n\nhttps://deploy-preview-2831--algolia-instantsearch.netlify.com",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/16079583",
         "id": 16079583,
-        "login": "algobot",
-        "type": "User"
-      }
+        "login": "algobot"
+      },
+      "id": 374624250,
+      "reactions": {}
     },
     {
-      "body": "does wrapping it in Promise.resolve also fix it? ",
       "date": 1521559586,
-      "id": 374639642,
-      "reactions": {},
+      "body": "does wrapping it in Promise.resolve also fix it? ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 374639642,
+      "reactions": {}
     },
     {
-      "body": "Yes it should have the same behaviour 👍 ",
       "date": 1521563571,
-      "id": 374665569,
-      "reactions": {},
+      "body": "Yes it should have the same behaviour 👍 ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/893837",
         "id": 893837,
-        "login": "iam4x",
-        "type": "User"
-      }
+        "login": "iam4x"
+      },
+      "id": 374665569,
+      "reactions": {}
     },
     {
-      "body": "@iam4x agree that's an easy fix, we have the same strategy in [React InstantSearch](https://github.com/algolia/react-instantsearch/blob/7c19c75df4856a3e5afe3c79fc9dee470d956633/packages/react-instantsearch/src/core/createWidgetsManager.js#L15-L18). But we should not rely on that since it's not predictable at all. For example, in React when they will launch the async rendering the lib could cause multiple request because of that. We should find a proper API to handle this case, it's a recurring problem.",
       "date": 1521569921,
-      "id": 374704144,
-      "reactions": {},
+      "body": "@iam4x agree that's an easy fix, we have the same strategy in [React InstantSearch](https://github.com/algolia/react-instantsearch/blob/7c19c75df4856a3e5afe3c79fc9dee470d956633/packages/react-instantsearch/src/core/createWidgetsManager.js#L15-L18). But we should not rely on that since it's not predictable at all. For example, in React when they will launch the async rendering the lib could cause multiple request because of that. We should find a proper API to handle this case, it's a recurring problem.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6513513",
         "id": 6513513,
-        "login": "samouss",
-        "type": "User"
-      }
+        "login": "samouss"
+      },
+      "id": 374704144,
+      "reactions": {}
     },
     {
-      "body": "How can we handle both “yes we want a new request if a widget is unmourned, but none if we’re also going to delete everything”. Maybe requestIdleCallback, but that doesn’t work in node. All I can think of is that we need to have a queue that must be flushed, but I can’t think of an implementation without timers ",
       "date": 1521570569,
-      "id": 374708082,
-      "reactions": {},
+      "body": "How can we handle both “yes we want a new request if a widget is unmourned, but none if we’re also going to delete everything”. Maybe requestIdleCallback, but that doesn’t work in node. All I can think of is that we need to have a queue that must be flushed, but I can’t think of an implementation without timers ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 374708082,
+      "reactions": {}
     },
     {
-      "body": "The only way to do it properly in every flavour, without relying on setTimeout 0, is to know the inner details of the framework (react, angular, vue) behaviour about mounting/unmounting/rendering/life cycle. For example maybe in Angular unmounting hooks are called and scheduled using setTimeout 0, maybe with Promise.resolve() or anything..\r\n\r\nOnce you know that, you can build a small scheduler inside the framework (angular, react, vue). This scheduler must be responsible for stacking widgets mounting/unmounting to avoid calling .search() everytime.\r\n\r\nWhich also means from my POV that nor removeWidget, nor addWidget should be responsible for calling .search(). At least flavours other than the vanilla one should be able to call removeWidget() without having it triggering a search (example: removeWidget({autoSearch: false})).\r\n\r\nThe vanilla flavour could still benefit from having search called automatically that would be scheduled in the way this PR propose it (but maybe with just Promise.resolve() which is the shortest microtask scheduler).\r\n\r\nKnowing the limitations of this fix and it's implication is also important for other frameworks. And we need to check the behaviour when used in Vue (cc @Haroenv).\r\n\r\ntl;dr; I am not sure we can find a generic way for every flavour, at least every framework has its own way of handling asynchronous mounting/unmounting and rendering. So we need to understand them to build a sort-of generic solution where the stack scheduler can be built in core, but async semantics needs to be passed by flavours (as an option).",
       "date": 1521627321,
+      "body": "The only way to do it properly in every flavour, without relying on setTimeout 0, is to know the inner details of the framework (react, angular, vue) behaviour about mounting/unmounting/rendering/life cycle. For example maybe in Angular unmounting hooks are called and scheduled using setTimeout 0, maybe with Promise.resolve() or anything..\r\n\r\nOnce you know that, you can build a small scheduler inside the framework (angular, react, vue). This scheduler must be responsible for stacking widgets mounting/unmounting to avoid calling .search() everytime.\r\n\r\nWhich also means from my POV that nor removeWidget, nor addWidget should be responsible for calling .search(). At least flavours other than the vanilla one should be able to call removeWidget() without having it triggering a search (example: removeWidget({autoSearch: false})).\r\n\r\nThe vanilla flavour could still benefit from having search called automatically that would be scheduled in the way this PR propose it (but maybe with just Promise.resolve() which is the shortest microtask scheduler).\r\n\r\nKnowing the limitations of this fix and it's implication is also important for other frameworks. And we need to check the behaviour when used in Vue (cc @Haroenv).\r\n\r\ntl;dr; I am not sure we can find a generic way for every flavour, at least every framework has its own way of handling asynchronous mounting/unmounting and rendering. So we need to understand them to build a sort-of generic solution where the stack scheduler can be built in core, but async semantics needs to be passed by flavours (as an option).",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
       "id": 374888947,
       "reactions": {
         "👍️": 3
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
       }
     },
     {
-      "body": "I have pretty much the same opinion than @vvo on the problem. I'm also for integrating this change  for now and iterate. \r\n\r\nFor the glory, allow me to add some elements:\r\n\r\nFirst thing, I think we should define the problem. We want to **batch operations** and yet **minimize** the waiting time before the execution. It's what @vvo mentioned when he talked about scheduling. This problem is inherently based on time. That's why we cannot do without time based callback.\r\n\r\nMaybe using some heuristics we  could cut the time. For example, if we've already unmounted all the widgets, maybe it's not meaningful to wait for another x milliseconds to trigger a new search (considering that it's meaningful to do one at all), so we could shortcut the waiting time.\r\n\r\nBeyond this definition of the problem, we can also say that in our case we have a lot widget removal and therefore lots of new requests. For 10 removed widgets, we have 10 requests. If we  could batch in 2 of 5, we'll 5x less queries which is already good. In that kind of problem, better is already good.\r\n\r\nEventually when renderers are all asynchronous, it will mean that we'll have time when the system will be stable and unstable. I hope that the frameworks will provide an API for knowing when the system is back to being stable so that we can do the cleanup. Hence, as proposed by @vvo, eventually a method like `start` that triggers the search again could be useful.\r\n\r\nBut then, here I think that if this change actually helps mitigating the issue on Angular that's a good step. Eventually, as frameworks evolve we should be able to provide more control to the implementors of framework flavors.",
       "date": 1521637873,
+      "body": "I have pretty much the same opinion than @vvo on the problem. I'm also for integrating this change  for now and iterate. \r\n\r\nFor the glory, allow me to add some elements:\r\n\r\nFirst thing, I think we should define the problem. We want to **batch operations** and yet **minimize** the waiting time before the execution. It's what @vvo mentioned when he talked about scheduling. This problem is inherently based on time. That's why we cannot do without time based callback.\r\n\r\nMaybe using some heuristics we  could cut the time. For example, if we've already unmounted all the widgets, maybe it's not meaningful to wait for another x milliseconds to trigger a new search (considering that it's meaningful to do one at all), so we could shortcut the waiting time.\r\n\r\nBeyond this definition of the problem, we can also say that in our case we have a lot widget removal and therefore lots of new requests. For 10 removed widgets, we have 10 requests. If we  could batch in 2 of 5, we'll 5x less queries which is already good. In that kind of problem, better is already good.\r\n\r\nEventually when renderers are all asynchronous, it will mean that we'll have time when the system will be stable and unstable. I hope that the frameworks will provide an API for knowing when the system is back to being stable so that we can do the cleanup. Hence, as proposed by @vvo, eventually a method like `start` that triggers the search again could be useful.\r\n\r\nBut then, here I think that if this change actually helps mitigating the issue on Angular that's a good step. Eventually, as frameworks evolve we should be able to provide more control to the implementors of framework flavors.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
       "id": 374931040,
       "reactions": {
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
       }
     },
     {
-      "body": "I'm +1 on @vvo's idea of putting this under a flag",
       "date": 1521639217,
-      "id": 374937519,
-      "reactions": {},
+      "body": "I'm +1 on @vvo's idea of putting this under a flag",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 374937519,
+      "reactions": {}
     },
     {
-      "body": "> I'm +1 on @vvo's idea of putting this under a flag\r\n\r\nI don't think it's necessary.",
       "date": 1521639842,
-      "id": 374940888,
-      "reactions": {},
+      "body": "> I'm +1 on @vvo's idea of putting this under a flag\r\n\r\nI don't think it's necessary.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      }
+        "login": "bobylito"
+      },
+      "id": 374940888,
+      "reactions": {}
     },
     {
-      "body": "> I'm +1 on @vvo's idea of putting this under a flag\r\n\r\nTo be clear the thing I was proposing to pass under a flag is the decision to call .search() or not in add/remove (to be able to call search yourself when you want). But that's more for a future change than for the current fix.\r\n\r\nI was more providing context to @samouss comment about the fact that in React this might or might not work ultimately.\r\n\r\nIf right now this is fixing a good issue, and it does not breaks anything then why not.\r\n\r\nThe only thing that could break, since you are moving from synchronously calling search to asynchronously, could be people relying on the former behaviour.\r\n\r\nA safe bet would be to be able to put the setTimeout on Angular side maybe, like this:\r\n\r\n```js\r\n// this is code on Angular InstantSearch side\r\nremoveWidget(function done() {\r\n  if (instance.widgets.length > 0) {\r\n    setTimeout(() => helper.search(), 0);\r\n  }\r\n})\r\n```\r\n\r\nUsed like that, removeWidget won't call helper.search automatically\r\n\r\nUntil we have a proper solution/scheduler in IS.js.\r\n\r\nYour call here.",
       "date": 1521653363,
-      "id": 375028869,
-      "reactions": {},
+      "body": "> I'm +1 on @vvo's idea of putting this under a flag\r\n\r\nTo be clear the thing I was proposing to pass under a flag is the decision to call .search() or not in add/remove (to be able to call search yourself when you want). But that's more for a future change than for the current fix.\r\n\r\nI was more providing context to @samouss comment about the fact that in React this might or might not work ultimately.\r\n\r\nIf right now this is fixing a good issue, and it does not breaks anything then why not.\r\n\r\nThe only thing that could break, since you are moving from synchronously calling search to asynchronously, could be people relying on the former behaviour.\r\n\r\nA safe bet would be to be able to put the setTimeout on Angular side maybe, like this:\r\n\r\n```js\r\n// this is code on Angular InstantSearch side\r\nremoveWidget(function done() {\r\n  if (instance.widgets.length > 0) {\r\n    setTimeout(() => helper.search(), 0);\r\n  }\r\n})\r\n```\r\n\r\nUsed like that, removeWidget won't call helper.search automatically\r\n\r\nUntil we have a proper solution/scheduler in IS.js.\r\n\r\nYour call here.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
+        "login": "vvo"
+      },
+      "id": 375028869,
+      "reactions": {}
     },
     {
-      "body": "You take a look at this package for the perf about `timeout` / `Promise` etc... \r\n\r\n> https://github.com/jamiebuilds/tickedoff#perf",
       "date": 1522244470,
+      "body": "You take a look at this package for the perf about `timeout` / `Promise` etc... \r\n\r\n> https://github.com/jamiebuilds/tickedoff#perf",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6513513",
+        "id": 6513513,
+        "login": "samouss"
+      },
       "id": 376890672,
       "reactions": {
         "👍️": 2
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6513513",
-        "id": 6513513,
-        "login": "samouss",
-        "type": "User"
       }
     }
-  ],
-  "date": 1521556942,
-  "labels": [],
-  "number": 2831,
-  "reactions": {
-    "👍️": 2
-  },
-  "state": "merged",
-  "title": "fix(removeWidget): check for widgets.length on next tick",
-  "type": "pull",
-  "user": {
-    "avatar": "https://avatars.githubusercontent.com/u/893837",
-    "id": 893837,
-    "login": "iam4x",
-    "type": "User"
-  }
+  ]
 }

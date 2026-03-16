@@ -1,138 +1,141 @@
 {
-  "body": "These are three separate commits that should probably be reviewed in order because of the way it has been done (mostly scripted, a few manual modifications when needed).\nI didn't do three PRs because of the potential conflicts that would have followed. I think squashing them will be the easiest solution.\n### style(require): Force extension for local requires\n\nIf `require` content starts with a dot, add `.js` to the `require`.\n\n``` sh\nag -l \"require\\([\\\"']\\.\" | xargs -I {} sed -i -r \"s#require\\([\\\"'](\\.[^\\\"']*/[^\\.\\\"']*)[\\\"']\\)#require('\\1.js')#g\" {} \n```\n\nFew manual modifications afterwards.\n### style(import): Use import over require at the root level\n\n``` sh\n# For `let xxx = require('xxx');`:\nag -l \"^let [a-zA-Z]+\\s*=.*require\\(['\\\"].*['\\\"]\\);$\" src/ | xargs -I {} sed -i -r \"s/^let ([a-zA-Z]+)\\s*=.*require\\(['\\\"]([^'\\\"]*)['\\\"]\\);$/import \\1 from '\\2';/g\" {}\n\n# For `require('xxx');`\nag -l \"^require\\(['\\\"].*['\\\"]\\);$\" src/ | xargs -I {} sed -i -r \"s/^require\\(['\\\"]([^'\\\"]*)['\\\"]\\);$/import '\\1';/g\" {}\n```\n### style(export): Use export default instead of module.exports …\n\n``` sh\nag -l 'module.exports =' index.js src | xargs -I {} sed -i -r 's/^module.exports =/export default/g' {}\n```\n\nSpecial treatment for `src/lib/version.js` which is generated and\nused in `scripts`, hence the update of\n`scripts/bump-package-version.js`.\n### Notes\n\nAs you might have noticed, the linter is now only passed on `index.js` and `src`. Scripts shouldn't rely on `node` understanding the ES6 syntax yet.\nThis has one drawback though : your editor will be screaming while editing js files in `scripts`. Not sure how to handle that. Maybe exclude them using `.eslintrc` ?\n\nAlso, I'm still unable to run `npm shrinkwrap`, hence the failing tests.\n",
-  "comments": [
-    {
-      "body": "By analyzing the blame information on this pull request, we identified @vvo, @pixelastic and @maxiloc to be potential reviewers\n",
-      "date": 1449499138,
-      "id": 162543194,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/16079583",
-        "id": 16079583,
-        "login": "algobot",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> Also, I'm still unable to run npm shrinkwrap, hence the failing tests.\n\nnpm install -g npm@2 to ensure you have latest 2\nGo to the branch,\ndo npm install\ndo npm install package-to-update@version --save-dev\ndo npm install package-to-update@version --save-dev\ndo npm run shrinkwrap\n\nshould work\n",
-      "date": 1449564495,
-      "id": 162816261,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> Scripts shouldn't rely on node understanding the ES6 syntax yet.\n\nI don't really get the change, was it needed? The scripts were linted previously so I wonder why the change?\n\nWe use babel-node internally for every .js script we need to run so we should be good.\n\nLet me know\n",
-      "date": 1449564592,
-      "id": 162817301,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Very good work, lots of small and big chores here!\n\nI think the right tag would be refactor since we are using a new token, style being only \"Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)\" (https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit)\n\nBut: no big deal having 3 commits etc.. WFM\n",
-      "date": 1449564970,
-      "id": 162819882,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> npm install -g npm@2 to ensure you have latest 2\n> Go to the branch,\n> do npm install\n> do npm install package-to-update@version --save-dev\n> do npm install package-to-update@version --save-dev\n> do npm run shrinkwrap\n\nThanks, worked great. I need to run a `shrinkwrap` on `develop` too for `babel-istanbul` that I added for coverage.\n",
-      "date": 1449566279,
-      "id": 162824160,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/5095856",
-        "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> I need to run a shrinkwrap on develop too for babel-istanbul that I added for coverage.\n\nOk you can maybe submit a PR, I wanted to fail testing when those were not added to shrinkwrap but it's currently not doable (works for direct dependencies not in shrinkwrap but in package.json, it will fail in CI)\n",
-      "date": 1449566356,
-      "id": 162824399,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    },
-    {
-      "body": "> We use babel-node internally for every .js script we need to run so we should be good.\n\nHadn't noticed that, I'm doing the modification.\n",
-      "date": 1449566414,
-      "id": 162824587,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/5095856",
-        "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Quid of conf files, like `scripts/karma.conf.js` ?\n",
-      "date": 1449566776,
-      "id": 162826010,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/5095856",
-        "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
-      }
-    },
-    {
-      "body": "Need review of the last commits. Then I'll squash all of them (and do the refactor renaming), because the last modifications I've done could go in each commit.\n",
-      "date": 1449567942,
-      "id": 162833057,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/5095856",
-        "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
-      }
-    },
-    {
-      "body": ":guitar: \n",
-      "date": 1449570652,
-      "id": 162842746,
-      "reactions": {},
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      }
-    }
-  ],
-  "date": 1449499123,
-  "labels": [],
-  "number": 720,
-  "reactions": {},
-  "state": "merged",
-  "title": "refactor(import): force usage of import and export ES6 keywords (+extension)",
   "type": "pull",
+  "distinctKey": "pull:720",
+  "title": "refactor(import): force usage of import and export ES6 keywords (+extension)",
+  "date": 1449499123,
+  "body": "These are three separate commits that should probably be reviewed in order because of the way it has been done (mostly scripted, a few manual modifications when needed).\nI didn't do three PRs because of the potential conflicts that would have followed. I think squashing them will be the easiest solution.\n### style(require): Force extension for local requires\n\nIf `require` content starts with a dot, add `.js` to the `require`.\n\n``` sh\nag -l \"require\\([\\\"']\\.\" | xargs -I {} sed -i -r \"s#require\\([\\\"'](\\.[^\\\"']*/[^\\.\\\"']*)[\\\"']\\)#require('\\1.js')#g\" {} \n```\n\nFew manual modifications afterwards.\n### style(import): Use import over require at the root level\n\n``` sh\n# For `let xxx = require('xxx');`:\nag -l \"^let [a-zA-Z]+\\s*=.*require\\(['\\\"].*['\\\"]\\);$\" src/ | xargs -I {} sed -i -r \"s/^let ([a-zA-Z]+)\\s*=.*require\\(['\\\"]([^'\\\"]*)['\\\"]\\);$/import \\1 from '\\2';/g\" {}\n\n# For `require('xxx');`\nag -l \"^require\\(['\\\"].*['\\\"]\\);$\" src/ | xargs -I {} sed -i -r \"s/^require\\(['\\\"]([^'\\\"]*)['\\\"]\\);$/import '\\1';/g\" {}\n```\n### style(export): Use export default instead of module.exports …\n\n``` sh\nag -l 'module.exports =' index.js src | xargs -I {} sed -i -r 's/^module.exports =/export default/g' {}\n```\n\nSpecial treatment for `src/lib/version.js` which is generated and\nused in `scripts`, hence the update of\n`scripts/bump-package-version.js`.\n### Notes\n\nAs you might have noticed, the linter is now only passed on `index.js` and `src`. Scripts shouldn't rely on `node` understanding the ES6 syntax yet.\nThis has one drawback though : your editor will be screaming while editing js files in `scripts`. Not sure how to handle that. Maybe exclude them using `.eslintrc` ?\n\nAlso, I'm still unable to run `npm shrinkwrap`, hence the failing tests.\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/5095856",
     "id": 5095856,
-    "login": "Jerska",
-    "type": "User"
-  }
+    "login": "Jerska"
+  },
+  "pull": {
+    "labels": [],
+    "number": 720,
+    "reactions": {},
+    "state": "merged"
+  },
+  "comments": [
+    {
+      "date": 1449499138,
+      "body": "By analyzing the blame information on this pull request, we identified @vvo, @pixelastic and @maxiloc to be potential reviewers\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/16079583",
+        "id": 16079583,
+        "login": "algobot"
+      },
+      "id": 162543194,
+      "reactions": {}
+    },
+    {
+      "date": 1449564495,
+      "body": "> Also, I'm still unable to run npm shrinkwrap, hence the failing tests.\n\nnpm install -g npm@2 to ensure you have latest 2\nGo to the branch,\ndo npm install\ndo npm install package-to-update@version --save-dev\ndo npm install package-to-update@version --save-dev\ndo npm run shrinkwrap\n\nshould work\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 162816261,
+      "reactions": {}
+    },
+    {
+      "date": 1449564592,
+      "body": "> Scripts shouldn't rely on node understanding the ES6 syntax yet.\n\nI don't really get the change, was it needed? The scripts were linted previously so I wonder why the change?\n\nWe use babel-node internally for every .js script we need to run so we should be good.\n\nLet me know\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 162817301,
+      "reactions": {}
+    },
+    {
+      "date": 1449564970,
+      "body": "Very good work, lots of small and big chores here!\n\nI think the right tag would be refactor since we are using a new token, style being only \"Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)\" (https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit)\n\nBut: no big deal having 3 commits etc.. WFM\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 162819882,
+      "reactions": {}
+    },
+    {
+      "date": 1449566279,
+      "body": "> npm install -g npm@2 to ensure you have latest 2\n> Go to the branch,\n> do npm install\n> do npm install package-to-update@version --save-dev\n> do npm install package-to-update@version --save-dev\n> do npm run shrinkwrap\n\nThanks, worked great. I need to run a `shrinkwrap` on `develop` too for `babel-istanbul` that I added for coverage.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska"
+      },
+      "id": 162824160,
+      "reactions": {}
+    },
+    {
+      "date": 1449566356,
+      "body": "> I need to run a shrinkwrap on develop too for babel-istanbul that I added for coverage.\n\nOk you can maybe submit a PR, I wanted to fail testing when those were not added to shrinkwrap but it's currently not doable (works for direct dependencies not in shrinkwrap but in package.json, it will fail in CI)\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 162824399,
+      "reactions": {}
+    },
+    {
+      "date": 1449566414,
+      "body": "> We use babel-node internally for every .js script we need to run so we should be good.\n\nHadn't noticed that, I'm doing the modification.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska"
+      },
+      "id": 162824587,
+      "reactions": {}
+    },
+    {
+      "date": 1449566776,
+      "body": "Quid of conf files, like `scripts/karma.conf.js` ?\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska"
+      },
+      "id": 162826010,
+      "reactions": {}
+    },
+    {
+      "date": 1449567942,
+      "body": "Need review of the last commits. Then I'll squash all of them (and do the refactor renaming), because the last modifications I've done could go in each commit.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/5095856",
+        "id": 5095856,
+        "login": "Jerska"
+      },
+      "id": 162833057,
+      "reactions": {}
+    },
+    {
+      "date": 1449570652,
+      "body": ":guitar: \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 162842746,
+      "reactions": {}
+    }
+  ]
 }

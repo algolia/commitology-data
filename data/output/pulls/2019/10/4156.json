@@ -1,84 +1,87 @@
 {
+  "type": "pull",
+  "distinctKey": "pull:4156",
+  "title": "refactor: migrate to Preact X",
+  "date": 1570198509,
   "body": "This updates InstantSearch.js to Preact X. This version was [released as stable](https://github.com/preactjs/preact/releases/tag/10.0.0) and will generate a lighter bundle and a more stable development environment. The challenging part of this migration was the way we tested some components.\r\n\r\nThis history is quite messy because I started this work a few months ago and we rebased the base branch in the meantime. Rebasing is now quite hard. I can spend some time rebasing later but not sure it's worth the trouble for now.\r\n\r\n## Why\r\n\r\nWe want to migrate to Preact X for the following reasons:\r\n\r\n- Recent and future-proof React public API\r\n    - Fragment support: some component could not follow the InstantSearch.css spec because Fragments were not supported: additional `div`s were added.\r\n- Smaller bundle size\r\n- Less confusion in our setup ([we used to use Preact components but test them with React](https://github.com/algolia/instantsearch.js/blob/21b1ef9223f6b0d327e608f96e343d157518815c/src/components/Template/__tests__/Template-test.js))\r\n\r\n## Changes\r\n\r\n### `unmountComponentAtNode` is not exported by Preact anymore\r\n\r\nWe now rely on rendering `null` (which is the internal implementation in Preact) because `unmountComponentAtNode` is part of `preact/compat` which we don't need anymore.\r\n\r\n### `onChange` becomes `onInput` on input elements\r\n\r\nThis makes it hard to test with Enzyme. Besides Enzyme's `mount` doesn't mount children (it shallow-render them). Therefore I introduced [`preact-testing-library`](https://github.com/testing-library/preact-testing-library) which correctly trigger DOM events that can be caught up in tests.\r\n\r\n### React is fully removed from the codebase\r\n\r\nWe used to depend on Preact for our components but React in the testing environment, which led to inconsistent results. We now use Preact everywhere and use the `h` pragma. This should make the setup easier and more consistent.\r\n\r\n### Preact Rheostat dependency is gone\r\n\r\nHaving Preact Rheostat as a dependency caused some troubles: hard to remove its proptypes in production, depends on other versions of Preact, unmaintained source. Besides, the version we had wasn't compatible with Preact X (it used string refs). The Rheostat component is now part of InstantSearch.js code and will be able to evolve with time. With this change, we're also in control of what goes into our library (I removed some unused part).\r\n\r\n### Snapshot format has changed\r\n\r\nThe `mount` function of Enzyme with the `enzyme-adapter-preact-pure` adapter now always returns arrays. Component snapshots have all been updated. Some were migrated using the snapshot version of `preact-testing-library` (we might want to use this version for new component tests).\r\n\r\n### Snapshot to Preact's `render` function have changed\r\n\r\nWe used to snapshot the whole call to the Preact `render` function but now only snapshot the props object. It'd be nice at some point to get rid of these snapshots.\r\n\r\n### Less usage of `shouldComponentUpdate`\r\n\r\n`shouldComponentUpdate` acts differently in Preact X and cause issues where used like this:\r\n\r\n    shouldComponentUpdate(nextProps) {\r\n      return !isEqual(this.props, nextProps);\r\n    }\r\n\r\nI removed cases where it was used this way. The performance gains were minimal if not inexistent.\r\n\r\n### Remove usage of `componentWillMount`\r\n\r\n[`componentWillMount`](https://reactjs.org/docs/react-component.html#unsafe_componentwillmount) is a deprecated lifecycle hook that was trivial to remove.\r\n\r\n## Browser support\r\n\r\nPreact X supports IE11, like InstantSearch.js.\r\n\r\n## Skipped tests\r\n\r\nSome tests don't work with the current setup and are skipped. I suspect this is because of underlying libraries not being updated yet. If we don't plan to touch the `SearchBox` component, we can wait for libraries to be updated and keep these skipped tests for now.\r\n\r\n### SearchBox autofocus\r\n\r\nThe test environment doesn't reflect the `autofocus` prop like it does in production.\r\n\r\n### SearchBox reset\r\n\r\nThe reset event doesn't seem to be caught by the test setup.\r\n\r\n## How to review\r\n\r\nA lot of snapshots were updated so there are a lot of files to check. Reviewing components' behavior on the [Storybook](https://deploy-preview-4156--instantsearchjs.netlify.com/stories) and on the examples will help make sure that everything behaves as expected.\r\n\r\n## Next steps\r\n\r\n- Migrate away from deprecated React lifecycles\r\n\r\n## Preview\r\n\r\n- [Storybook](https://deploy-preview-4156--instantsearchjs.netlify.com/stories)\r\n- [E-commerce demo](https://deploy-preview-4156--instantsearchjs.netlify.com/examples/e-commerce/)\r\n\r\n## Related\r\n\r\n- Closes #3828\r\n\r\n## References\r\n\r\n- [https://preactjs.com/guide/v10/whats-new/](https://preactjs.com/guide/v10/whats-new/)\r\n- [https://preactjs.com/guide/v10/upgrade-guide/#notes-for-library-authors](https://preactjs.com/guide/v10/upgrade-guide/#notes-for-library-authors)",
+  "user": {
+    "type": "User",
+    "avatar": "https://avatars.githubusercontent.com/u/6137112",
+    "id": 6137112,
+    "login": "francoischalifour"
+  },
+  "pull": {
+    "labels": [],
+    "number": 4156,
+    "reactions": {
+      "🎉": 2
+    },
+    "state": "merged"
+  },
   "comments": [
     {
-      "body": "You can update the dev bundle size, it's 10kb smaller than the limit",
       "date": 1570201361,
-      "id": 538435121,
-      "reactions": {},
+      "body": "You can update the dev bundle size, it's 10kb smaller than the limit",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 538435121,
+      "reactions": {}
     },
     {
-      "body": "@Haroenv Good call about the `utils.ts` file, it an unused file that comes from a merge issue.",
       "date": 1570203684,
+      "body": "@Haroenv Good call about the `utils.ts` file, it an unused file that comes from a merge issue.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6137112",
+        "id": 6137112,
+        "login": "francoischalifour"
+      },
       "id": 538451695,
       "reactions": {
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6137112",
-        "id": 6137112,
-        "login": "francoischalifour",
-        "type": "User"
       }
     },
     {
-      "body": "@yannickcr I didn't want to migrate the files that didn't need to be updated but we should indeed at some point get rid of one solution (likely Enzyme). From my experience it's way easier to write tests with the Testing Library, except for the few problems that I mentioned and that I'm gonna write issues about on their respective projects.\r\n\r\n@Haroenv @yannickcr Are you guys confident enough to include this in the first v4 release? (i.e. merging now)",
       "date": 1570459739,
-      "id": 539048920,
-      "reactions": {},
+      "body": "@yannickcr I didn't want to migrate the files that didn't need to be updated but we should indeed at some point get rid of one solution (likely Enzyme). From my experience it's way easier to write tests with the Testing Library, except for the few problems that I mentioned and that I'm gonna write issues about on their respective projects.\r\n\r\n@Haroenv @yannickcr Are you guys confident enough to include this in the first v4 release? (i.e. merging now)",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6137112",
         "id": 6137112,
-        "login": "francoischalifour",
-        "type": "User"
-      }
+        "login": "francoischalifour"
+      },
+      "id": 539048920,
+      "reactions": {}
     },
     {
-      "body": "@francoischalifour Yes, my intent was not to migrate in the other files right now (this PR is already big :yum:) but more about thinking for the future. I agree for Testing Library vs Enzyme :innocent:.\r\n\r\nWe are currently at `4.0.0-beta.1` so I suppose this can still be added to the release. I'm relatively confident but I would be more at ease with at least a beta and an RC before the final release.\r\n\r\n",
       "date": 1570460961,
+      "body": "@francoischalifour Yes, my intent was not to migrate in the other files right now (this PR is already big :yum:) but more about thinking for the future. I agree for Testing Library vs Enzyme :innocent:.\r\n\r\nWe are currently at `4.0.0-beta.1` so I suppose this can still be added to the release. I'm relatively confident but I would be more at ease with at least a beta and an RC before the final release.\r\n\r\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/13209",
+        "id": 13209,
+        "login": "yannickcr"
+      },
       "id": 539058607,
       "reactions": {
         "👍️": 1
-      },
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/13209",
-        "id": 13209,
-        "login": "yannickcr",
-        "type": "User"
       }
     },
     {
-      "body": "I'm confident enough too once all comments have been solved",
       "date": 1570460995,
-      "id": 539058844,
-      "reactions": {},
+      "body": "I'm confident enough too once all comments have been solved",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      }
+        "login": "Haroenv"
+      },
+      "id": 539058844,
+      "reactions": {}
     }
-  ],
-  "date": 1570198509,
-  "labels": [],
-  "number": 4156,
-  "reactions": {
-    "🎉": 2
-  },
-  "state": "merged",
-  "title": "refactor: migrate to Preact X",
-  "type": "pull",
-  "user": {
-    "avatar": "https://avatars.githubusercontent.com/u/6137112",
-    "id": 6137112,
-    "login": "francoischalifour",
-    "type": "User"
-  }
+  ]
 }
