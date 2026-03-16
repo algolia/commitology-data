@@ -1,56 +1,59 @@
 {
-  "number": 4994,
+  "type": "issue",
+  "distinctKey": "issue:4994",
   "title": "Connect Infinite Hits Makes Network Requests Despite Retrieving Results From Cache",
+  "date": 1642330007,
+  "body": "## 🐛 Bug description\r\nI have an instance of connectInfiniteHits with a custom cache. The custom cache is working and confirmed by modifying the data before the cache is written. The modified data is what gets rendered, not what is directly returned from the server. However, InstantSearch continues to make network requests for each page regardless of whether the cache.read method returns data from cache.\r\n\r\n## 🔍 Bug reproduction\r\nCreate an instance of InstantSearch, set the cache to instantsearch.createInfiniteHitsSessionStorageCache(), watch for network requests regardless of whether or not we have hydrated cache.\r\n\r\n**Steps to reproduce the behavior:**\r\n1. Create an instance of InstantSearch\r\n2. Set cache to instantsearch.createInfiniteHitsSessionStorageCache()\r\n3. Fresh page reload sees cache get written\r\n4. Second page load sees cache get read, and network request made for the same data.\r\n\r\n## 💭 Expected behavior\r\nInstantSearch only performs network requests if the cache read method returns null\r\n\r\n## 🖥 Screenshots\r\nSuccessfully written to cache:\r\n<img width=\"831\" alt=\"Screenshot 2022-01-16 at 10 38 37\" src=\"https://user-images.githubusercontent.com/87069715/149656684-af68a600-8e78-40ea-bc56-976220d9642b.png\">\r\n\r\nRequests page data anyway:\r\n<img width=\"832\" alt=\"Screenshot 2022-01-16 at 10 41 01\" src=\"https://user-images.githubusercontent.com/87069715/149656733-60c614d3-fdf0-4c9b-831e-13290c2bbc1d.png\">\r\n\r\n## Environment\r\n- Browser: Chrome, Safari\r\n- Version: [e.g. 22]\r\n- InstantSearch 4.23.0\r\n- Vanilla JS (no framework)\r\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/87069715",
     "id": 87069715,
-    "login": "matt-savage",
-    "type": "User"
+    "login": "matt-savage"
   },
-  "body": "## 🐛 Bug description\r\nI have an instance of connectInfiniteHits with a custom cache. The custom cache is working and confirmed by modifying the data before the cache is written. The modified data is what gets rendered, not what is directly returned from the server. However, InstantSearch continues to make network requests for each page regardless of whether the cache.read method returns data from cache.\r\n\r\n## 🔍 Bug reproduction\r\nCreate an instance of InstantSearch, set the cache to instantsearch.createInfiniteHitsSessionStorageCache(), watch for network requests regardless of whether or not we have hydrated cache.\r\n\r\n**Steps to reproduce the behavior:**\r\n1. Create an instance of InstantSearch\r\n2. Set cache to instantsearch.createInfiniteHitsSessionStorageCache()\r\n3. Fresh page reload sees cache get written\r\n4. Second page load sees cache get read, and network request made for the same data.\r\n\r\n## 💭 Expected behavior\r\nInstantSearch only performs network requests if the cache read method returns null\r\n\r\n## 🖥 Screenshots\r\nSuccessfully written to cache:\r\n<img width=\"831\" alt=\"Screenshot 2022-01-16 at 10 38 37\" src=\"https://user-images.githubusercontent.com/87069715/149656684-af68a600-8e78-40ea-bc56-976220d9642b.png\">\r\n\r\nRequests page data anyway:\r\n<img width=\"832\" alt=\"Screenshot 2022-01-16 at 10 41 01\" src=\"https://user-images.githubusercontent.com/87069715/149656733-60c614d3-fdf0-4c9b-831e-13290c2bbc1d.png\">\r\n\r\n## Environment\r\n- Browser: Chrome, Safari\r\n- Version: [e.g. 22]\r\n- InstantSearch 4.23.0\r\n- Vanilla JS (no framework)\r\n",
-  "date": 1642330007,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 4994,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1642425551,
+      "body": "Unfortunately I fear this would be quite complicated to achieve. There are two levels of cache:\r\n\r\n- search client: this is to prevent the request of already-requested queries\r\n- infinite hits: this is for display of pages that weren't in the current network request mostly\r\n\r\nthe infinite hits cache isn't in control of whether a network request happens, as that happens on every interaction with the search.\r\n\r\n\r\nA completely different design could solve this where the search client cache instead was saved in session storage, and infinite hits would call as many network requests (or cache as needed), but that's not possible easily right now. \r\n\r\nWhat I can see as a solution for you now is to pass the responsesCache: sessionStorageCache (that you can write based on https://github.com/algolia/algoliasearch-client-javascript/tree/master/packages/cache-browser-local-storage) in combination with your existing infinite hits cache. The information will then be cached twice, but it will avoid the initial network request.\r\n\r\n\r\nHope that helps, before we take the time to redesign this feature",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "Unfortunately I fear this would be quite complicated to achieve. There are two levels of cache:\r\n\r\n- search client: this is to prevent the request of already-requested queries\r\n- infinite hits: this is for display of pages that weren't in the current network request mostly\r\n\r\nthe infinite hits cache isn't in control of whether a network request happens, as that happens on every interaction with the search.\r\n\r\n\r\nA completely different design could solve this where the search client cache instead was saved in session storage, and infinite hits would call as many network requests (or cache as needed), but that's not possible easily right now. \r\n\r\nWhat I can see as a solution for you now is to pass the responsesCache: sessionStorageCache (that you can write based on https://github.com/algolia/algoliasearch-client-javascript/tree/master/packages/cache-browser-local-storage) in combination with your existing infinite hits cache. The information will then be cached twice, but it will avoid the initial network request.\r\n\r\n\r\nHope that helps, before we take the time to redesign this feature",
-      "date": 1642425551,
-      "reactions": {},
-      "id": 1014528117
+      "id": 1014528117,
+      "reactions": {}
     },
     {
+      "date": 1642430851,
+      "body": "Thanks for your reply. We actually pass in a wrapper for a relatively sophisticated cache implementation for instantSearch.connectInfiniteHits where we parse and store the data using custom keys specific to our requirements, passing the same / similar wrapper to responsesCache looks like a reasonable solution for the time being, thanks for the heads up, much appreciated.\r\n\r\nI look forward to refactoring when you guys are done refactoring 😂",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/87069715",
         "id": 87069715,
-        "login": "matt-savage",
-        "type": "User"
+        "login": "matt-savage"
       },
-      "body": "Thanks for your reply. We actually pass in a wrapper for a relatively sophisticated cache implementation for instantSearch.connectInfiniteHits where we parse and store the data using custom keys specific to our requirements, passing the same / similar wrapper to responsesCache looks like a reasonable solution for the time being, thanks for the heads up, much appreciated.\r\n\r\nI look forward to refactoring when you guys are done refactoring 😂",
-      "date": 1642430851,
+      "id": 1014620703,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1014620703
+      }
     },
     {
+      "date": 1642755990,
+      "body": "While we might revisit this, for the time being this issue is solved I think. If you have any more questions, don't hesitate to open a different issue. Have a great day!",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "While we might revisit this, for the time being this issue is solved I think. If you have any more questions, don't hesitate to open a different issue. Have a great day!",
-      "date": 1642755990,
-      "reactions": {},
-      "id": 1018314292
+      "id": 1018314292,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

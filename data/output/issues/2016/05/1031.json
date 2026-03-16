@@ -1,165 +1,168 @@
 {
-  "number": 1031,
+  "type": "issue",
+  "distinctKey": "issue:1031",
   "title": "Add a widget for helper configuration",
+  "date": 1464095146,
+  "body": "Following up on #1027, letting the user provide its own configuration for the internal search configuration using `searchParmaters` can be confusing because it relies on the internal structure of the helper state which is poorly documented.\n\nBut the helper and the state are objects that can be used for this configuration much more easily. It is also much more straightforward as it doesn't require knowledge of the structure but on using methods.\n\nWe could easily provide a widget that let the user access either the state or the helper. I think that using the state would be better as it contains more fine grained methods and also some that are not directly accessible on the helper, such as `setFacets` / `setDisjunctiveFacets`. It is also [documented](https://community.algolia.com/algoliasearch-helper-js/docs/SearchParameters.html#addDisjunctiveFacetRefinement).\n\nThe API could look like :\n\n``` js\nsearch.addWidget(instantsearch.widgets.configurator(function (state) {\n  return state.setFacets(state.facets.concat('myOtherFacet'))\n              .addFacetRefinement('myOtherFacet', 'a value');\n}))\n```\n\nWhat do you think? @redox @vvo @pixelastic \n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/393765",
     "id": 393765,
-    "login": "bobylito",
-    "type": "User"
+    "login": "bobylito"
   },
-  "body": "Following up on #1027, letting the user provide its own configuration for the internal search configuration using `searchParmaters` can be confusing because it relies on the internal structure of the helper state which is poorly documented.\n\nBut the helper and the state are objects that can be used for this configuration much more easily. It is also much more straightforward as it doesn't require knowledge of the structure but on using methods.\n\nWe could easily provide a widget that let the user access either the state or the helper. I think that using the state would be better as it contains more fine grained methods and also some that are not directly accessible on the helper, such as `setFacets` / `setDisjunctiveFacets`. It is also [documented](https://community.algolia.com/algoliasearch-helper-js/docs/SearchParameters.html#addDisjunctiveFacetRefinement).\n\nThe API could look like :\n\n``` js\nsearch.addWidget(instantsearch.widgets.configurator(function (state) {\n  return state.setFacets(state.facets.concat('myOtherFacet'))\n              .addFacetRefinement('myOtherFacet', 'a value');\n}))\n```\n\nWhat do you think? @redox @vvo @pixelastic \n",
-  "date": 1464095146,
-  "labels": [
-    {
-      "color": "0052cc",
-      "id": 238751637,
-      "isDark": true,
-      "name": "Type: Needs Investigation"
-    }
-  ],
-  "state": "closed",
-  "reactions": {
-    "👍️": 1
+  "issue": {
+    "labels": [
+      {
+        "color": "0052cc",
+        "id": 238751637,
+        "isDark": true,
+        "name": "Type: Needs Investigation"
+      }
+    ],
+    "number": 1031,
+    "reactions": {
+      "👍️": 1
+    },
+    "state": "closed"
   },
   "comments": [
     {
+      "date": 1464120616,
+      "body": "Definitely make sense to create something dedicated to handle that 👍\n\nIf we go for a widget, I think we need to continue to iterate on the `configurator` naming.\n\nThat being said, I'm not a big fan of exposing the state API, it's one more API to understand to dig into instantsearch.js; I would keep manipulating the helper.\n\nOne other option could be to pass the configurator to the `start` function :)\n\n``` javascript\nsearch.start(function configurator(helper) {\n  helper.addFacetRefinement('myOtherFacet', 'a value');\n  helper.addDisjunctiveFacetRefinement(/* ... */);\n});\n```\n\nWouldn't that be easier to understand?\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/29529",
         "id": 29529,
-        "login": "redox",
-        "type": "User"
+        "login": "redox"
       },
-      "body": "Definitely make sense to create something dedicated to handle that 👍\n\nIf we go for a widget, I think we need to continue to iterate on the `configurator` naming.\n\nThat being said, I'm not a big fan of exposing the state API, it's one more API to understand to dig into instantsearch.js; I would keep manipulating the helper.\n\nOne other option could be to pass the configurator to the `start` function :)\n\n``` javascript\nsearch.start(function configurator(helper) {\n  helper.addFacetRefinement('myOtherFacet', 'a value');\n  helper.addDisjunctiveFacetRefinement(/* ... */);\n});\n```\n\nWouldn't that be easier to understand?\n",
-      "date": 1464120616,
-      "reactions": {},
-      "id": 221387234
+      "id": 221387234,
+      "reactions": {}
     },
     {
+      "date": 1464132167,
+      "body": "Agreed that it's easier to manipulate the helper than the underlying structure. Not sure I would have used a widget for that, seems to far from what a widget should do.\n\nNot sure about passing it to the `start` method either. This looks like a quick win but adds one more place where users can configure the default behavior. I would stay with an instanciation option, something like `helperConfiguration`.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "Agreed that it's easier to manipulate the helper than the underlying structure. Not sure I would have used a widget for that, seems to far from what a widget should do.\n\nNot sure about passing it to the `start` method either. This looks like a quick win but adds one more place where users can configure the default behavior. I would stay with an instanciation option, something like `helperConfiguration`.\n",
-      "date": 1464132167,
-      "reactions": {},
-      "id": 221431265
+      "id": 221431265,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      },
-      "body": "`Configurator` is the best I could find so far :P Any other suggestion?\n\nDo instantsearch users already use the helper? If not then exposing the SearchParameters makes no difference in terms of API learning, doesn't it? I'm ok to change the helper, but this kind of API raises other questions like is it a change if you add facet?\n\nAlso the Helper API is much powerful that what I would like  to expose in this context. You can add event listeners and trigger the search...\n\nI don't think yet adding yet another option makes things easier. The widget is trivial, and doesn't raise new questions in the reader/learner mind and it doesn't clutter the core.\n\n> I would stay with an instanciation option, something like helperConfiguration\n\nI don't  understanding how this is different from @redox suggestion?\n",
       "date": 1464166944,
-      "reactions": {},
-      "id": 221514872
-    },
-    {
+      "body": "`Configurator` is the best I could find so far :P Any other suggestion?\n\nDo instantsearch users already use the helper? If not then exposing the SearchParameters makes no difference in terms of API learning, doesn't it? I'm ok to change the helper, but this kind of API raises other questions like is it a change if you add facet?\n\nAlso the Helper API is much powerful that what I would like  to expose in this context. You can add event listeners and trigger the search...\n\nI don't think yet adding yet another option makes things easier. The widget is trivial, and doesn't raise new questions in the reader/learner mind and it doesn't clutter the core.\n\n> I would stay with an instanciation option, something like helperConfiguration\n\nI don't  understanding how this is different from @redox suggestion?\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "I did a draft PR ^\n",
-      "date": 1464167308,
-      "reactions": {},
-      "id": 221516313
+      "id": 221514872,
+      "reactions": {}
     },
     {
+      "date": 1464167308,
+      "body": "I did a draft PR ^\n",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 221516313,
+      "reactions": {}
+    },
+    {
+      "date": 1464183933,
+      "body": "> Do instantsearch users already use the helper? If not then exposing the SearchParameters makes no difference in terms of API learning, doesn't it? I'm ok to change the helper, but this kind of API raises other questions like is it a change if you add facet?\n\nThe `helper` is what they need to use while building custom widgets; so for sure they are (and will more and more) use it.\n\n> Also the Helper API is much powerful that what I would like to expose in this context. You can add event listeners and trigger the search...\n\nGood point, but I don't think it's a big deal. \n\n> I don't think yet adding yet another option makes things easier. The widget is trivial, and doesn't raise new questions in the reader/learner mind and it doesn't clutter the core.\n\nThe \"widget\" is trivial, but not the underlying `state` (nothing complex, just everything is new).\n\n> I would stay with an instanciation option, something like helperConfiguration\n\nI think @pixelastic is just proposing something declared as an instantiation option to help having every \"initial setup\" dong at the very same place. I'm fine with that. Maybe we could name that option `init` or something meanings \"put here a function to configure the underlying helper\" because `helperConfiguration` looks more like an object rather than a function.\n",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/29529",
         "id": 29529,
-        "login": "redox",
-        "type": "User"
+        "login": "redox"
       },
-      "body": "> Do instantsearch users already use the helper? If not then exposing the SearchParameters makes no difference in terms of API learning, doesn't it? I'm ok to change the helper, but this kind of API raises other questions like is it a change if you add facet?\n\nThe `helper` is what they need to use while building custom widgets; so for sure they are (and will more and more) use it.\n\n> Also the Helper API is much powerful that what I would like to expose in this context. You can add event listeners and trigger the search...\n\nGood point, but I don't think it's a big deal. \n\n> I don't think yet adding yet another option makes things easier. The widget is trivial, and doesn't raise new questions in the reader/learner mind and it doesn't clutter the core.\n\nThe \"widget\" is trivial, but not the underlying `state` (nothing complex, just everything is new).\n\n> I would stay with an instanciation option, something like helperConfiguration\n\nI think @pixelastic is just proposing something declared as an instantiation option to help having every \"initial setup\" dong at the very same place. I'm fine with that. Maybe we could name that option `init` or something meanings \"put here a function to configure the underlying helper\" because `helperConfiguration` looks more like an object rather than a function.\n",
-      "date": 1464183933,
-      "reactions": {},
-      "id": 221580651
+      "id": 221580651,
+      "reactions": {}
     },
     {
+      "date": 1464196915,
+      "body": ":+1: on advocating to use the helper.methods. The SearchParameters is not official as a user facing API.\n\nWhat we want to do here is already doable by using `searchFunction` parameter, but I agree this is not straightforward.\n\nCreating a custom widget or adding a new option, we will still need to add a FAQ entry containing \"Setting default parameter at launch\".\n\nWhat about having `configureHelper` callback in instantsearch option? I was first fine with a new widget but feel like this would look weird because it's really only configuring the helper, not adding anything to the DOM nor configuring the url bar.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": ":+1: on advocating to use the helper.methods. The SearchParameters is not official as a user facing API.\n\nWhat we want to do here is already doable by using `searchFunction` parameter, but I agree this is not straightforward.\n\nCreating a custom widget or adding a new option, we will still need to add a FAQ entry containing \"Setting default parameter at launch\".\n\nWhat about having `configureHelper` callback in instantsearch option? I was first fine with a new widget but feel like this would look weird because it's really only configuring the helper, not adding anything to the DOM nor configuring the url bar.\n",
-      "date": 1464196915,
-      "reactions": {},
-      "id": 221645520
+      "id": 221645520,
+      "reactions": {}
     },
     {
+      "date": 1464198012,
+      "body": "I have the feeling that the `configureHelper` function as a callback option in the instanciation feels hardcoded whereas a widget feels modular. Everything that can be done as a widget should.\n\nThe idea when creating the SearchParameters object was not to hide it to the users (and it is official API). But it sure fails to be on par with the helper interface which makes a poor choice for now.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "I have the feeling that the `configureHelper` function as a callback option in the instanciation feels hardcoded whereas a widget feels modular. Everything that can be done as a widget should.\n\nThe idea when creating the SearchParameters object was not to hide it to the users (and it is official API). But it sure fails to be on par with the helper interface which makes a poor choice for now.\n",
-      "date": 1464198012,
-      "reactions": {},
-      "id": 221650600
+      "id": 221650600,
+      "reactions": {}
     },
     {
+      "date": 1464199376,
+      "body": "I would rather keep the widgets for everything that is DOM/UI related. That's what we always push when we explain the library.\n\nI would follow the same path as what we did with the `urlSync`. For the end-user it is just a new option to pass to the main instanciation object, even if internally we can handle it as a widget. Let's keep the user-facing API simple, and let's re-use the internal mechanism we are already used to. Best of both worlds.\n\nAnd yes, we should definitely expose the helper more and not the state. We'll have to work on revamping the helper doc on the side as well\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "I would rather keep the widgets for everything that is DOM/UI related. That's what we always push when we explain the library.\n\nI would follow the same path as what we did with the `urlSync`. For the end-user it is just a new option to pass to the main instanciation object, even if internally we can handle it as a widget. Let's keep the user-facing API simple, and let's re-use the internal mechanism we are already used to. Best of both worlds.\n\nAnd yes, we should definitely expose the helper more and not the state. We'll have to work on revamping the helper doc on the side as well\n",
-      "date": 1464199376,
+      "id": 221657218,
       "reactions": {
         "👍️": 1
-      },
-      "id": 221657218
+      }
     },
     {
+      "date": 1489572393,
+      "body": "This can be revisited, since we use `Configure` for react-instantsearch. There we decided on a widget/component, even though it's not DOM.\r\n\r\nAs @alexandremeunier noticed when using `Configure`, it isn't immediately obvious why you need a component for that, and not do it on the `InstantSearch` component. I think we decided on a component to keep a clear distinction between algolia/helper params and things used in instantsearch. ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "This can be revisited, since we use `Configure` for react-instantsearch. There we decided on a widget/component, even though it's not DOM.\r\n\r\nAs @alexandremeunier noticed when using `Configure`, it isn't immediately obvious why you need a component for that, and not do it on the `InstantSearch` component. I think we decided on a component to keep a clear distinction between algolia/helper params and things used in instantsearch. ",
-      "date": 1489572393,
+      "id": 286696531,
       "reactions": {
         "👍️": 1
-      },
-      "id": 286696531
+      }
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      },
-      "body": "We have two proposals: make a widget, add a configuration option (either in `instantsearch(options)` or `start(setState)`).\r\n\r\nThe widget approach pros:\r\n - separate the logic into a separated element\r\n - does not add to the current API\r\n\r\nThe configuration option pros:\r\n - Much better control over the lifecycle\r\n - Close to the searchParameters approach\r\n - Make sense if it's a one time configuration at the beginning\r\n\r\nThe widget approach would be close to `react-instantsearch`, but the two libraries are quite different: instantsearch.js offers a static configuration whereas react-instantsearch is dynamic. Also react-instantsearch does not offer any access to the helper. That's why it's a requirement for react-instantsearch and not so for instantantsearch.js.",
       "date": 1494928917,
-      "reactions": {
-        "👍️": 1
-      },
-      "id": 301735155
-    },
-    {
+      "body": "We have two proposals: make a widget, add a configuration option (either in `instantsearch(options)` or `start(setState)`).\r\n\r\nThe widget approach pros:\r\n - separate the logic into a separated element\r\n - does not add to the current API\r\n\r\nThe configuration option pros:\r\n - Much better control over the lifecycle\r\n - Close to the searchParameters approach\r\n - Make sense if it's a one time configuration at the beginning\r\n\r\nThe widget approach would be close to `react-instantsearch`, but the two libraries are quite different: instantsearch.js offers a static configuration whereas react-instantsearch is dynamic. Also react-instantsearch does not offer any access to the helper. That's why it's a requirement for react-instantsearch and not so for instantantsearch.js.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "Closing this one for now. The tools are available if need be.",
+      "id": 301735155,
+      "reactions": {
+        "👍️": 1
+      }
+    },
+    {
       "date": 1498930320,
-      "reactions": {},
-      "id": 312445156
+      "body": "Closing this one for now. The tools are available if need be.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 312445156,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

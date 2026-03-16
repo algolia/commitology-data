@@ -1,161 +1,164 @@
 {
-  "number": 982,
+  "type": "issue",
+  "distinctKey": "issue:982",
   "title": "Urls should be safe by default",
+  "date": 1460730913,
+  "body": "Following https://github.com/algolia/instantsearch.js/issues/848#issuecomment-191795411 and a support request we had also recently, I believe we should fix our urls.\n\nWe will get more and more issues about unsafe urls in the future.\n## Problem :trollface:\n\nwe implemented urls so that they do not look too bad:\n`?query=&hits=24&idx=instant_search&p=0&nR[price][<=][0]=320&is_v=1`\n\nBut this is not really standard because most parameters should be encoded so that our urls are compatible with every use case (copy pasting from/to email/app/slack, server side parsing, library parsing..)\n\nThus it would mean having urls like:\n\n`?query=&hits=24&idx=instant_search&p=0&nR%5Bprice%5D%5B%3C%3D%5D%5B0%5D=380&is_v=1`\n\nNot so clean and readable but would work everywhere.\n## Possible solutions :horse:\n- allow the helper to always encode. It's currently [disabled](https://github.com/algolia/algoliasearch-helper-js/blob/4357cf95d7efb0c1d017a0c897093289bf31c266/src/url.js#L157) and [we specifically asked](https://github.com/ljharb/qs/issues/116) for this feature in the `qs` project (lol)\n\nThis even seem to be backward compatible. It would be a WTF moment for developers but safety first!\n- create a brand new stringifier for complex objects => url which would not be based on unsafe characters like [ ] > =\n\nHere we should be careful about URL versions if we want to stay backward compatible (is_v= will help)\n- use https://github.com/vjeux/URLON\n\nHelp and feedback appreciated.\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/123822",
     "id": 123822,
-    "login": "vvo",
-    "type": "User"
+    "login": "vvo"
   },
-  "body": "Following https://github.com/algolia/instantsearch.js/issues/848#issuecomment-191795411 and a support request we had also recently, I believe we should fix our urls.\n\nWe will get more and more issues about unsafe urls in the future.\n## Problem :trollface:\n\nwe implemented urls so that they do not look too bad:\n`?query=&hits=24&idx=instant_search&p=0&nR[price][<=][0]=320&is_v=1`\n\nBut this is not really standard because most parameters should be encoded so that our urls are compatible with every use case (copy pasting from/to email/app/slack, server side parsing, library parsing..)\n\nThus it would mean having urls like:\n\n`?query=&hits=24&idx=instant_search&p=0&nR%5Bprice%5D%5B%3C%3D%5D%5B0%5D=380&is_v=1`\n\nNot so clean and readable but would work everywhere.\n## Possible solutions :horse:\n- allow the helper to always encode. It's currently [disabled](https://github.com/algolia/algoliasearch-helper-js/blob/4357cf95d7efb0c1d017a0c897093289bf31c266/src/url.js#L157) and [we specifically asked](https://github.com/ljharb/qs/issues/116) for this feature in the `qs` project (lol)\n\nThis even seem to be backward compatible. It would be a WTF moment for developers but safety first!\n- create a brand new stringifier for complex objects => url which would not be based on unsafe characters like [ ] > =\n\nHere we should be careful about URL versions if we want to stay backward compatible (is_v= will help)\n- use https://github.com/vjeux/URLON\n\nHelp and feedback appreciated.\n",
-  "date": 1460730913,
-  "labels": [
-    {
-      "color": "fbca04",
-      "id": 620214916,
-      "isDark": false,
-      "name": "Scope: Core"
-    }
-  ],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "fbca04",
+        "id": 620214916,
+        "isDark": false,
+        "name": "Scope: Core"
+      }
+    ],
+    "number": 982,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/393765",
-        "id": 393765,
-        "login": "bobylito",
-        "type": "User"
-      },
-      "body": "Maybe we tried to be generic and infer stuff that we shouldn't have in the first place. What about, we force the users to alias everything that can be?\n",
       "date": 1465481791,
-      "reactions": {},
-      "id": 224908133
-    },
-    {
+      "body": "Maybe we tried to be generic and infer stuff that we shouldn't have in the first place. What about, we force the users to alias everything that can be?\n",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      },
-      "body": "> Maybe we tried to be generic and infer stuff that we shouldn't have in the first place. What about, we force the users to alias everything that can be?\n\nI do not get how this would solve the issue?\n",
-      "date": 1465808936,
-      "reactions": {},
-      "id": 225527194
-    },
-    {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      },
-      "body": "First part of providing a safe: true option is done in the helper, cc @olance this is coming this week.\n\nhttps://github.com/algolia/algoliasearch-helper-js/pull/317\n",
-      "date": 1466450859,
-      "reactions": {},
-      "id": 227243773
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "> I do not get how this would solve the issue?\n\nLet me explain further. Right now, we have a generic solution that completly maps whatever could be in the SearchParameters. Our problem comes from the fact we serialize deep structures automatically. This leads to : `fR[format][0]=Wild` in which we have `[` and `]`. What about we let the user make it's own mapping, `format=Wild,Standard` for a the list of selected facets for the attribute `format`?\n\nI don't have an idea for an API. :) \n\nIn the mean time, the PR look nice :)\n",
+      "id": 224908133,
+      "reactions": {}
+    },
+    {
+      "date": 1465808936,
+      "body": "> Maybe we tried to be generic and infer stuff that we shouldn't have in the first place. What about, we force the users to alias everything that can be?\n\nI do not get how this would solve the issue?\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 225527194,
+      "reactions": {}
+    },
+    {
+      "date": 1466450859,
+      "body": "First part of providing a safe: true option is done in the helper, cc @olance this is coming this week.\n\nhttps://github.com/algolia/algoliasearch-helper-js/pull/317\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 227243773,
+      "reactions": {}
+    },
+    {
       "date": 1466495737,
+      "body": "> I do not get how this would solve the issue?\n\nLet me explain further. Right now, we have a generic solution that completly maps whatever could be in the SearchParameters. Our problem comes from the fact we serialize deep structures automatically. This leads to : `fR[format][0]=Wild` in which we have `[` and `]`. What about we let the user make it's own mapping, `format=Wild,Standard` for a the list of selected facets for the attribute `format`?\n\nI don't have an idea for an API. :) \n\nIn the mean time, the PR look nice :)\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/393765",
+        "id": 393765,
+        "login": "bobylito"
+      },
+      "id": 227367178,
       "reactions": {
         "👍️": 1
-      },
-      "id": 227367178
+      }
     },
     {
+      "date": 1466503333,
+      "body": "Yes this could be an interesting way to solve this. we would need to discuss it further, for now the safe option is more of a bug fix introduced as an option to avoid breaking current versions.\n\nBut I like your proposition, I will open a new discussion about it\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "Yes this could be an interesting way to solve this. we would need to discuss it further, for now the safe option is more of a bug fix introduced as an option to avoid breaking current versions.\n\nBut I like your proposition, I will open a new discussion about it\n",
-      "date": 1466503333,
-      "reactions": {},
-      "id": 227395742
+      "id": 227395742,
+      "reactions": {}
     },
     {
+      "date": 1466605758,
+      "body": "Yup @bobylito this would actually solve two problems in one, with people who want to completely change the URL params names used by the helper! :)\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/314079",
         "id": 314079,
-        "login": "olance",
-        "type": "User"
+        "login": "olance"
       },
-      "body": "Yup @bobylito this would actually solve two problems in one, with people who want to completely change the URL params names used by the helper! :)\n",
-      "date": 1466605758,
-      "reactions": {},
-      "id": 227761986
+      "id": 227761986,
+      "reactions": {}
     },
     {
+      "date": 1507293354,
+      "body": "Is there any reason to encode `[` and `]` in URLs? As far as I know, that's how HTML5 forms that have arrays are sent and they are not encoded. Like `name[0]=Actor1&name[1]=Actor2`. I think not encoding these 2 characters will provide a more readable URL and keep the compatibility.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/613331",
         "id": 613331,
-        "login": "xPaw",
-        "type": "User"
+        "login": "xPaw"
       },
-      "body": "Is there any reason to encode `[` and `]` in URLs? As far as I know, that's how HTML5 forms that have arrays are sent and they are not encoded. Like `name[0]=Actor1&name[1]=Actor2`. I think not encoding these 2 characters will provide a more readable URL and keep the compatibility.",
-      "date": 1507293354,
-      "reactions": {},
-      "id": 334742322
+      "id": 334742322,
+      "reactions": {}
     },
     {
+      "date": 1507293704,
+      "body": "@xPaw, because it's not safe in all use cases, it's described in the linked issue: https://github.com/algolia/instantsearch.js/issues/848#issuecomment-191795411",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "@xPaw, because it's not safe in all use cases, it's described in the linked issue: https://github.com/algolia/instantsearch.js/issues/848#issuecomment-191795411",
-      "date": 1507293704,
-      "reactions": {},
-      "id": 334743566
+      "id": 334743566,
+      "reactions": {}
     },
     {
+      "date": 1507294355,
+      "body": "@Haroenv I think that particular issue was not encoding `>=`, and not `[ ]`.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/613331",
         "id": 613331,
-        "login": "xPaw",
-        "type": "User"
+        "login": "xPaw"
       },
-      "body": "@Haroenv I think that particular issue was not encoding `>=`, and not `[ ]`.",
-      "date": 1507294355,
-      "reactions": {},
-      "id": 334745937
+      "id": 334745937,
+      "reactions": {}
     },
     {
+      "date": 1507310274,
+      "body": "We had to encode [] also because when copy pasting links those need to be encoded.\r\n\r\nYou can check which ones needs to be encoded in a URL by doing:\r\n\r\n```\r\n> encodeURIComponent('[]')\r\n\"%5B%5D\"\r\n```\r\n\r\nFor example copy pasting those links in slack or in emails resulted in failures given the email client or the slack client.\r\n\r\nHappy to revisit/rediscuss this if some testing prove this is not necessary. (maybe open another issue if so)\r\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "We had to encode [] also because when copy pasting links those need to be encoded.\r\n\r\nYou can check which ones needs to be encoded in a URL by doing:\r\n\r\n```\r\n> encodeURIComponent('[]')\r\n\"%5B%5D\"\r\n```\r\n\r\nFor example copy pasting those links in slack or in emails resulted in failures given the email client or the slack client.\r\n\r\nHappy to revisit/rediscuss this if some testing prove this is not necessary. (maybe open another issue if so)\r\n",
-      "date": 1507310274,
+      "id": 334816803,
       "reactions": {
         "👍️": 1
-      },
-      "id": 334816803
+      }
     },
     {
+      "date": 1507311667,
+      "body": "Also this post has some good details: https://stackoverflow.com/a/1016737/147079",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "Also this post has some good details: https://stackoverflow.com/a/1016737/147079",
-      "date": 1507311667,
-      "reactions": {},
-      "id": 334823116
+      "id": 334823116,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

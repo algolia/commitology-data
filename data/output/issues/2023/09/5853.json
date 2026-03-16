@@ -1,123 +1,126 @@
 {
-  "number": 5853,
+  "type": "issue",
+  "distinctKey": "issue:5853",
   "title": "JSX types are augmented incorrectly when importing an instantsearch package",
+  "date": 1695039037,
+  "body": "### 🐛 Current behavior\n\nImporting the package seems to import globally augmented versions of various types in the `JSX` namespace. This has the side effect of clashing and being incorrect against the versions in `@types/react` and `@types/react-dom`.\r\n\r\nThis seems to have been caused by https://github.com/algolia/ui-components/pull/16 which declares the augmentations inside a `global` block, affecting anything that imports these packages. \n\n### 🔍 Steps to reproduce\n\nAn example is included in the CodeSandbox below - see src/App.tsx.\r\n\r\nThe `Name` component has been supplied with a `ref` prop, which should be a TypeScript error because `Name` does not list that props in its type. However, due to the global augmentation of `InstristicAttributes`, this is not an error and the `@ts-expect-error` comment is incorrectly reported as unused. \r\n\r\nCommenting out the import for `react-instantsearch` correctly reports an error for the `ref` prop not existing on the component.\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/algolia-ts-issue-43d7hp?file=/src/App.tsx\n\n### 💭 Expected behavior\n\nImporting any of the instantsearch or ui-components packages should not be incorrectly augmenting the types for the project they are imported into. Specifically in this case, they should not be adding a `ref` prop to all JSX elements.\r\n\r\nIt now means that all of our components can appear to take a ref according to their types, leading to confusion as to which components actually do take a ref at runtime.\r\n\r\nI believe the solution here is to declare the JSX types needed inside a `.d.ts` file within the repository and include it as a reference in the tsconfig.json, so that it can exist only at build time for compilation and not at runtime where it interferes with existing declarations.\n\n### Package version\n\nreact-instantsearch 7.0.3\n\n### Operating system\n\nmacOS 13.4.1\n\n### Browser\n\nChrome 117.0.5938.88\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/57462397",
     "id": 57462397,
-    "login": "sachinahya",
-    "type": "User"
+    "login": "sachinahya"
   },
-  "body": "### 🐛 Current behavior\n\nImporting the package seems to import globally augmented versions of various types in the `JSX` namespace. This has the side effect of clashing and being incorrect against the versions in `@types/react` and `@types/react-dom`.\r\n\r\nThis seems to have been caused by https://github.com/algolia/ui-components/pull/16 which declares the augmentations inside a `global` block, affecting anything that imports these packages. \n\n### 🔍 Steps to reproduce\n\nAn example is included in the CodeSandbox below - see src/App.tsx.\r\n\r\nThe `Name` component has been supplied with a `ref` prop, which should be a TypeScript error because `Name` does not list that props in its type. However, due to the global augmentation of `InstristicAttributes`, this is not an error and the `@ts-expect-error` comment is incorrectly reported as unused. \r\n\r\nCommenting out the import for `react-instantsearch` correctly reports an error for the `ref` prop not existing on the component.\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/algolia-ts-issue-43d7hp?file=/src/App.tsx\n\n### 💭 Expected behavior\n\nImporting any of the instantsearch or ui-components packages should not be incorrectly augmenting the types for the project they are imported into. Specifically in this case, they should not be adding a `ref` prop to all JSX elements.\r\n\r\nIt now means that all of our components can appear to take a ref according to their types, leading to confusion as to which components actually do take a ref at runtime.\r\n\r\nI believe the solution here is to declare the JSX types needed inside a `.d.ts` file within the repository and include it as a reference in the tsconfig.json, so that it can exist only at build time for compilation and not at runtime where it interferes with existing declarations.\n\n### Package version\n\nreact-instantsearch 7.0.3\n\n### Operating system\n\nmacOS 13.4.1\n\n### Browser\n\nChrome 117.0.5938.88\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
-  "date": 1695039037,
-  "labels": [
-    {
-      "color": "d93f0b",
-      "id": 238751632,
-      "isDark": true,
-      "name": "Type: Bug"
+  "issue": {
+    "labels": [
+      {
+        "color": "d93f0b",
+        "id": 238751632,
+        "isDark": true,
+        "name": "Type: Bug"
+      },
+      {
+        "color": "5319E7",
+        "id": 4913597511,
+        "isDark": true,
+        "name": "triage"
+      }
+    ],
+    "number": 5853,
+    "reactions": {
+      "👍️": 3
     },
-    {
-      "color": "5319E7",
-      "id": 4913597511,
-      "isDark": true,
-      "name": "triage"
-    }
-  ],
-  "state": "closed",
-  "reactions": {
-    "👍️": 3
+    "state": "closed"
   },
   "comments": [
     {
+      "date": 1695642482,
+      "body": "Yesss, I also have an issue where algolia is overiding the global jsx key type:\r\n\r\n```\r\ndeclare global {\r\n    namespace JSX {\r\n        interface IntrinsicAttributes {\r\n            key?: string | number | null;\r\n            ref?: unknown;\r\n        }\r\n        interface ElementChildrenAttribute {\r\n            children: ComponentChildren;\r\n        }\r\n        interface Element extends VNode {\r\n        }\r\n        interface IntrinsicElements {\r\n        }\r\n    }\r\n}\r\n```\r\n\r\nhowever react allows setting a bigint as a type so it fails everywhere in my app..\r\n\r\n```\r\n Types of property 'key' are incompatible.\r\n      Type 'Key | null | undefined' is not assignable to type 'string | number | null | undefined'.\r\n        Type 'bigint' is not assignable to type 'string | number | null | undefined'.ts(2322)\r\n````",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/12549124",
         "id": 12549124,
-        "login": "JClackett",
-        "type": "User"
+        "login": "JClackett"
       },
-      "body": "Yesss, I also have an issue where algolia is overiding the global jsx key type:\r\n\r\n```\r\ndeclare global {\r\n    namespace JSX {\r\n        interface IntrinsicAttributes {\r\n            key?: string | number | null;\r\n            ref?: unknown;\r\n        }\r\n        interface ElementChildrenAttribute {\r\n            children: ComponentChildren;\r\n        }\r\n        interface Element extends VNode {\r\n        }\r\n        interface IntrinsicElements {\r\n        }\r\n    }\r\n}\r\n```\r\n\r\nhowever react allows setting a bigint as a type so it fails everywhere in my app..\r\n\r\n```\r\n Types of property 'key' are incompatible.\r\n      Type 'Key | null | undefined' is not assignable to type 'string | number | null | undefined'.\r\n        Type 'bigint' is not assignable to type 'string | number | null | undefined'.ts(2322)\r\n````",
-      "date": 1695642482,
+      "id": 1733507129,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1733507129
+      }
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/109598904",
-        "id": 109598904,
-        "login": "thejessewinton",
-        "type": "User"
-      },
-      "body": "+1, bumping this, currently blocking me from being able to ship!",
       "date": 1696382253,
-      "reactions": {},
-      "id": 1745981013
-    },
-    {
+      "body": "+1, bumping this, currently blocking me from being able to ship!",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "We think we have found a solution for now, if you change the built version of ui-components to be the one from this PR: https://github.com/algolia/ui-components/pull/29, does it work for you all @thejessewinton, @JClackett, @sachinahya?",
-      "date": 1696413164,
-      "reactions": {},
-      "id": 1746530344
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/109598904",
         "id": 109598904,
-        "login": "thejessewinton",
-        "type": "User"
+        "login": "thejessewinton"
       },
-      "body": "@Haroenv thanks, I will give it a try. When do you think this will be released?",
-      "date": 1696416851,
-      "reactions": {},
-      "id": 1746630864
+      "id": 1745981013,
+      "reactions": {}
     },
     {
+      "date": 1696413164,
+      "body": "We think we have found a solution for now, if you change the built version of ui-components to be the one from this PR: https://github.com/algolia/ui-components/pull/29, does it work for you all @thejessewinton, @JClackett, @sachinahya?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "Once it's confirmed this works as expected in some diverse environments @thejessewinton :) ",
-      "date": 1696418182,
-      "reactions": {},
-      "id": 1746663856
+      "id": 1746530344,
+      "reactions": {}
     },
     {
+      "date": 1696416851,
+      "body": "@Haroenv thanks, I will give it a try. When do you think this will be released?",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/109598904",
+        "id": 109598904,
+        "login": "thejessewinton"
+      },
+      "id": 1746630864,
+      "reactions": {}
+    },
+    {
+      "date": 1696418182,
+      "body": "Once it's confirmed this works as expected in some diverse environments @thejessewinton :) ",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 1746663856,
+      "reactions": {}
+    },
+    {
+      "date": 1696425061,
+      "body": "@Haroenv Thanks for doing this. I built and npm linked this locally and it seems to have solved our issue.",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/57462397",
         "id": 57462397,
-        "login": "sachinahya",
-        "type": "User"
+        "login": "sachinahya"
       },
-      "body": "@Haroenv Thanks for doing this. I built and npm linked this locally and it seems to have solved our issue.",
-      "date": 1696425061,
+      "id": 1746850193,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1746850193
+      }
     },
     {
+      "date": 1696426761,
+      "body": "@Haroenv same result as @sachinahya, thanks for your work on it!",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/109598904",
         "id": 109598904,
-        "login": "thejessewinton",
-        "type": "User"
+        "login": "thejessewinton"
       },
-      "body": "@Haroenv same result as @sachinahya, thanks for your work on it!",
-      "date": 1696426761,
+      "id": 1746900812,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1746900812
+      }
     }
-  ],
-  "type": "issue"
+  ]
 }

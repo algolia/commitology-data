@@ -1,42 +1,45 @@
 {
-  "number": 829,
+  "type": "issue",
+  "distinctKey": "issue:829",
   "title": "[hits]: Apply `transformData.allItems` even if no `template.allItems`",
+  "date": 1454937319,
+  "body": "Currently, the `transformData.allItems` method is only applied when a `templates.allItems` template is defined. What if I want to filter the list of results returned but still use the default rendering (and thus only want to use the `templates.item` property)?\n\nThis can be used for example to dedupe elements returned by the API in more custom ways, or merge elements together. Currently this can only be achieved by defining a `templates.allItems` that only reproduce the default behavior.\n\nI suggest we always apply `transformData.allItems` to the list of returned hits, even if no `allItems` template is defined. Then, each of the resulting hit will be normally passed to the `transformData.item` methods.\n\nThis does not change the fact that the `item` and `allItems` templates are mutually exclusive, just the fact the that `allItems` `transformData` is always called.\n\nThoughts? I can take care of the PR.\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/283419",
     "id": 283419,
-    "login": "pixelastic",
-    "type": "User"
+    "login": "pixelastic"
   },
-  "body": "Currently, the `transformData.allItems` method is only applied when a `templates.allItems` template is defined. What if I want to filter the list of results returned but still use the default rendering (and thus only want to use the `templates.item` property)?\n\nThis can be used for example to dedupe elements returned by the API in more custom ways, or merge elements together. Currently this can only be achieved by defining a `templates.allItems` that only reproduce the default behavior.\n\nI suggest we always apply `transformData.allItems` to the list of returned hits, even if no `allItems` template is defined. Then, each of the resulting hit will be normally passed to the `transformData.item` methods.\n\nThis does not change the fact that the `item` and `allItems` templates are mutually exclusive, just the fact the that `allItems` `transformData` is always called.\n\nThoughts? I can take care of the PR.\n",
-  "date": 1454937319,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 829,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1454937526,
+      "body": "Do you have a practical example? For deduplication, isn't distinct in the API enough? (since we are not merging several requests into one)\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "Do you have a practical example? For deduplication, isn't distinct in the API enough? (since we are not merging several requests into one)\n",
-      "date": 1454937526,
-      "reactions": {},
-      "id": 181363966
+      "id": 181363966,
+      "reactions": {}
     },
     {
+      "date": 1454938145,
+      "body": "The example I have currently in mind is when searching in a large text (like a book). I have split my text in chunks that roughly equals a paragraph. In order to display a nice UI, I want to display the matching chunk of text, along with its context (paragraph before and paragraph after). `content`, `after` and `before` are all stored in the same record.\n\nThe thing is, if I have two results like this:\n\n```\nbefore: A\ncontent: B\nafter: C\n```\n\n```\nbefore: B\ncontent: C\nafter: D\n```\n\nYou can see that they are actually two paragraphs following one another. Instead of duplicating the render, I would like to merge them in something like:\n\n```\nbefore: A\ncontent: B + C\nafter: D\n```\n\nTo do that I need to access the full list and merge some hits together before passing it to the rendering.\n\nI just remembered that the `template` and `transformData` keys are really linked, a `transformData` will always be applied to the data when calling the template with the same name. This actually makes a lot of sense and makes the API very predictable. I'm now unsure I really need to change that :)\n\nMaybe using an `allItems` template is actually the best solution. I'm closing the issue for now, but feel free to comment if you have anything other thoughts to add.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "The example I have currently in mind is when searching in a large text (like a book). I have split my text in chunks that roughly equals a paragraph. In order to display a nice UI, I want to display the matching chunk of text, along with its context (paragraph before and paragraph after). `content`, `after` and `before` are all stored in the same record.\n\nThe thing is, if I have two results like this:\n\n```\nbefore: A\ncontent: B\nafter: C\n```\n\n```\nbefore: B\ncontent: C\nafter: D\n```\n\nYou can see that they are actually two paragraphs following one another. Instead of duplicating the render, I would like to merge them in something like:\n\n```\nbefore: A\ncontent: B + C\nafter: D\n```\n\nTo do that I need to access the full list and merge some hits together before passing it to the rendering.\n\nI just remembered that the `template` and `transformData` keys are really linked, a `transformData` will always be applied to the data when calling the template with the same name. This actually makes a lot of sense and makes the API very predictable. I'm now unsure I really need to change that :)\n\nMaybe using an `allItems` template is actually the best solution. I'm closing the issue for now, but feel free to comment if you have anything other thoughts to add.\n",
-      "date": 1454938145,
-      "reactions": {},
-      "id": 181366614
+      "id": 181366614,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

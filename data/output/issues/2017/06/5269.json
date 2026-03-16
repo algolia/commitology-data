@@ -1,274 +1,277 @@
 {
-  "number": 5269,
+  "type": "issue",
+  "distinctKey": "issue:5269",
   "title": "infinite loop when rendering a conditional loading message with children",
+  "date": 1498142285,
+  "body": "**Do you want to request a *feature* or report a *bug*?**\r\n\r\nBug.\r\n\r\n**Bug: What is the current behavior?**\r\n\r\n(See below for full description.)\r\n\r\nAttempting to use a connected \"loading message\" component (one that renders static content when loading and its children when finished) causes an infinite loop in certain circumstances.\r\n\r\n* when `children` contains the `<Stats />` component, `searchResults.searching` is set as expected.\r\n* when `children` contains the `<Hits />` and `<Pagination />` components (possibly others), `searchResults.searching` flips back and forth ad infinitum.\r\n\r\nWhen the \"loading message\" component is configured to render static content upon completion, the infinite loop does not occur.\r\n\r\n**Bug: What is the expected behavior?**\r\n\r\n`searchResults.searching` should not flip-flop between `true` and `false` in an infinite loop when rendering `children`.\r\n\r\n**Bug: What browsers are impacted? Which versions?**\r\n\r\nObserved in Chrome 59.0.3071.109 & Safari 10.1.1.\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\n\r\nObserved in react-instantsearch 4.0.3 and 4.0.4.\r\n \r\n----\r\n\r\n### Background\r\n\r\n(copied/adapted from [discussion on community forum](https://discourse.algolia.com/t/searching-multiple-indices-with-different-fields-loading-indicator/1647/8).)\r\n\r\nUsing the example connector provided [in your docs](https://community.algolia.com/react-instantsearch/guide/Conditional_display.html#displaying-content-when-loading):\r\n```\r\nconst connectLoading = createConnector({\r\n  displayName: 'ConditionalError',\r\n  getProvidedProps(props, searchState, searchResults) {\r\n    return {\r\n      loading: searchResults.searching\r\n    };\r\n  }\r\n});\r\n```\r\n\r\nI then create a component that renders a message when loading, and its children when complete:\r\n```\r\nconst LoadingMessage = connectLoading(({ loading, children }) =>\r\n  <div>\r\n    {loading ? <p>Loading...</p> : children }\r\n  </div>\r\n);\r\n```\r\n\r\nNow we make use of it in a minimal UI where we just display the stats:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage>\r\n      <p>FINISHED!</p>\r\n      <Stats />\r\n    </LoadingMessage>\r\n  </div>\r\n\r\n</InstantSearch>\r\n```\r\n\r\nYou can see this example here in a codepen: [`https://codepen.io/wrksprfct/full/jwmmox/`](https://codepen.io/wrksprfct/full/jwmmox/). This works as expected. Load the page and you see \"Loading...\" and then \"FINISHED! X results found in Yms\". Ensure you have web console open and you'll see the XHRs fly by and `searchResults.searching` toggle between `true` and `false` when things change state. Type \"avocado\" into the box: the UI updates and the console logs as you'd expect.\r\n\r\nNow here's the fun part. Let's replace the `<Stats />` component with the `<Hits />` component, so it looks like this:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage>\r\n      <p>FINISHED!</p>\r\n      <Hits />\r\n    </LoadingMessage>\r\n  </div>\r\n</InstantSearch>\r\n```\r\n\r\nYou can see this example in another codepen: [`https://codepen.io/wrksprfct/full/yXbXNQ`](https://codepen.io/wrksprfct/full/yXbXNQ). **!!!BEWARE!!!** before loading that page, be prepared to kill it via Chrome's Task Manager or your OS's equivalent because it gets into an infinite loop and consumes CPU & gobs of memory quickly. Again, ensure you have the web console open.\r\n\r\nSo, upon loading that page, you'll see two XHRs instead of one (identical, AFAICT), and then `searchResults.searching` flip between `false` and `true` ad infinitum.\r\n\r\nIf, in this problematic example, you hardcode the `loading` prop to `false`:\r\n```\r\ngetProvidedProps(props, searchState, searchResults) {\r\n  return {\r\n    loading: false\r\n  };\r\n}\r\n```\r\n...everything works. Well, except for seeing the loading message... which is the whole point of this exercise!\r\n\r\nAgain, the only difference is the switch from `<Stats />` to `<Hits />`.  I looked at their sources, but could not find anything interesting.\r\n\r\nInterestingly, the same problematic behavior occurs with `<Pagination />`. See [`https://codepen.io/wrksprfct/full/zzzOWm/`](https://codepen.io/wrksprfct/full/zzzOWm/). I did not test any others yet.\r\n\r\nNow... if we update the `LoadingMessage` component to not render children:\r\n```\r\nconst LoadingMessage = connectLoading(({ loading }) =>\r\n  <div>\r\n    {loading ? <p>Loading...</p> : <p>DONE!</p> }\r\n  </div>\r\n);\r\n```\r\n\r\n... then everything works fine:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage />\r\n  </div>\r\n</InstantSearch>\r\n```\r\nYou can see this example in action in this codepen: [`https://codepen.io/wrksprfct/full/WOOajx`](https://codepen.io/wrksprfct/full/WOOajx).\r\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/9916",
     "id": 9916,
-    "login": "blech75",
-    "type": "User"
+    "login": "blech75"
   },
-  "body": "**Do you want to request a *feature* or report a *bug*?**\r\n\r\nBug.\r\n\r\n**Bug: What is the current behavior?**\r\n\r\n(See below for full description.)\r\n\r\nAttempting to use a connected \"loading message\" component (one that renders static content when loading and its children when finished) causes an infinite loop in certain circumstances.\r\n\r\n* when `children` contains the `<Stats />` component, `searchResults.searching` is set as expected.\r\n* when `children` contains the `<Hits />` and `<Pagination />` components (possibly others), `searchResults.searching` flips back and forth ad infinitum.\r\n\r\nWhen the \"loading message\" component is configured to render static content upon completion, the infinite loop does not occur.\r\n\r\n**Bug: What is the expected behavior?**\r\n\r\n`searchResults.searching` should not flip-flop between `true` and `false` in an infinite loop when rendering `children`.\r\n\r\n**Bug: What browsers are impacted? Which versions?**\r\n\r\nObserved in Chrome 59.0.3071.109 & Safari 10.1.1.\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\n\r\nObserved in react-instantsearch 4.0.3 and 4.0.4.\r\n \r\n----\r\n\r\n### Background\r\n\r\n(copied/adapted from [discussion on community forum](https://discourse.algolia.com/t/searching-multiple-indices-with-different-fields-loading-indicator/1647/8).)\r\n\r\nUsing the example connector provided [in your docs](https://community.algolia.com/react-instantsearch/guide/Conditional_display.html#displaying-content-when-loading):\r\n```\r\nconst connectLoading = createConnector({\r\n  displayName: 'ConditionalError',\r\n  getProvidedProps(props, searchState, searchResults) {\r\n    return {\r\n      loading: searchResults.searching\r\n    };\r\n  }\r\n});\r\n```\r\n\r\nI then create a component that renders a message when loading, and its children when complete:\r\n```\r\nconst LoadingMessage = connectLoading(({ loading, children }) =>\r\n  <div>\r\n    {loading ? <p>Loading...</p> : children }\r\n  </div>\r\n);\r\n```\r\n\r\nNow we make use of it in a minimal UI where we just display the stats:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage>\r\n      <p>FINISHED!</p>\r\n      <Stats />\r\n    </LoadingMessage>\r\n  </div>\r\n\r\n</InstantSearch>\r\n```\r\n\r\nYou can see this example here in a codepen: [`https://codepen.io/wrksprfct/full/jwmmox/`](https://codepen.io/wrksprfct/full/jwmmox/). This works as expected. Load the page and you see \"Loading...\" and then \"FINISHED! X results found in Yms\". Ensure you have web console open and you'll see the XHRs fly by and `searchResults.searching` toggle between `true` and `false` when things change state. Type \"avocado\" into the box: the UI updates and the console logs as you'd expect.\r\n\r\nNow here's the fun part. Let's replace the `<Stats />` component with the `<Hits />` component, so it looks like this:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage>\r\n      <p>FINISHED!</p>\r\n      <Hits />\r\n    </LoadingMessage>\r\n  </div>\r\n</InstantSearch>\r\n```\r\n\r\nYou can see this example in another codepen: [`https://codepen.io/wrksprfct/full/yXbXNQ`](https://codepen.io/wrksprfct/full/yXbXNQ). **!!!BEWARE!!!** before loading that page, be prepared to kill it via Chrome's Task Manager or your OS's equivalent because it gets into an infinite loop and consumes CPU & gobs of memory quickly. Again, ensure you have the web console open.\r\n\r\nSo, upon loading that page, you'll see two XHRs instead of one (identical, AFAICT), and then `searchResults.searching` flip between `false` and `true` ad infinitum.\r\n\r\nIf, in this problematic example, you hardcode the `loading` prop to `false`:\r\n```\r\ngetProvidedProps(props, searchState, searchResults) {\r\n  return {\r\n    loading: false\r\n  };\r\n}\r\n```\r\n...everything works. Well, except for seeing the loading message... which is the whole point of this exercise!\r\n\r\nAgain, the only difference is the switch from `<Stats />` to `<Hits />`.  I looked at their sources, but could not find anything interesting.\r\n\r\nInterestingly, the same problematic behavior occurs with `<Pagination />`. See [`https://codepen.io/wrksprfct/full/zzzOWm/`](https://codepen.io/wrksprfct/full/zzzOWm/). I did not test any others yet.\r\n\r\nNow... if we update the `LoadingMessage` component to not render children:\r\n```\r\nconst LoadingMessage = connectLoading(({ loading }) =>\r\n  <div>\r\n    {loading ? <p>Loading...</p> : <p>DONE!</p> }\r\n  </div>\r\n);\r\n```\r\n\r\n... then everything works fine:\r\n```\r\n<InstantSearch ...>\r\n  <SearchBox />\r\n\r\n  <div className=\"SearchResults\">\r\n    <LoadingMessage />\r\n  </div>\r\n</InstantSearch>\r\n```\r\nYou can see this example in action in this codepen: [`https://codepen.io/wrksprfct/full/WOOajx`](https://codepen.io/wrksprfct/full/WOOajx).\r\n",
-  "date": 1498142285,
-  "labels": [
-    {
-      "color": "61dafb",
-      "id": 4926236951,
-      "isDark": false,
-      "name": "Library: React InstantSearch < 7"
-    }
-  ],
-  "state": "closed",
-  "reactions": {
-    "👍️": 11
+  "issue": {
+    "labels": [
+      {
+        "color": "61dafb",
+        "id": 4926236951,
+        "isDark": false,
+        "name": "Library: React InstantSearch < 7"
+      }
+    ],
+    "number": 5269,
+    "reactions": {
+      "👍️": 11
+    },
+    "state": "closed"
   },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6885378",
-        "id": 6885378,
-        "login": "mthuret",
-        "type": "User"
-      },
-      "body": "Fix in 4.0.6",
       "date": 1498724384,
-      "reactions": {},
-      "id": 1363064115
-    },
-    {
+      "body": "Fix in 4.0.6",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6885378",
         "id": 6885378,
-        "login": "mthuret",
-        "type": "User"
+        "login": "mthuret"
       },
-      "body": "The fix was not the good one. ",
-      "date": 1499855212,
-      "reactions": {},
-      "id": 1363064126
+      "id": 1363064115,
+      "reactions": {}
     },
     {
+      "date": 1499855212,
+      "body": "The fix was not the good one. ",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6885378",
+        "id": 6885378,
+        "login": "mthuret"
+      },
+      "id": 1363064126,
+      "reactions": {}
+    },
+    {
+      "date": 1504603967,
+      "body": "Hello,\r\nI also just stumbled upon the exact same problem.\r\nI get an infinite loop when rendering `<Hits>` as the child.\r\n@blech75 did you find a workaround?",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/10137",
         "id": 10137,
-        "login": "ghost",
-        "type": "User"
+        "login": "ghost"
       },
-      "body": "Hello,\r\nI also just stumbled upon the exact same problem.\r\nI get an infinite loop when rendering `<Hits>` as the child.\r\n@blech75 did you find a workaround?",
-      "date": 1504603967,
+      "id": 1363064134,
       "reactions": {
         "👍️": 2
-      },
-      "id": 1363064134
+      }
     },
     {
+      "date": 1509745875,
+      "body": "I got the the exact same problem when trying to add a Loading message. Is there any ETA on when this will be fixed?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/10137",
         "id": 10137,
-        "login": "ghost",
-        "type": "User"
+        "login": "ghost"
       },
-      "body": "I got the the exact same problem when trying to add a Loading message. Is there any ETA on when this will be fixed?",
-      "date": 1509745875,
+      "id": 1363064144,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1363064144
+      }
     },
     {
+      "date": 1512496314,
+      "body": "@blech75 @roma98 @reinvanimschoot \r\n\r\nWe are currently looking into the issue, we found where the problem came from. But for the moment we don't have a proper fix. The problem is inherent of how React InstantSearch works. It's related to how the query parameters are computed & the lifecycle of the components.\r\n\r\nAs a workaround for the example provided by @blech75 you need to avoid to mount / unmount the component on each change of the props `searching`. You can simply hide the `Hits` component with the help of styles instead of remove it on each changes. The fact that the component is mounted / unmounted trigger the infinite loop. I made an example showing how to avoid the problem with the workaround proposed above.\r\n\r\n```jsx\r\nconst Loading = connectStateResults(({ searching, children }) => (\r\n  <div>\r\n    <p style={{ display: searching ? 'block' : 'none' }}>\r\n      Loading...\r\n    </p>\r\n\r\n    <div style={{ display: searching ? 'none' : 'block' }}>\r\n      {children}\r\n    </div>\r\n  </div>\r\n));\r\n\r\nconst App = () => (\r\n  <InstantSearch>\r\n    <Loading>\r\n      <Hits hitComponent={Product} />\r\n      <Pagination />\r\n    </Loading>\r\n  </InstantSearch>\r\n);\r\n```\r\n\r\n> https://codesandbox.io/s/7yzwl0kom0",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6513513",
         "id": 6513513,
-        "login": "samouss",
-        "type": "User"
+        "login": "samouss"
       },
-      "body": "@blech75 @roma98 @reinvanimschoot \r\n\r\nWe are currently looking into the issue, we found where the problem came from. But for the moment we don't have a proper fix. The problem is inherent of how React InstantSearch works. It's related to how the query parameters are computed & the lifecycle of the components.\r\n\r\nAs a workaround for the example provided by @blech75 you need to avoid to mount / unmount the component on each change of the props `searching`. You can simply hide the `Hits` component with the help of styles instead of remove it on each changes. The fact that the component is mounted / unmounted trigger the infinite loop. I made an example showing how to avoid the problem with the workaround proposed above.\r\n\r\n```jsx\r\nconst Loading = connectStateResults(({ searching, children }) => (\r\n  <div>\r\n    <p style={{ display: searching ? 'block' : 'none' }}>\r\n      Loading...\r\n    </p>\r\n\r\n    <div style={{ display: searching ? 'none' : 'block' }}>\r\n      {children}\r\n    </div>\r\n  </div>\r\n));\r\n\r\nconst App = () => (\r\n  <InstantSearch>\r\n    <Loading>\r\n      <Hits hitComponent={Product} />\r\n      <Pagination />\r\n    </Loading>\r\n  </InstantSearch>\r\n);\r\n```\r\n\r\n> https://codesandbox.io/s/7yzwl0kom0",
-      "date": 1512496314,
+      "id": 1363064156,
       "reactions": {
         "👍️": 4,
         "👎️": 4
-      },
-      "id": 1363064156
+      }
     },
     {
+      "date": 1512576264,
+      "body": "@samouss interesting, and thanks for the update!\r\n\r\nthis workaround -- using `display` to show/hide elements --  though not optimal or intuitive, makes sense. i can't dedicate time to applying this approach to my project right now, but i'll be sure to follow up when i do.\r\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/9916",
         "id": 9916,
-        "login": "blech75",
-        "type": "User"
+        "login": "blech75"
       },
-      "body": "@samouss interesting, and thanks for the update!\r\n\r\nthis workaround -- using `display` to show/hide elements --  though not optimal or intuitive, makes sense. i can't dedicate time to applying this approach to my project right now, but i'll be sure to follow up when i do.\r\n",
-      "date": 1512576264,
-      "reactions": {},
-      "id": 1363064176
+      "id": 1363064176,
+      "reactions": {}
     },
     {
+      "date": 1513201433,
+      "body": "Same issue here. As a workaround I took the pagination component off the `connectStateResults` function and connected it individually with `connectPagination`, but is also not optimal.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1702755",
         "id": 1702755,
-        "login": "nicosommi",
-        "type": "User"
+        "login": "nicosommi"
       },
-      "body": "Same issue here. As a workaround I took the pagination component off the `connectStateResults` function and connected it individually with `connectPagination`, but is also not optimal.",
-      "date": 1513201433,
-      "reactions": {},
-      "id": 1363064182
+      "id": 1363064182,
+      "reactions": {}
     },
     {
+      "date": 1514489357,
+      "body": "I had the same kind of issue with : \r\n\r\n```ts\r\nexport const SearchResults = connectStateResults(connectHits(SearchResultsComponent));\r\n```\r\n\r\nThe workaround was to do : \r\n\r\n```ts\r\nexport const SearchResults = connectHits(connectStateResults(SearchResultsComponent));\r\n```\r\n\r\n\r\n💯 ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1252066",
         "id": 1252066,
-        "login": "charlypoly",
-        "type": "User"
+        "login": "charlypoly"
       },
-      "body": "I had the same kind of issue with : \r\n\r\n```ts\r\nexport const SearchResults = connectStateResults(connectHits(SearchResultsComponent));\r\n```\r\n\r\nThe workaround was to do : \r\n\r\n```ts\r\nexport const SearchResults = connectHits(connectStateResults(SearchResultsComponent));\r\n```\r\n\r\n\r\n💯 ",
-      "date": 1514489357,
+      "id": 1363064191,
       "reactions": {
         "🎉": 1,
         "👍️": 7,
         "🚀": 1
-      },
-      "id": 1363064191
+      }
     },
     {
+      "date": 1535652125,
+      "body": "Same here. \r\n`connectStateResults` is infinite loop.\r\nAlways returns `searching=true` case.\r\n\r\n```\r\nconst Content = connectStateResults(\r\n  ({ searchState, searching, onSearchStateChange, getSelected }) => {\r\n    if(searching) {\r\n      return <Text>\r\n        SEACHING...\r\n      </Text>\r\n    } else {\r\n      return (\r\n        <InfiniteHits onSearchStateChange={ onSearchStateChange }\r\n                      searchState={ searchState }\r\n                      getSelected={ getSelected }/>\r\n      )\r\n    }\r\n  }\r\n);\r\n\r\n              <InstantSearch\r\n                appId=\"...\"\r\n                apiKey=\"...\"\r\n                indexName=\"...\"\r\n                onSearchStateChange={ this.props.onSearchStateChange }\r\n                searchState={ this.props.searchState }\r\n                refresh={ true }\r\n                // resultsState={ { query: '...' } }\r\n              >\r\n                { /*<RefinementList attribute=\"...\" headerText={ '...' } />*/ }\r\n                <TouchableOpacity\r\n                  onPress={ () => {\r\n                    this.props.setModalVisible(false);\r\n                  } }\r\n                >\r\n                  <Text style={ { marginTop: 20, height: 50, alignSelf: 'center', fontSize: 14 } }>\r\n                    Close\r\n                  </Text>\r\n                </TouchableOpacity>\r\n                <SearchBox />\r\n                <Content\r\n                  onSearchStateChange={ this.props.onSearchStateChange }\r\n                  searchState={ this.props.searchState }\r\n                  getSelected={ this.props.getSelected }\r\n                />\r\n              </InstantSearch>\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/3880497",
         "id": 3880497,
-        "login": "wzup",
-        "type": "User"
+        "login": "wzup"
       },
-      "body": "Same here. \r\n`connectStateResults` is infinite loop.\r\nAlways returns `searching=true` case.\r\n\r\n```\r\nconst Content = connectStateResults(\r\n  ({ searchState, searching, onSearchStateChange, getSelected }) => {\r\n    if(searching) {\r\n      return <Text>\r\n        SEACHING...\r\n      </Text>\r\n    } else {\r\n      return (\r\n        <InfiniteHits onSearchStateChange={ onSearchStateChange }\r\n                      searchState={ searchState }\r\n                      getSelected={ getSelected }/>\r\n      )\r\n    }\r\n  }\r\n);\r\n\r\n              <InstantSearch\r\n                appId=\"...\"\r\n                apiKey=\"...\"\r\n                indexName=\"...\"\r\n                onSearchStateChange={ this.props.onSearchStateChange }\r\n                searchState={ this.props.searchState }\r\n                refresh={ true }\r\n                // resultsState={ { query: '...' } }\r\n              >\r\n                { /*<RefinementList attribute=\"...\" headerText={ '...' } />*/ }\r\n                <TouchableOpacity\r\n                  onPress={ () => {\r\n                    this.props.setModalVisible(false);\r\n                  } }\r\n                >\r\n                  <Text style={ { marginTop: 20, height: 50, alignSelf: 'center', fontSize: 14 } }>\r\n                    Close\r\n                  </Text>\r\n                </TouchableOpacity>\r\n                <SearchBox />\r\n                <Content\r\n                  onSearchStateChange={ this.props.onSearchStateChange }\r\n                  searchState={ this.props.searchState }\r\n                  getSelected={ this.props.getSelected }\r\n                />\r\n              </InstantSearch>\r\n```",
-      "date": 1535652125,
-      "reactions": {},
-      "id": 1363064222
+      "id": 1363064222,
+      "reactions": {}
     },
     {
+      "date": 1538645698,
+      "body": "Running into this problem as well. I'm implementing the `display:none` workaround but just wondering: could React InstantSearch show a warning for this? That might save a lot of frustration, it took me quite some time to find what was causing this issue.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5630996",
         "id": 5630996,
-        "login": "GriffinSauce",
-        "type": "User"
+        "login": "GriffinSauce"
       },
-      "body": "Running into this problem as well. I'm implementing the `display:none` workaround but just wondering: could React InstantSearch show a warning for this? That might save a lot of frustration, it took me quite some time to find what was causing this issue.",
-      "date": 1538645698,
-      "reactions": {},
-      "id": 1363064234
+      "id": 1363064234,
+      "reactions": {}
     },
     {
+      "date": 1538658431,
+      "body": "@GriffinSauce Sorry about that. For the question about the warning it's indeed a good idea but it's a bit hard to detect when we want to warn people about a possible infinite loop. Mainly because this is the \"normal\" lifecycle of the widgets. Once a widget is removed we have to trigger a new search to update the widgets accordingly.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6513513",
         "id": 6513513,
-        "login": "samouss",
-        "type": "User"
+        "login": "samouss"
       },
-      "body": "@GriffinSauce Sorry about that. For the question about the warning it's indeed a good idea but it's a bit hard to detect when we want to warn people about a possible infinite loop. Mainly because this is the \"normal\" lifecycle of the widgets. Once a widget is removed we have to trigger a new search to update the widgets accordingly.",
-      "date": 1538658431,
-      "reactions": {},
-      "id": 1363064244
+      "id": 1363064244,
+      "reactions": {}
     },
     {
+      "date": 1538740319,
+      "body": "Yeah I couldn't figure out a quick idea to do that either. Another idea is to look at the outcome, a massive amount of successive searches, and to trigger a warning that there might be an issue.\r\n\r\n> Warning: a lot of searches were triggered in short succession, you might have an infinite loop because of nested connected components. [link to docs]\r\n\r\nFar from a perfect solution but it would be cheap to do and might mitigate the issue for future users.\r\n\r\nThanks for the support either way! ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5630996",
         "id": 5630996,
-        "login": "GriffinSauce",
-        "type": "User"
+        "login": "GriffinSauce"
       },
-      "body": "Yeah I couldn't figure out a quick idea to do that either. Another idea is to look at the outcome, a massive amount of successive searches, and to trigger a warning that there might be an issue.\r\n\r\n> Warning: a lot of searches were triggered in short succession, you might have an infinite loop because of nested connected components. [link to docs]\r\n\r\nFar from a perfect solution but it would be cheap to do and might mitigate the issue for future users.\r\n\r\nThanks for the support either way! ",
-      "date": 1538740319,
-      "reactions": {},
-      "id": 1363064255
+      "id": 1363064255,
+      "reactions": {}
     },
     {
+      "date": 1597845659,
+      "body": "Is there any updates or solution for this issue?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/29848729",
         "id": 29848729,
-        "login": "jwoo0122",
-        "type": "User"
+        "login": "jwoo0122"
       },
-      "body": "Is there any updates or solution for this issue?",
-      "date": 1597845659,
-      "reactions": {},
-      "id": 1363064269
+      "id": 1363064269,
+      "reactions": {}
     },
     {
+      "date": 1630675965,
+      "body": "I am having the same issue. In my situation, The parent component used `connectStateResults` and I was passing the `searching` property to the child component which was wrapped with `connectInfiniteHits` causing an infinite loop.\r\n\r\nMy solution was to add a non-connected wrapper around the child component and use that as a direct child of the parent component.\r\n\r\n```\r\nconst Child = connectInfiniteHits((props) => (\r\n    // Hits logic\r\n))\r\n\r\nconst ChildNoConnector = (props) => <Child {...props} />\r\n\r\nconst Parent = connectStateResults(({ searching }) => (\r\n    <ChildNoConnector loading={searching} />\r\n));\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/3267066",
         "id": 3267066,
-        "login": "ercgnclvs",
-        "type": "User"
+        "login": "ercgnclvs"
       },
-      "body": "I am having the same issue. In my situation, The parent component used `connectStateResults` and I was passing the `searching` property to the child component which was wrapped with `connectInfiniteHits` causing an infinite loop.\r\n\r\nMy solution was to add a non-connected wrapper around the child component and use that as a direct child of the parent component.\r\n\r\n```\r\nconst Child = connectInfiniteHits((props) => (\r\n    // Hits logic\r\n))\r\n\r\nconst ChildNoConnector = (props) => <Child {...props} />\r\n\r\nconst Parent = connectStateResults(({ searching }) => (\r\n    <ChildNoConnector loading={searching} />\r\n));\r\n```",
-      "date": 1630675965,
+      "id": 1363064284,
       "reactions": {
         "👍️": 2
-      },
-      "id": 1363064284
+      }
     },
     {
+      "date": 1703688996,
+      "body": "The same behavior happens with **v7** too, the following code `freezes` the page.\r\n\r\n```jsx\r\nfunction LoadingIndicator(props) {\r\n  const { children } = props;\r\n  const { status } = useInstantSearch();\r\n\r\n  if (status === 'loading' || status === 'stalled') {\r\n    return <p>Loading search results</p>;\r\n  }\r\n\r\n  return <div>{children}</div>;\r\n}\r\n```\r\n\r\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/371844",
         "id": 371844,
-        "login": "mverissimo",
-        "type": "User"
+        "login": "mverissimo"
       },
-      "body": "The same behavior happens with **v7** too, the following code `freezes` the page.\r\n\r\n```jsx\r\nfunction LoadingIndicator(props) {\r\n  const { children } = props;\r\n  const { status } = useInstantSearch();\r\n\r\n  if (status === 'loading' || status === 'stalled') {\r\n    return <p>Loading search results</p>;\r\n  }\r\n\r\n  return <div>{children}</div>;\r\n}\r\n```\r\n\r\n",
-      "date": 1703688996,
+      "id": 1870380423,
       "reactions": {
         "😕": 1
-      },
-      "id": 1870380423
+      }
     },
     {
+      "date": 1703689924,
+      "body": "Hi @mverissimo, do you wrap InstantSearch widgets with `<LoadingIndicator>`? If so, you're mounting/unmounting these in an infinite loop. See [Show and hide widgets](https://www.algolia.com/doc/guides/building-search-ui/widgets/show-and-hide-widgets/react/) in our documentation for more info on how to handle mounting/unmounting widgets, for example by setting the `preserveSharedStateOnUnmount` flag in the latest version of React InstantSearch.\r\n\r\nIf your issue persists, don't hesitate to provide a reproducible sandbox.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/154633",
         "id": 154633,
-        "login": "dhayab",
-        "type": "User"
+        "login": "dhayab"
       },
-      "body": "Hi @mverissimo, do you wrap InstantSearch widgets with `<LoadingIndicator>`? If so, you're mounting/unmounting these in an infinite loop. See [Show and hide widgets](https://www.algolia.com/doc/guides/building-search-ui/widgets/show-and-hide-widgets/react/) in our documentation for more info on how to handle mounting/unmounting widgets, for example by setting the `preserveSharedStateOnUnmount` flag in the latest version of React InstantSearch.\r\n\r\nIf your issue persists, don't hesitate to provide a reproducible sandbox.",
-      "date": 1703689924,
+      "id": 1870393886,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1870393886
+      }
     },
     {
+      "date": 1703700429,
+      "body": "Hi @dhayab, thanks for the fast feedback, I understood, this is exactly what I'm doing:\r\nhttps://codesandbox.io/p/sandbox/exciting-jackson-mz44k3?file=%2Fcomponents%2FLayout.tsx%3A5%2C30\r\n\r\nBut if I can't wrap a global loading around the app, what's the best way to show, thinking I need the status to check the `loading`.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/371844",
         "id": 371844,
-        "login": "mverissimo",
-        "type": "User"
+        "login": "mverissimo"
       },
-      "body": "Hi @dhayab, thanks for the fast feedback, I understood, this is exactly what I'm doing:\r\nhttps://codesandbox.io/p/sandbox/exciting-jackson-mz44k3?file=%2Fcomponents%2FLayout.tsx%3A5%2C30\r\n\r\nBut if I can't wrap a global loading around the app, what's the best way to show, thinking I need the status to check the `loading`.",
-      "date": 1703700429,
-      "reactions": {},
-      "id": 1870521283
+      "id": 1870521283,
+      "reactions": {}
     },
     {
+      "date": 1703759549,
+      "body": "With the number of widgets you're wrapping, it might be more practical to keep them mounted but only switch their visibility with CSS (you'll need an actual HTML element to contain all the children though), something like:\r\n\r\n```tsx\r\nimport React from \"react\";\r\nimport { useInstantSearch } from \"react-instantsearch\";\r\n\r\nexport function Layout(props) {\r\n  const { children } = props;\r\n  const { status, results } = useInstantSearch();\r\n\r\n  const isFetching = status === \"loading\" || status === \"stalled\";\r\n\r\n  return (\r\n    <React.Fragment>\r\n      <h1 style={{ display: isFetching ? 'block' : 'none' }}>loading</h1>\r\n      <div style={{ display: isFetching ? 'none' : 'block' }}>{children}</div>\r\n    </React.Fragment>\r\n  );\r\n}\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/154633",
         "id": 154633,
-        "login": "dhayab",
-        "type": "User"
+        "login": "dhayab"
       },
-      "body": "With the number of widgets you're wrapping, it might be more practical to keep them mounted but only switch their visibility with CSS (you'll need an actual HTML element to contain all the children though), something like:\r\n\r\n```tsx\r\nimport React from \"react\";\r\nimport { useInstantSearch } from \"react-instantsearch\";\r\n\r\nexport function Layout(props) {\r\n  const { children } = props;\r\n  const { status, results } = useInstantSearch();\r\n\r\n  const isFetching = status === \"loading\" || status === \"stalled\";\r\n\r\n  return (\r\n    <React.Fragment>\r\n      <h1 style={{ display: isFetching ? 'block' : 'none' }}>loading</h1>\r\n      <div style={{ display: isFetching ? 'none' : 'block' }}>{children}</div>\r\n    </React.Fragment>\r\n  );\r\n}\r\n```",
-      "date": 1703759549,
+      "id": 1871037639,
       "reactions": {
         "👍️": 2
-      },
-      "id": 1871037639
+      }
     },
     {
+      "date": 1723186746,
+      "body": "This is also described in the \"conditional display\" guide, so I think the issue can be closed: https://www.algolia.com/doc/guides/building-search-ui/going-further/conditional-display/react/#handling-no-results",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "This is also described in the \"conditional display\" guide, so I think the issue can be closed: https://www.algolia.com/doc/guides/building-search-ui/going-further/conditional-display/react/#handling-no-results",
-      "date": 1723186746,
-      "reactions": {},
-      "id": 2277273311
+      "id": 2277273311,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

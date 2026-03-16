@@ -1,49 +1,52 @@
 {
-  "number": 6475,
+  "type": "issue",
+  "distinctKey": "issue:6475",
   "title": "Multi-filter search on same index doesn't work for SSR",
+  "date": 1734357792,
+  "body": "### 🐛 Current behavior\r\n\r\nOur site has product lister pages which are split up into sections. They search the same index, but show a subset of products with different filters. One section might show the title \"Black T-Shirts\" using filter `Color: Black` while the other might show \"White T-Shirts\" using filter `Color: White`.\r\n\r\nOur set-up with `react-instantseach` looks something like this:\r\n\r\n```tsx\r\n<InstantSearch searchClient={searchClient}>\r\n  <h2>Black T-Shirts</h2>\r\n  <Index indexName=\"products\">\r\n    <Configure filters=\"Color:Black\" hitsPerPage={8} />\r\n    <Hits hitComponent={Hit} />\r\n  </Index>\r\n\r\n  <h2>White T-Shirts</h2>\r\n  <Index indexName=\"products\">\r\n    <Configure filters=\"Color:White\" hitsPerPage={8} />\r\n    <Hits hitComponent={Hit} />\r\n  </Index>\r\n</InstantSearch>\r\n```\r\n\r\nAnd this works great. Except for when we introduce server-side rendering by using `getServerState()`. Example with Remix:\r\n\r\n```tsx\r\nexport function loader() {\r\n  return getServerState(<ProductLister />, { renderToString });\r\n}\r\n\r\nexport default function ProductLister() {\r\n  const serverState = useLoaderData<typeof loader>();\r\n\r\n  return (\r\n    <InstantSearchSSRProvider initialResults={serverState.initialResults}>\r\n      {/* example from above */}\r\n    </InstantSearchSSRProvider>\r\n  );\r\n}\r\n```\r\n\r\nWhen checking the server-side rendered HTML that gets produced, we noticed that both the \"Black T-Shirts\" section and the \"White T-Shirts\" section show the \"White T-Shirts\" results.\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Use `react-instantsearch` with two `<Index>` components targeting the same `indexName` but with different configuration.\r\n2. Use `getServerState` w/ `<InstantSearchSSRProvider>` to enable server-side rendering.\r\n3. View the server-rendered HTML.\r\n4. Observe that the first index copies the result from the second index.\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/github/LuudJanssen/algolia-multi-index-server-side-rendering-bug-reproduction/main?import=true\r\n\r\n> ⚠️ Be sure to view the HTML source of the sandbox preview. In the live preview, the client-side will refetch the query and update the results to what they should be. This only happens in the server-side rendered HTML result.\r\n\r\n### 💭 Expected behavior\r\n\r\nEach instance of `<Index>` has its own configuration, set of filters and results, just like with client-side rendering.\r\n\r\n> While checking how `initialResults` is structured, I noticed the results are keyed by index name. This should probably be changed to a key that uses the index name, as well as any configuration like filters / facets / query, etc.\r\n\r\n### Package version\r\n\r\n7.13.9\r\n\r\n### Operating system\r\n\r\n_No response_\r\n\r\n### Browser\r\n\r\n_No response_\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/12209111",
     "id": 12209111,
-    "login": "LuudJanssen",
-    "type": "User"
+    "login": "LuudJanssen"
   },
-  "body": "### 🐛 Current behavior\r\n\r\nOur site has product lister pages which are split up into sections. They search the same index, but show a subset of products with different filters. One section might show the title \"Black T-Shirts\" using filter `Color: Black` while the other might show \"White T-Shirts\" using filter `Color: White`.\r\n\r\nOur set-up with `react-instantseach` looks something like this:\r\n\r\n```tsx\r\n<InstantSearch searchClient={searchClient}>\r\n  <h2>Black T-Shirts</h2>\r\n  <Index indexName=\"products\">\r\n    <Configure filters=\"Color:Black\" hitsPerPage={8} />\r\n    <Hits hitComponent={Hit} />\r\n  </Index>\r\n\r\n  <h2>White T-Shirts</h2>\r\n  <Index indexName=\"products\">\r\n    <Configure filters=\"Color:White\" hitsPerPage={8} />\r\n    <Hits hitComponent={Hit} />\r\n  </Index>\r\n</InstantSearch>\r\n```\r\n\r\nAnd this works great. Except for when we introduce server-side rendering by using `getServerState()`. Example with Remix:\r\n\r\n```tsx\r\nexport function loader() {\r\n  return getServerState(<ProductLister />, { renderToString });\r\n}\r\n\r\nexport default function ProductLister() {\r\n  const serverState = useLoaderData<typeof loader>();\r\n\r\n  return (\r\n    <InstantSearchSSRProvider initialResults={serverState.initialResults}>\r\n      {/* example from above */}\r\n    </InstantSearchSSRProvider>\r\n  );\r\n}\r\n```\r\n\r\nWhen checking the server-side rendered HTML that gets produced, we noticed that both the \"Black T-Shirts\" section and the \"White T-Shirts\" section show the \"White T-Shirts\" results.\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Use `react-instantsearch` with two `<Index>` components targeting the same `indexName` but with different configuration.\r\n2. Use `getServerState` w/ `<InstantSearchSSRProvider>` to enable server-side rendering.\r\n3. View the server-rendered HTML.\r\n4. Observe that the first index copies the result from the second index.\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/github/LuudJanssen/algolia-multi-index-server-side-rendering-bug-reproduction/main?import=true\r\n\r\n> ⚠️ Be sure to view the HTML source of the sandbox preview. In the live preview, the client-side will refetch the query and update the results to what they should be. This only happens in the server-side rendered HTML result.\r\n\r\n### 💭 Expected behavior\r\n\r\nEach instance of `<Index>` has its own configuration, set of filters and results, just like with client-side rendering.\r\n\r\n> While checking how `initialResults` is structured, I noticed the results are keyed by index name. This should probably be changed to a key that uses the index name, as well as any configuration like filters / facets / query, etc.\r\n\r\n### Package version\r\n\r\n7.13.9\r\n\r\n### Operating system\r\n\r\n_No response_\r\n\r\n### Browser\r\n\r\n_No response_\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
-  "date": 1734357792,
-  "labels": [
-    {
-      "color": "5319E7",
-      "id": 4913597511,
-      "isDark": true,
-      "name": "triage"
-    }
-  ],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "5319E7",
+        "id": 4913597511,
+        "isDark": true,
+        "name": "triage"
+      }
+    ],
+    "number": 6475,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1734424837,
+      "body": "If you want two indices with unrelated state, they need to have a different indexId to differentiate them. They can both have the same indexName, but the indexId needs to be unique, or else the same state will be used for both indices",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "If you want two indices with unrelated state, they need to have a different indexId to differentiate them. They can both have the same indexName, but the indexId needs to be unique, or else the same state will be used for both indices",
-      "date": 1734424837,
-      "reactions": {},
-      "id": 2547818150
+      "id": 2547818150,
+      "reactions": {}
     },
     {
+      "date": 1735586733,
+      "body": "This fixed it! Thanks so much for your help :)",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/12209111",
         "id": 12209111,
-        "login": "LuudJanssen",
-        "type": "User"
+        "login": "LuudJanssen"
       },
-      "body": "This fixed it! Thanks so much for your help :)",
-      "date": 1735586733,
-      "reactions": {},
-      "id": 2565840346
+      "id": 2565840346,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

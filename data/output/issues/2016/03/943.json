@@ -1,133 +1,136 @@
 {
-  "number": 943,
+  "type": "issue",
+  "distinctKey": "issue:943",
   "title": "urlSync.threshold seems not to work",
+  "date": 1458578274,
+  "body": "According to the [docs](https://community.algolia.com/instantsearch.js/documentation/#initialization)\n\n![unbenannt](https://cloud.githubusercontent.com/assets/36167/13926061/f35e5826-ef8a-11e5-80ca-60f97fb2f599.PNG)\n\n`urlSync.threshold` should update the URL but delayed by700 ms. This seems not to work for me, it even seems to block typing into the search box while the URL is beeing updated. (Can not be proven.)\n\nSo it works, the URL is updated, but it definitely does not delay the URL update by 1000 ms. \n\n```\nvar search = instantsearch({\n    appId:      '...',\n    apiKey:     '...',\n    indexName:  '...',\n    urlSync:    {\n        useHash:    true,\n        threshold:  1000 // This seems not to work\n    },\n    searchFunction: function (helper) {\n        helper.search();\n    },\n    searchParameters: {\n        typoTolerance: true,\n    },\n});\n\nsearch.addWidget(\n    instantsearch.widgets.searchBox({\n        container:      '#q',\n        autofocus:      true,\n        wrapInput:      false,\n        queryHook:      $.throttle(function(query, search) {\n            if ($.trim(query).length == 0) {\n                return false;\n            } else { /* set empty result list */ }\n            search(query);\n        }, 1000),\n    })\n);\n```\n\nOr is this only about the browser history?\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/36167",
     "id": 36167,
-    "login": "powtac",
-    "type": "User"
+    "login": "powtac"
   },
-  "body": "According to the [docs](https://community.algolia.com/instantsearch.js/documentation/#initialization)\n\n![unbenannt](https://cloud.githubusercontent.com/assets/36167/13926061/f35e5826-ef8a-11e5-80ca-60f97fb2f599.PNG)\n\n`urlSync.threshold` should update the URL but delayed by700 ms. This seems not to work for me, it even seems to block typing into the search box while the URL is beeing updated. (Can not be proven.)\n\nSo it works, the URL is updated, but it definitely does not delay the URL update by 1000 ms. \n\n```\nvar search = instantsearch({\n    appId:      '...',\n    apiKey:     '...',\n    indexName:  '...',\n    urlSync:    {\n        useHash:    true,\n        threshold:  1000 // This seems not to work\n    },\n    searchFunction: function (helper) {\n        helper.search();\n    },\n    searchParameters: {\n        typoTolerance: true,\n    },\n});\n\nsearch.addWidget(\n    instantsearch.widgets.searchBox({\n        container:      '#q',\n        autofocus:      true,\n        wrapInput:      false,\n        queryHook:      $.throttle(function(query, search) {\n            if ($.trim(query).length == 0) {\n                return false;\n            } else { /* set empty result list */ }\n            search(query);\n        }, 1000),\n    })\n);\n```\n\nOr is this only about the browser history?\n",
-  "date": 1458578274,
-  "labels": [
-    {
-      "color": "d93f0b",
-      "id": 238751632,
-      "isDark": true,
-      "name": "Type: Bug"
-    }
-  ],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "d93f0b",
+        "id": 238751632,
+        "isDark": true,
+        "name": "Type: Bug"
+      }
+    ],
+    "number": 943,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1458579333,
+      "body": "Hi Simon, thanks for the issue. Our doc is lacking real explanation about that. The URL sync mechanism is implemented in a way that it will update the URL (and not creating new browser history steps) if under the threshold. Beyond the threshold it will create a new entry. It is not using throttle or debounce.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/393765",
         "id": 393765,
-        "login": "bobylito",
-        "type": "User"
+        "login": "bobylito"
       },
-      "body": "Hi Simon, thanks for the issue. Our doc is lacking real explanation about that. The URL sync mechanism is implemented in a way that it will update the URL (and not creating new browser history steps) if under the threshold. Beyond the threshold it will create a new entry. It is not using throttle or debounce.\n",
-      "date": 1458579333,
-      "reactions": {},
-      "id": 199376648
+      "id": 199376648,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/36167",
-        "id": 36167,
-        "login": "powtac",
-        "type": "User"
-      },
-      "body": "@bobylito Ah! I see, so either the \"internal\" browser history is used with `useHash: true` OR a \"real\" browser history is rendered into the browsers search bar. \n\nAnyway the threshold value/functionality seems not to be recognized. \n",
       "date": 1458579868,
-      "reactions": {},
-      "id": 199382165
+      "body": "@bobylito Ah! I see, so either the \"internal\" browser history is used with `useHash: true` OR a \"real\" browser history is rendered into the browsers search bar. \n\nAnyway the threshold value/functionality seems not to be recognized. \n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/36167",
+        "id": 36167,
+        "login": "powtac"
+      },
+      "id": 199382165,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      },
-      "body": "@powtac at each keystroke we update the url (no matter if we use native browser history or fake one using location.hash).\n\nThen, when using native browser history API, on top of updating the url at each keystroke, we create a new history state after the thresold.\n\nThe states we are talking about are the ones used when you hit \"back\", only. They should represent the times where you stop typing/meaningful queries/half queries.\n\nHere's an example:\n- history state is empty query\n- t0: type t (url bar has: t, history state is empty query)\n- t0+30ms: type e (url bar has: te, history state is empty query)\n- t0+600ms: type s (url bar has: tes, history state is empty query)\n- t0 + 700ms: type t (url bar has: test, new state is created)\n- t0 + 900ms: type e (url bar has: teste, history state is \"test\")\n\nThen if you stop writing, url bar is \"teste\", history state should be \"teste\" (because you stopped typing for more than 500ms more (900 + 500 = 1400 so two times thresold).\n\nThen if you hit \"back button\", you will go to \"test\" and if you hit back button again you will go to empty query.\n\nHope this long explanation is clearer.\n\nI think a lot of people thinks thresold might be a debounce url bar set. It's just the time after we create a new history state entry in the browser.\n",
       "date": 1458650018,
-      "reactions": {},
-      "id": 199788620
+      "body": "@powtac at each keystroke we update the url (no matter if we use native browser history or fake one using location.hash).\n\nThen, when using native browser history API, on top of updating the url at each keystroke, we create a new history state after the thresold.\n\nThe states we are talking about are the ones used when you hit \"back\", only. They should represent the times where you stop typing/meaningful queries/half queries.\n\nHere's an example:\n- history state is empty query\n- t0: type t (url bar has: t, history state is empty query)\n- t0+30ms: type e (url bar has: te, history state is empty query)\n- t0+600ms: type s (url bar has: tes, history state is empty query)\n- t0 + 700ms: type t (url bar has: test, new state is created)\n- t0 + 900ms: type e (url bar has: teste, history state is \"test\")\n\nThen if you stop writing, url bar is \"teste\", history state should be \"teste\" (because you stopped typing for more than 500ms more (900 + 500 = 1400 so two times thresold).\n\nThen if you hit \"back button\", you will go to \"test\" and if you hit back button again you will go to empty query.\n\nHope this long explanation is clearer.\n\nI think a lot of people thinks thresold might be a debounce url bar set. It's just the time after we create a new history state entry in the browser.\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 199788620,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/36167",
-        "id": 36167,
-        "login": "powtac",
-        "type": "User"
-      },
-      "body": "@vvo clear! I got it. \n\nAnyway. The case I tried to describe in [this ticket](https://github.com/algolia/instantsearch.js/issues/943#issue-142403425) is, that it looks like the **hash URL** is updated immediately and not only every 700ms. I thought it only will be updated once every 700 ms as you described it. But I can not see a delay even when setting `threshold` to 10000 ms. Or is the `threshold` option only for `useHash: false`?\n",
       "date": 1458652889,
-      "reactions": {},
-      "id": 199810942
+      "body": "@vvo clear! I got it. \n\nAnyway. The case I tried to describe in [this ticket](https://github.com/algolia/instantsearch.js/issues/943#issue-142403425) is, that it looks like the **hash URL** is updated immediately and not only every 700ms. I thought it only will be updated once every 700 ms as you described it. But I can not see a delay even when setting `threshold` to 10000 ms. Or is the `threshold` option only for `useHash: false`?\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/36167",
+        "id": 36167,
+        "login": "powtac"
+      },
+      "id": 199810942,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      },
-      "body": "In both cases no matter the value of thresold the URL is always updated. Thresold is only saying \"every 700ms create a new state that will be available when using the back button\".\n\nSo, if you use \"useHash\", do you have a state per letter when clicking on back button? That would be a bug.\n\nThanks\n",
       "date": 1458661000,
-      "reactions": {},
-      "id": 199869774
+      "body": "In both cases no matter the value of thresold the URL is always updated. Thresold is only saying \"every 700ms create a new state that will be available when using the back button\".\n\nSo, if you use \"useHash\", do you have a state per letter when clicking on back button? That would be a bug.\n\nThanks\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 199869774,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/36167",
-        "id": 36167,
-        "login": "powtac",
-        "type": "User"
-      },
-      "body": "> So, if you use \"useHash\", do you have a state per letter when clicking on back button? That would be a bug. \n\nI will check that! Thanks for clarifying! \n",
       "date": 1458662095,
-      "reactions": {},
-      "id": 199878478
-    },
-    {
+      "body": "> So, if you use \"useHash\", do you have a state per letter when clicking on back button? That would be a bug. \n\nI will check that! Thanks for clarifying! \n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/36167",
         "id": 36167,
-        "login": "powtac",
-        "type": "User"
+        "login": "powtac"
       },
-      "body": "Definitely the value of threshold is not recognized. When I set it to 10000 the URL is updated roughly every second. Probably every 700 ms but not every 10 seconds!\n",
+      "id": 199878478,
+      "reactions": {}
+    },
+    {
       "date": 1458667325,
-      "reactions": {},
-      "id": 199915440
+      "body": "Definitely the value of threshold is not recognized. When I set it to 10000 the URL is updated roughly every second. Probably every 700 ms but not every 10 seconds!\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/36167",
+        "id": 36167,
+        "login": "powtac"
+      },
+      "id": 199915440,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/123822",
-        "id": 123822,
-        "login": "vvo",
-        "type": "User"
-      },
-      "body": "Ok thanks for that I will have a look\n",
       "date": 1458725945,
-      "reactions": {},
-      "id": 200270209
-    },
-    {
+      "body": "Ok thanks for that I will have a look\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "I have been double checking this and it's \"on purpose\" that we update the url at every keystroke to provide the right feedback to our users.\n\nThen, the thresold is only the minimum time between two search states where we decide to create a new state.\n\nSo when putting thresold: 10000 (10s) it means that we will create new search states every 10s. The thresold is our way of saying \"After xxxms of inactivity, we consider the state to be one to remember when going back\".\n\nExample with 10s:\n- t0 page load (enpty query)\n- t0+1 type hello (url is updated like h, e, l, l, o\n- t0+8 type mom (url is updated like m, o, m)\n- t0 + 9 click on back button (url is back like at t0 and query is empty)\n\nYou are now back at the initial state because we were not able to create any search state.\n\nI understand this may not be the behavior you might want to build into your application but this is the correct behavior given the implementation.\n\nI will update the documentation on this part.\n\nIf you want to have a different behavior or a new parameter then please open a new issue. Thanks!\n",
+      "id": 200270209,
+      "reactions": {}
+    },
+    {
       "date": 1461878175,
-      "reactions": {},
-      "id": 215564940
+      "body": "I have been double checking this and it's \"on purpose\" that we update the url at every keystroke to provide the right feedback to our users.\n\nThen, the thresold is only the minimum time between two search states where we decide to create a new state.\n\nSo when putting thresold: 10000 (10s) it means that we will create new search states every 10s. The thresold is our way of saying \"After xxxms of inactivity, we consider the state to be one to remember when going back\".\n\nExample with 10s:\n- t0 page load (enpty query)\n- t0+1 type hello (url is updated like h, e, l, l, o\n- t0+8 type mom (url is updated like m, o, m)\n- t0 + 9 click on back button (url is back like at t0 and query is empty)\n\nYou are now back at the initial state because we were not able to create any search state.\n\nI understand this may not be the behavior you might want to build into your application but this is the correct behavior given the implementation.\n\nI will update the documentation on this part.\n\nIf you want to have a different behavior or a new parameter then please open a new issue. Thanks!\n",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/123822",
+        "id": 123822,
+        "login": "vvo"
+      },
+      "id": 215564940,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

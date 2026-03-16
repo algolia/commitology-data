@@ -1,82 +1,85 @@
 {
-  "number": 5160,
+  "type": "issue",
+  "distinctKey": "issue:5160",
   "title": "Refinement list items count is wrong in certain scenarios",
+  "date": 1668419397,
+  "body": "## 🐛 Bug description\r\n\r\nIn refinement list when I select an item that has a high count number and an item that has a low count number, the item with the low count number will suddenly return a 0 count. This low count item is selected after facet searching for it, so normally it is out of the view when nothing is selected.\r\n\r\n## 🔍 Bug reproduction\r\n\r\nReproduction repo: https://github.com/flevi29/refinement_list_bug\r\n\r\n**Live reproduction:**\r\n\r\n-\r\n\r\n## 💭 Expected behavior\r\n\r\nI expect the selected item with the low count to keep it's count.\r\n\r\n## 🖥 Screenshots\r\n\r\n-\r\n\r\n## Environment\r\n\r\n- OS: Windows 11\r\n- Browser: Firefox\r\n- Version: 106.0.5 (64-bit)\r\n\r\n## Additional context\r\n\r\nI thought to post this on `react-instantsearch-hooks-web` but initially I had the same problem with Angular, so I concluded it's an `instantsearch.js` bug\r\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/55688616",
     "id": 55688616,
-    "login": "flevi29",
-    "type": "User"
+    "login": "flevi29"
   },
-  "body": "## 🐛 Bug description\r\n\r\nIn refinement list when I select an item that has a high count number and an item that has a low count number, the item with the low count number will suddenly return a 0 count. This low count item is selected after facet searching for it, so normally it is out of the view when nothing is selected.\r\n\r\n## 🔍 Bug reproduction\r\n\r\nReproduction repo: https://github.com/flevi29/refinement_list_bug\r\n\r\n**Live reproduction:**\r\n\r\n-\r\n\r\n## 💭 Expected behavior\r\n\r\nI expect the selected item with the low count to keep it's count.\r\n\r\n## 🖥 Screenshots\r\n\r\n-\r\n\r\n## Environment\r\n\r\n- OS: Windows 11\r\n- Browser: Firefox\r\n- Version: 106.0.5 (64-bit)\r\n\r\n## Additional context\r\n\r\nI thought to post this on `react-instantsearch-hooks-web` but initially I had the same problem with Angular, so I concluded it's an `instantsearch.js` bug\r\n",
-  "date": 1668419397,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 5160,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/55688616",
-        "id": 55688616,
-        "login": "flevi29",
-        "type": "User"
-      },
-      "body": "It's somehow specific to the collection within the repo, I am trying to recreate it with a simpler data set, but can't quite figure out what causes the issue.",
       "date": 1668426484,
-      "reactions": {},
-      "id": 1313557238
-    },
-    {
+      "body": "It's somehow specific to the collection within the repo, I am trying to recreate it with a simpler data set, but can't quite figure out what causes the issue.",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "Are you seeing `exhaustiveFacetCount: false` in the network response? That could be a reason for the behaviour",
-      "date": 1668427814,
-      "reactions": {},
-      "id": 1313585696
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/55688616",
         "id": 55688616,
-        "login": "flevi29",
-        "type": "User"
+        "login": "flevi29"
       },
-      "body": "No, it's `true`.\r\n![image](https://user-images.githubusercontent.com/55688616/201662289-0abf81c6-525d-4baa-a385-90aa0971fc03.png)\r\n\r\nI updated and simplified the reproduction repo. With an Algolia free tier if you select `Sík Sándor` and then search for `Sajó Géza` and select it, it should happen.",
+      "id": 1313557238,
+      "reactions": {}
+    },
+    {
+      "date": 1668427814,
+      "body": "Are you seeing `exhaustiveFacetCount: false` in the network response? That could be a reason for the behaviour",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 1313585696,
+      "reactions": {}
+    },
+    {
       "date": 1668429668,
+      "body": "No, it's `true`.\r\n![image](https://user-images.githubusercontent.com/55688616/201662289-0abf81c6-525d-4baa-a385-90aa0971fc03.png)\r\n\r\nI updated and simplified the reproduction repo. With an Algolia free tier if you select `Sík Sándor` and then search for `Sajó Géza` and select it, it should happen.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/55688616",
+        "id": 55688616,
+        "login": "flevi29"
+      },
+      "id": 1313630753,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1313630753
+      }
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "Technically this is a behaviour of the engine, which doesn't forcibly return the facet which is selected to be shown. You can work around this by passing a high maxValuesPerFacet as such: `<Configure maxValuesPerFacet={500} />`, which doesn't significantly slow down the search (just 1ms in my testing with your dataset).\r\n\r\nA real fix would be lower down the chain, where we should request the facet values in an extra query specifically for each of the individual applied filters, instead of the current logic where the refined values are requested in a single query.\r\n\r\nBecause of that, and the fact that this behaviour has existed for as long as faceting has had counts, I'm not sure that there could be a lasting solution for this yet.",
       "date": 1668431825,
-      "reactions": {
-        "👍️": 1
-      },
-      "id": 1313682867
-    },
-    {
+      "body": "Technically this is a behaviour of the engine, which doesn't forcibly return the facet which is selected to be shown. You can work around this by passing a high maxValuesPerFacet as such: `<Configure maxValuesPerFacet={500} />`, which doesn't significantly slow down the search (just 1ms in my testing with your dataset).\r\n\r\nA real fix would be lower down the chain, where we should request the facet values in an extra query specifically for each of the individual applied filters, instead of the current logic where the refined values are requested in a single query.\r\n\r\nBecause of that, and the fact that this behaviour has existed for as long as faceting has had counts, I'm not sure that there could be a lasting solution for this yet.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "As I don't see how this can fixed from our side, I'll close this issue",
+      "id": 1313682867,
+      "reactions": {
+        "👍️": 1
+      }
+    },
+    {
       "date": 1671455700,
-      "reactions": {},
-      "id": 1357652452
+      "body": "As I don't see how this can fixed from our side, I'll close this issue",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 1357652452,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

@@ -1,85 +1,88 @@
 {
-  "number": 407,
+  "type": "issue",
+  "distinctKey": "issue:407",
   "title": "rename hideContainerWhenNoResults to autoHideContainer",
+  "date": 1446476941,
+  "body": "As proposed by @Jerskouille in #394 \n\nTODO:\n- [x] always use facet values count to hide the container when relevant\n- [x] use nbHits if facet values not relevant\n- [x] handle cases were we have only null facet values\n- [x] also to be used in #405 clearAll proposals where we hide when no refinements WERE made (vs no facet values available in the algolia response)\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/123822",
     "id": 123822,
-    "login": "vvo",
-    "type": "User"
+    "login": "vvo"
   },
-  "body": "As proposed by @Jerskouille in #394 \n\nTODO:\n- [x] always use facet values count to hide the container when relevant\n- [x] use nbHits if facet values not relevant\n- [x] handle cases were we have only null facet values\n- [x] also to be used in #405 clearAll proposals where we hide when no refinements WERE made (vs no facet values available in the algolia response)\n",
-  "date": 1446476941,
-  "labels": [
-    {
-      "color": "d93f0b",
-      "id": 238751632,
-      "isDark": true,
-      "name": "Type: Bug"
-    }
-  ],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "d93f0b",
+        "id": 238751632,
+        "isDark": true,
+        "name": "Type: Bug"
+      }
+    ],
+    "number": 407,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1446716210,
+      "body": "After discussions in #394 and https://github.com/algolia/instantsearch.js/pull/427 it seems that we are going to remove the `autoHideWhenNoResults` and `autoHideWhenNoRefinements` options for several widgets and replace them with a more generic `autoHideContainer`.\n\nI think `autoHideContainer` sound to magical for the naming of a public-facing API attribute. What it does is really dependent on the widget context. I would use `hdieContainerIfNoResults` for widgets displaying results, and `hideContainerIfNoRefinements` for the `clearAll` widget. Explicit is better.\n\nIt does not change the fact that the underlying `autoHideContainer` decorator can use a `autoHideContainer:true/false` props itself, but the public-facing widget option should be self-explanatory.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "After discussions in #394 and https://github.com/algolia/instantsearch.js/pull/427 it seems that we are going to remove the `autoHideWhenNoResults` and `autoHideWhenNoRefinements` options for several widgets and replace them with a more generic `autoHideContainer`.\n\nI think `autoHideContainer` sound to magical for the naming of a public-facing API attribute. What it does is really dependent on the widget context. I would use `hdieContainerIfNoResults` for widgets displaying results, and `hideContainerIfNoRefinements` for the `clearAll` widget. Explicit is better.\n\nIt does not change the fact that the underlying `autoHideContainer` decorator can use a `autoHideContainer:true/false` props itself, but the public-facing widget option should be self-explanatory.\n",
-      "date": 1446716210,
-      "reactions": {},
-      "id": 154005056
+      "id": 154005056,
+      "reactions": {}
     },
     {
+      "date": 1446717462,
+      "body": "I would say on this one (always using `autoHideContainer`) should not harm the users or make them wonder what is hapening. I agree I like being explicit most of the time but here what I want is \"Hide this when it makes sense\", being explicit introduces more naming conflicts.\n\nclearAll widget needs an option to say \"hide the container when no refinements were made\", thus if we introduce both `hideContainerIfNoResults` and `hideContainerIfNoRefinements`, how do we name the \"hide the container when no refinements were made\"?\n\nWe would then need:\n- hideContainerIfNoResults\n- hideContainerIfNoFacetValues\n- hideContainerIfNoNumericalRefinements (sliders)\n- hideContainerIfNoRefinements (= no refinement were made, clearAll)\n\nAnd we would be exhaustive, but that's a lot of options to remember for the \"hide this when it make sense\" usecase, while \"autoHideContainer\" could solve the three first cases.\n\nI would still go for `autoHideContainer`\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "I would say on this one (always using `autoHideContainer`) should not harm the users or make them wonder what is hapening. I agree I like being explicit most of the time but here what I want is \"Hide this when it makes sense\", being explicit introduces more naming conflicts.\n\nclearAll widget needs an option to say \"hide the container when no refinements were made\", thus if we introduce both `hideContainerIfNoResults` and `hideContainerIfNoRefinements`, how do we name the \"hide the container when no refinements were made\"?\n\nWe would then need:\n- hideContainerIfNoResults\n- hideContainerIfNoFacetValues\n- hideContainerIfNoNumericalRefinements (sliders)\n- hideContainerIfNoRefinements (= no refinement were made, clearAll)\n\nAnd we would be exhaustive, but that's a lot of options to remember for the \"hide this when it make sense\" usecase, while \"autoHideContainer\" could solve the three first cases.\n\nI would still go for `autoHideContainer`\n",
-      "date": 1446717462,
-      "reactions": {},
-      "id": 154012318
+      "id": 154012318,
+      "reactions": {}
     },
     {
+      "date": 1446717696,
+      "body": "This actually allowed us to not worry about some namings:\n- For facetting widgets, we'd use `hideWhenNoRefinements` when there is no _available_ refinement to select.\n- For `currentRefinedValues` and `clearAll`, we also want `hideWhenNoRefinements`, but these refinements are the _currently selected_ ones\n\nOur widget are already \"intelligent\" by doing a lot of logic, and I like the idea that a widget knows when it's best to be hidden or show and allow the user to customize it with something like https://github.com/algolia/instantsearch.js/issues/455 .\n\nIn the end the markup generated and `cssClasses` are kind of magical too. But as soon as we document them they become part of the widget and it's easy to understand, don't you think that a clear documentation would be enough for this too?\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5095856",
         "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
+        "login": "Jerska"
       },
-      "body": "This actually allowed us to not worry about some namings:\n- For facetting widgets, we'd use `hideWhenNoRefinements` when there is no _available_ refinement to select.\n- For `currentRefinedValues` and `clearAll`, we also want `hideWhenNoRefinements`, but these refinements are the _currently selected_ ones\n\nOur widget are already \"intelligent\" by doing a lot of logic, and I like the idea that a widget knows when it's best to be hidden or show and allow the user to customize it with something like https://github.com/algolia/instantsearch.js/issues/455 .\n\nIn the end the markup generated and `cssClasses` are kind of magical too. But as soon as we document them they become part of the widget and it's easy to understand, don't you think that a clear documentation would be enough for this too?\n",
-      "date": 1446717696,
-      "reactions": {},
-      "id": 154013519
+      "id": 154013519,
+      "reactions": {}
     },
     {
+      "date": 1446718246,
+      "body": "Ok, I was missing some pieces, I thought there was only two cases. Makes sense with your explanation. Having a unified and maigical `autoHideContainer` options is also nice from our user POV, where we do not want them to dive too deep into the world of refinement and facets.\n\nLGTM, then\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "Ok, I was missing some pieces, I thought there was only two cases. Makes sense with your explanation. Having a unified and maigical `autoHideContainer` options is also nice from our user POV, where we do not want them to dive too deep into the world of refinement and facets.\n\nLGTM, then\n",
-      "date": 1446718246,
-      "reactions": {},
-      "id": 154015382
+      "id": 154015382,
+      "reactions": {}
     },
     {
+      "date": 1446718800,
+      "body": "doing this right now so we can handle #427 \n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "doing this right now so we can handle #427 \n",
-      "date": 1446718800,
-      "reactions": {},
-      "id": 154018662
+      "id": 154018662,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

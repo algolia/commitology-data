@@ -1,6 +1,6 @@
 import { spinner, writeJson } from 'firost';
-import { outputIssueFieldOrder } from '../../lib/config.js';
 import {
+  fieldOrder,
   forEachInputIssue,
   getOutputPath,
   normalizeIssue,
@@ -17,7 +17,7 @@ await forEachInputIssue(
     const issuePath = getOutputPath(issueData);
 
     await writeJson(issueData, issuePath, {
-      sort: outputIssueFieldOrder,
+      sort: fieldOrder.output,
     });
   },
   { concurrency: 50 },

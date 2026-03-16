@@ -1,102 +1,105 @@
 {
-  "number": 116,
+  "type": "issue",
+  "distinctKey": "issue:116",
   "title": "API proposal: `transformData` before template rendering",
+  "date": 1442927837,
+  "body": "Following discussion in #72 .\n\nIn a lot of wigets, there are many reasons that could justify modifying the data before calling the `render` method of the template: formatting, adding lambdas, etc. Right now, we're doing it by passing a function to `template`, however it doesn't seem logical that data modification happens there.\n\nA solution that could make sense would be to add an optional `transformData` parameter to the object passed to a widget constructor which would accept a callback.\n\nThis callback would accept one object parameter: the previously object sent to `render`.  \nIt would then return a new (or not) object to be used with the `render` method.\n\n``` js\ninstantsearch.widgets.refinementList({\n  container: '#myfacet',\n  facetName: 'myfacet',\n  template: '{{ value }}',\n  transformData: function (refinement) {\n    return { value: '$' + refinement.name };\n  }\n});\n```\n\nSome questions:\n- Should we deep clone the object before sending it to `transformData` ?\n- How to handle the _multiple templates_ widgets (e.g. hits)? I am not found of the plural form of `transformsData`, and `transforms` might be clearer. Is there anything else we'd like to transform ?\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/5095856",
     "id": 5095856,
-    "login": "Jerska",
-    "type": "User"
+    "login": "Jerska"
   },
-  "body": "Following discussion in #72 .\n\nIn a lot of wigets, there are many reasons that could justify modifying the data before calling the `render` method of the template: formatting, adding lambdas, etc. Right now, we're doing it by passing a function to `template`, however it doesn't seem logical that data modification happens there.\n\nA solution that could make sense would be to add an optional `transformData` parameter to the object passed to a widget constructor which would accept a callback.\n\nThis callback would accept one object parameter: the previously object sent to `render`.  \nIt would then return a new (or not) object to be used with the `render` method.\n\n``` js\ninstantsearch.widgets.refinementList({\n  container: '#myfacet',\n  facetName: 'myfacet',\n  template: '{{ value }}',\n  transformData: function (refinement) {\n    return { value: '$' + refinement.name };\n  }\n});\n```\n\nSome questions:\n- Should we deep clone the object before sending it to `transformData` ?\n- How to handle the _multiple templates_ widgets (e.g. hits)? I am not found of the plural form of `transformsData`, and `transforms` might be clearer. Is there anything else we'd like to transform ?\n",
-  "date": 1442927837,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 116,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1442928204,
+      "body": "> Should we deep clone the object before sending it to transformData ?\n\nShould not be needed since every render re-computes fresh data, so the data is not yet passed to any other widget.\n\n> How to handle the multiple templates widgets (e.g. hits) ? This could be an idea:\n\nYes `transformData` (instead of transformsData) and mapping to the templates.$KEY should be allright.\n\nAlso with #115 we will soon no more have single 'template' but 'templates' everywhere.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "> Should we deep clone the object before sending it to transformData ?\n\nShould not be needed since every render re-computes fresh data, so the data is not yet passed to any other widget.\n\n> How to handle the multiple templates widgets (e.g. hits) ? This could be an idea:\n\nYes `transformData` (instead of transformsData) and mapping to the templates.$KEY should be allright.\n\nAlso with #115 we will soon no more have single 'template' but 'templates' everywhere.\n",
-      "date": 1442928204,
-      "reactions": {},
-      "id": 142288467
+      "id": 142288467,
+      "reactions": {}
     },
     {
+      "date": 1442936393,
+      "body": "Regarding your example, wouldn't this be a simpler way to solve the issue?\n\n``` javascript\ninstantsearch.widgets.refinementList({\n  container: '#myfacet',\n  facetName: 'myfacet',\n  template: '{{ value }}',\n  transformData: function (refinement) {\n    return { value: '$' + refinement.value };\n  }\n});\n```\n\nI feel the `transformData` is about transforming the data we got from the widget before passing it to the template. But not go too deep inside what helpers the Mustache render method has available. This should just be a _take object as input, returns object as output_ IMHO.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "Regarding your example, wouldn't this be a simpler way to solve the issue?\n\n``` javascript\ninstantsearch.widgets.refinementList({\n  container: '#myfacet',\n  facetName: 'myfacet',\n  template: '{{ value }}',\n  transformData: function (refinement) {\n    return { value: '$' + refinement.value };\n  }\n});\n```\n\nI feel the `transformData` is about transforming the data we got from the widget before passing it to the template. But not go too deep inside what helpers the Mustache render method has available. This should just be a _take object as input, returns object as output_ IMHO.\n",
-      "date": 1442936393,
-      "reactions": {},
-      "id": 142327430
+      "id": 142327430,
+      "reactions": {}
     },
     {
+      "date": 1442936509,
+      "body": ":+1: with @pixelastic; didn't see we where dealing with the `helpers` in the first comment.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/29529",
         "id": 29529,
-        "login": "redox",
-        "type": "User"
+        "login": "redox"
       },
-      "body": ":+1: with @pixelastic; didn't see we where dealing with the `helpers` in the first comment.\n",
-      "date": 1442936509,
-      "reactions": {},
-      "id": 142327940
+      "id": 142327940,
+      "reactions": {}
     },
     {
+      "date": 1442936725,
+      "body": "> didn't see we where dealing with the helpers in the first comment\n\nMe neither sorry @Jerskouille! I think you can update the proposal with something simpler (but keeping the `transformData: {keys,keys}` solution which is needed.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "> didn't see we where dealing with the helpers in the first comment\n\nMe neither sorry @Jerskouille! I think you can update the proposal with something simpler (but keeping the `transformData: {keys,keys}` solution which is needed.\n",
-      "date": 1442936725,
-      "reactions": {},
-      "id": 142328909
+      "id": 142328909,
+      "reactions": {}
     },
     {
+      "date": 1442937080,
+      "body": "Simplified, but I don't see why helpers weren't a good example. To answer your question @pixelastic , I don't believe so, because I'd like to keep a maximum of the the logic in a separate file with only lambdas + in the templates, and there are multiple places where you need to format a price.\nAnd in the end, the method was just _taking an object, returning an object_, but did it knowing the underlying template engine was Hogan, that's all.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5095856",
         "id": 5095856,
-        "login": "Jerska",
-        "type": "User"
+        "login": "Jerska"
       },
-      "body": "Simplified, but I don't see why helpers weren't a good example. To answer your question @pixelastic , I don't believe so, because I'd like to keep a maximum of the the logic in a separate file with only lambdas + in the templates, and there are multiple places where you need to format a price.\nAnd in the end, the method was just _taking an object, returning an object_, but did it knowing the underlying template engine was Hogan, that's all.\n",
-      "date": 1442937080,
-      "reactions": {},
-      "id": 142330930
+      "id": 142330930,
+      "reactions": {}
     },
     {
+      "date": 1442937868,
+      "body": "Do you think passing a function in the helpers: {} would have worked? I thought that to have lambdas in hogan it was more work.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/123822",
         "id": 123822,
-        "login": "vvo",
-        "type": "User"
+        "login": "vvo"
       },
-      "body": "Do you think passing a function in the helpers: {} would have worked? I thought that to have lambdas in hogan it was more work.\n",
-      "date": 1442937868,
-      "reactions": {},
-      "id": 142334165
+      "id": 142334165,
+      "reactions": {}
     },
     {
+      "date": 1442938156,
+      "body": "@vvo It would have worked, the function @Jerskouille was passing was one carefully wrapped once or twice so Hogan would get it :)\n\nBut you're right, in the end what you suggested first was a specific use-case knowing Hogan.\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/283419",
         "id": 283419,
-        "login": "pixelastic",
-        "type": "User"
+        "login": "pixelastic"
       },
-      "body": "@vvo It would have worked, the function @Jerskouille was passing was one carefully wrapped once or twice so Hogan would get it :)\n\nBut you're right, in the end what you suggested first was a specific use-case knowing Hogan.\n",
-      "date": 1442938156,
-      "reactions": {},
-      "id": 142335334
+      "id": 142335334,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

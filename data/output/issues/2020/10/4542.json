@@ -1,85 +1,88 @@
 {
-  "number": 4542,
+  "type": "issue",
+  "distinctKey": "issue:4542",
   "title": "Insights middleware sometimes fails to initialize insightsClient before the first event.",
+  "date": 1603288745,
+  "body": "## 🐛 Bug description\r\n\r\nInsights middleware sometimes fails to initialize insightsClient before the first event.\r\n\r\n[Here](https://github.com/algolia/instantsearch.js/blob/master/src/middlewares/createInsightsMiddleware.ts#L41:L41) insights middleware checks if `insightsClient` is initialized (asynchronously). If not, it initializes it. However this asynchronous task may not end before the first event. Then the insights middleware tries to send the first event with `insightsClient`, `insightsClient` will throw an error:\r\n\r\n![image](https://user-images.githubusercontent.com/499898/96729283-46a29300-13b5-11eb-955f-efc52b6ad4c5.png)\r\n\r\n## How to solve\r\n\r\nThe most straightforward solution to this problem is to initialize the client without checking if it's already initialized. Then everything will be synchronous. It leaves us a concern which I had in the first place.\r\n> What if `insightsClient` is already initialized?\r\n\r\nNaively thinking, it should be fine. According to our documentation, users are not supposed to initialize it on their own (We don't even mention `init`.)\r\nHowever what if they somehow initialize it? It's actually okay. It will re-assign some variables. No problem.\r\n\r\nWe could update `search-insights` to accept an option like `ignoreIfAlreadyInitialized`, but it doesn't seem necessary.\r\n\r\nSo, my suggestion would be to replace \r\n\r\n```js\r\n    insightsClient('_get', '_hasCredentials', (hasCredentials: boolean) => {\r\n      if (!hasCredentials) {\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n      }\r\n    });\r\n```\r\n\r\nwith\r\n\r\n```js\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n```\r\n\r\nWhat do you think?",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/499898",
     "id": 499898,
-    "login": "eunjae-lee",
-    "type": "User"
+    "login": "eunjae-lee"
   },
-  "body": "## 🐛 Bug description\r\n\r\nInsights middleware sometimes fails to initialize insightsClient before the first event.\r\n\r\n[Here](https://github.com/algolia/instantsearch.js/blob/master/src/middlewares/createInsightsMiddleware.ts#L41:L41) insights middleware checks if `insightsClient` is initialized (asynchronously). If not, it initializes it. However this asynchronous task may not end before the first event. Then the insights middleware tries to send the first event with `insightsClient`, `insightsClient` will throw an error:\r\n\r\n![image](https://user-images.githubusercontent.com/499898/96729283-46a29300-13b5-11eb-955f-efc52b6ad4c5.png)\r\n\r\n## How to solve\r\n\r\nThe most straightforward solution to this problem is to initialize the client without checking if it's already initialized. Then everything will be synchronous. It leaves us a concern which I had in the first place.\r\n> What if `insightsClient` is already initialized?\r\n\r\nNaively thinking, it should be fine. According to our documentation, users are not supposed to initialize it on their own (We don't even mention `init`.)\r\nHowever what if they somehow initialize it? It's actually okay. It will re-assign some variables. No problem.\r\n\r\nWe could update `search-insights` to accept an option like `ignoreIfAlreadyInitialized`, but it doesn't seem necessary.\r\n\r\nSo, my suggestion would be to replace \r\n\r\n```js\r\n    insightsClient('_get', '_hasCredentials', (hasCredentials: boolean) => {\r\n      if (!hasCredentials) {\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n      }\r\n    });\r\n```\r\n\r\nwith\r\n\r\n```js\r\n        const [appId, apiKey] = getAppIdAndApiKey(instantSearchInstance.client);\r\n        insightsClient('_get', '_userToken', (userToken: string) => {\r\n          warning(\r\n            !userToken,\r\n            `You set userToken before \\`createInsightsMiddleware()\\` and it is ignored.\r\nPlease set the token after the \\`createInsightsMiddleware()\\` call.\r\ncreateInsightsMiddleware({ /* ... */ });\r\ninsightsClient('setUserToken', 'your-user-token');\r\n// or\r\naa('setUserToken', 'your-user-token');\r\n            `\r\n          );\r\n        });\r\n        insightsClient('init', { appId, apiKey });\r\n```\r\n\r\nWhat do you think?",
-  "date": 1603288745,
-  "labels": [
-    {
-      "color": "d93f0b",
-      "id": 238751632,
-      "isDark": true,
-      "name": "Type: Bug"
-    },
-    {
-      "color": "EED646",
-      "id": 4913578451,
-      "isDark": false,
-      "name": "Library: InstantSearch.js"
-    },
-    {
-      "color": "D4C5F9",
-      "id": 4917162301,
-      "isDark": false,
-      "name": "Feature: Insights"
-    }
-  ],
-  "state": "open",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "d93f0b",
+        "id": 238751632,
+        "isDark": true,
+        "name": "Type: Bug"
+      },
+      {
+        "color": "EED646",
+        "id": 4913578451,
+        "isDark": false,
+        "name": "Library: InstantSearch.js"
+      },
+      {
+        "color": "D4C5F9",
+        "id": 4917162301,
+        "isDark": false,
+        "name": "Feature: Insights"
+      }
+    ],
+    "number": 4542,
+    "reactions": {},
+    "state": "open"
+  },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "> However what if they somehow initialize it? It's actually okay. It will re-assign some variables. No problem.\r\n\r\nI thought an error was thrown on double init?",
       "date": 1603288994,
-      "reactions": {},
-      "id": 713601122
-    },
-    {
+      "body": "> However what if they somehow initialize it? It's actually okay. It will re-assign some variables. No problem.\r\n\r\nI thought an error was thrown on double init?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "we can also check for `init` in the queue, like we do for userToken, and we could skip in that case? I'm in favour of making this sync instead of async though!",
-      "date": 1603289055,
-      "reactions": {},
-      "id": 713601806
+      "id": 713601122,
+      "reactions": {}
     },
     {
+      "date": 1603289055,
+      "body": "we can also check for `init` in the queue, like we do for userToken, and we could skip in that case? I'm in favour of making this sync instead of async though!",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 713601806,
+      "reactions": {}
+    },
+    {
+      "date": 1697152574,
+      "body": "I know this is an old issue but it seems like the 'init' event call is still `void` so we don't really know if it's been initialised yet.\r\n\r\nHas anyone found a workaround for this, aside from above? How come we don't have access to know if it's been initialised (or have I missed some documentation)?",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1400563",
         "id": 1400563,
-        "login": "mrowles",
-        "type": "User"
+        "login": "mrowles"
       },
-      "body": "I know this is an old issue but it seems like the 'init' event call is still `void` so we don't really know if it's been initialised yet.\r\n\r\nHas anyone found a workaround for this, aside from above? How come we don't have access to know if it's been initialised (or have I missed some documentation)?",
-      "date": 1697152574,
-      "reactions": {},
-      "id": 1760509054
+      "id": 1760509054,
+      "reactions": {}
     },
     {
+      "date": 1697622799,
+      "body": "I believe now the behaviour is calling `init` in most cases, can you clarify exactly in which situation you are that you want to check if insights is already `init`ed? We definitely have changed the behaviour of search-insights to allow multiple `init` calls without resetting defaults",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "I believe now the behaviour is calling `init` in most cases, can you clarify exactly in which situation you are that you want to check if insights is already `init`ed? We definitely have changed the behaviour of search-insights to allow multiple `init` calls without resetting defaults",
-      "date": 1697622799,
-      "reactions": {},
-      "id": 1768093713
+      "id": 1768093713,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

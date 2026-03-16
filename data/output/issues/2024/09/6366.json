@@ -1,114 +1,117 @@
 {
-  "number": 6366,
+  "type": "issue",
+  "distinctKey": "issue:6366",
   "title": "FlatList not refreshing properly with useInfiniteHits in React Native",
+  "date": 1726743474,
+  "body": "Hello there,\r\n\r\nI'm facing an issue while implementing Algolia's `react-instantsearch-core` in a React Native project. Specifically, the refresh functionality in a `FlatList` component does not work as expected. I'm trying to use the `useInfiniteHits` hook with `FlatList` as per your official documentation, but I cannot get the list to refresh properly when clearing the cache or when new posts are received via a real-time data source.\r\n\r\n### What I Need:\r\nI need the ability to:\r\n- Reload the posts displayed in a `FlatList` when new data becomes available.\r\n- Trigger a refresh using the pull-to-refresh mechanism to fetch fresh data and clear the cache.\r\n\r\n### What I Have:\r\nI am following the official Algolia documentation on integrating Algolia search with React Native's `FlatList`. Posts are fetched from Algolia and displayed in a list. Additionally, I'm using SignalR to listen for new real-time posts, which should appear at the top of the list when received. \r\n\r\nHowever, when I trigger a refresh using `clearCache` and attempt to reset the UI state, the list does not update with new data. This happens both when pulling to refresh and when receiving new posts from SignalR.\r\n\r\n#### Code snippets:\r\n\r\n**PostCollection.tsx** (Simplified)\r\n```tsx\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite';\r\n...\r\nconst searchClient = useMemo(() => {\r\n  const client = algoliasearch(algoliaConfig.appId, algoliaConfig.key);\r\n  return {\r\n    ...client,\r\n    clearCache: client.clearCache\r\n  };\r\n}, [algoliaConfig]);\r\n\r\nreturn (\r\n  <InstantSearch\r\n    searchClient={searchClient}\r\n    indexName={algoliaConfig.index}\r\n  >\r\n    <Configure hitsPerPage={take} filters={filtersFormatted} />\r\n    <PostCollectionAlgolia\r\n      ref={postCollectionRef}\r\n      language={language}\r\n      clearCache={searchClient.clearCache}\r\n    />\r\n  </InstantSearch>\r\n);\r\n```\r\n\r\n**PostCollectionAlgolia.tsx** (Simplified)\r\n```tsx\r\nconst PostCollectionAlgolia = forwardRef(\r\n  ({ clearCache, indexName }, ref) => {\r\n    const { items, showMore, isLastPage } = useInfiniteHits();\r\n    const { refresh } = useInstantSearch();\r\n\r\n    const [newPostsAvailable, setNewPostsAvailable] = useState(false);\r\n    const [isRefreshing, setIsRefreshing] = useState(false);\r\n\r\n    const onRefresh = useCallback(async () => {\r\n      setIsRefreshing(true);\r\n      \r\n      await clearCache(); // Clear Algolia cache\r\n      setUiState((state) => ({\r\n        ...state,\r\n        [indexName]: { page: 0 }, // Reset page to trigger new data fetch\r\n      }));\r\n      \r\n      refresh(); // This doesn't seem to trigger a UI update with new data\r\n      \r\n      setNewPostsAvailable(false);\r\n      setIsRefreshing(false);\r\n    }, [clearCache, refresh, setUiState, indexName]);\r\n\r\n    return (\r\n      <FlatList\r\n        ref={ref}\r\n        data={items}\r\n        renderItem={renderPost}\r\n        keyExtractor={keyExtractor}\r\n        onEndReached={() => {\r\n          if (!isLastPage) {\r\n            showMore();\r\n          }\r\n        }}\r\n        refreshControl={\r\n          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />\r\n        }\r\n      />\r\n    );\r\n  }\r\n);\r\n```\r\n\r\n### What’s Happening:\r\n- When I pull to refresh, the `clearCache` method is called, and the UI state is reset, but the list does not update with new data. The content remains the same.\r\n- Additionally, when new posts are received via SignalR, they should appear in the list immediately, but they don't show up unless I manually interact with the app (e.g., scrolling or refreshing).\r\n\r\n### Steps to Reproduce:\r\n1. Use Algolia's `useInfiniteHits` in a React Native project, integrating it with `FlatList` (as per the [official documentation](https://www.algolia.com/doc/guides/building-search-ui/going-further/native/react/?client=InfiniteHits.js)).\r\n2. Implement pull-to-refresh by clearing the cache and resetting the UI state to trigger new data fetching.\r\n3. Try to refresh the list either by pulling to refresh or by adding new data dynamically via a real-time source like SignalR.\r\n\r\n### Expected Behavior:\r\n- The `FlatList` should update with new data upon clearing the cache and resetting the UI state.\r\n- New posts added dynamically should appear in the list immediately without manual interaction.\r\n\r\n### Actual Behavior:\r\n- The `FlatList` remains unchanged after the refresh is triggered, even though `clearCache` and state updates are called.\r\n\r\n### Environment:\r\n- React Native v0.74.5\r\n- Expo v51.0.32\r\n- Algolia's `react-instantsearch-core` v7.13.1\r\n- Algolia Search Client v5.5.1\r\n\r\n### Question:\r\nIs there something missing in the way `clearCache`, `refresh`, or `useInfiniteHits` works in React Native's `FlatList`? I would appreciate any guidance on how to ensure the list updates correctly with new data after clearing the cache.\r\n\r\nThanks in advance for your help!",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/51238748",
     "id": 51238748,
-    "login": "FXStreetDeveloper",
-    "type": "User"
+    "login": "FXStreetDeveloper"
   },
-  "body": "Hello there,\r\n\r\nI'm facing an issue while implementing Algolia's `react-instantsearch-core` in a React Native project. Specifically, the refresh functionality in a `FlatList` component does not work as expected. I'm trying to use the `useInfiniteHits` hook with `FlatList` as per your official documentation, but I cannot get the list to refresh properly when clearing the cache or when new posts are received via a real-time data source.\r\n\r\n### What I Need:\r\nI need the ability to:\r\n- Reload the posts displayed in a `FlatList` when new data becomes available.\r\n- Trigger a refresh using the pull-to-refresh mechanism to fetch fresh data and clear the cache.\r\n\r\n### What I Have:\r\nI am following the official Algolia documentation on integrating Algolia search with React Native's `FlatList`. Posts are fetched from Algolia and displayed in a list. Additionally, I'm using SignalR to listen for new real-time posts, which should appear at the top of the list when received. \r\n\r\nHowever, when I trigger a refresh using `clearCache` and attempt to reset the UI state, the list does not update with new data. This happens both when pulling to refresh and when receiving new posts from SignalR.\r\n\r\n#### Code snippets:\r\n\r\n**PostCollection.tsx** (Simplified)\r\n```tsx\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite';\r\n...\r\nconst searchClient = useMemo(() => {\r\n  const client = algoliasearch(algoliaConfig.appId, algoliaConfig.key);\r\n  return {\r\n    ...client,\r\n    clearCache: client.clearCache\r\n  };\r\n}, [algoliaConfig]);\r\n\r\nreturn (\r\n  <InstantSearch\r\n    searchClient={searchClient}\r\n    indexName={algoliaConfig.index}\r\n  >\r\n    <Configure hitsPerPage={take} filters={filtersFormatted} />\r\n    <PostCollectionAlgolia\r\n      ref={postCollectionRef}\r\n      language={language}\r\n      clearCache={searchClient.clearCache}\r\n    />\r\n  </InstantSearch>\r\n);\r\n```\r\n\r\n**PostCollectionAlgolia.tsx** (Simplified)\r\n```tsx\r\nconst PostCollectionAlgolia = forwardRef(\r\n  ({ clearCache, indexName }, ref) => {\r\n    const { items, showMore, isLastPage } = useInfiniteHits();\r\n    const { refresh } = useInstantSearch();\r\n\r\n    const [newPostsAvailable, setNewPostsAvailable] = useState(false);\r\n    const [isRefreshing, setIsRefreshing] = useState(false);\r\n\r\n    const onRefresh = useCallback(async () => {\r\n      setIsRefreshing(true);\r\n      \r\n      await clearCache(); // Clear Algolia cache\r\n      setUiState((state) => ({\r\n        ...state,\r\n        [indexName]: { page: 0 }, // Reset page to trigger new data fetch\r\n      }));\r\n      \r\n      refresh(); // This doesn't seem to trigger a UI update with new data\r\n      \r\n      setNewPostsAvailable(false);\r\n      setIsRefreshing(false);\r\n    }, [clearCache, refresh, setUiState, indexName]);\r\n\r\n    return (\r\n      <FlatList\r\n        ref={ref}\r\n        data={items}\r\n        renderItem={renderPost}\r\n        keyExtractor={keyExtractor}\r\n        onEndReached={() => {\r\n          if (!isLastPage) {\r\n            showMore();\r\n          }\r\n        }}\r\n        refreshControl={\r\n          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />\r\n        }\r\n      />\r\n    );\r\n  }\r\n);\r\n```\r\n\r\n### What’s Happening:\r\n- When I pull to refresh, the `clearCache` method is called, and the UI state is reset, but the list does not update with new data. The content remains the same.\r\n- Additionally, when new posts are received via SignalR, they should appear in the list immediately, but they don't show up unless I manually interact with the app (e.g., scrolling or refreshing).\r\n\r\n### Steps to Reproduce:\r\n1. Use Algolia's `useInfiniteHits` in a React Native project, integrating it with `FlatList` (as per the [official documentation](https://www.algolia.com/doc/guides/building-search-ui/going-further/native/react/?client=InfiniteHits.js)).\r\n2. Implement pull-to-refresh by clearing the cache and resetting the UI state to trigger new data fetching.\r\n3. Try to refresh the list either by pulling to refresh or by adding new data dynamically via a real-time source like SignalR.\r\n\r\n### Expected Behavior:\r\n- The `FlatList` should update with new data upon clearing the cache and resetting the UI state.\r\n- New posts added dynamically should appear in the list immediately without manual interaction.\r\n\r\n### Actual Behavior:\r\n- The `FlatList` remains unchanged after the refresh is triggered, even though `clearCache` and state updates are called.\r\n\r\n### Environment:\r\n- React Native v0.74.5\r\n- Expo v51.0.32\r\n- Algolia's `react-instantsearch-core` v7.13.1\r\n- Algolia Search Client v5.5.1\r\n\r\n### Question:\r\nIs there something missing in the way `clearCache`, `refresh`, or `useInfiniteHits` works in React Native's `FlatList`? I would appreciate any guidance on how to ensure the list updates correctly with new data after clearing the cache.\r\n\r\nThanks in advance for your help!",
-  "date": 1726743474,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 6366,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/20689156",
-        "id": 20689156,
-        "login": "shortcuts",
-        "type": "User"
-      },
-      "body": "Hey, this seems like an issue for https://github.com/algolia/instantsearch, I'm transferring it there",
       "date": 1726745012,
-      "reactions": {},
-      "id": 2360717694
-    },
-    {
+      "body": "Hey, this seems like an issue for https://github.com/algolia/instantsearch, I'm transferring it there",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/20689156",
         "id": 20689156,
-        "login": "shortcuts",
-        "type": "User"
+        "login": "shortcuts"
       },
-      "body": "@dhayab @Haroenv doesn't hesitate to let me know if this is related to our `clearCache` implementation!",
+      "id": 2360717694,
+      "reactions": {}
+    },
+    {
       "date": 1726745080,
-      "reactions": {},
-      "id": 2360719568
+      "body": "@dhayab @Haroenv doesn't hesitate to let me know if this is related to our `clearCache` implementation!",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/20689156",
+        "id": 20689156,
+        "login": "shortcuts"
+      },
+      "id": 2360719568,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "Infinite Hits has its own cache `infiniteHitsCache`, which you can instantiate yourself, and add a clear method to call at the same time as refresh",
       "date": 1726748430,
-      "reactions": {},
-      "id": 2360839256
-    },
-    {
+      "body": "Infinite Hits has its own cache `infiniteHitsCache`, which you can instantiate yourself, and add a clear method to call at the same time as refresh",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "There's no solution other than the workaround yet, so this is actually a duplicate of https://github.com/algolia/instantsearch/issues/5263",
+      "id": 2360839256,
+      "reactions": {}
+    },
+    {
       "date": 1726748493,
-      "reactions": {},
-      "id": 2360841316
-    },
-    {
+      "body": "There's no solution other than the workaround yet, so this is actually a duplicate of https://github.com/algolia/instantsearch/issues/5263",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/51238748",
-        "id": 51238748,
-        "login": "FXStreetDeveloper",
-        "type": "User"
-      },
-      "body": "> There's no solution other than the workaround yet, so this is actually a duplicate of #5263\r\n\r\nI have tried multiple workarounds from that thread with no success. I tried to use the following but uses an old version and I don't think it can still working here:\r\n\r\n(Message from the user, not mine)\r\n\r\n> @allanohorn \r\n\r\nI got refresh to work in my App by manually clearing the Algolia Client cache.  I'm using a reactive variable titled searchVar with Apollo client, but any global state manager will work.  My searchVar has this shape: \r\n\r\n```\r\nSearchVar.tsx\r\n\r\n  import {SearchState} from 'react-instantsearch-core';\r\n\r\n  export interface SearchVar {\r\n  refresh: boolean;\r\n  searchState: SearchState;\r\n  }\r\n```\r\n\r\n``` \r\nSearchScreen.tsx\r\n\r\n  const {refresh, searchState} = useReactiveVar(searchVar)\r\n\r\n  useEffect(() => {\r\n    if (refresh) {\r\n      algoliaClient\r\n        .clearCache()\r\n        .then(() => {\r\n         \r\n          //  LOGIC TO REFRESH THE TOKEN \r\n          //  AND RESET THE SEARCH STATE TO AN EMPTY OBJECT\r\n\r\n          searchVar({\r\n            refresh: false,         \r\n            searchState: {}\r\n          });\r\n        })\r\n        .catch(err => console.log('[SearchScreen] refresh ERROR', err));\r\n    }\r\n  }, [refresh]);\r\n```\r\n\r\n\r\nThen for the `InstantSearch` component I utilize a controlled searchState, onSearchStateChange, along with a refresh prop (but I'm not confident that actually does anything).\r\n\r\nMy `InstantSearch` looks like this:\r\n\r\n```\r\n      <InstantSearch\r\n        searchClient={algoliaClient}\r\n        indexName=\"items\"\r\n        searchState={searchState}\r\n        onSearchStateChange={(newState: SearchState) => {\r\n\r\n          //  UPDATE searchState BUT LEAVE REFRESH TOKEN UNTOUCHED\r\n          searchVar({...searchVar(), searchState: newState});\r\n\r\n        }}\r\n        refresh={refresh}>\r\n\r\n        <Header showHeader={showHeader} />\r\n\r\n        <Animated.View style={animatedStyles.content}>\r\n          <ConnectedSearchBox />\r\n          <ConnectedSearchResults />\r\n          <RefinementList />\r\n        </Animated.View>\r\n\r\n        <Footer showFooter={showFooter} />\r\n\r\n      </InstantSearch>\r\n```\r\n\r\nlet me know if that helps or if you have any questions\r\n\r\n_Originally posted by @skam22 in https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061966_\r\n            ",
-      "date": 1726758359,
-      "reactions": {},
-      "id": 2361281185
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885, and then clearing the infinite hits cache and calling useInstantSearch().refresh should work",
-      "date": 1726760331,
-      "reactions": {},
-      "id": 2361368283
+      "id": 2360841316,
+      "reactions": {}
     },
     {
+      "date": 1726758359,
+      "body": "> There's no solution other than the workaround yet, so this is actually a duplicate of #5263\r\n\r\nI have tried multiple workarounds from that thread with no success. I tried to use the following but uses an old version and I don't think it can still working here:\r\n\r\n(Message from the user, not mine)\r\n\r\n> @allanohorn \r\n\r\nI got refresh to work in my App by manually clearing the Algolia Client cache.  I'm using a reactive variable titled searchVar with Apollo client, but any global state manager will work.  My searchVar has this shape: \r\n\r\n```\r\nSearchVar.tsx\r\n\r\n  import {SearchState} from 'react-instantsearch-core';\r\n\r\n  export interface SearchVar {\r\n  refresh: boolean;\r\n  searchState: SearchState;\r\n  }\r\n```\r\n\r\n``` \r\nSearchScreen.tsx\r\n\r\n  const {refresh, searchState} = useReactiveVar(searchVar)\r\n\r\n  useEffect(() => {\r\n    if (refresh) {\r\n      algoliaClient\r\n        .clearCache()\r\n        .then(() => {\r\n         \r\n          //  LOGIC TO REFRESH THE TOKEN \r\n          //  AND RESET THE SEARCH STATE TO AN EMPTY OBJECT\r\n\r\n          searchVar({\r\n            refresh: false,         \r\n            searchState: {}\r\n          });\r\n        })\r\n        .catch(err => console.log('[SearchScreen] refresh ERROR', err));\r\n    }\r\n  }, [refresh]);\r\n```\r\n\r\n\r\nThen for the `InstantSearch` component I utilize a controlled searchState, onSearchStateChange, along with a refresh prop (but I'm not confident that actually does anything).\r\n\r\nMy `InstantSearch` looks like this:\r\n\r\n```\r\n      <InstantSearch\r\n        searchClient={algoliaClient}\r\n        indexName=\"items\"\r\n        searchState={searchState}\r\n        onSearchStateChange={(newState: SearchState) => {\r\n\r\n          //  UPDATE searchState BUT LEAVE REFRESH TOKEN UNTOUCHED\r\n          searchVar({...searchVar(), searchState: newState});\r\n\r\n        }}\r\n        refresh={refresh}>\r\n\r\n        <Header showHeader={showHeader} />\r\n\r\n        <Animated.View style={animatedStyles.content}>\r\n          <ConnectedSearchBox />\r\n          <ConnectedSearchResults />\r\n          <RefinementList />\r\n        </Animated.View>\r\n\r\n        <Footer showFooter={showFooter} />\r\n\r\n      </InstantSearch>\r\n```\r\n\r\nlet me know if that helps or if you have any questions\r\n\r\n_Originally posted by @skam22 in https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061966_\r\n            ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/51238748",
         "id": 51238748,
-        "login": "FXStreetDeveloper",
-        "type": "User"
+        "login": "FXStreetDeveloper"
       },
-      "body": "> [#5263 (comment)](https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885), and then clearing the infinite hits cache and calling useInstantSearch().refresh should work\r\n\r\nOk, after some hours testing this I couldn't come up with a fix using the refresh.",
-      "date": 1726823313,
-      "reactions": {},
-      "id": 2363238630
+      "id": 2361281185,
+      "reactions": {}
     },
     {
+      "date": 1726760331,
+      "body": "https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885, and then clearing the infinite hits cache and calling useInstantSearch().refresh should work",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 2361368283,
+      "reactions": {}
+    },
+    {
+      "date": 1726823313,
+      "body": "> [#5263 (comment)](https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885), and then clearing the infinite hits cache and calling useInstantSearch().refresh should work\r\n\r\nOk, after some hours testing this I couldn't come up with a fix using the refresh.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/51238748",
+        "id": 51238748,
+        "login": "FXStreetDeveloper"
+      },
+      "id": 2363238630,
+      "reactions": {}
+    },
+    {
+      "date": 1728646768,
+      "body": "> [#5263 (comment)](https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885), and then clearing the infinite hits cache and calling useInstantSearch().refresh should work\r\n\r\nHello there, I'm getting the same error and this component is not refreshing on demand. Any workaround available with this major version? There's one workaround from 2 years ago that I am not able to make it work.\r\n\r\nThanks in advance!",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/24481425",
         "id": 24481425,
-        "login": "alexmartinezm",
-        "type": "User"
+        "login": "alexmartinezm"
       },
-      "body": "> [#5263 (comment)](https://github.com/algolia/instantsearch/issues/5263#issuecomment-1363061885), and then clearing the infinite hits cache and calling useInstantSearch().refresh should work\r\n\r\nHello there, I'm getting the same error and this component is not refreshing on demand. Any workaround available with this major version? There's one workaround from 2 years ago that I am not able to make it work.\r\n\r\nThanks in advance!",
-      "date": 1728646768,
-      "reactions": {},
-      "id": 2407231179
+      "id": 2407231179,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

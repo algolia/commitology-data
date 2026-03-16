@@ -1,68 +1,71 @@
 {
-  "number": 5256,
+  "type": "issue",
+  "distinctKey": "issue:5256",
   "title": "Configure doesn't accept offset + length. Error is thrown",
+  "date": 1596306638,
+  "body": "**Describe the bug 🐛**\r\n\r\nError is thrown if `offset` and `length` is passed to `<Configure />`.\r\n\r\n**To Reproduce 🔍**\r\n\r\nhttps://codesandbox.io/s/elated-dawn-cfb89?file=/src/App.js\r\n\r\n**Expected behavior 💭**\r\n\r\nShould display up to the number of items configured in the `length` property.\r\n\r\n**Screenshots 🖥**\r\n\r\n![image](https://user-images.githubusercontent.com/967317/89108059-fea24e80-d40b-11ea-85d4-71f7cf8e7a84.png)\r\n\r\n![image](https://user-images.githubusercontent.com/967317/89107958-2349f680-d40b-11ea-9527-1d05fc4956ee.png)\r\n\r\n--\r\n\r\nMy use case for using offset & length is: in the initial page, I don't want to show pagination and want to restrict to only that fixed number of results, and then if facets are applied, then I'd let the user paginate. This was working normally on 6.4.0, but, after updating to 6.7.0 it is now breaking.\r\n\r\nAs you can see in the attached screenshot, Algolia does cap the number of hits to the desired number, however, it throws an error when rendering.\r\n\r\nOne other thing which's definitely related to that is: when I use `connectInfiniteHits` and SSR, the initial hits array is `[undefined]`. I have to `.filter(Boolean)` so my application doesn't crash, but still, the array comes empty if offset and length is passed to `<Configure />`.",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/967317",
     "id": 967317,
-    "login": "andreyvital",
-    "type": "User"
+    "login": "andreyvital"
   },
-  "body": "**Describe the bug 🐛**\r\n\r\nError is thrown if `offset` and `length` is passed to `<Configure />`.\r\n\r\n**To Reproduce 🔍**\r\n\r\nhttps://codesandbox.io/s/elated-dawn-cfb89?file=/src/App.js\r\n\r\n**Expected behavior 💭**\r\n\r\nShould display up to the number of items configured in the `length` property.\r\n\r\n**Screenshots 🖥**\r\n\r\n![image](https://user-images.githubusercontent.com/967317/89108059-fea24e80-d40b-11ea-85d4-71f7cf8e7a84.png)\r\n\r\n![image](https://user-images.githubusercontent.com/967317/89107958-2349f680-d40b-11ea-9527-1d05fc4956ee.png)\r\n\r\n--\r\n\r\nMy use case for using offset & length is: in the initial page, I don't want to show pagination and want to restrict to only that fixed number of results, and then if facets are applied, then I'd let the user paginate. This was working normally on 6.4.0, but, after updating to 6.7.0 it is now breaking.\r\n\r\nAs you can see in the attached screenshot, Algolia does cap the number of hits to the desired number, however, it throws an error when rendering.\r\n\r\nOne other thing which's definitely related to that is: when I use `connectInfiniteHits` and SSR, the initial hits array is `[undefined]`. I have to `.filter(Boolean)` so my application doesn't crash, but still, the array comes empty if offset and length is passed to `<Configure />`.",
-  "date": 1596306638,
-  "labels": [],
-  "state": "open",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 5256,
+    "reactions": {},
+    "state": "open"
+  },
   "comments": [
     {
+      "date": 1596439868,
+      "body": "I wonder if the key `length` makes an object \"array-like\". We had this problem before in facet values, but that was back when we were using lodash. \r\n\r\nIs there a reason you're using offset and length, and not regular pagination? If you want to set a default page for infinite hits, that can be done by setting the page value in `searchState`.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "I wonder if the key `length` makes an object \"array-like\". We had this problem before in facet values, but that was back when we were using lodash. \r\n\r\nIs there a reason you're using offset and length, and not regular pagination? If you want to set a default page for infinite hits, that can be done by setting the page value in `searchState`.",
-      "date": 1596439868,
-      "reactions": {},
-      "id": 1363060816
+      "id": 1363060816,
+      "reactions": {}
     },
     {
+      "date": 1596462066,
+      "body": "I don't want to set the default page. I want to cap the number of results for the first page so `View more` won't show up unless you apply certain filters (that's the way I have it programmed)\r\n\r\n```JSX\r\n<Configure {...getConfigureProps(hasFilters)} />\r\n```\r\n\r\n```JS\r\nfunction getConfigureProps(hasFilters: boolean) {\r\n  const defaultProps = {\r\n    maxValuesPerFacet: 20,\r\n    hitsPerPage: 3 * 8,\r\n  };\r\n\r\n  if (!hasFilters) {\r\n    return {\r\n      ...defaultProps,\r\n      offset: 0,\r\n      length: 15,\r\n    };\r\n  }\r\n\r\n  return {\r\n    ...defaultProps,\r\n  };\r\n}\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/967317",
         "id": 967317,
-        "login": "andreyvital",
-        "type": "User"
+        "login": "andreyvital"
       },
-      "body": "I don't want to set the default page. I want to cap the number of results for the first page so `View more` won't show up unless you apply certain filters (that's the way I have it programmed)\r\n\r\n```JSX\r\n<Configure {...getConfigureProps(hasFilters)} />\r\n```\r\n\r\n```JS\r\nfunction getConfigureProps(hasFilters: boolean) {\r\n  const defaultProps = {\r\n    maxValuesPerFacet: 20,\r\n    hitsPerPage: 3 * 8,\r\n  };\r\n\r\n  if (!hasFilters) {\r\n    return {\r\n      ...defaultProps,\r\n      offset: 0,\r\n      length: 15,\r\n    };\r\n  }\r\n\r\n  return {\r\n    ...defaultProps,\r\n  };\r\n}\r\n```",
-      "date": 1596462066,
+      "id": 1363060829,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1363060829
+      }
     },
     {
+      "date": 1690371019,
+      "body": "Same problems here, I wanted to have different hits for the first page, so I tried to set offset and length dynamically, but wouldn't work",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/21838011",
         "id": 21838011,
-        "login": "ryumy97",
-        "type": "User"
+        "login": "ryumy97"
       },
-      "body": "Same problems here, I wanted to have different hits for the first page, so I tried to set offset and length dynamically, but wouldn't work",
-      "date": 1690371019,
-      "reactions": {},
-      "id": 1651609461
+      "id": 1651609461,
+      "reactions": {}
     },
     {
+      "date": 1690373065,
+      "body": "you'll need to transform both the parameters and response to pretend your in offset-only or page-only mode",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "you'll need to transform both the parameters and response to pretend your in offset-only or page-only mode",
-      "date": 1690373065,
-      "reactions": {},
-      "id": 1651673380
+      "id": 1651673380,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

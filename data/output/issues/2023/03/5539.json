@@ -1,158 +1,161 @@
 {
-  "number": 5539,
+  "type": "issue",
+  "distinctKey": "issue:5539",
   "title": "`createInstantSearchRouterNext` doubles refinement requests to the Algolia API",
+  "date": 1678460607,
+  "body": "### 🐛 Current behavior\r\n\r\nWe've started using `createInstantSearchRouterNext` in our Next.js application to solve issues with back button navigation, but noticed our application has started querying the Algolia API 3 times for each refinement selection instead of just once.\r\n\r\nThis is concerning for us since we are already paying a significant amount of money for Algolia and don't want to see our costs tripled.\r\n\r\nUPDATE: I've adjusted the props to DynamicWidgets as the docs recommend to reduce network requests, but still have two requests instead of just one like we had previously...\r\n\r\nUPDATE 2: I've switched to using the RefinementList component directly, since that's closer to our application's implementation. Looks like we're still having 2 requests per refinement.\r\n\r\nMinimal reproduction is here:\r\n\r\nhttps://github.com/jmotes/algolia-next-router-duplicate-requests\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Clone https://github.com/jmotes/algolia-next-router-duplicate-requests\r\n2. `npm install && npm run dev` to launch the application\r\n3. Open http://localhost:3000/ in Chrome and bring up the browser network console\r\n4. Observe 3 http requests for every refinement selection\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/s/github/jmotes/algolia-next-router-duplicate-requests\r\n\r\n### 💭 Expected behavior\r\n\r\nThere should only be one network request with response containing items filtered by the selected refinement.\r\n\r\n### Package version\r\n\r\nreact-instantsearch-hooks-web 6.41.0, react-instantsearch-hooks-router-nextjs 6.41.0\r\n\r\n### Operating system\r\n\r\nWindows 11\r\n\r\n### Browser\r\n\r\nChrome\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/1943254",
     "id": 1943254,
-    "login": "jmotes",
-    "type": "User"
+    "login": "jmotes"
   },
-  "body": "### 🐛 Current behavior\r\n\r\nWe've started using `createInstantSearchRouterNext` in our Next.js application to solve issues with back button navigation, but noticed our application has started querying the Algolia API 3 times for each refinement selection instead of just once.\r\n\r\nThis is concerning for us since we are already paying a significant amount of money for Algolia and don't want to see our costs tripled.\r\n\r\nUPDATE: I've adjusted the props to DynamicWidgets as the docs recommend to reduce network requests, but still have two requests instead of just one like we had previously...\r\n\r\nUPDATE 2: I've switched to using the RefinementList component directly, since that's closer to our application's implementation. Looks like we're still having 2 requests per refinement.\r\n\r\nMinimal reproduction is here:\r\n\r\nhttps://github.com/jmotes/algolia-next-router-duplicate-requests\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Clone https://github.com/jmotes/algolia-next-router-duplicate-requests\r\n2. `npm install && npm run dev` to launch the application\r\n3. Open http://localhost:3000/ in Chrome and bring up the browser network console\r\n4. Observe 3 http requests for every refinement selection\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/s/github/jmotes/algolia-next-router-duplicate-requests\r\n\r\n### 💭 Expected behavior\r\n\r\nThere should only be one network request with response containing items filtered by the selected refinement.\r\n\r\n### Package version\r\n\r\nreact-instantsearch-hooks-web 6.41.0, react-instantsearch-hooks-router-nextjs 6.41.0\r\n\r\n### Operating system\r\n\r\nWindows 11\r\n\r\n### Browser\r\n\r\nChrome\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
-  "date": 1678460607,
-  "labels": [
-    {
-      "color": "5319E7",
-      "id": 4913597511,
-      "isDark": true,
-      "name": "triage"
-    }
-  ],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "5319E7",
+        "id": 4913597511,
+        "isDark": true,
+        "name": "triage"
+      }
+    ],
+    "number": 5539,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1679580808,
+      "body": "Hey @jmotes,\r\n\r\nYou're passing a new instance of the `algoliasearch` client at every render, which is causing the issue. You need to instantiate the search client outside of your component so that InstantSearch reuses the same reference:\r\n\r\n```js\r\nconst client = algoliasearch('latency', '6be0576ff61c053d5f9a3225e2a90f76');\r\n\r\nexport default function Home() {\r\n  // …\r\n\r\n  return (\r\n    <InstantSearch\r\n      searchClient={client}\r\n      indexName=\"instant_search\"\r\n      routing={{\r\n        router: createInstantSearchRouterNext({ singletonRouter }),\r\n      }}\r\n    >\r\n      {/* … */}\r\n    </InstantSearch>\r\n  );\r\n}\r\n```",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5370675",
         "id": 5370675,
-        "login": "sarahdayan",
-        "type": "User"
+        "login": "sarahdayan"
       },
-      "body": "Hey @jmotes,\r\n\r\nYou're passing a new instance of the `algoliasearch` client at every render, which is causing the issue. You need to instantiate the search client outside of your component so that InstantSearch reuses the same reference:\r\n\r\n```js\r\nconst client = algoliasearch('latency', '6be0576ff61c053d5f9a3225e2a90f76');\r\n\r\nexport default function Home() {\r\n  // …\r\n\r\n  return (\r\n    <InstantSearch\r\n      searchClient={client}\r\n      indexName=\"instant_search\"\r\n      routing={{\r\n        router: createInstantSearchRouterNext({ singletonRouter }),\r\n      }}\r\n    >\r\n      {/* … */}\r\n    </InstantSearch>\r\n  );\r\n}\r\n```",
-      "date": 1679580808,
+      "id": 1481274578,
       "reactions": {
         "🎉": 1,
         "👍️": 2
-      },
-      "id": 1481274578
+      }
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/1943254",
-        "id": 1943254,
-        "login": "jmotes",
-        "type": "User"
-      },
-      "body": "Thanks so much @sarahdayan! I'm still learning React and sometimes forget that function references get destroyed on every render. In our actual implementation I can't hardcode the client, but I was able to utilize `useMemo` there to fix things up so there is only one request per refinement selection now!\r\n\r\nI'm still seeing two requests on the initial page load that I was hoping this would fix too, but I'll debug more and create a separate issue for that if I can't resolve it.",
       "date": 1679585849,
-      "reactions": {},
-      "id": 1481417459
+      "body": "Thanks so much @sarahdayan! I'm still learning React and sometimes forget that function references get destroyed on every render. In our actual implementation I can't hardcode the client, but I was able to utilize `useMemo` there to fix things up so there is only one request per refinement selection now!\r\n\r\nI'm still seeing two requests on the initial page load that I was hoping this would fix too, but I'll debug more and create a separate issue for that if I can't resolve it.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/1943254",
+        "id": 1943254,
+        "login": "jmotes"
+      },
+      "id": 1481417459,
+      "reactions": {}
     },
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "@jmotes, why does the search client need to be conditional? We'd like to see if those use cases can be filled other ways too",
       "date": 1679586158,
-      "reactions": {
-        "👍️": 1
-      },
-      "id": 1481425776
-    },
-    {
+      "body": "@jmotes, why does the search client need to be conditional? We'd like to see if those use cases can be filled other ways too",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/1943254",
-        "id": 1943254,
-        "login": "jmotes",
-        "type": "User"
-      },
-      "body": "@Haroenv our application is a Next.js renderer for WordPress's block editor, where the credentials are configured in WP and pulled in at runtime and the search functionality is implemented in a block that the user places on the page.\r\n\r\nI was thinking I could instantiate the client in our global React Context and reference the context in the block's frontend component. But, we also have a site search that's always in the Header block and I wasn't sure it would make sense to share the searchClient between those two implementations since the search block placed on a page can be configured with different filters than the header search (so it's limited to show content for specific post types, etc.).",
-      "date": 1679586498,
-      "reactions": {
-        "👍️": 1
-      },
-      "id": 1481434857
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "Not sure if I understand the use case completely, but the searchClient doesn't store any state, it's safe to share it across totally separate instances",
-      "date": 1679586869,
+      "id": 1481425776,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1481445879
+      }
     },
     {
+      "date": 1679586498,
+      "body": "@Haroenv our application is a Next.js renderer for WordPress's block editor, where the credentials are configured in WP and pulled in at runtime and the search functionality is implemented in a block that the user places on the page.\r\n\r\nI was thinking I could instantiate the client in our global React Context and reference the context in the block's frontend component. But, we also have a site search that's always in the Header block and I wasn't sure it would make sense to share the searchClient between those two implementations since the search block placed on a page can be configured with different filters than the header search (so it's limited to show content for specific post types, etc.).",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1943254",
         "id": 1943254,
-        "login": "jmotes",
-        "type": "User"
+        "login": "jmotes"
       },
-      "body": "@Haroenv oh ok! That was the part I wasn't certain about. I'll give it a shot!",
-      "date": 1679586909,
-      "reactions": {},
-      "id": 1481447040
+      "id": 1481434857,
+      "reactions": {
+        "👍️": 1
+      }
     },
     {
+      "date": 1679586869,
+      "body": "Not sure if I understand the use case completely, but the searchClient doesn't store any state, it's safe to share it across totally separate instances",
       "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 1481445879,
+      "reactions": {
+        "👍️": 1
+      }
+    },
+    {
+      "date": 1679586909,
+      "body": "@Haroenv oh ok! That was the part I wasn't certain about. I'll give it a shot!",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/1943254",
+        "id": 1943254,
+        "login": "jmotes"
+      },
+      "id": 1481447040,
+      "reactions": {}
+    },
+    {
+      "date": 1679587008,
+      "body": "@jmotes Regarding the two requests you see at initial page load, this might be an `OPTIONS` call and a `POST` call. Do you use Firefox?",
+      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/5370675",
         "id": 5370675,
-        "login": "sarahdayan",
-        "type": "User"
+        "login": "sarahdayan"
       },
-      "body": "@jmotes Regarding the two requests you see at initial page load, this might be an `OPTIONS` call and a `POST` call. Do you use Firefox?",
-      "date": 1679587008,
-      "reactions": {},
-      "id": 1481449772
+      "id": 1481449772,
+      "reactions": {}
     },
     {
+      "date": 1679587452,
+      "body": "@sarahdayan I'm using Chrome but looks like they are both `POST` requests.\r\n\r\nBut I just verified that is fixed in the minimal reproduction, so I probably just have another unstable React reference in our project somewhere. I keep thinking I've fixed them but I found another last night so probably another lingering one. If I can identify a way to reproduce it easily I'll create a new ticket and tag you both in it if that's ok!\r\n\r\n<img width=\"521\" alt=\"image\" src=\"https://user-images.githubusercontent.com/1943254/227263425-b7e40dee-f3da-4cee-8d53-2f11525d9132.png\">\r\n",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1943254",
         "id": 1943254,
-        "login": "jmotes",
-        "type": "User"
+        "login": "jmotes"
       },
-      "body": "@sarahdayan I'm using Chrome but looks like they are both `POST` requests.\r\n\r\nBut I just verified that is fixed in the minimal reproduction, so I probably just have another unstable React reference in our project somewhere. I keep thinking I've fixed them but I found another last night so probably another lingering one. If I can identify a way to reproduce it easily I'll create a new ticket and tag you both in it if that's ok!\r\n\r\n<img width=\"521\" alt=\"image\" src=\"https://user-images.githubusercontent.com/1943254/227263425-b7e40dee-f3da-4cee-8d53-2f11525d9132.png\">\r\n",
-      "date": 1679587452,
+      "id": 1481464067,
       "reactions": {
         "👍️": 1
-      },
-      "id": 1481464067
+      }
     },
     {
+      "date": 1679609112,
+      "body": "@sarahdayan @Haroenv I figured what was causing the duplicate queries on page load and found a workaround so thought I'd post incase anyone else encounters this!\r\n\r\nIt only happens if Next.js middleware is in place. I think this bug explains why: https://github.com/vercel/next.js/issues/38267\r\n\r\nAs I mentioned before, it was still happening when memo'ing the search client - which should have allowed us to handle the middleware re-renders issue, but my `useMemo` dependency array included an object that contained the app ID and public key. Breaking those out into scalars first allows React to more easily calculate that it doesn't need to re-create the search client on the re-render:\r\n\r\n```js\r\nconst { appID, indexName, publicKey } = algoliaCredentials;\r\n\r\nconst searchClient = useMemo(\r\n\t() => (appID && publicKey ? algoliasearch(appID, publicKey) : null),\r\n\t[appID, publicKey]\r\n);\r\n```\r\n\r\n@Haroenv also, this does work great in our app's React Context - as long as it's memo'd. Thanks for the push in the right direction!",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/1943254",
         "id": 1943254,
-        "login": "jmotes",
-        "type": "User"
+        "login": "jmotes"
       },
-      "body": "@sarahdayan @Haroenv I figured what was causing the duplicate queries on page load and found a workaround so thought I'd post incase anyone else encounters this!\r\n\r\nIt only happens if Next.js middleware is in place. I think this bug explains why: https://github.com/vercel/next.js/issues/38267\r\n\r\nAs I mentioned before, it was still happening when memo'ing the search client - which should have allowed us to handle the middleware re-renders issue, but my `useMemo` dependency array included an object that contained the app ID and public key. Breaking those out into scalars first allows React to more easily calculate that it doesn't need to re-create the search client on the re-render:\r\n\r\n```js\r\nconst { appID, indexName, publicKey } = algoliaCredentials;\r\n\r\nconst searchClient = useMemo(\r\n\t() => (appID && publicKey ? algoliasearch(appID, publicKey) : null),\r\n\t[appID, publicKey]\r\n);\r\n```\r\n\r\n@Haroenv also, this does work great in our app's React Context - as long as it's memo'd. Thanks for the push in the right direction!",
-      "date": 1679609112,
-      "reactions": {},
-      "id": 1481975568
+      "id": 1481975568,
+      "reactions": {}
     },
     {
+      "date": 1679646031,
+      "body": "Perfect, in general the more things are static, the easier your app will be to reason about. We're trying to find ways to add more warnings if things people usually consider static aren't :) ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "Perfect, in general the more things are static, the easier your app will be to reason about. We're trying to find ways to add more warnings if things people usually consider static aren't :) ",
-      "date": 1679646031,
+      "id": 1482420076,
       "reactions": {
         "❤️": 1
-      },
-      "id": 1482420076
+      }
     }
-  ],
-  "type": "issue"
+  ]
 }

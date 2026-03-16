@@ -1,61 +1,64 @@
 {
-  "number": 6404,
+  "type": "issue",
+  "distinctKey": "issue:6404",
   "title": "Cannot read properties of null (reading 'hits')",
+  "date": 1729333402,
+  "body": "### 🐛 Current behavior\n\nWe see that on Sentry we get a lot of the error \"Cannot read properties of null (reading 'hits')\".\r\n\r\n![Screenshot 2024-10-19 at 12 17 53](https://github.com/user-attachments/assets/d5ddb6a7-19f7-47c3-b644-d93411d89a6f)\r\n\r\nIt's hard to investigate for us as the stack trace leads us from `../../../../node_modules/instantsearch.js/es/connectors/autocomplete/connectAutocomplete.js in indices at line 63:84` to `../../../../node_modules/instantsearch.js/es/lib/utils/defer.js in progress at line 18:16`.\r\n\r\nOur dependencies are:\r\n\r\n```\r\n  \"dependencies\": {\r\n    \"algoliasearch\": \"^4.22.1\",\r\n    \"react-instantsearch\": \"^7.5.5\",\r\n    \"react-instantsearch-nextjs\": \"0.2.4\",\r\n    \"search-insights\": \"^2.13.0\"\r\n  },\r\n```\r\n\r\nThis project is not using nextjs, but we are in a monorepo and so are sharing some packages. We are just importing from `react-instantsearch` for things like `useInfiniteHits`, `useHits`, `useRefinementList`, the `Configure` component.\r\n\r\nWe have about 26 files using react-instantsearch so I'm happy to share some code examples although it's hard for us to know _which_ part is causing the issue. So I wanted to open this issue incase it is a library bug. Happy to try and work through to understand if it's userland or not.\r\n\n\n### 🔍 Steps to reproduce\n\n1. Use react-instantsearch\r\n2. See this error reported in Sentry\n\n### Live reproduction\n\nn/a\n\n### 💭 Expected behavior\n\nNo error is thrown\n\n### Package version\n\nreact-instantsearch@7.5.5\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/19930241",
     "id": 19930241,
-    "login": "bitttttten",
-    "type": "User"
+    "login": "bitttttten"
   },
-  "body": "### 🐛 Current behavior\n\nWe see that on Sentry we get a lot of the error \"Cannot read properties of null (reading 'hits')\".\r\n\r\n![Screenshot 2024-10-19 at 12 17 53](https://github.com/user-attachments/assets/d5ddb6a7-19f7-47c3-b644-d93411d89a6f)\r\n\r\nIt's hard to investigate for us as the stack trace leads us from `../../../../node_modules/instantsearch.js/es/connectors/autocomplete/connectAutocomplete.js in indices at line 63:84` to `../../../../node_modules/instantsearch.js/es/lib/utils/defer.js in progress at line 18:16`.\r\n\r\nOur dependencies are:\r\n\r\n```\r\n  \"dependencies\": {\r\n    \"algoliasearch\": \"^4.22.1\",\r\n    \"react-instantsearch\": \"^7.5.5\",\r\n    \"react-instantsearch-nextjs\": \"0.2.4\",\r\n    \"search-insights\": \"^2.13.0\"\r\n  },\r\n```\r\n\r\nThis project is not using nextjs, but we are in a monorepo and so are sharing some packages. We are just importing from `react-instantsearch` for things like `useInfiniteHits`, `useHits`, `useRefinementList`, the `Configure` component.\r\n\r\nWe have about 26 files using react-instantsearch so I'm happy to share some code examples although it's hard for us to know _which_ part is causing the issue. So I wanted to open this issue incase it is a library bug. Happy to try and work through to understand if it's userland or not.\r\n\n\n### 🔍 Steps to reproduce\n\n1. Use react-instantsearch\r\n2. See this error reported in Sentry\n\n### Live reproduction\n\nn/a\n\n### 💭 Expected behavior\n\nNo error is thrown\n\n### Package version\n\nreact-instantsearch@7.5.5\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
-  "date": 1729333402,
-  "labels": [
-    {
-      "color": "5319E7",
-      "id": 4913597511,
-      "isDark": true,
-      "name": "triage"
-    }
-  ],
-  "state": "open",
-  "reactions": {},
+  "issue": {
+    "labels": [
+      {
+        "color": "5319E7",
+        "id": 4913597511,
+        "isDark": true,
+        "name": "triage"
+      }
+    ],
+    "number": 6404,
+    "reactions": {},
+    "state": "open"
+  },
   "comments": [
     {
+      "date": 1729350081,
+      "body": "The most interesting part to reproduce would be the part where you're using connectAutocomplete. I wonder if it's possibly rendering conditionally and therefore at some timing where there's no results? It's odd because this is in a loop with the scopedResults array which therefore is definitely present, but it seems to imply that one of the `results` is `null`. Could this maybe be an adjacent index widget which is rendered conditionally as well?\r\n\r\nWe could guard for the case but I'd rather find out _why_ results is null before, maybe something larger is wrong?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "The most interesting part to reproduce would be the part where you're using connectAutocomplete. I wonder if it's possibly rendering conditionally and therefore at some timing where there's no results? It's odd because this is in a loop with the scopedResults array which therefore is definitely present, but it seems to imply that one of the `results` is `null`. Could this maybe be an adjacent index widget which is rendered conditionally as well?\r\n\r\nWe could guard for the case but I'd rather find out _why_ results is null before, maybe something larger is wrong?",
-      "date": 1729350081,
-      "reactions": {},
-      "id": 2423937408
+      "id": 2423937408,
+      "reactions": {}
     },
     {
+      "date": 1729350497,
+      "body": "What could help you here? Shall I share some more of our set up code?",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/19930241",
         "id": 19930241,
-        "login": "bitttttten",
-        "type": "User"
+        "login": "bitttttten"
       },
-      "body": "What could help you here? Shall I share some more of our set up code?",
-      "date": 1729350497,
-      "reactions": {},
-      "id": 2423942398
+      "id": 2423942398,
+      "reactions": {}
     },
     {
+      "date": 1729499135,
+      "body": "a minimal reproduction that shows the issue is the most efficient way for us to dig down. ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "a minimal reproduction that shows the issue is the most efficient way for us to dig down. ",
-      "date": 1729499135,
-      "reactions": {},
-      "id": 2425965788
+      "id": 2425965788,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

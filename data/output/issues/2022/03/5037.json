@@ -1,66 +1,69 @@
 {
-  "number": 5037,
+  "type": "issue",
+  "distinctKey": "issue:5037",
   "title": "defining max in a RangeSlider automatically filters results to that max value",
+  "date": 1648540264,
+  "body": "## 🐛 Bug description\r\n\r\nDefining max in a RangeSlider automatically filters results to that max value\r\n\r\n## 💭 Expected behavior\r\n\r\nAll results to come in until the user actually filters them.\r\n\r\n## 🖥 Screenshots\r\n\r\n![image](https://user-images.githubusercontent.com/4541410/160559876-7f6185b7-f3cd-4cdf-b168-0ba7ff7ee295.png)\r\n\r\n## Additional context\r\n\r\n```\r\nrangeSlider({\r\n    container: '#price-range-slider',\r\n    attribute: 'price',\r\n    max:8000,\r\n  }),\r\n\r\n```\r\n\r\nAdding the filter automatically is a nice future to have in some scenarios. The default should be to work with all results until the end user actually interacts with the widget.   The way instantsearch works now how do I go about removing that max filter optimaly?\r\n\r\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/4541410",
     "id": 4541410,
-    "login": "dianos",
-    "type": "User"
+    "login": "dianos"
   },
-  "body": "## 🐛 Bug description\r\n\r\nDefining max in a RangeSlider automatically filters results to that max value\r\n\r\n## 💭 Expected behavior\r\n\r\nAll results to come in until the user actually filters them.\r\n\r\n## 🖥 Screenshots\r\n\r\n![image](https://user-images.githubusercontent.com/4541410/160559876-7f6185b7-f3cd-4cdf-b168-0ba7ff7ee295.png)\r\n\r\n## Additional context\r\n\r\n```\r\nrangeSlider({\r\n    container: '#price-range-slider',\r\n    attribute: 'price',\r\n    max:8000,\r\n  }),\r\n\r\n```\r\n\r\nAdding the filter automatically is a nice future to have in some scenarios. The default should be to work with all results until the end user actually interacts with the widget.   The way instantsearch works now how do I go about removing that max filter optimaly?\r\n\r\n",
-  "date": 1648540264,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 5037,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
-      "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/6270048",
-        "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
-      },
-      "body": "Could you clarify which behaviour you want for the max? Would it not apply the filter, but in the UI still show as 8000 as the highest value?",
       "date": 1648540618,
-      "reactions": {},
-      "id": 1081549272
-    },
-    {
+      "body": "Could you clarify which behaviour you want for the max? Would it not apply the filter, but in the UI still show as 8000 as the highest value?",
       "user": {
-        "avatar": "https://avatars.githubusercontent.com/u/4541410",
-        "id": 4541410,
-        "login": "dianos",
-        "type": "User"
-      },
-      "body": "Exactly.  The reason to put in the max is to make the range slider usable when there is large price outliers.   But we don't want to limit the initial search results.   When the end user drags the upper bound then the upper filter should be applied.  ",
-      "date": 1648544498,
-      "reactions": {},
-      "id": 1081614567
-    },
-    {
-      "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "I can't think of a good solution for that problem right now without forking the library, the concept of min and max encodes both the visual and filter range. What I can think of is transforming the response to filter out the outliers instead of setting min and max:\r\n\r\n```\r\nconst originalSearch = searchClient.search;\r\nsearchClient.search = function (requests) {\r\n  return originalSearch(requests).then(({ results }) => ({\r\n    results: results.map((result) => {\r\n      if (!result.facets_stats || !result.facets_stats.price) {\r\n        return result;\r\n      }\r\n\r\n      return {\r\n        ...result,\r\n        facets_stats: {\r\n          ...result.facets_stats,\r\n          price: {\r\n            ...result.facets_stats.price,\r\n            // override the maximum\r\n            max: 2000,\r\n          },\r\n        },\r\n      };\r\n    }),\r\n  }));\r\n};\r\n```\r\n\r\nhttps://codesandbox.io/s/busy-goodall-ktjqt1?file=/src/app.js:139-683",
-      "date": 1648555522,
-      "reactions": {},
-      "id": 1081787918
+      "id": 1081549272,
+      "reactions": {}
     },
     {
+      "date": 1648544498,
+      "body": "Exactly.  The reason to put in the max is to make the range slider usable when there is large price outliers.   But we don't want to limit the initial search results.   When the end user drags the upper bound then the upper filter should be applied.  ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/4541410",
         "id": 4541410,
-        "login": "dianos",
-        "type": "User"
+        "login": "dianos"
       },
-      "body": "Thanks, that works well.",
+      "id": 1081614567,
+      "reactions": {}
+    },
+    {
+      "date": 1648555522,
+      "body": "I can't think of a good solution for that problem right now without forking the library, the concept of min and max encodes both the visual and filter range. What I can think of is transforming the response to filter out the outliers instead of setting min and max:\r\n\r\n```\r\nconst originalSearch = searchClient.search;\r\nsearchClient.search = function (requests) {\r\n  return originalSearch(requests).then(({ results }) => ({\r\n    results: results.map((result) => {\r\n      if (!result.facets_stats || !result.facets_stats.price) {\r\n        return result;\r\n      }\r\n\r\n      return {\r\n        ...result,\r\n        facets_stats: {\r\n          ...result.facets_stats,\r\n          price: {\r\n            ...result.facets_stats.price,\r\n            // override the maximum\r\n            max: 2000,\r\n          },\r\n        },\r\n      };\r\n    }),\r\n  }));\r\n};\r\n```\r\n\r\nhttps://codesandbox.io/s/busy-goodall-ktjqt1?file=/src/app.js:139-683",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/6270048",
+        "id": 6270048,
+        "login": "Haroenv"
+      },
+      "id": 1081787918,
+      "reactions": {}
+    },
+    {
       "date": 1648716925,
-      "reactions": {},
-      "id": 1084287631
+      "body": "Thanks, that works well.",
+      "user": {
+        "type": "User",
+        "avatar": "https://avatars.githubusercontent.com/u/4541410",
+        "id": 4541410,
+        "login": "dianos"
+      },
+      "id": 1084287631,
+      "reactions": {}
     }
-  ],
-  "type": "issue"
+  ]
 }

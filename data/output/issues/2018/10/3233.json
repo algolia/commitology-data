@@ -1,44 +1,47 @@
 {
-  "number": 3233,
+  "type": "issue",
+  "distinctKey": "issue:3233",
   "title": "Question on the page \"menu\"",
+  "date": 1540543498,
+  "body": "Hi! I have a documentation issue on InstantSearch.js. I could not find what I was looking for on the page \"[menu](https://community.algolia.com/instantsearch.js/v2/widgets/menu.html)\".\r\n\r\nItems in my dataset have a `category` property, with values `category1`, `category2`, `category3`.\r\n\r\nI'm trying to build a menu looking like:\r\n\r\n`[All categories] [category1] [category2] [category3]`\r\n\r\nWhat I could not achieve with the widget:\r\n- Menu items disappear when applying other filters but I want to keep them all (even if no result matches)\r\n- Clicking on a selected category unsets it (hence resets the filter), but I want to click on a specific button \"All categories\" to reset this particular category filter.\r\n\r\nCan the Menu widget fulfill my needs? \r\nOr should I hardcode the menu and trigger an Algolia query for each button?\r\n",
   "user": {
+    "type": "User",
     "avatar": "https://avatars.githubusercontent.com/u/10119619",
     "id": 10119619,
-    "login": "gitomato",
-    "type": "User"
+    "login": "gitomato"
   },
-  "body": "Hi! I have a documentation issue on InstantSearch.js. I could not find what I was looking for on the page \"[menu](https://community.algolia.com/instantsearch.js/v2/widgets/menu.html)\".\r\n\r\nItems in my dataset have a `category` property, with values `category1`, `category2`, `category3`.\r\n\r\nI'm trying to build a menu looking like:\r\n\r\n`[All categories] [category1] [category2] [category3]`\r\n\r\nWhat I could not achieve with the widget:\r\n- Menu items disappear when applying other filters but I want to keep them all (even if no result matches)\r\n- Clicking on a selected category unsets it (hence resets the filter), but I want to click on a specific button \"All categories\" to reset this particular category filter.\r\n\r\nCan the Menu widget fulfill my needs? \r\nOr should I hardcode the menu and trigger an Algolia query for each button?\r\n",
-  "date": 1540543498,
-  "labels": [],
-  "state": "closed",
-  "reactions": {},
+  "issue": {
+    "labels": [],
+    "number": 3233,
+    "reactions": {},
+    "state": "closed"
+  },
   "comments": [
     {
+      "date": 1540546241,
+      "body": "```js\r\nconst staticRefinementList = instantsearch.connectors.connectRefinementList(\r\n  ({ items, refine, widgetParams }, isFirtRender) => {\r\n    const container = document.getElementById('brand-list');\r\n    if (isFirtRender) {\r\n      container.addEventListener('click', event => {\r\n        const input = event.target.closest('input');\r\n        if (input) {\r\n          refine(input.value);\r\n        }\r\n      });\r\n      return;\r\n    }\r\n    const list = widgetParams.values.map(staticItem => {\r\n      const { isRefined } = items.find(\r\n        item => item.label === staticItem.label\r\n      ) || {\r\n        isRefined: false,\r\n      };\r\n      return `\r\n        <li>\r\n          <label>\r\n            <input\r\n              type=\"checkbox\"\r\n              value=\"${staticItem.value}\"\r\n              ${isRefined ? 'checked' : ''}\r\n            />\r\n            ${staticItem.label}\r\n          </label>\r\n        </li>\r\n      `;\r\n    });\r\n    container.innerHTML = `\r\n      <ul>\r\n        ${list.join('')}\r\n      </ul>\r\n    `;\r\n  }\r\n);\r\nsearch.addWidget(\r\n  staticRefinementList({\r\n    attributeName: 'brand',\r\n    values: [\r\n      { label: 'Apple', value: 'Apple' },\r\n      { label: 'Microsoft', value: 'Microsoft' },\r\n    ],\r\n  })\r\n);\r\n```\r\n\r\nSomething like this, but with menu instead of refinement list should do the job you want, I think ",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/6270048",
         "id": 6270048,
-        "login": "Haroenv",
-        "type": "User"
+        "login": "Haroenv"
       },
-      "body": "```js\r\nconst staticRefinementList = instantsearch.connectors.connectRefinementList(\r\n  ({ items, refine, widgetParams }, isFirtRender) => {\r\n    const container = document.getElementById('brand-list');\r\n    if (isFirtRender) {\r\n      container.addEventListener('click', event => {\r\n        const input = event.target.closest('input');\r\n        if (input) {\r\n          refine(input.value);\r\n        }\r\n      });\r\n      return;\r\n    }\r\n    const list = widgetParams.values.map(staticItem => {\r\n      const { isRefined } = items.find(\r\n        item => item.label === staticItem.label\r\n      ) || {\r\n        isRefined: false,\r\n      };\r\n      return `\r\n        <li>\r\n          <label>\r\n            <input\r\n              type=\"checkbox\"\r\n              value=\"${staticItem.value}\"\r\n              ${isRefined ? 'checked' : ''}\r\n            />\r\n            ${staticItem.label}\r\n          </label>\r\n        </li>\r\n      `;\r\n    });\r\n    container.innerHTML = `\r\n      <ul>\r\n        ${list.join('')}\r\n      </ul>\r\n    `;\r\n  }\r\n);\r\nsearch.addWidget(\r\n  staticRefinementList({\r\n    attributeName: 'brand',\r\n    values: [\r\n      { label: 'Apple', value: 'Apple' },\r\n      { label: 'Microsoft', value: 'Microsoft' },\r\n    ],\r\n  })\r\n);\r\n```\r\n\r\nSomething like this, but with menu instead of refinement list should do the job you want, I think ",
-      "date": 1540546241,
-      "reactions": {},
-      "id": 433347680
+      "id": 433347680,
+      "reactions": {}
     },
     {
+      "date": 1540557096,
+      "body": "Thank you @Haroenv, that's a good start for me to work on a solution.",
       "user": {
+        "type": "User",
         "avatar": "https://avatars.githubusercontent.com/u/10119619",
         "id": 10119619,
-        "login": "gitomato",
-        "type": "User"
+        "login": "gitomato"
       },
-      "body": "Thank you @Haroenv, that's a good start for me to work on a solution.",
-      "date": 1540557096,
+      "id": 433391738,
       "reactions": {
         "👍️": 1
-      },
-      "id": 433391738
+      }
     }
-  ],
-  "type": "issue"
+  ]
 }
