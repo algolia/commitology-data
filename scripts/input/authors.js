@@ -3,6 +3,7 @@ import { spinner, writeJson } from 'firost';
 import {
   forEachRepoAuthor,
   getGitHubUserFromAuthorName,
+  getInputAuthors,
   inputPath,
 } from '../../lib/helpers/author.js';
 
@@ -12,6 +13,12 @@ import {
  * commit.
  * If a user is associated, save the user id in the authors.json file
  **/
+const knownAuthors = await getInputAuthors();
+const hashedIds = {};
+_.each(knownAuthors, ({ name, id }) => {
+  hashedIds[name] = id;
+});
+
 const progress = spinner();
 
 const authors = await forEachRepoAuthor(
@@ -20,8 +27,14 @@ const authors = await forEachRepoAuthor(
     const { name } = data;
     progress.tick(`[${index}/${max}] ${name}`);
 
-    const user = await getGitHubUserFromAuthorName(name);
-    data.id = user?.id || 0;
+    // We avoid doing an API call if we have already resolved the name <=> id of
+    // that author
+    if (_.has(hashedIds, name)) {
+      data.id = hashedIds[name];
+    } else {
+      const user = await getGitHubUserFromAuthorName(name);
+      data.id = user?.id || -1;
+    }
 
     return data;
   },
