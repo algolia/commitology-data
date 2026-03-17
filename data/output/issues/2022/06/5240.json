@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5240",
   "title": "[react-instantsearch-hooks] RefinementList search state cleared on un-mount even when using useRefinementList to create a virtual widget",
   "date": 1656511494,
   "body": "## 🐛 Bug description\r\n\r\nWhen placing a `<RefinementList>` component inside a modal component that mounts and un-mounts its content, the current refinements are cleared even when using the `useRefinementsList` hook to create a virtual refinement list widget.  \r\n\r\n## 🔍 Bug reproduction\r\n\r\nMinimal example set up on Codesandbox, using the [Algolia docs example](https://www.algolia.com/doc/guides/building-search-ui/widgets/customize-an-existing-widget/react-hooks/#building-a-virtual-widget-with-hooks) as a reference.\r\n\r\n**Steps to reproduce the behavior:**\r\n\r\n1. Go to https://codesandbox.io/s/snowy-field-22wyku?file=/src/App.js\r\n2. Click on the \"Show DIalog\" button to open the modal \r\n3. Apply a refinement (notice that the hits have updated)\r\n4. Close the modal by clicking outside the modal body\r\n5. The refinement has reset and all results show (refinement state has been cleared)\r\n\r\n**Live reproduction:**\r\n\r\nhttps://codesandbox.io/s/snowy-field-22wyku?file=/src/App.js\r\n\r\n## 💭 Expected behavior\r\n\r\nCurrent refinement search state should be preserved when the `<RefinementList>` component inside the modal component is unmounted on close. \r\n\r\n\r\n## Environment\r\n\r\n- React InstantSearch Hooks version: 6.29.0\r\n- React version: 18.0.0\r\n- Browser: Chrome 103.0.5060.53\r\n- OS: macOS\r\n\r\nThanks\r\n",
@@ -21,99 +20,5 @@
       "👍️": 9
     },
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1656514007,
-      "body": "Unfortunately this isn't yet possible. There's two possible workarounds:\r\n\r\n1. if you're making a custom widget anyway, make the layout like this:\r\n\r\n```js\r\nfunction RefinementList() {\r\n  useRefinementList()\r\n  \r\n  return <Dialog />\r\n}\r\n```\r\n\r\n2. use a dialog that only hides via css, but keeps the refinement in the tree\r\n\r\nWe don't yet have a mechanism to prevent a widget from cleaning up when it unmounts, even when there's another widget of the same type in the tree, as it's impossible to detect both are intended to be synced",
-      "user": 6270048,
-      "id": 1363059676,
-      "reactions": {}
-    },
-    {
-      "date": 1656514548,
-      "body": "Here's how to use the internal ui component to avoid recreating the whole rendering and still put the dialog inside the refinement list conceptually: https://codesandbox.io/s/autumn-leftpad-3j3nmp?file=/src/App.js",
-      "user": 6270048,
-      "id": 1363059686,
-      "reactions": {}
-    },
-    {
-      "date": 1658484455,
-      "body": "We are running into the same issue. We use a drawer like structure on mobile, while keeping the desktop UI components mounted. The drawer is a component from @chakra-ui/react, of which we can't control the mounting state (it gets unmounted on close)\r\nhttps://chakra-ui.com/docs/components/drawer\r\n\r\nThe drawer opens if you click a filter button, the user can apply refinements within the drawer but once the drawer closes, all filters cleared (as the drawer simply renders all the filters within). It feels like unexpected behaviour, as I would expect the lib to keep track of the mounted widgets\r\n\r\nWe'll look intro restructuring our component tree for now.\r\n\r\n**[edit]** please note that both the desktop and mobile UI use hooks\r\n\r\nThe documentation actually seems to suggest that the @jamespeilow is pointing out should actually work: https://www.algolia.com/doc/guides/building-search-ui/widgets/customize-an-existing-widget/react-hooks/#building-a-virtual-widget-with-hooks",
-      "user": 10176709,
-      "id": 1363059694,
-      "reactions": {
-        "👍️": 7
-      }
-    },
-    {
-      "date": 1663761890,
-      "body": "had another look the connect example from here which uses a modal https://www.algolia.com/doc/guides/building-search-ui/going-further/native/react/#create-a-modal\r\n\r\nit can also be done in hooks by using `const { setUiState } = useInstantSearch()` and wrapping the modal in another InstantSearch instance\r\n\r\n```jsx\r\nconst VirtualUiState = ({ searchState }) => {\r\n  const { setUiState } = useInstantSearch();\r\n  useEffect(() => {\r\n    setUiState(searchState);\r\n  }, [setUiState, searchState]);\r\n\r\n  return null;\r\n};\r\n```\r\n```jsx\r\nconst VirtualRefinementList = ({ attribute, searchState }) => {\r\n  useRefinementList({ attribute });\r\n return null\r\n};\r\n```\r\n\r\n```js\r\n...\r\nconst [searchState, setSearchState] = useState({})\r\nconst handleStateChange = ({ uiState, setUiState }) => {\r\n  const nextState = {...uiState} // or custom merge\r\n  setSearchState(nextState);\r\n  setUiState(nextState);\r\n}\r\n...\r\n```\r\n\r\n```jsx\r\n<InstantSearch searchClient={searchClient} indexName=\"instant_search\" >\r\n<VirtualUiState searchState={searchState} />\r\n<VirtualRefinementList searchState={searchState} attribute={attribute} /> \r\n{filterVisible && (\r\n                <InstantSearch\r\n                  searchClient={searchClient}\r\n                  indexName=\"instant_search\"\r\n                  onStateChange={handleStateChange}\r\n                  initialUiState={searchState}\r\n                >\r\n                  <Panel header={attribute}>\r\n                    <RefinementList attribute={attribute} />\r\n                  </Panel>\r\n                </InstantSearch>\r\n              )}\r\n</InstantSearch>\r\n```\r\n\r\nworking version here https://codesandbox.io/s/snowy-leftpad-cbln77?file=/src/App.tsx:954-1145\r\n\r\n@Haroenv the hooks documentation should be updated with this example\r\n",
-      "user": 505776,
-      "id": 1363059721,
-      "reactions": {}
-    },
-    {
-      "date": 1663891412,
-      "body": "We've fixed this issue in our app with this wrapper component for a widget to prevent the unloading state behaviour\r\n\r\n```jsx\r\nconst WidgetUiStateProvider = ({\r\n  indexName,\r\n  children,\r\n  searchClient,\r\n  syncWithRootUiState = true,\r\n}) => {\r\n  const {\r\n    uiState: rootUiState,\r\n    setUiState: setRootUiState,\r\n  } = useInstantSearch();\r\n\r\n  const handleStateChange = ({ uiState, setUiState }) => {\r\n    if (syncWithRootUiState) {\r\n      setUiState(uiState);\r\n      setRootUiState(uiState);\r\n    }\r\n  };\r\n\r\n  return (\r\n    <InstantSearch\r\n      indexName={indexName}\r\n      searchClient={searchClient}\r\n      onStateChange={handleStateChange}\r\n      initialUiState={rootUiState}\r\n    >\r\n      {children}\r\n    </InstantSearch>\r\n  );\r\n};\r\n```\r\n\r\nit can be used like so\r\n\r\n```jsx\r\n<InstantSearch searchClient={searchClient} indexName=\"instant_search\">\r\n          <Configure hitsPerPage={8} />\r\n         <VirtualRefinementList attribute={attribute} />\r\n...\r\n\r\n{filterVisible && (\r\n                <WidgetUiStateProvider\r\n                  searchClient={searchClient}\r\n                  indexName=\"instant_search\"\r\n                >\r\n                  <Panel header={attribute}>\r\n                    <RefinementList attribute={attribute} />\r\n                  </Panel>\r\n                </WidgetUiStateProvider>\r\n              )}\r\n\r\n...\r\n</InstantSearch>\r\n```\r\n\r\nhttps://codesandbox.io/s/solitary-mountain-d47veh?file=/src/App.tsx:2708-3066",
-      "user": 505776,
-      "id": 1363059734,
-      "reactions": {}
-    },
-    {
-      "date": 1664522582,
-      "body": "This is the fiddliest thing I've dealt with today. Thankyou @fatlinesofcode for the hint, would not have figured this out without your help. A note on my struggles implementing it in my code:\r\n\r\n-  You need to do the unmount in the same function containing the widgetuistateprovider (ie don't unmount in a custom refinementlist)\r\n- The virtualrefinementlist needs to be mounted always.",
-      "user": 70618696,
-      "id": 1363059745,
-      "reactions": {}
-    },
-    {
-      "date": 1667590397,
-      "body": "To anyone who doesn't want the added complexity of maintaining search state and virtual widgets just to get a drawer working w/ React on mobile, Material UI drawer has the ability to hide without unmounting, **so you can use regular refinement lists without any of the workarounds above**. Funny enough, I love Chakra UI and my entire project uses it except for just this single drawer on mobile breakpoints 😝.\r\n\r\nMaterial UI drawer: https://mui.com/material-ui/react-drawer/\r\n\r\n```\r\n<Drawer\r\n  anchor={'left'}\r\n  open={isDrawerIsOpen}\r\n  onClose={handleClose}\r\n  variant=\"temporary\"\r\n  ModalProps={{\r\n    keepMounted: true,\r\n  }}\r\n>\r\n```",
-      "user": 12532471,
-      "id": 1363059754,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1669923967,
-      "body": "I've ran into this same issue but a little different.  First, I am only hiding the refinements.  If a refinement has a transformItems function set, it loses its state on hide, none of my other refinements lose state. I have not tried the state provider example from @fatlinesofcode yet but will see if that works this weekend. ",
-      "user": 110320494,
-      "id": 1363059766,
-      "reactions": {}
-    },
-    {
-      "date": 1669932902,
-      "body": "So I just had time to test this and the state handler @fatlinesofcode proposed does not solve the issue of RefinementList with transformItems function set losing it's state when hiding.\r\nMy transformItems is only setting the label like:\r\n```jsx\r\n        <RefinementList\r\n          transformItems={\r\n            (items) => items.map((item) => ({\r\n              ...item,\r\n              label: RefinementTypeMap.get(item.label) || item.label\r\n            }))\r\n          }\r\n          attribute=\"type\" />\r\n```\r\nAs soon as the refinements are hidden, it loses the selection however all my other refinements without transformItems do not.\r\nAny suggestions appreciated.\r\n\r\n",
-      "user": 110320494,
-      "id": 1363059775,
-      "reactions": {}
-    },
-    {
-      "date": 1677249692,
-      "body": "In the past, we were able to avoid clean on unMount by deleting the `cleanUp` function of the custom connector.\r\n\r\nIs there any way, in `react-instantsearch-hooks`, with custom connectors to avoid cleaning process ?\r\n\r\n~~We tried to override the `dispose` method without success, the state is still reset.~~\r\n\r\n### EDIT\r\n\r\nNevermind, we were wrong and successfuly reach this objective, overriding `dispose` method.\r\n\r\n```\r\nimport { connectSortBy } from 'instantsearch.js/es/connectors';\r\n\r\nconst connectNoCleanupSortBy = (renderFn, unmountFn = () => {}) => {\r\n  const connector = connectSortBy(renderFn, unmountFn);\r\n\r\n  const overridenConnector = widgetParams => {\r\n    const newInstance = connector(widgetParams);\r\n\r\n    newInstance.dispose = () => {\r\n      unmountFn();\r\n    };\r\n\r\n    return newInstance;\r\n  };\r\n\r\n  return overridenConnector;\r\n};\r\n```",
-      "user": 104082030,
-      "id": 1443777143,
-      "reactions": {
-        "👍️": 4
-      }
-    },
-    {
-      "date": 1680608485,
-      "body": "We have a similar issue with react-native an a Modal with refinements.\r\n\r\nSo i made a similar solution like @AntoineDuComptoirDesPharmacies for useRefinementList\r\n\r\n```\r\nimport connectRefinementList from 'instantsearch.js/es/connectors/refinement-list/connectRefinementList.js';\r\nimport { useConnector } from 'react-instantsearch-hooks';\r\n\r\nconst useRefinementList = (props, additionalWidgetProperties) => {\r\n\r\n    const overridenConnectRefinementList = (renderFn, unmountFn) => {\r\n        const connector = connectRefinementList(renderFn, unmountFn);\r\n\r\n        return (props) => {\r\n            const newInstance = connector(props)\r\n            newInstance.dispose = () => {\r\n                unmountFn();\r\n            };\r\n\r\n            return newInstance;\r\n        };\r\n    }\r\n\r\n    return useConnector(overridenConnectRefinementList, props, additionalWidgetProperties);\r\n}\r\n\r\nexport default useRefinementList;\r\n```\r\n",
-      "user": 1888761,
-      "id": 1495822343,
-      "reactions": {
-        "👍️": 3
-      }
-    },
-    {
-      "date": 1723186862,
-      "body": "This should actually be fixed with the `future={{ preserveSharedStateOnUnmount: true }}` option on InstantSearch: https://www.algolia.com/doc/guides/building-search-ui/widgets/show-and-hide-widgets/react/#enable-preservesharedstateonunmount / https://www.algolia.com/doc/api-reference/widgets/instantsearch/react/#widget-param-preservesharedstateonunmount",
-      "user": 6270048,
-      "id": 2277276206,
-      "reactions": {}
-    }
-  ]
+  }
 }

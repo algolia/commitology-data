@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:848",
   "title": "Encoding / Decoding issue",
   "date": 1455602486,
   "body": "The bracket characters (unsafe) and equal character (reserved) are directly set in the url query string or fragment without encoding.\n\nexample:\nhttps://demo.algolia.com/instant-search-demo/?q=&hPP=10&idx=instant_search&p=0&nR[price][>=][0]=2676&is_v=1\nshould be:\nhttps://demo.algolia.com/instant-search-demo/?q=&hPP=10&idx=instant_search&p=0&nR%5Bprice%5D%5B%3E%3D%5D%5B0%5D=2676&is_v=1\n\n(same thing observed with useHash = true)\n",
@@ -18,42 +17,5 @@
     "number": 848,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1455635574,
-      "body": "Hi @NicoD this should be handled by the browsers in a natural way: the url looks good and can be copy pasted in a url bar, did you observe any bad behavior?\n",
-      "user": 123822,
-      "id": 184721541,
-      "reactions": {}
-    },
-    {
-      "date": 1455638825,
-      "body": "Hi @vvo ,\n\nhere some examples with a failure:\n- here in github, in my previous comment. When I copied the first url (which is the instantsearch url), github had itself encoded the unsafe characters (brackets) but not the =. The link does not work when following it. (however the second link - which i encoded manually - works fine)\n- i had the same issue when reading an instantsearch url through a slack client (not the web client)\n\n=> i suppose this error may happened on others clients that encode the query string: the brackets are normaly url urlencoded, but not the = which is considered as a separator.\n- js url parsing lib (like urljs and browserify url) fail parsing the query string or fragment because of the = and the non encoded chars.\n\nI think it would be safer to urlencode all the reserved and unsafe chars in the query string and the fragment (https://tools.ietf.org/html/rfc3986) \n",
-      "user": 404176,
-      "id": 184747550,
-      "reactions": {}
-    },
-    {
-      "date": 1456937142,
-      "body": "@NicoD As for copy pasting the url from the urlbar or right click a link and copy from the context menu then paste it anywhere => it's the responsibility of the client to do things well. Github does, slack also it seems\n\nOn this issue, I was able to fix it by decoding the uri every time its needed (loading the page, back button): decodeURIComponent.\n\nSeems to work well, let me know. The fix is incoming\n",
-      "user": 123822,
-      "id": 191320521,
-      "reactions": {}
-    },
-    {
-      "date": 1457016225,
-      "body": "This is not as easy as I thought, decoding when receiving has his owns quirks: values (facet refinements) with & or = are decoded and then mis interpreted as separators.\n",
-      "user": 123822,
-      "id": 191793458,
-      "reactions": {}
-    },
-    {
-      "date": 1457016353,
-      "body": "To completely solve this issue we will have to stop trying to be smart in the helper: trying to only encode values and not param delimiters.\n\nWe should just use encode: true from qs/ module because what we did was worse: encoding values while not encoding param separators like []. It turns out that this is not well supported in cases where you copy paste the url.\n\nI am sorry I am the one that thought this would be feasible but it's not. We must encode everything and thus have not so good looking uris.\n\ncc @bobylito would you be ok removing our custom encoding code from the helper and just use encode: true from qs?\n",
-      "user": 123822,
-      "id": 191795411,
-      "reactions": {}
-    }
-  ]
+  }
 }

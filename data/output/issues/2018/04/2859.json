@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2859",
   "title": "Tree-shaking doesn't seem to be working with latest Webpack",
   "date": 1522857504,
   "body": "<!--\r\n  ***************************\r\n  Thanks for participating in this project!\r\n\r\n  This form is to report issues or new features.\r\n  As for general questions like \"How to hide results when the query is empty?\",\r\n  please search or post a question to our discourse forum: https://discourse.algolia.com/.\r\n\r\n  In any case,\r\n    - make sure you are using the latest version of the library;\r\n    - do at least one search in current issues or questions, your question might already be answered;\r\n    - do include details, screenshots when it's a visual issue, console errors otherwise;\r\n  ***************************\r\n-->\r\n\r\n**Do you want to request a *feature* or report a *bug*?**\r\nBug. Repo to reproduce: https://github.com/mariuslazar93/algolia-instantsearch-test . We are only concered about the final bundle size, so just running `npm install` and `npm run build-prod` will generate a dist folder with the production files.\r\n\r\n<!--\r\n  ***************************\r\n  If the current behavior is a bug, please provide all the steps to reproduce and a minimal\r\n  [CodeSandbox](https://codesandbox.io/) example or a repository on GitHub that we can `npm install`\r\n  and `npm start`.\r\n\r\n  We have a simple online template for you to use as a base to explain your bug or issue:\r\n  https://codesandbox.io/s/github/algolia/instantsearch-templates/tree/master/src/InstantSearch.js\r\n\r\n  If you are requesting a new feature, we need to understand WHY would you\r\n  need this feature (your use case) or how you are limited with the current API.\r\n  ***************************\r\n-->\r\n\r\n**Bug: What is the current behavior?**\r\nI am trying to create a production build using Webpack 4.5.0 and make use of tree-shaking to remove the unimported widgets/connectors. \r\n\r\nI'm only importing 3 widgets inside `./src/js/search.js` (listed below too), but the generated bundle report shows that all the widgets and connectors are imported into the final (production) bundle. \r\n\r\n`import instantsearch from 'instantsearch.js/es';`\r\n`\r\nimport {\r\n  searchBox,\r\n  hits,\r\n  pagination\r\n} from 'instantsearch.js/es/widgets';\r\n`\r\n\r\nI'm splitting the bundles into app.bundle.js, vendor.bundle.js (what comes from /node_modules) and runtime.bundle.js (webpack runtime). I've added the webpack-bundle-analyzer to generate the dependencies report of the bundles (as you can see in the image).\r\n\r\nIt also seems like the prod bundle ends up with a duplicated loadash library which adds up to the final size.\r\n\r\n![image](https://user-images.githubusercontent.com/11423217/38317030-02d23dde-3824-11e8-94a4-019e330f15ca.png)\r\n\r\n**Bug: What is the expected behavior?**\r\nOnly the imported widgets should show in the final bundle. Only one loadash library.\r\n\r\n**Bug: What browsers are impacted? Which versions?**\r\nDoesn't apply.\r\n\r\n**Bug: What is the proposed solution?**\r\nSeems like Webpack 4+ is using a `sideEffect` property in package.json which dictates if the unused code can be removed safely by the minifier (UglifyJS in this case). More on their docs: https://webpack.js.org/guides/tree-shaking/ . Not sure if this is the problem or not.\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\nLatest.\r\n\r\n<!-- Delete any HTML comment and non relevant questions -->\r\n\r\nIf I'm missing something please let me know.\r\n",
@@ -24,35 +23,5 @@
     "number": 2859,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1522861831,
-      "body": "I've been investigating this a bit over and saw significant improvements in the bundle size. \r\n\r\nI also noticed that when I regenerated the package-lock.json in your repo, _or_ if I used Yarn, lodash is only installed / included in the bundle once. \r\n\r\nI'll be doing two PRs to this repo with this in mind",
-      "user": 6270048,
-      "id": 378675159,
-      "reactions": {}
-    },
-    {
-      "date": 1522862236,
-      "body": "https://github.com/mariuslazar93/algolia-instantsearch-test/pull/1 for updating your lockfile",
-      "user": 6270048,
-      "id": 378677219,
-      "reactions": {}
-    },
-    {
-      "date": 1522864308,
-      "body": "Awesome! Thanks for your work! The size is indeed noticeable 👍 \r\n\r\nNot sure if you guys are already using the ES6 modules for **loadash** and just importing the methods that you need, but if you don't, you can make even more improvements by using [lodash-webpack-plugin](https://github.com/lodash/lodash-webpack-plugin) and [babel-plugin-lodash](https://github.com/lodash/babel-plugin-lodash) which will transform the importing syntax to be tree-shakable.",
-      "user": 11423217,
-      "id": 378688111,
-      "reactions": {}
-    },
-    {
-      "date": 1522868080,
-      "body": "We should already be doing what’s necessary there, we just use a lot of Lodash in the helper (it’s very transformation-heavy and supports older browsers), so we can’t win a lot of size easy that way. It was investigated earlier. Thanks for the suggestion though!",
-      "user": 6270048,
-      "id": 378707462,
-      "reactions": {}
-    }
-  ]
+  }
 }

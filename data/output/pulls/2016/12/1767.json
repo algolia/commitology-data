@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:1767",
   "title": "feat(SearchForFacetValues): connector functions + refinementList implementation",
   "date": 1482159621,
   "body": "![sfvv](https://cloud.githubusercontent.com/assets/6885378/21593619/6a947072-d119-11e6-898e-9675df8836fd.gif)\r\n\r\n\r\nYou can run the storybook, to see the widget live. \r\n\r\n\r\n**New API entry:** \r\n\r\n- make the <RefinementList/> widget have the search for facet values: \r\n```\r\n    <RefinementList attributeName=\"category\" searchForFacetValues/>\r\n```\r\n\r\n- use search for facet values inside a custom RefinementList\r\n   * a new exposed prop **searchForFacetValues**: a boolean that if set to true will add the `searchForFacetValues` to the provided props. \r\n\r\n   * a new provided prop **isFromSearch**: a boolean that says if the `items` props contains facets values from the global search, or searchForFacetValues results. \r\n   * a new provided prop **searchForFacetValues**: a function that take a query as a parameter. To call for searching facet values. \r\n\r\n- create a connector that will propose search for facet values:\r\n  * a new **searchForFacetValuesResults** parameter inside the getProvidedProps\r\n  * a new function **searchForFacetValues** to implement\r\n\r\n```\r\nexport default createConnector({\r\n\r\n  getProvidedProps(props, searchState, searchResults, metadata, searchForFacetValuesResults) {\r\n        ... \r\n        return props;\r\n  }\r\n\r\n  searchForFacetValues(props, searchState, nextRefinement) {\r\n    return {facetName: props.attributeName, query: nextRefinement};\r\n  }\r\n})\r\n```\r\n\r\nThe next step about this PR are:\r\n* should we keep the facetQuery in our searchState (on another PR if needed)\r\n* [x] Should we merge both searchResults and searchForFacetValuesResults?\r\n* [x] Merge #1765 and add tests to check the call from the helper to SFFV\r\n* [x] Fix the naming once the API is stable\r\n* [x] Add the jsdoc & guide\r\n* [x] Add this feature into one of our example",
@@ -11,98 +10,5 @@
     "number": 1767,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1482159637,
-      "body": "By analyzing the blame information on this pull request, we identified @vvo, @Morhaus and @bobylito to be potential reviewers",
-      "user": 16079583,
-      "id": 267985081,
-      "reactions": {}
-    },
-    {
-      "date": 1482333380,
-      "body": "Could you add to the PR description the new public API additions and simple examples on how to use them?",
-      "user": 123822,
-      "id": 268547443,
-      "reactions": {}
-    },
-    {
-      "date": 1482333831,
-      "body": "I am not sure how to name it yet, but in our own code, we need to be very specific as for what are the type of facet values we are talking about. Those are either facetValues of search results of facet values. Today the distinction is not obvious if you read the code.",
-      "user": 123822,
-      "id": 268549294,
-      "reactions": {}
-    },
-    {
-      "date": 1482343461,
-      "body": "There is one thing I'm not sure to understand: why do we provide to the component two sets of values? Why can't we provide only items? Wouldn't that simplify the API for the connector user?",
-      "user": 393765,
-      "id": 268596305,
-      "reactions": {}
-    },
-    {
-      "date": 1482404534,
-      "body": "I followed your suggestion @bobylito -> we only have items now. I also added a boolean `isFromSearch` to know if a searchForFacetsValues has been performed or not. \r\n\r\nThe next step about this PR are:\r\n* should we keep the facetQuery in our `searchState` (also see my previous comment on that)?\r\n* Should we merge both `searchResults` and `searchForFacetValuesResults`?\r\n* Once #1765 is merged, refactor code responsible to call the helper for SFFV\r\n* Fix the naming once the API is stable\r\n* Add the jsdoc & guide\r\n* Add this feature into one of our example?",
-      "user": 6885378,
-      "id": 268776886,
-      "reactions": {}
-    },
-    {
-      "date": 1482417932,
-      "body": "Can you update the PR description with the latest API changes?\r\n\r\n> should we keep the facetQuery in our searchState (also see my previous comment on that)?\r\n\r\nWhere is this comment? Cannot find it. Why would we do not want to have the facetQuery?\r\n\r\n> Should we merge both searchResults and searchForFacetValuesResults?\r\n\r\nI would say yes if that's doable AND if you are convinced too that it makes things easier for the user.\r\n\r\n> Add this feature into one of our example?\r\n\r\nYes :)\r\n\r\n+ everything you said that was not a question.",
-      "user": 123822,
-      "id": 268813774,
-      "reactions": {}
-    },
-    {
-      "date": 1482418053,
-      "body": "> I followed your suggestion @bobylito -> we only have items now\r\n\r\nI was wondering this too. Do you think there was a usecase for having both? The only one I can think of is displaying the currently selected values along with the searchable ones but that's already doable via currentRefinement.\r\n\r\nShowing both facet results from the main search AND facet result from facet search does not make sense to me. So we are aligned I guess here. (thx @bobylito)",
-      "user": 123822,
-      "id": 268814214,
-      "reactions": {}
-    },
-    {
-      "date": 1482418461,
-      "body": "Previous comment about adding the SFFVQuery in `searchState`\r\n\r\nTo do that we need to add the SFFV query inside the search state.\r\nCurrently the SFFV query is handled directly inside the RefinementList widget by using state. It means that you can't share an url that will bring you to an InstantSearch page with a SFFV displayed. Do we want that?\r\n\r\nAlso adding it to the search state brings new questions. Basically I assumed we would want a structure like:\r\n\r\n{\r\n   refinementList: {category: {items: ['Table'], query: 'Ch'}}\r\n}\r\nBut then when forwarding the searchState to the user, how could he easily know that it's not necessary to update the whole <InstantSearch/> (that would trigger a new search for nothing)?",
-      "user": 6885378,
-      "id": 268815607,
-      "reactions": {}
-    },
-    {
-      "date": 1482418671,
-      "body": "> But then when forwarding the searchState to the user, how could he easily know that it's not necessary to update the whole (that would trigger a new search for nothing)?\r\n\r\nCan you precise this a little bit more? Do we have the same issue with the regular instantsearch query?",
-      "user": 123822,
-      "id": 268816357,
-      "reactions": {}
-    },
-    {
-      "date": 1482419103,
-      "body": "Providing a `searchState` object trigger a new search after checking that the props are not equals. \r\nIf it's the regular instantsearch query, it's fine because it's what you wan't. \r\n\r\nNow if we put the facetQuery inside the `searchState`, then it will go through the same process, and trigger a new global search. Which is not what we want (we only want the SFFV search). Therefore we need a way to differentiate both search. \r\n\r\nI think it's doable but it will change the way that the search is triggered now. ",
-      "user": 6885378,
-      "id": 268817827,
-      "reactions": {}
-    },
-    {
-      "date": 1483378300,
-      "body": "The feature should be complete. I updated the API inside the PR body so that you can see the last changes. \r\n\r\n",
-      "user": 6885378,
-      "id": 269999869,
-      "reactions": {}
-    },
-    {
-      "date": 1483428460,
-      "body": "> should we keep the facetQuery in our searchState (on another PR if needed)\r\n\r\nIt's a local search state not a global one, we shouldn't keep it in the main state. IMHO.",
-      "user": 393765,
-      "id": 270062191,
-      "reactions": {}
-    },
-    {
-      "date": 1483525521,
-      "body": "We can iterate on putting the searchQuery inside the state. Ultimately I would say our state should represent the complete search interface so that you can render the whole interface as it was, we can discuss this further in another iteration.",
-      "user": 123822,
-      "id": 270339650,
-      "reactions": {}
-    }
-  ]
+  }
 }

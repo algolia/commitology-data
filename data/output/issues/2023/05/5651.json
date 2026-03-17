@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5651",
   "title": "`useRefinementList` in Show Less state doesn't respect `transformItems` sort",
   "date": 1685370240,
   "body": "### 🐛 Current behavior\n\nAccording to the [docs](https://www.algolia.com/doc/api-reference/widgets/refinement-list/react-hooks/#widget-param-transformitems), `transformItems` can be used to reorder the refinement values with a custom sort.\r\n\r\nWhen a custom sort is used together with Show More/Show Less functionality, the custom sort isn't applied in the Show Less state. It's only applied in the Show More state.\n\n### 🔍 Steps to reproduce\n\n1. The static sort is defined as `Whirlpool, Sony, Metra` (then the rest).\r\n2. Observe that in the default state of Show Less, the first three items are incorrectly `Metra, Insignia, Samsung`.\r\n3. Observe that when selecting Show More, the first three items are correctly `Whirlpool, Sony, Metra`.\r\n<img width=\"209\" alt=\"Screen Shot 2023-05-29 at 10 15 55 AM\" src=\"https://github.com/algolia/instantsearch/assets/10588097/0aaa68ea-727c-4abf-8fe8-9e7127d19d20\">\r\n<img width=\"216\" alt=\"Screen Shot 2023-05-29 at 10 16 05 AM\" src=\"https://github.com/algolia/instantsearch/assets/10588097/c12291a7-8674-4fdf-bf48-cdbbc5fca599\">\r\n\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/next13-4-4-forked-79jevr?file=%2Fcomponents%2FBrands.js%3A11%2C78\n\n### 💭 Expected behavior\n\nA custom sort in `transformItems` is respected in the Show Less state.\n\n### Package version\n\nalgoliasearch 4.17.1, react-instantsearch-hooks-web 6.44.0\n\n### Operating system\n\nMac 11.6.5\n\n### Browser\n\nChrome 113.0.5672.126\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,48 +17,5 @@
     "number": 5651,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1685448193,
-      "body": "While this is still something I'd like to look into fixing, you can also use \"Facet Ordering\" (docs: https://www.algolia.com/doc/guides/building-search-ui/ui-and-ux-patterns/facet-display/js/) to pin certain facets, and not need to use transformItems to sort the items.",
-      "user": 6270048,
-      "id": 1568313771,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1685453826,
-      "body": "We have quite a complex sort - for example: sort brands by most popular per category. It would be difficult to manage with facet ordering.",
-      "user": 10588097,
-      "id": 1568451665,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1685456141,
-      "body": "I believe this is happening because limit gets evaluated before transformItems, which is logical for some use cases, but doesn't seem to match yours, as that causes the items aren't guaranteed to be in place.\r\n\r\nHowever, there's also the sortBy option which does get evaluated before transformItems and seems to match your use case quite well: \r\n\r\nhttps://codesandbox.io/p/sandbox/refinement-list-sort-issue-forked-pjx46b?file=%2Fcomponents%2FBrands.js%3A35%2C14\r\n\r\n```\r\nuseRefinementList({\r\n      attribute: \"brand\",\r\n      showMore: true,\r\n      limit: 5,\r\n      sortBy: useCallback((a, b) => {\r\n        if (\r\n          CUSTOM_BRAND_SORT[a.escapedValue] !== undefined &&\r\n          CUSTOM_BRAND_SORT[b.escapedValue] !== undefined\r\n        ) {\r\n          return (\r\n            CUSTOM_BRAND_SORT[a.escapedValue] -\r\n            CUSTOM_BRAND_SORT[b.escapedValue]\r\n          );\r\n        }\r\n        if (CUSTOM_BRAND_SORT[a.escapedValue] !== undefined) {\r\n          return -1;\r\n        }\r\n\r\n        if (CUSTOM_BRAND_SORT[b.escapedValue] !== undefined) {\r\n          return 1;\r\n        }\r\n\r\n        return 0;\r\n      }, []),\r\n    });\r\n```",
-      "user": 6270048,
-      "id": 1568515329,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1685548242,
-      "body": "@Haroenv Thanks, didn't realize that `sortBy` accepts a function too.\r\n\r\nSandbox links is broken for me.",
-      "user": 10588097,
-      "id": 1570492852,
-      "reactions": {}
-    },
-    {
-      "date": 1685608847,
-      "body": "Sorry, I'm not used to the new sandbox system that automatically makes links private (instead of public).\r\n\r\nAs sortBy runs first, I think this solves your use case, and the documentation doesn't need to be updated, as the function is already mentioned (not sure how to make it clearer)",
-      "user": 6270048,
-      "id": 1571610778,
-      "reactions": {}
-    }
-  ]
+  }
 }

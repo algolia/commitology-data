@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:4377",
   "title": "Custom widget : using facets as hierarchicalFacets",
   "date": 1586354537,
   "body": "**Describe the bug 🐛**\r\nCalling addHierarchicalFacet() does nothing.\r\n\r\nI noticed that using the \"breadcrumb\" widget, the targeted attribute is moved from the \"facets\" property to the \"hierarchicalFacets\" property.\r\nI would like to implement the same behavior in my custom widget, but nothing seems to happen when using addHierarchicalFacet() :\r\n\r\n\r\n**To Reproduce 🔍**\r\n```\r\n//in my custom widget implementation\r\ninit: function (initOptions) {\r\ninitOptions.helper.state.addHierarchicalFacet({\r\n          name: 'filter_category.lvl0',\r\n          attributes: [ \"filter_category.lvl0\", \"filter_category.lvl1\" ],\r\n          separator: \" > \",\r\n          rootPath: null\r\n        });\r\n}\r\nconsole.log(initOptions.helper.state.hierarchicalFacets) //empty\r\n\r\n```\r\nThe last line here prints an empty Array.\r\nAlso, calling addHierarchicalFacet 2 times with the same name do not raise an error, but calling it 1 time after adding the \"breadcrumb\" widget does.\r\n\r\nCould you explain me how to flag a facet as a hierarchicalFacet ?\r\n\r\nVersions :\r\ninstantsearch.js@4.3.0\r\nalgoliasearch-helper@3.1.1:\r\n\r\n**workaround**\r\nI found a workaround, noticing the state was returned by the function :\r\n```\r\ninitOptions.helper.state=initOptions.helper.state.addHierarchicalFacet({\r\n          name: 'filter_category.lvl0',\r\n          attributes: [ \"filter_category.lvl0\", \"filter_category.lvl1\" ],\r\n          separator: \" > \",\r\n          rootPath: null\r\n        });\r\n```",
@@ -30,77 +29,5 @@
     "number": 4377,
     "reactions": {},
     "state": "ignored"
-  },
-  "comments": [
-    {
-      "date": 1586355925,
-      "body": "Algolia doesn't (yet) support the concept of \"hierarchical facets\". A hierarchical facet is a concept that exists at the Helper level. It adds the facet to the `facets` search parameter.\r\n\r\nYou should therefore be able to see your hierarchical facet attribute in `helper.state.facets`.",
-      "user": 6137112,
-      "id": 610990671,
-      "reactions": {}
-    },
-    {
-      "date": 1586356229,
-      "body": "Hi @francoischalifour \r\nThank you for this answer.\r\nI indeed notice it in `helper.state.facets`. But the issue is that *in the results*, at render time, `results.facets` *disappears* when you mount the `breadcrumb` widget.\r\nI need to avoid cross-widget dependency.\r\n\r\nExample :\r\n```\r\nrender: function (renderOptions) {\r\nconsole.log( renderOptions.results)\r\n```\r\nThe above will show  :\r\n* `facets` populated when no `breadcrumb` widget is used, and  `hierarchicalFacets` empty.\r\n* `hierarchicalFacets` populated and  `facets` empty otherwise\r\n",
-      "user": 2420358,
-      "id": 610993526,
-      "reactions": {}
-    },
-    {
-      "date": 1586357906,
-      "body": "Can you please reproduce the behavior in this [InstantSearch.js sandbox](https://codesandbox.io/s/github/algolia/create-instantsearch-app/tree/templates/instantsearch.js)?",
-      "user": 6137112,
-      "id": 611008749,
-      "reactions": {}
-    },
-    {
-      "date": 1586361515,
-      "body": "@francoischalifour done, but unexpectedly I hit the following error on `breadcrumb` mount:\r\n```\r\nTypeError\r\nB(...)[0] is undefined\r\n```\r\nThis error do not prevent us to reproduce the bug : You just have to comment lines from 46 to 55 to see the console output change",
-      "user": 2420358,
-      "id": 611042855,
-      "reactions": {}
-    },
-    {
-      "date": 1586419682,
-      "body": "Sorry, I forgot to mention, can you send the link back here? (it created a forked sandbox)",
-      "user": 6137112,
-      "id": 611393089,
-      "reactions": {}
-    },
-    {
-      "date": 1586425128,
-      "body": "here you go : https://codesandbox.io/s/gifted-khorana-l4rf8",
-      "user": 2420358,
-      "id": 611433909,
-      "reactions": {}
-    },
-    {
-      "date": 1586512276,
-      "body": "You can use an [`index` widget](https://www.algolia.com/doc/api-reference/widgets/index-widget/js/) so that the search parameters computed are independent from the `breadcrumb` widget.\r\n\r\nI built an example [in this sandbox](https://codesandbox.io/s/focused-cherry-910no). I hope this helps!",
-      "user": 6137112,
-      "id": 611964350,
-      "reactions": {}
-    },
-    {
-      "date": 1586769034,
-      "body": "@francoischalifour That would not resolve the problem, being that I want to implement a custom widget that can be applied to any search object through `addWidgets()`, regardless if they are already using the `breadcrumb` widget or not. For the moment I use the workaround stated in the description at the `init` step, is it the correct way to proceed?",
-      "user": 2420358,
-      "id": 612820675,
-      "reactions": {}
-    },
-    {
-      "date": 1671470005,
-      "body": "Hi! We're doing a round of clean up in this repository. Is this still an issue for you or does the workaround works well enough?",
-      "user": 154633,
-      "id": 1357982139,
-      "reactions": {}
-    },
-    {
-      "date": 1671472149,
-      "body": "Hi !\nI no longer work with Algolia, please close this issue if you wish to\n\nLe lun. 19 déc. 2022 à 18:13, Dhaya ***@***.***> a écrit :\n\n> Hi! We're doing a round of clean up in this repository. Is this still an\n> issue for you or does the workaround works well enough?\n>\n> —\n> Reply to this email directly, view it on GitHub\n> <https://github.com/algolia/instantsearch.js/issues/4377#issuecomment-1357982139>,\n> or unsubscribe\n> <https://github.com/notifications/unsubscribe-auth/AASO5BSEHFZKTI37RELODP3WOCJT7ANCNFSM4MD6RGVA>\n> .\n> You are receiving this because you authored the thread.Message ID:\n> ***@***.***>\n>\n",
-      "user": 2420358,
-      "id": 1358022668,
-      "reactions": {}
-    }
-  ]
+  }
 }

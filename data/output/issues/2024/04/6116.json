@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6116",
   "title": "InstantSearch component updating status inside unrelated InstantSearch component ",
   "date": 1712260606,
   "body": "### 🐛 Current behavior\n\nConsider this scenario:\r\n```\r\n<Header>\r\n   <InstantSearch id=\"1\" {...relevantProps}>\r\n       <SearchBox />\r\n   </InstantSearch>\r\n</Header>\r\n\r\n<SearchPage>\r\n   <InstantSearch id=\"2\" {...relevantProps}>\r\n       <SearchBox style={{ display: \"none\" }} />\r\n       <Hits />\r\n   </InstantSearch>\r\n</SearchPage>\r\n```\r\n\r\nThe issue is that inside SearchPage I want the loading state of the second (id: 2) instantsearch component. I do this with the useInstantSearch hook to retrieve the status. The peculiar thing is that whenever I click the SearchBox in the header (id: 1), the status of the second InstantSearch component reacts to this and updates the status object, setting it to \"loading\", then \"stalled\", then \"idle\".\n\n### 🔍 Steps to reproduce\n\nTry above scenario.\n\n### Live reproduction\n\nn/a\n\n### 💭 Expected behavior\n\nI expect the status state to be seperate and not react to unrelated InstantSearch components.\n\n### Package version\n\ninstantsearch.js@4.66.1, react-instantsearch@7.7.1\n\n### Operating system\n\nWindows 11\n\n### Browser\n\nChrome 122.0.6261.131\n\n### Code of Conduct\n\n- [x] I agree to follow this project's Code of Conduct",
@@ -18,23 +17,5 @@
     "number": 6116,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1712320645,
-      "body": "This shouldn't happen, I've reproduced your scenario in this sandbox and it works as expected: https://codesandbox.io/p/sandbox/gh-6116-forked-24zxfn. Can you give more details about your implementation, and why you want to use 2 InstantSearch in the same page? ",
-      "user": 154633,
-      "id": 2039700645,
-      "reactions": {}
-    },
-    {
-      "date": 1712353797,
-      "body": "Thanks for your sandbox dhayab. I found the issue. I was managing a state inside the `<SearchContext />` called `searchIsActive`. The context also holds the searchClient. I wrapped the entire app with this SearchContext so any <InstantSearch /> component reacted to the state updates to `searchIsActive`.\r\n\r\nHere's a reproduction sandbox: https://codesandbox.io/p/sandbox/gh-6116-forked-d328gf\r\n\r\nThe problems lies in the following files:\r\n* SearchContext (managing searchIsActive state)\r\n* CustomSearchBox (useSearch hook and setting the searchIsActive state on events)\r\n\r\nSo when I interact with the header search box the status updates in the search page. The reason for wanting this state is for controlling a modal with a list of hits under the search box.\r\n\r\nThe workaround was to not have this state in the context but instead in the nearest common parent for any component that needs the state and prop drill it.\r\n",
-      "user": 37844670,
-      "id": 2040674735,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

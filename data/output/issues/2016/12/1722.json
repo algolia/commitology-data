@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1722",
   "title": "Restore RangeSlider initial position afeter clear query",
   "date": 1481226529,
   "body": "![](https://d17oy1vhnax1f7.cloudfront.net/items/090o0K1B1Q1o0L1y3n32/Screen%20Recording%202016-12-08%20at%2008.43%20pm.gif?v=f2e1c1ca)\r\n\r\nWhen you type a query, the range slider adapt the `min` and `max` values based on the criteria, but, when you clear the query, it should be restoer the initial position (30 and 1500 repectively).\r\n\r\nCould be easily checking the value of the `query` in the component, but I don't know how to.\r\n\r\nAnother thing: as you can see, in the first state, the value 30 and 1500 are the \"base values\" and they are not applied as a facet, but when you type a criteria, the new base values are applied as facet. Could be possible control that? this behavior is a little crazy, specially when you have more than one rangeSlider, check on https://windtoday.co/ what happens when you type something 😂\r\n\r\nMy [code](https://github.com/windtoday/windtoday-app/blob/master/src/app/Range/index.js) is based in the [rangeSlider code](https://community.algolia.com/instantsearch.js/react/widgets/RangeSlider.html).\r\n\r\nExpected behavior: click [here](http://localhost:3001/?query=neylpride). It's have the query inside the URL, and the range sliders value are ok and not applied as facets.\r\n\r\n\r\n\r\n\r\n",
@@ -11,21 +10,5 @@
     "number": 1722,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1481293763,
-      "body": "Hi @Kikobeats \r\n\r\nFor your first issue, I noticed that you didn't update the slider when new props are given by InstantSearch. Adding something like this should do the trick:\r\n\r\n```js\r\n  componentWillReceiveProps(sliderState) {\r\n    const value = {\r\n      min: sliderState.currentRefinement.min,\r\n      max: sliderState.currentRefinement.max\r\n    }\r\n\r\n    this.setState({\r\n      min: sliderState.min,\r\n      max: sliderState.max,\r\n      value: value\r\n    })\r\n  },\r\n```\r\n\r\nYou might also need this condition around the refine function:\r\n\r\n```js\r\n    if (this.props.currentRefinement.min !== sliderState.values[0] || this.props.currentRefinement.max !== sliderState.values[1]) {\r\n```\r\n\r\nFor the second part, I'm sorry but can you also make a gif of the behavior that's bothering you, I have trouble to understand it correctly. \r\n\r\nFinally, when launching your application I noticed that sometimes, you can end-up with an infinite loop. The reason behind it is the usage of rheostat as a slider. When passing an equal min and max to rheostat, you got 'NaN' from it, and then `react-instantsearch` goes crazy. \r\n\r\nWe will improve the behavior of `react-instantsearch` to avoid the infinite loop and I will open an issue on the rheostat side. \r\n\r\nIn the meantime, if you want to fix this on your side, you can check for the current slider values and don't do a refine if those are `NaN`. \r\n\r\n",
-      "user": 6885378,
-      "id": 266026274,
-      "reactions": {}
-    },
-    {
-      "date": 1481298254,
-      "body": "woh, your `componentWillReceiveProps` solves the problem.\r\n\r\nThanks!",
-      "user": 2096101,
-      "id": 266045041,
-      "reactions": {}
-    }
-  ]
+  }
 }

@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5255",
   "title": "`connectStateResults` does not provide up-to-date values in server side rendering ",
   "date": 1614614530,
   "body": "**Describe the bug 🐛**\r\n\r\nIn some cases, `connectStateResults` does not provide the correct up-to-date values.\r\n\r\n**To Reproduce 🔍**\r\n\r\nUnfortunately, it's not possible for me to give a working example here. But the flow is as follow:\r\n\r\n* The user lands on the search page.\r\n* They see a list of results L1.\r\n* They update and submit a new query.\r\n* They do see the list of results L2. In the network tab, the request fired to Algolia API works successfully. But because `connectStateResults` is not correctly updated, `searching` remains `true` - and, in our implementation, the spinner keeps spinning, on top of several other unwanted side-effects. The provided `searchResults` is also not correctly updated.\r\n\r\n**Expected behavior 💭**\r\n\r\n`connectStateResults` should always provide the latest values. There should not be a difference between the provided `searchResults.hits` and the hits provided by `connectHits`, for instance. Nor there should be a difference between the provided `searchState.query` and `searchResults.query`.\r\n\r\n**Environment:**\r\n\r\n - OS: MacOS\r\n - Browser: Chrome\r\n - Version: 88\r\n\r\n**Additional context**\r\n\r\nWe're using the latest `6.10.0` version of both `react-instantsearch-core` and `react-instantsearch-dom`.\r\n\r\nWe're using the following connectors:\r\n\r\n* `connectSearchBox`. When submitting the search query, I'm calling the provided `refine` method with the query.\r\n* `connectHits`. The hits are always up to date, there is absolutely no issue there.\r\n* `connectStateResults`. Somehow, when using the React inspector, we can see that:\r\n  * `searchState` is up to date. It contains the latest query.\r\n  * `searching` sometimes remains `true` until a new search query is fired.\r\n  * `searchResults` sometimes contain the previous results until a new search query is fired. This also means that `searchResults.query` contains the previous query, as opposed to `searchState.query`, where the up-to-date query can be found.\r\n\r\nWe're also using server-side rendering, click analytics, and conversion analytics. Here is how the configure component looks like:\r\n\r\n```\r\n        <Configure\r\n            optionalFilters={optionalFilters}\r\n            filters={filters}\r\n            queryLanguages={queryLanguages}\r\n            hitsPerPage={hitsPerPage}\r\n            removeWordsIfNoResults=\"lastWords\"\r\n            clickAnalytics\r\n            analytics\r\n        />\r\n```\r\n\r\nThe search is performed on a single index, correctly passed to `InstantSearch`.\r\n",
@@ -20,104 +19,5 @@
       "👍️": 2
     },
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1614615402,
-      "body": "Unsure if this will help, but it feels like these two issues are kind of related?\r\n\r\n* https://github.com/algolia/react-instantsearch/issues/3019\r\n* https://github.com/algolia/react-instantsearch/issues/3018",
-      "user": 7127784,
-      "id": 1363060778,
-      "reactions": {}
-    },
-    {
-      "date": 1614675994,
-      "body": "Hey @ksntcrq, do you have a sandbox with this behaviour? Is it not happening when you use 6.9.0? Thanks!",
-      "user": 6270048,
-      "id": 1363060792,
-      "reactions": {}
-    },
-    {
-      "date": 1614676720,
-      "body": "looks like it's a duplicate of algolia/react-instantsearch#3018 indeed. Feel free to give more information on your problem there, and use 6.9.0 in the mean time",
-      "user": 6270048,
-      "id": 1363060802,
-      "reactions": {}
-    },
-    {
-      "date": 1614691385,
-      "body": "@Haroenv It does happen on 6.9.0, as well as 6.8.2. Could you please reopen?",
-      "user": 7127784,
-      "id": 1363060811,
-      "reactions": {}
-    },
-    {
-      "date": 1614691548,
-      "body": "I misunderstood the issue then, sorry! \r\n\r\nhttps://github.com/algolia/react-instantsearch/pull/2953 sounds similar to the issue you're having",
-      "user": 6270048,
-      "id": 1363060821,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1614939182,
-      "body": "I've been trying to reproduce this the last couple of days, but always come short of touching the actual problem. Eg. I made https://codesandbox.io/s/charming-nash-cq896?file=/src/App.js, but there I always see searchResults being updated and a render using `searching: false`.\r\n\r\nTo debug this properly, I'd love to see a sandbox that shows this behaviour\r\n\r\nI'm not sure what causes the bug yet, but in the mean time, you could use connectHits and connectSearchBox instead of connectStateResults in your use case if you see the data not being correct.",
-      "user": 6270048,
-      "id": 1363060836,
-      "reactions": {}
-    },
-    {
-      "date": 1614948547,
-      "body": "I sent a working version in private to @mathougui, let me know if you need more details.\r\n\r\nThe component using `searching` also uses `query` and `nbHits` from `searchResults`, so I'm afraid I can't only use `connectHits` and `connectSearchBox`, but I'll try to find a workaround with this idea in mind. Thanks!",
-      "user": 7127784,
-      "id": 1363060845,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1615288522,
-      "body": "The issue seems to be introduced as soon as we're using `connectHitInsights`. Because we have server-side rendering, we do it this way:\r\n\r\n```\r\nexport default connectHitInsights(getAlgoliaAnalytics())(CustomHit);\r\n```\r\n\r\n```\r\nexport function getAlgoliaAnalytics() {\r\n    if (isServerSide()) {\r\n        return null;\r\n    }\r\n\r\n    if (isEmpty(window.aa)) {\r\n        return null;\r\n    }\r\n\r\n    return window.aa;\r\n}\r\n```",
-      "user": 7127784,
-      "id": 1363060855,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1615309883,
-      "body": "I managed to reproduce [here](https://codesandbox.io/s/nervous-microservice-n09c1). Just type two letters in the input, and see the outdated log in the console.",
-      "user": 7127784,
-      "id": 1363060865,
-      "reactions": {}
-    },
-    {
-      "date": 1615371594,
-      "body": "I simplified the example and found the following things that matter: https://codesandbox.io/s/stoic-hermann-98bx9?file=/pages/index.js\r\n\r\n1. stateResults *behind* hits has the issue, *before* it doesn't\r\n2. a hitComponent must be given in default Hits component\r\n\r\nFor your specific use case, can you try putting StateResults in front of Hits?",
-      "user": 6270048,
-      "id": 1363060873,
-      "reactions": {
-        "👍️": 1,
-        "🚀": 1
-      }
-    },
-    {
-      "date": 1615372285,
-      "body": "Changing the order seems to be working. Thanks!",
-      "user": 7127784,
-      "id": 1363060885,
-      "reactions": {
-        "❤️": 1
-      }
-    },
-    {
-      "date": 1615384238,
-      "body": "Found some more things: https://codesandbox.io/s/billowing-browser-gd3kn?file=/src/App.js\r\n\r\n- resultsState is required for this to misbehave\r\n- it doesn't have to be server-side rendered\r\n- only the first StateResults has outdated results\r\n- if key is index (not objectID), the issue doesn't happen",
-      "user": 6270048,
-      "id": 1363060895,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

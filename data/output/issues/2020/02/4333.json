@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:4333",
   "title": "In requestBuilder._getFacetFilters when state.hierarchicalFacetsRefinements is parsed - it only process the first element/value",
   "date": 1581329525,
   "body": "**Our issue:**\r\n\r\nWe have the following situation:\r\n- A brand menu filter (HierarchicalMenu widget), which contains root brands and their sub-categories.\r\n- It seems that HierarchicalMenu menu allows faceting by only one value - currently selected option.\r\n- We have a use case where we need to add one or more additional values to the above one - in particular - to filter by the selected brand/sub-brand and in addition with `None` (adding OR filter).\r\n- We tried to use `onSearchStateChange` to inject dynamically the additional facet filter, but seems that does not works for `HierarchicalMenu` since it only process the first element from `state.hierarchicalFacetsRefinements`.\r\n- Also in case of fixing the above, consider changing the behaviour of the HierarchicalMenu widget as well - to support multi-values selection.\r\n\r\nOur widget looks like this:\r\n```\r\n <HierarchicalMenu\r\n     key=\"brandMenu\"\r\n     attributes={['brand.lvl0', 'brand.lvl1']}\r\n     separator=\"/\"\r\n     defaultRefinement={defaultRefinement}\r\n     showParentLevel\r\n  />\r\n```                  \r\nand \r\n\r\n```\r\nclass App extends Component {\r\n   constructor(props) {\r\n\r\n  ............\r\n\r\n      this.searchParams = {\r\n        hitsPerPage: 60,\r\n        disjunctiveFacetsRefinements,\r\n        filters,\r\n        facetFilters\r\n      };\r\n    }\r\n\r\n.............\r\n\r\n  handleSearchStateChange(nextSearchState) {\r\n    if (!this.mounted) {\r\n      return;\r\n    }\r\n    onSearchStateChange(nextSearchState);\r\n\r\n    const dynamicBrandFilters = ['brand.lvl0:None'];\r\n\r\n    this.searchParams.facetFilters = {\r\n      ...this.searchParams.facetFilters,\r\n      ...dynamicBrandFilters,\r\n    };\r\n    \r\n    this.setState({ searchState: nextSearchState });\r\n  }\r\n}\r\n```\r\n\r\nand\r\n```\r\n <InstantSearch\r\n   searchClient={this.algoliaClient}\r\n   indexName={this.props.indexes.products}\r\n   searchState={this.state.searchState}\r\n   onSearchStateChange={this.handleSearchStateChange}\r\n   resultsState={this.resultState}\r\n >\r\n<Configure {...this.searchParams} />\r\n```\r\n\r\n**Expected behaviour:**\r\n- We can dynamically add one or more additional (`OR`) facet filters to the  `HierarchicalMenu` current refinement, using `onSearchStateChange`.\r\n\r\nLooking forward for any feedback or suggestion to workaround this (if possible).\r\n\r\nThank you in advance!\r\n",
@@ -11,16 +10,5 @@
     "number": 4333,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1581339622,
-      "body": "What you're trying to achieve seems to be a \"disjunctive hierarchical menu\". This feature is not supported in our [JavaScript Helper](https://github.com/algolia/algoliasearch-helper-js) (the underlying library that manages the state) because it would trigger too many requests to the Algolia API.\r\n\r\nIf despite this technical constraint you'd still like to implement this feature, the only solution as of now would be to see how the Helper manages hierarchical facets and to support multiple selections in a custom hierarchical menu widget.\r\n\r\nClosing because duplicate of #1658. You can subscribe to this issue to be notified when we plan to support this feature.",
-      "user": 6137112,
-      "id": 584110717,
-      "reactions": {
-        "👍️": 2
-      }
-    }
-  ]
+  }
 }

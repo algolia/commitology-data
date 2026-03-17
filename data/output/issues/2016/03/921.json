@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:921",
   "title": "[searchBox]: queryHook not called on initial search",
   "date": 1457452937,
   "body": "Currently the `queryHook` parameter to the `searchBox` widget is not called on the initial search (the one we usually refer to the \"empty query\").\n\nThis seems broken because it is correctly fired if I start typing something then delete everything (in essence getting back to the \"empty query\").\n\nI'm not sure if this is a bug or if it is by design, tough.\n",
@@ -18,93 +17,5 @@
     "number": 921,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1457453034,
-      "body": "What you are looking for is the searchFunction hook which is a global hook of the instantsearch({searchHook}).\n\nThe query hook is only called when the user actually type something.\n\nThose are two differents hooks because if you want to implement a query debouncing, you need the hook to be on the searchBox widget. But if you want to be able to globally hack all requests made then you need the global searchFunction hook.\n\nSee the all options tab for the instantsearch function in the documentation\n",
-      "user": 123822,
-      "id": 193840389,
-      "reactions": {}
-    },
-    {
-      "date": 1457453179,
-      "body": "Oh, so `queryHook` is more like a `keypressHook`. Thanks, I'll update my code to use that instead.\n",
-      "user": 283419,
-      "id": 193841065,
-      "reactions": {}
-    },
-    {
-      "date": 1457453389,
-      "body": "Yes it's more of a keypressHook, named queryHook because it's the hook that is called just before making the query from the searchbox.\n\nWe could rename it though because it's very new so won't be so hard.\n",
-      "user": 123822,
-      "id": 193842184,
-      "reactions": {}
-    },
-    {
-      "date": 1457453711,
-      "body": "It's called `searchFunction` and it works perfectly, thanks.\n",
-      "user": 283419,
-      "id": 193844021,
-      "reactions": {}
-    },
-    {
-      "date": 1457453758,
-      "body": "awesome :)\n",
-      "user": 123822,
-      "id": 193844420,
-      "reactions": {}
-    },
-    {
-      "date": 1457453805,
-      "body": "What about renaming `searchFunction` to `beforeSearch` et `queryHook` to `onKeyPress`?\n",
-      "user": 283419,
-      "id": 193844658,
-      "reactions": {}
-    },
-    {
-      "date": 1457453962,
-      "body": "beforeSearch could be understood as being an event-like hook: not actually expressing we are replacing the helper.search function.\n\nonKeyPress is kind of the same, does it says it's replacing the default query?\n\nNaming is hard!\n",
-      "user": 123822,
-      "id": 193845458,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1457454047,
-      "body": "onKeyPress can be ok, not sure about beforeSearch\n",
-      "user": 123822,
-      "id": 193845903,
-      "reactions": {}
-    },
-    {
-      "date": 1457454208,
-      "body": "You may also be victim of previous issues titles that we discussed where it was proposed as \"beforeSearch\" #823. :D\n",
-      "user": 123822,
-      "id": 193847847,
-      "reactions": {}
-    },
-    {
-      "date": 1457454694,
-      "body": "Both methods currently expect you to call a callback to continue the initial flow. It you just define them with a `noop`, everything is broken :p.\n\nI feel like they should have a similar naming for that reason.\n\nActually, on a broader topic I feel like we have three kind of methods:\n- The event, that you can just listen to and react to, but in a \"forked\" workflow. Like the `on('render')`.\n- The method getting a value as input ( `transformData`) and expecting you to return a new version of the data\n- The method with a callback as input, expecting you to call it when you're done to resume the normal workflow\n\nMy point is that we should be able to clearly know which kind of method we're dealing with from their name. Do you think that would be a good idea?\n\nWe could still maintain backward compatibility by keeping the old names.\n",
-      "user": 283419,
-      "id": 193851266,
-      "reactions": {}
-    },
-    {
-      "date": 1457458925,
-      "body": "> It you just define them with a noop, everything is broken :p.\n\nYes that's on purpose, once you use the hook, you need to call the search function/call the callback. That's the API exposed so that you can implement complex patterns with it (debounce, min length, act on helper, do an asynchronous call to an API..).\n\n> My point is that we should be able to clearly know which kind of method we're dealing with from their name. Do you think that would be a good idea?\n\nYes, as you said:\n- we have **events**. As for libs I use, events are better being things that you can only listen to, only the DOM provides things like events + event object you can cancel. But only given the complexity of those.\n- we have hooks (searchFunction, queryHook), we could maybe call them that way, searchHook, queryHook\n- then we have formatData but I am not sure there's a need to change anything to it, we did not have issues about it or misunderstanding. The only one being that people would like to reformat the whole dataset, not per hit (thats another topic)\n\nWe could just rename searchFunction to searchHook but unsure this is the biggest pain, you tried to go to the searchBox to implement something that belongs to the whole instance, that's maybe the real issue?\n",
-      "user": 123822,
-      "id": 193884415,
-      "reactions": {}
-    },
-    {
-      "date": 1457522176,
-      "body": "I think you summarized this well. No need to change our events or `transformData`-like methods. And this is not a big issue, we just have trouble remembering the option names\n\nThe naming issue might only come from:\n- `queryHook` is called on every keypress, with the actual query and the helper as parameters\n- `searchFunction` is called just before a search is made, with only the helper as parameter\n\nMaybe replacing them with:\n- `onQueryChangedHook`, in the searchbox widget\n- `beforeSearchHook` more globally\n\nJust throwing ideas here. WDYT?\n",
-      "user": 283419,
-      "id": 194246335,
-      "reactions": {}
-    }
-  ]
+  }
 }

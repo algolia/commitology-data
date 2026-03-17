@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:4074",
   "title": "feat: introduce initialUiState option",
   "date": 1566933837,
   "body": "**Summary**\r\n\r\nThis PR introduces the `initialUiState` option at the `InstantSearch` level. The option allows users to provide an `uiState` used for the initial request. Only for the **initial request**. I've chosen to name the option `initialXXX` rather than `uiState` to have a clear intent. At some point, we might want to introduce the concept of controlled state (like React InstantSearch) that could use the option `uiState`.\r\n\r\nAt the moment the type definitions are incorrect. We have only one type that defines the `uiState` but we have to define two different types. The first is one is the \"global\" `uiState` and the second one is the \"local\" to each index. The \"global\" `uiState` is built on multiple \"local\" `uiState`. We'll update the definition in a separate PR.\r\n\r\n\r\n**Usage**\r\n\r\n```js\r\nconst search = instantsearch({\r\n  // ...\r\n  initialUiState: {\r\n    instant_search: {\r\n      query: \"Apple\"\r\n    },\r\n    instant_search_price_asc: {\r\n      refinementList: {\r\n        brand: [\"Apple\"]\r\n      }\r\n    }\r\n  }\r\n});\r\n```\r\n\r\nCheckout the example on [Storybook](https://deploy-preview-4074--instantsearchjs.netlify.com/stories/?path=/story/instantsearch--with-initialuistate).",
@@ -13,86 +12,5 @@
       "👍️": 1
     },
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1566980465,
-      "body": "How does it behave when combined with routing on initial load with a state in the url?",
-      "user": 6270048,
-      "id": 525637288,
-      "reactions": {}
-    },
-    {
-      "date": 1566982428,
-      "body": "> How does it behave when combined with routing on initial load with a state in the url?\r\n\r\nNothing is implemented right now since routing is not updated (yet). For a first version I think an override (or shallow merge) will be enough otherwise we have to implement a merge function for `UiState`. This is something that I would like to avoid as much as possible. Another alternative is to allow the user to provide its own function to perform the merge. ",
-      "user": 6513513,
-      "id": 525649188,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1573410271,
-      "body": "Any evidence this actually works in v4? Can't get it to work at all myself. No console errors, but also zero impact on results. Have followed the example at https://www.algolia.com/doc/api-reference/widgets/instantsearch/js/#widget-param-initialuistate",
-      "user": 2221888,
-      "id": 552219939,
-      "reactions": {}
-    },
-    {
-      "date": 1573457686,
-      "body": "Note that you need to mount a (could be virtual / non-rendering) widget too. We have a warning for that case normally, so I’d like to see your reproduction on codesandbox",
-      "user": 6270048,
-      "id": 552327155,
-      "reactions": {}
-    },
-    {
-      "date": 1573466579,
-      "body": "@Haroenv Thanks for responding. Here is some code on codesandbox:\r\nhttps://codesandbox.io/s/wizardly-jackson-ovx2f?fontsize=14\r\n\r\nNot sure what you mean about mounting a widget. The hits widget should be enough right?\r\n\r\nYou'll see in the sample that there are results produced but they don't have the query or Designer refinement applied. Have tried various options but none are making a difference. Have tried just the query and not the refinementList, and vice versa. Not 100% sure if initialUiState is meant to have a property of \"indexName\" or \"products\" (which is the actual index name). Have tried both in any case. Have also tried not including this node, i.e. just:\r\n`        initialUiState: {\r\n          refinementList: {\r\n            Designer: [\"Zimmermann\"]\r\n          }\r\n        }`\r\nwhich is how the code example says its done on this page: https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/js/#upgrade-from-v3-to-v4\r\n\r\nI'm not the most advanced coder but the documentation in this area seems to be very light.\r\n\r\nShouldn't be any issue on the index side, as falling back to v3 and specifying searchParameters produces expected results. E.g.\r\n`\r\nsearchParameters: {\r\ndisjunctiveFacetsRefinements: {\"Designer\":[\"Zimmermann\"]}\r\n}\r\n`\r\n\r\nAny ideas?",
-      "user": 2221888,
-      "id": 552375417,
-      "reactions": {}
-    },
-    {
-      "date": 1573547439,
-      "body": "```js\r\nconst search = instantsearch({\r\n  indexName: \"products\",\r\n  searchClient,\r\n  initialUiState: {\r\n    products: {\r\n      query: \"fakequerythatshouldreturnnoresults\",\r\n      refinementList: {\r\n        Designer: [\"Zimmermann\"]\r\n      }\r\n    }\r\n  }\r\n});\r\n\r\nconst virtualRefinementList = instantsearch.connectors.connectRefinementList(\r\n  () => null\r\n);\r\nconst virtualSearchBox = instantsearch.connectors.connectSearchBox(\r\n  () => null\r\n);\r\n\r\nsearch.addWidgets([\r\n  virtualSearchBox(),\r\n  virtualRefinementList({ attribute: \"Designer\" }),\r\n  instantsearch.widgets.hits({\r\n    container: \"#hits\",\r\n    templates: {\r\n      item: `<div>{{Designer}} - {{ProductTitle}}</div>`\r\n    }\r\n  })\r\n]);\r\n```\r\n\r\nThis is what's meant with \"virtual widget\". \r\n\r\nThanks for pointing out that [this section](https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/js/#searchparameters) is indeed insufficient to follow if  you didn't already  use advanced InstantSearch features.\r\n\r\nAnother option is the following:\r\n\r\n```js\r\nsearch.addWidgets([\r\n  instantsearch.widgets.configure(\r\n      { disjunctiveFacetsRefinements: {\"Designer\":[\"Zimmermann\"]} }\r\n  ),\r\n]);\r\n```",
-      "user": 6270048,
-      "id": 552788226,
-      "reactions": {}
-    },
-    {
-      "date": 1573547470,
-      "body": "see my example: https://codesandbox.io/s/determined-wood-quvoq",
-      "user": 6270048,
-      "id": 552788415,
-      "reactions": {}
-    },
-    {
-      "date": 1573574589,
-      "body": "Thanks, that seems to have done the job. I must say it does seem more difficult than using `searchParameters` from previous versions, so I'm not sure why that would be deprecated in favour of this, although I'm sure you guys have your reasons :) Cheers",
-      "user": 2221888,
-      "id": 552959573,
-      "reactions": {}
-    },
-    {
-      "date": 1573576276,
-      "body": "I think you missed the first part of that note, saying the default replacement is the configure widget. I've updated the docs to be clearer by the way",
-      "user": 6270048,
-      "id": 552972557,
-      "reactions": {}
-    },
-    {
-      "date": 1573584379,
-      "body": "I did miss that, my bad. Looking at the docs now...\r\n\r\nhttps://www.algolia.com/doc/api-reference/widgets/configure/js/\r\npoints me to:\r\nhttps://www.algolia.com/doc/api-reference/search-api-parameters/\r\n\r\nThere is no mention of \"disjunctiveFacetsRefinements\" as a possible parameter in the searchParameters object.",
-      "user": 2221888,
-      "id": 553051052,
-      "reactions": {}
-    },
-    {
-      "date": 1573596077,
-      "body": "True, that’s also somewhat confusing. The arguments aren’t just search parameters, but also helper ones: https://community.algolia.com/algoliasearch-helper-js/reference.html",
-      "user": 6270048,
-      "id": 553136510,
-      "reactions": {}
-    }
-  ]
+  }
 }

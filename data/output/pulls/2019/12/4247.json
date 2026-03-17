@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:4247",
   "title": "chore(ts): import EventEmitter not as default",
   "date": 1575885265,
   "body": "\r\n<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n**Summary**\r\n\r\nIf we use the named import, this works with standard TS setup, otherwise I get this error:\r\n\r\n\r\n\r\n<!--\r\n  Explain the **motivation** for making this change.\r\n  What existing problem does the pull request solve?\r\n  Are there any linked issues?\r\n-->\r\n\r\n**Result**\r\n\r\n<!--\r\n  Demonstrate the code is solid.\r\n  Example: The exact commands you ran and their output,\r\n  screenshots / videos if the pull request changes UI.\r\n\r\n  You will be able to test out these changes on the deploy\r\n  preview (address will be commented by a bot):\r\n\r\n  1. the documentation site (/)\r\n  2. a widget playground (/stories)\r\n-->\r\n\r\nno longer this error in TS (e.g. Angular InstantSearch)\r\n```\r\nModule '\"events\"' can only be default-imported using the 'esModuleInterop' flag ts(1259)\r\n```\r\n\r\n",
@@ -11,108 +10,5 @@
     "number": 4247,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1575885978,
-      "body": "hmm, very weird that it doesn't work with this setup, maybe we have opposite problems in InstantSearch as in Angular InstantSearch. Does someone have a hunch?",
-      "user": 6270048,
-      "id": 563157742,
-      "reactions": {}
-    },
-    {
-      "date": 1576056719,
-      "body": "hey @Haroenv can you provide the codesample that demonstrates the issue with `import EventEmitter from 'events';`?\r\nI don't think I've ever encountered it.",
-      "user": 2982512,
-      "id": 564456478,
-      "reactions": {}
-    },
-    {
-      "date": 1576056900,
-      "body": "I'll close this for now, then see if it comes back. Seems like both options aren't ideal.",
-      "user": 6270048,
-      "id": 564457686,
-      "reactions": {}
-    },
-    {
-      "date": 1637336321,
-      "body": "I'm getting this now and the solution looks to be the same one proposed here.\r\n\r\n```\r\nERROR in .../node_modules/instantsearch.js/es/lib/InstantSearch.d.ts(94,97):\r\n94:97 Type 'typeof EventEmitter' is not a constructor function type.\r\n    92 |  * It emits the 'render' event every time a search is done\r\n    93 |  */\r\n  > 94 | declare class InstantSearch<TUiState extends UiState = UiState, TRouteState = TUiState> extends EventEmitter {\r\n       |                                                                                                 ^\r\n    95 |     client: InstantSearchOptions['searchClient'];\r\n    96 |     indexName: string;\r\n    97 |     insightsClient: AlgoliaInsightsClient | null;\r\n```\r\n\r\nBoth on Typescript 3.8.3 and 4.5.2 (this error message from 4.5.2). This also came up here: https://github.com/algolia/instantsearch.js/issues/4911 and required a different workaround. We're consuming this through vue-instantsearch.\r\n\r\nI was just coming here to open this same PR to unblock our usage. Looks like we'll need to fork with this fix unless we can bring it in here.",
-      "user": 1593639,
-      "id": 974178946,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1637338405,
-      "body": "Aaaand now when I try to build my fork I get the following build error: \r\n\r\n```\r\n[!] Error: 'EventEmitter' is not exported by node_modules/events/events.js\r\nhttps://rollupjs.org/guide/en/#error-name-is-not-exported-by-module\r\nsrc/lib/InstantSearch.ts (3:9)\r\n1: import type { AlgoliaSearchHelper } from 'algoliasearch-helper';\r\n2: import algoliasearchHelper from 'algoliasearch-helper';\r\n3: import { EventEmitter } from 'events';\r\n            ^\r\n4: import type { IndexWidget } from '../widgets/index/index';\r\n5: import index, { isIndexWidget } from '../widgets/index/index';\r\nError: 'EventEmitter' is not exported by node_modules/events/events.js\r\n    at error (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:5330:30)\r\n    at Module.error (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:9733:16)\r\n    at handleMissingExport (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:9634:28)\r\n    at Module.traceVariable (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:10072:24)\r\n    at ModuleScope.findVariable (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:8679:39)\r\n    at Identifier$1.bind (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:4353:40)\r\n    at CallExpression$1.bind (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:3098:31)\r\n    at CallExpression$1.bind (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:6631:15)\r\n    at VariableDeclarator.bind (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:3102:23)\r\n    at VariableDeclaration.bind (/Users/jeff/workspace/instantsearch.js/node_modules/rollup/dist/rollup.js:3098:31)\r\n```\r\n\r\nWhich is the same error referenced in https://github.com/algolia/instantsearch.js/issues/2730. So indeed it looks like we have two competing environments that demand different import structures...\r\n\r\nI upgraded node on my local machine from `v16.8.0` to `v17.0.1` and upgraded `@types/node` and it seemed to resolve the issue \r\n",
-      "user": 1593639,
-      "id": 974207183,
-      "reactions": {}
-    },
-    {
-      "date": 1637339550,
-      "body": "@trestletech have you tried enabling `esModuleInterop: true` in your tsconfig? If that doesn't solve your issue, it'd be helpful to get a minimal example to help me reproduce, would you be able to provide that?",
-      "user": 2982512,
-      "id": 974222397,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1637665965,
-      "body": "Fwiw I had similar issues with some Rollup configs.",
-      "user": 6137112,
-      "id": 976411824,
-      "reactions": {}
-    },
-    {
-      "date": 1637669389,
-      "body": "let's get rid of events",
-      "user": 6270048,
-      "id": 976450540,
-      "reactions": {
-        "❤️": 1
-      }
-    },
-    {
-      "date": 1637712676,
-      "body": "Any chance this could be reopened? I'm getting the same. I can try and put together a minimal reproducible example if that helps?",
-      "user": 4801116,
-      "id": 977307378,
-      "reactions": {}
-    },
-    {
-      "date": 1637743410,
-      "body": "@duhaime, does `esModuleInterop` and `allowSyntheticDefaultImports` not work for you? could you indeed create a reproducible example and a new issue please? ",
-      "user": 6270048,
-      "id": 977655618,
-      "reactions": {}
-    },
-    {
-      "date": 1637971067,
-      "body": "@Haroenv thanks for your fast follow up. Setting `esModuleInterop: true` resolves this error but opens up many other issues. I haven't been able to reproduce the problem in a minimal example yet, so I'm diving more deeply (I haven't worked with typescript in a few years). \r\n\r\nHopefully I can get you something to work with soon. In my big baggy repo I get:\r\n\r\n```\r\nyarn run v1.22.17\r\n$ tsc\r\npnode_modules/instantsearch.js/es/lib/InstantSearch.d.ts:94:97 - error TS2507: Type 'typeof EventEmitter' is not a constructor function type.\r\n\r\n94 declare class InstantSearch<TUiState extends UiState = UiState, TRouteState = TUiState> extends EventEmitter {\r\n                                                                                                   ~~~~~~~~~~~~\r\nFound 1 error.\r\n\r\nerror Command failed with exit code 2.\r\n```\r\n\r\nIn my environment, changing `import EventEmitter from 'events';` to `import { EventEmitter } from 'events'` resolves the issue. Can someone help me understand why `events` is showing unpredictable behavior here? ",
-      "user": 4801116,
-      "id": 980470704,
-      "reactions": {}
-    },
-    {
-      "date": 1637972034,
-      "body": "To resolve this error I just needed to install `@types/node` with a major version that matched my Node version. \r\n\r\nI.e. `node -v` returned `v14.18.1` so I added `\"@types/node\": \"14.17.34\",` (the last release of @types/node on major version 14) to my `packages.json` file and then `yarn` 🚀 ",
-      "user": 4801116,
-      "id": 980473368,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1638177075,
-      "body": "This should be fixed more long-term by #4961, as it doesn't overlap with the node builtins",
-      "user": 6270048,
-      "id": 981426271,
-      "reactions": {
-        "❤️": 1
-      }
-    }
-  ]
+  }
 }

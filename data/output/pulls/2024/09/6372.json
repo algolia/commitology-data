@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:6372",
   "title": "fix(next-app-router): mitigate memory leak",
   "date": 1727359272,
   "body": "**Summary**\r\n\r\nGot reports of memory leaks with the Next.js App Router solution.\r\nIt seems partly related to `ServerInsertedHTML` or maybe just the fact that renders are streamed.\r\n\r\n**Result**\r\n\r\nPrior to the change, on an index with stringified results weighing ~50kb, for 500 concurrent requests we had a peak of 1GB which reduced to 600mb when idle.\r\nBy moving the initialisation of `createInsertHTML` so that it does not capture the scope of the whole component, it peaks at 600mb then reduces to 160mb when idle.\r\n\r\nThere are definitely more ways this could be improved as I see stringified results are kept in memory way after, so does certain React nodes with results in them. Should try to see with the Next.js team perhaps.\r\n",
@@ -13,28 +12,5 @@
       "🚀": 2
     },
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1727359557,
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/6372/builds/545374) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 6b4141a2440533ca59607a7e68e390f27755508d:\n\n|Sandbox| Source |\n|--|--|\n|[example-instantsearch-getting-started](https://codesandbox.io/s/example-instantsearch-getting-started-kl5h6t)| Configuration |\n|[example-react-instantsearch-getting-started](https://codesandbox.io/s/example-react-instantsearch-getting-started-7ppj2v)| Configuration |\n|[example-react-instantsearch-next-app-dir-example](https://codesandbox.io/s/example-react-instantsearch-next-app-dir-example-j8jjdc)| Configuration |\n|[example-react-instantsearch-next-routing-example](https://codesandbox.io/s/example-react-instantsearch-next-routing-example-nl6g49)| Configuration |\n|[example-vue-instantsearch-getting-started](https://codesandbox.io/s/example-vue-instantsearch-getting-started-wtzymw)| Configuration |\n",
-      "user": 54081388,
-      "id": 2377077564,
-      "reactions": {}
-    },
-    {
-      "date": 1728908288,
-      "body": "Hi @aymeric-giraudet It seems like next.js with its addInsertedHtml function causes a memory leak issue. If I comment out insertHTML call the memory leak is gone that of course breaks SSR. Have you considered not using ServerInsertedHTML but return <script> from the component JSX if it's possible?",
-      "user": 17574421,
-      "id": 2411066624,
-      "reactions": {}
-    },
-    {
-      "date": 1729501530,
-      "body": "Hey @pkutsenko,\r\n\r\nTried changing it to a component on this branch : https://github.com/algolia/instantsearch/commit/68c8c577592b24b1ce83166d8c4c947db290022c and I get the exact same results, so that's not the issue.\r\n\r\nI identified another memory leak in the Node.js requester in `algoliasearch`. Some handlers that retain responses as string are not cleared. By using the fetch requester instead (install the `@algolia/requester-fetch`) and use that instead : \r\n```js\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite';\r\nimport { createFetchRequester } from '@algolia/requester-fetch';\r\nconst searchClient = algoliasearch(\r\n  appId,\r\n  apiKey,\r\n  { requester: createFetchRequester() }\r\n);\r\n```\r\n\r\n_Note that I'm using `algoliasearch` v5 with `@algolia/requester-fetch` matching the same version, should still work with v4 though but you can update if it doesn't work_\r\n\r\nNow after 500 parallel requests it goes down to 40Mb at the end rather than 160Mb. That's using `react-instantsearch-nextjs` at `0.3.14` of course.\r\n\r\nI still see some retained objects but I think it's Next.js/webpack at this point which we can't do anything about.",
-      "user": 9158954,
-      "id": 2426064536,
-      "reactions": {}
-    }
-  ]
+  }
 }

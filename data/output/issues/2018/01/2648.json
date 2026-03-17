@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2648",
   "title": "[refinementList] sortBy doesn't factor in transformData",
   "date": 1515172167,
   "body": "When adding a transformData function to a refinement list, it is not factored in when sorting the refinements. The bug is reproduced here: https://jsfiddle.net/9ej3v2t6/\r\n\r\n1. added a refinement list widget for genres.\r\n2. added transformData function that changes the label of one of the genres from \"Comedy\" to \"Humor\"\r\n3. added `sortBy:['name:asc']` and would expect the refinements to be sorted correctly but we get Action, **Humor**, Crime etc.\r\n\r\nThis problem can be circumvented by using a custom function for sortBy, something like this:\r\n\r\n\r\n```\r\nsortBy: function(a,b){\r\n  const genres = {'Comedy':'Humor'};\r\n  var nameA = a.name.toUpperCase(); // ignore upper and lowercase\r\n  var nameB = b.name.toUpperCase(); // ignore upper and lowercase\r\n\r\n  if (genres.hasOwnProperty(a.name)) nameA = genres[a.name].toUpperCase();\r\n  if (genres.hasOwnProperty(b.name)) nameB = genres[b.name].toUpperCase();\r\n\r\n  if (nameA < nameB) {\r\n    return -1;\r\n  }\r\n  if (nameA > nameB) {\r\n    return 1;\r\n  }\r\n // names must be equal\r\n return 0;\r\n}\r\n```",
@@ -30,23 +29,5 @@
     "number": 2648,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1516872558,
-      "body": "Hi @razvanh, indeed `sortBy` is applied before `transformData`. I'm not sure whether we should \"fix\" that because some might rely on this behaviour. I'll sync up with the team.",
-      "user": 393765,
-      "id": 360410529,
-      "reactions": {}
-    },
-    {
-      "date": 1552662496,
-      "body": "This problem is not present anymore with [`transformItems`](https://www.algolia.com/doc/api-reference/widgets/refinement-list/js/#widget-param-transformitems), introduced in [2.10.0](https://github.com/algolia/instantsearch.js/blob/develop/CHANGELOG.md#2100-2018-08-08). This function is applied after `sortBy`.\r\n\r\nYou can read more on how to migrate to this API in [our InstantSearch.js v3 migration guide](https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/js/#transformdata-is-replaced-by-transformitems).",
-      "user": 6137112,
-      "id": 473322950,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

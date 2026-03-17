@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:3222",
   "title": "when using searchFunction hook my pagination stops working",
   "date": 1539872817,
   "body": "I'm running into a problem with `searchFunction` not respecting the pagination. When I create my instantsearch object I pass in \r\n\r\n```\r\n            searchFunction: function (helper) {\r\n               // helper.getPage() == correct page\r\n                var query = helper.getQuery().query;\r\n                if (query === '') {\r\n                    // for blank search (starting) everything within 50 is valued the same on geo.\r\n                    helper.setQueryParameter('aroundPrecision', 50 * metersInMile);\r\n                } else {\r\n                    // when a search term is added anything within 500 miles is valued the same on geo.\r\n                    helper.setQueryParameter('aroundPrecision', 500 * metersInMile);\r\n                }\r\n                // helper.getPage() == 0\r\n                helper.search();\r\n            },\r\n```\r\n\r\nthe pagination widget doesn't paginate the results.\r\n```\r\n            instantsearch.widgets.pagination({\r\n                container: '#pagination-top',\r\n                maxPages: 50,\r\n                // default is to scroll to 'body', here we disable this behavior\r\n                scrollTo: false\r\n            })\r\n```\r\n\r\nIf I remove `searchFunction` it will start working again. I'm wondering if I have to set all the parameters (search term, pagination page) if I use `setQueryParameter` once. If that is the case does that mean helper loses all incoming options when `setQueryParameter` is called?",
@@ -11,30 +10,5 @@
     "number": 3222,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1539873516,
-      "body": "Yes it's the expected behaviour the call to the method `setQueryParameter` ([actually every changes to the search parameters](https://github.com/algolia/algoliasearch-helper-js#automatic-reset-to-page-0)) reset the page automatically. You have to save the page before calling the method then re-apply it after.\r\n\r\n```js\r\n{\r\n  searchFunction: function(helper) {\r\n    var query = helper.state.query;\r\n    var page = helper.state.page;\r\n\r\n    if (query === \"\") {\r\n      helper.setQueryParameter(\"aroundPrecision\", 50 * metersInMile);\r\n    } else {\r\n      helper.setQueryParameter(\"aroundPrecision\", 500 * metersInMile);\r\n    }\r\n\r\n    helper.setPage(page).search();\r\n  }\r\n};\r\n```",
-      "user": 6513513,
-      "id": 431034576,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1539874223,
-      "body": "That worked. Thanks.\r\n\r\nIt seems like only options are reset. The query still exist.",
-      "user": 1406584,
-      "id": 431039161,
-      "reactions": {}
-    },
-    {
-      "date": 1539874435,
-      "body": "Page is the only parameter which automatically resets on `setQueryParameter`",
-      "user": 6270048,
-      "id": 431040601,
-      "reactions": {}
-    }
-  ]
+  }
 }

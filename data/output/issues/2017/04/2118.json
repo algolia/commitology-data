@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2118",
   "title": "paginationLimitedTo is not recognised as a searchParameter",
   "date": 1492687811,
   "body": "Hello,\r\n\r\nWe're using Algolia pro plan along with instantsearch.js in our project to make searches and show categories and contents inside them (category page and search pages are powered by Algolia). We are using instantsearch.js v1 is from cdn.\r\n\r\nOur main issue is that search doesn't provide more than 1000 records which we need.\r\n\r\nAs far as I understand correctly, `browse()` method provides more results, but it's not usable in instantsearch.js.\r\n\r\nAlso, after reading docs, I found out that there's a new option called `paginationLimitedTo`, which allows displaying more than 1000 records:\r\n\r\nhttps://www.algolia.com/doc/rest-api/search/#paginationlimitedto\r\n\r\nSo, setting this would allow displaying more than 1000 records.\r\n\r\nCan you help us here, how would we achieve getting more than 1000 records, or if it'd achieve our goal, how do we set this `paginationLimitedTo` attribute in instantsearch.js ? We're okay if we need to build or edit instantsearch.js for the time being.\r\n\r\nThanks in advance,",
@@ -18,79 +17,5 @@
     "number": 2118,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1492693870,
-      "body": "Closing, as it is being answered [on SO](http://stackoverflow.com/questions/43518921/how-to-show-more-than-1000-records-in-algolia-instantsearch-js/43520525#43520525).",
-      "user": 1502519,
-      "id": 295732812,
-      "reactions": {}
-    },
-    {
-      "date": 1492701051,
-      "body": "Thank you, I can confirm the issue is solved:\r\n\r\nHeads-up for future: \r\n\r\nI have created a custom ACL with `search` and `browse` features only, and injected a custom client to instantsearch, just like this:\r\n\r\n\r\n```js\r\n// custom client\r\nvar customClient = algoliasearch('appid', 'search_and_browse_only_custom_acl_key');\r\n// Create instant_search index and set its settings\r\nvar customIndex = customClient.initIndex('my_index');\r\ncustomIndex.setSettings({\r\n  paginationLimitedTo: 10000\r\n});\r\n// / custom client\r\n\r\nvar search = instantsearch({\r\n  appId: 'appid',\r\n  apiKey: 'search_and_browse_only_custom_acl_key',\r\n  indexName: '',\r\n  createAlgoliaClient: function(algoliasearch, appId, apiKey) { \r\n    return customClient;\r\n   }\r\n  // my other custom settings / preferences for search...\r\n});\r\n```\r\n\r\n**But, as suggested and mentioned in most places, try avoiding this if this is really not a must. This decreases overall performance of your search, also allows crawlers to scrape your site**",
-      "user": 2063957,
-      "id": 295772304,
-      "reactions": {}
-    },
-    {
-      "date": 1492701329,
-      "body": "Just for reference, you can do this too: \r\n\r\n\r\n```js\r\nvar search = instantsearch({\r\n  appId: 'appid',\r\n  apiKey: 'search_and_browse_only_custom_acl_key',\r\n  indexName: '',\r\n  searchParameters: {\r\n    paginationLimitedTo: 10000,\r\n  },\r\n  // my other custom settings / preferences for search...\r\n});\r\n```\r\n\r\nWhich has less overhead 😄 ",
-      "user": 6270048,
-      "id": 295774221,
-      "reactions": {}
-    },
-    {
-      "date": 1492702366,
-      "body": "@Haroenv Thank you again for the interest, however that didn't work on my case:\r\n\r\nThis is roughy my instantsearch.js updated due your comment:\r\n\r\n```js\r\nvar search = instantsearch({\r\n  appId: '',\r\n  apiKey: '',\r\n  indexName: '',\r\n  urlSync: {\r\n  useHash: false,\r\n  mapping: {\r\n    //...\r\n  },\r\n  trackedParameters: [\r\n    //...\r\n  ]\r\n  },\r\n  searchParameters: {\r\n    paginationLimitedTo: 10000,\r\n    hierarchicalFacetsRefinements: {\r\n        'hierarchicalCategories.lv0': [category]\r\n    },\r\n    filters:'is_tr=1 AND status=1'\r\n  }\r\n});\r\n```\r\n\r\nHere's the issue on my Chrome console:\r\n\r\n![image](https://cloud.githubusercontent.com/assets/2063957/25239062/b157556e-25f7-11e7-8d20-a64dc2feb1dc.png)\r\n\r\n> Unknown parameter: paginationLimitedTo\r\n\r\nCan't see the parameter [here](https://community.algolia.com/algoliasearch-helper-js/reference.html#searchparameters) neither.",
-      "user": 2063957,
-      "id": 295781597,
-      "reactions": {}
-    },
-    {
-      "date": 1493048844,
-      "body": "https://jsfiddle.net/vvoyer/0wm3donb/4/\r\n\r\nis a simple replication of this. `paginationLimitedTo` isn't recognised as a correct option",
-      "user": 6270048,
-      "id": 296714076,
-      "reactions": {}
-    },
-    {
-      "date": 1493049302,
-      "body": "I believed that `paginationLimitedTo` have the scope `settings` and therefore can't be use as a search parameters? (it's not applied at query time). ",
-      "user": 6885378,
-      "id": 296716748,
-      "reactions": {}
-    },
-    {
-      "date": 1493051927,
-      "body": "@mthuret Indeed, it doesn't work, saying it's an \"unknown parameter: paginationLimitedTo\". \r\n\r\nAny way to set it somewhere so we can use it?",
-      "user": 2063957,
-      "id": 296734802,
-      "reactions": {}
-    },
-    {
-      "date": 1493280902,
-      "body": "@Ardakilic Have you tried to set the configuration directly on the index, using a client and `setSettings`? https://www.algolia.com/doc/api-client/javascript/settings/#set-settings",
-      "user": 393765,
-      "id": 297645329,
-      "reactions": {}
-    },
-    {
-      "date": 1493283602,
-      "body": "@bobylito Hello, yes, but there's another issue regarding SortBySelector there: #2125 ",
-      "user": 2063957,
-      "id": 297655868,
-      "reactions": {}
-    },
-    {
-      "date": 1493290001,
-      "body": "This is not a query time parameter. It needs to be set when uploading the data to algolia.",
-      "user": 393765,
-      "id": 297679663,
-      "reactions": {
-        "👍️": 2
-      }
-    }
-  ]
+  }
 }

@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1001",
   "title": "urlSync change window.location.pathname",
   "date": 1461907413,
   "body": "I want change window.location.pathname with category slug. I need this for two reasons\n1. New path will be tracked by Google Analytics using ga('set', 'page', '/new-page.html');\n2. Sharing a beautiful url is always better than a dirty long url.\n\nIs there a way to define a custom getFullURL function?\n",
@@ -18,67 +17,5 @@
     "number": 1001,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1461916603,
-      "body": "Hey Hi! I am not sure to completely understand your usecase. Maybe you could have /categories landing pages that would instantiate instantsearch.js instances on their own with some default parameters? That way the pathname would already be the right one.\n",
-      "user": 123822,
-      "id": 215652583,
-      "reactions": {}
-    },
-    {
-      "date": 1461921443,
-      "body": "I have already done that @vvo. For example at category page (/women-clothes) if I click on a sub category (dresses) in hierarchicalMenu widget I want pathname to be /dresses.\n\nMy current configuration: \n\n``` javascript\nvar locationPath = window.location.pathname;\nvar searchParameters = {\n    hierarchicalFacetsRefinements : {category: ['Women > Clothes']}\n}\nvar defaultParams = {\n    appId: 'XXXXXX',\n    apiKey: 'XXXXXX',\n    indexName: 'XXXXXX',\n    searchParameters: searchParameters,\n    urlSync:{\n        useHash: false,\n        trackedParameters:['query','page','facetsRefinements','disjunctiveFacetsRefinements','numericRefinements']\n    }\n}\nvar search = instantsearch(defaultParams);\nvar firstTime = true;\nsearch.on('render', function() {\n    $('#categories a').click(function(){\n        locationPath =  '/'+$(this).data('slug');\n    });\n    if(!firstTime){\n        ga('set', 'page', locationPath);\n        ga('send', 'pageview');\n    }\n    firstTime = false;\n});\n```\n\nThen I downloaded instantsearch.js and edited that line;\n\n``` javascript\nfunction getFullURL(relative) {\n    //return getLocationOrigin() + window.location.pathname + relative;\n    return getLocationOrigin() + locationPath + relative;\n}\n```\n\nSo I will need to check new versions of instantsearch.js, download again and update :confounded: \n\nBut such a solution would be great:\n\n``` javascript\nvar defaultParams = {\n    appId: 'XXXXXX',\n    apiKey: 'XXXXXX',\n    indexName: 'XXXXXX',\n    locationPath: window.location.pathname,\n    searchParameters: searchParameters,\n    urlSync:{\n        useHash: false,\n        trackedParameters:['query','page','facetsRefinements','disjunctiveFacetsRefinements','numericRefinements']\n    }\n}\nvar search = instantsearch(defaultParams);\nsearch.on('render', function() {\n    $('#categories a').click(function(){\n        search.helper.setLocationPath('/'+$(this).data('slug'));\n    });\n}\n```\n",
-      "user": 10908812,
-      "id": 215666202,
-      "reactions": {}
-    },
-    {
-      "date": 1461922111,
-      "body": "If your website is able to show a webpage when /dresses is loaded (so that link can be copy pasted/refresh) then I am down thinking about providing the feature you are talking about.\n\nBasically it would mean provide an API option in urlSync like `urlSync.computeURL` that would be called:\n- before updating the url bar\n- for each widget asking to create a URL (so that the generated URLS for hierarchical menu can also be using /dress)\n\nAnd allow you to change it. We should be careful about the back button => it should still work.\n\nAside from having \"clean\" custom urls in your urlbar, can't you configure google analytics to track whatever url you want? Since you can issue google analytics tracking hits programmatically.\n",
-      "user": 123822,
-      "id": 215668109,
-      "reactions": {}
-    },
-    {
-      "date": 1461930526,
-      "body": "Yes my website shows a webpage for each item in hierarchical menu. I can configure google analytics for all urls but that has some disadvantages.\n1. Google likes clean and simple urls\n2. Sending google a url like .../...?q=w&p=0&dFR[brand][0]=XX&dFR[brand][1]=YY&.... does not seem a good opinion. This will also increase page views because this will send 5 views for a search like \"q=white\"\n\nMaybe turbolinks can be a solution for this?\n",
-      "user": 10908812,
-      "id": 215691470,
-      "reactions": {}
-    },
-    {
-      "date": 1462383706,
-      "body": "Do you have any plans for this issue @vvo ?\n",
-      "user": 10908812,
-      "id": 216944035,
-      "reactions": {}
-    },
-    {
-      "date": 1462785205,
-      "body": "@tecmusti Revisiting this issue I will try to get it right:\n- You want to have pages like /dresses, when accessed should display dresses\n- You want the links in your hierarchicalRefinementList(s) to go through /dresses/red\n\nTo solve this, you would only need to be able to provide a hook (function) here: https://github.com/algolia/instantsearch.js/blob/6291bfc47e9b91a0c8ea947355c9f68851187d20/src/lib/url-sync.js#L79\n\nIf this is all you need then why not submit a pull request? As an example, I recently added a way to provide a different History.state at each url render (urlbar/refinementList urls): https://github.com/algolia/instantsearch.js/commit/989856cb12c797c881301963c118e2d2b10aa63b\n\nOtherwise I will try to have a go at it. Please confirm to me that this is the only need that would be required to you.\n",
-      "user": 123822,
-      "id": 217814592,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1463122097,
-      "body": "@vvo Providing a hook for getFullURL function will solve my issue for now. Sorry but I don't know how to submit a pull request :(\n",
-      "user": 10908812,
-      "id": 218964920,
-      "reactions": {
-        "😕": 1
-      }
-    },
-    {
-      "date": 1488295495,
-      "body": "This issue is very old, I hope @tecmusti you managed to solve it somehow, if not please open a new one (you will see there's a new issue template for you to easily create an example jsfiddle).\r\n\r\nIf you can get a precise feature proposal then we should be able to implement it.",
-      "user": 123822,
-      "id": 283069401,
-      "reactions": {}
-    }
-  ]
+  }
 }

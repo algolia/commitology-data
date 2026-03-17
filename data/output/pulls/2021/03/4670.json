@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:4670",
   "title": "fix(bindEvent): escape payload correctly",
   "date": 1614978798,
   "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n## Summary\r\n\r\nThis PR updates the way we serialize & deserialize payloads for `bindEvent`. It's internal and users never got to deserialize by themselves, so it's not a breaking change.\r\n\r\n## Details\r\n\r\nSince [\"add hits and attributes to InsightsEvent\" PR](https://github.com/algolia/instantsearch.js/pull/4667), `bindEvent` method now serializes `hits` as well. And `hits` can contain special characters unlike the payloads that we used to have in insights middleware.\r\n\r\nFor example, \r\n\r\n```\r\nbtoa('™')\r\n> Uncaught DOMException: String contains an invalid character\r\n```\r\n\r\nbut\r\n```\r\nbtoa(encodeURIComponent('™'))\r\n> \"JUUyJTg0JUEy\"\r\n\r\ndecodeURIComponent(atob(\"JUUyJTg0JUEy\"))\r\n> \"™\"\r\n```\r\n\r\n## A minor concern\r\n\r\nIt's actually not about this PR, but about the previous [\"add hits and attributes to InsightsEvent\" PR](https://github.com/algolia/instantsearch.js/pull/4667).\r\nNow that we expose `hits` to `InsightsEvent`, its payload is much bigger than before. It's going to bloat the DOM output. \r\nWhen they have templates like\r\n\r\n```js\r\n<button\r\n  type=\"button\"\r\n  ${bindEvent('click', hit, 'Favorite')}\r\n>\r\n ...\r\n</button>\r\n```\r\n\r\nIf they don't pass the whole `hit` object, and pass only a subset of it, it will reduce the size. What do you think?",
@@ -11,35 +10,5 @@
     "number": 4670,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1614979037,
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4670/builds/107850) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 3f29d791dc69c4959ed5ddaa40b2ca839e97f593:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-4d7c3)| Configuration |\n",
-      "user": 54081388,
-      "id": 791715295,
-      "reactions": {}
-    },
-    {
-      "date": 1615215974,
-      "body": "> reasonable fix!\r\n\r\nYou also think the `A minor concern` part is okay?",
-      "user": 499898,
-      "id": 792816672,
-      "reactions": {}
-    },
-    {
-      "date": 1615219633,
-      "body": "it's probably not really an issue IMO, although a subset was already set with objectIDs, which you said was insufficient for segment",
-      "user": 6270048,
-      "id": 792861637,
-      "reactions": {}
-    },
-    {
-      "date": 1615219897,
-      "body": "> it's probably not really an issue IMO, although a subset was already set with objectIDs, which you said was insufficient for segment\r\n\r\nWhat I meant by a subset was to pass an object made from `hit` with some properties omitted like, for example, `image_url, description, ...` that won't be used in the `insights` middleware.\r\n\r\nIt could bloat the html size and might be an issue in case of SSR. Even if so, they can omit some properties to avoid the issue.",
-      "user": 499898,
-      "id": 792865198,
-      "reactions": {}
-    }
-  ]
+  }
 }

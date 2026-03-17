@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6426",
   "title": "react-instantsearch doesn't support algolia v5",
   "date": 1731058270,
   "body": "### 🐛 Current behavior\n\nI upgraded JavaScript API Client to version 5.13.0 successfully, but it is not compatible with `InstantSearch` component from react-instantsearch anymore.\r\n\r\nThis is the code:\r\n\r\n```\r\nimport { searchClient as algoliaSearch } from \"@algolia/client-search\";\r\n\r\nimport { Configure, InstantSearch } from \"react-instantsearch\";\r\n\r\n...\r\n\r\n <InstantSearch\r\n      searchClient={searchClient} <------- here is the problem\r\n      indexName={indexName}\r\n      initialUiState={initialUiState ?? undefined}\r\n    >\r\n      <Configure\r\n        aroundRadius={\"all\"}\r\n        hitsPerPage={80}\r\n        facetingAfterDistinct={true}\r\n      />\r\n      {children}\r\n</InstantSearch>\r\n\r\n```\r\n\r\nThe error is type related saying `is not assignable to type 'SearchClient'`\r\n\r\nIs `react-instantsearch` going to be updated soon to support algolia v5?\n\n### 🔍 Steps to reproduce\n\n1. Install latest algolia \r\n2. Install latest react-instantsearch\r\n3. Try to use it\n\n### Live reproduction\n\nhttps://www.algolia.com/doc/libraries/javascript/v5/upgrade\n\n### 💭 Expected behavior\n\n`InstantSearch` component shouldn't give any errors.\n\n### Package version\n\nalgoliasearch 5.13.0, react-instantsearch 7.13.7\n\n### Operating system\n\nMac OS 15.0.1\n\n### Browser\n\nChrome\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,77 +17,5 @@
     "number": 6426,
     "reactions": {},
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1731072882,
-      "body": "Hi, InstantSearch is typed to expect the API client coming from `algoliasearch` or `algoliasearch/lite`, not from the package you used. You should be able to switch to one of those imports with no impact on your codebase:\r\n\r\n```ts\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite';\r\n// or\r\nimport { algoliasearch } from 'algoliasearch';\r\n```",
-      "user": 154633,
-      "id": 2464783291,
-      "reactions": {}
-    },
-    {
-      "date": 1731073639,
-      "body": "> Hi, InstantSearch is typed to expect the API client coming from `algoliasearch` or `algoliasearch/lite`, not from the package you used. You should be able to switch to one of those imports with no impact on your codebase:\r\n> \r\n> ```ts\r\n> import { liteClient as algoliasearch } from 'algoliasearch/lite';\r\n> // or\r\n> import { algoliasearch } from 'algoliasearch';\r\n> ```\r\n\r\nThanks for answering so quickly! Tried that one already. Seems like it's working, but in both cases `InstantSearch` is still giving type errors. I'll copy you the entire thing here.\r\n\r\n```\r\nType '{ transporter: Transporter; appId: string; clearCache(): Promise<void>; readonly _ua: string; addAlgoliaAgent(segment: string, version?: string | undefined): void; ... 5 more ...; search<T>(searchMethodParams: SearchMethodParams | LegacySearchMethodProps, requestOptions?: RequestOptions | undefined): Promise<...>; }' is not assignable to type 'SearchClient'.\r\n  Types of property 'search' are incompatible.\r\n    Type '<T>(searchMethodParams: SearchMethodParams | LegacySearchMethodProps, requestOptions?: RequestOptions | undefined) => Promise<...>' is not assignable to type '<T>(requests: { indexName: string; params: SearchOptions; }[]) => Promise<MultipleQueriesResponse<T>>'.\r\n      Types of parameters 'searchMethodParams' and 'requests' are incompatible.\r\n        Type '{ indexName: string; params: SearchOptions; }[]' is not assignable to type 'SearchMethodParams | LegacySearchMethodProps'.\r\n          Type '{ indexName: string; params: SearchOptions; }[]' is not assignable to type 'LegacySearchMethodProps'.\r\n            Type '{ indexName: string; params: SearchOptions; }' is not assignable to type 'LegacySearchQuery'.\r\n              Type '{ indexName: string; params: SearchOptions; }' is not assignable to type 'LegacySearchForHits'.\r\n                Type '{ indexName: string; params: SearchOptions; }' is not assignable to type 'LegacySearchParams'.\r\n                  Types of property 'params' are incompatible.\r\n                    Type 'SearchOptions' is not assignable to type 'SearchParamsObject'.\r\n                      Type 'SearchOptions' is not assignable to type 'BaseSearchParamsWithoutQuery'.\r\n                        Types of property 'facetFilters' are incompatible.\r\n                          Type 'string | readonly string[] | readonly (string | readonly string[])[] | undefined' is not assignable to type 'FacetFilters | undefined'.\r\n                            Type 'readonly string[]' is not assignable to type 'FacetFilters | undefined'.\r\n                              The type 'readonly string[]' is 'readonly' and cannot be assigned to the mutable type 'FacetFilters[]'.ts(2322)\r\nInstantSearch.d.ts(42, 5): The expected type comes from property 'searchClient' which is declared here on type 'IntrinsicAttributes & UseInstantSearchApiProps<UiState, UiState> & { children?: ReactNode; }'\r\n```",
-      "user": 7549148,
-      "id": 2464807935,
-      "reactions": {}
-    },
-    {
-      "date": 1731078897,
-      "body": "There could be a version conflict in your package dependencies.\r\n\r\nCould you ideally reproduce this behavior using the following sandbox as a starting point: https://codesandbox.io/p/sandbox/gh-6426-rhlwdn?\r\n\r\nYou can also check that if you have declared multiple algoliasearch related packages, that they target the same version (but you only need `algoliasearch`).",
-      "user": 154633,
-      "id": 2465009296,
-      "reactions": {}
-    },
-    {
-      "date": 1736078368,
-      "body": "Also facing this, I have:\r\n\r\n```json\r\n\"react-instantsearch\": \"7.13.9\",\r\n\"algoliasearch\": \"5.18.0\",\r\n```\r\n\r\nClient imported like:\r\n```ts\r\nimport { algoliasearch } from 'algoliasearch';\r\n\r\nexport const searchClient = algoliasearch(...)\r\n```\r\n\r\nError:\r\n\r\n```\r\nType 'Algoliasearch' is not assignable to type 'SearchClient'.\r\n  Types of property 'searchForFacetValues' are incompatible.\r\n    Type '({ indexName, facetName, searchForFacetValuesRequest }: SearchForFacetValuesProps, requestOptions?: RequestOptions | undefined) => Promise<SearchForFacetValuesResponse>' is not assignable to type 'undefined'.ts(2322)\r\nInstantSearch.d.ts(42, 5): The expected type comes from property 'searchClient' which is declared here on type 'IntrinsicAttributes & UseInstantSearchApiProps<UiState, UiState> & { children?: ReactNode; }\r\n```",
-      "user": 12549124,
-      "id": 2571600688,
-      "reactions": {}
-    },
-    {
-      "date": 1736153573,
-      "body": "in some configurations of typescript (not sure which ones yet, as I haven't been able to reproduce) only algoliasearch lite is supported (just the types, the code always works):\r\n\r\n```\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite'\r\n```",
-      "user": 6270048,
-      "id": 2572607418,
-      "reactions": {}
-    },
-    {
-      "date": 1736156770,
-      "body": "@Haroenv It seems in v5, algolia/lite isnt a thing anymore though?",
-      "user": 12549124,
-      "id": 2572743834,
-      "reactions": {}
-    },
-    {
-      "date": 1736158911,
-      "body": "it still is, we use it in our examples: https://github.com/algolia/instantsearch/blob/392a65bd92465e3b392632597dd82ac3120bdfda/examples/react/getting-started/src/App.tsx#L1",
-      "user": 6270048,
-      "id": 2572806837,
-      "reactions": {}
-    },
-    {
-      "date": 1736168945,
-      "body": "@Haroenv ahh, youre right, probably just needed to restart tsserver!\r\n\r\nAny ideas about all the errors relating to react 19 and \"'InstantSearch' cannot be used as a JSX component.\"?",
-      "user": 12549124,
-      "id": 2573079176,
-      "reactions": {}
-    },
-    {
-      "date": 1736406348,
-      "body": "Same issue after upgrading.\r\n\r\nSeems like `SearchClient` is being redefined in the `algoliasearch-helper` package for use in the InstantSearch mono repo but that means it's no longer compatible with `algoliasearch` type for `SearchClient`.",
-      "user": 12246710,
-      "id": 2579311503,
-      "reactions": {}
-    },
-    {
-      "date": 1736523708,
-      "body": "Hey @JClackett this should be solved with #6520, you can test by installing it with this : \r\n```\r\nyarn add https://pkg.csb.dev/algolia/instantsearch/commit/6b87cac8/react-instantsearch\r\n```\r\n\r\nCouldn't reproduce the `algoliasearch` issue with `algoliasearch/lite` v5 though",
-      "user": 9158954,
-      "id": 2582990729,
-      "reactions": {}
-    }
-  ]
+  }
 }

@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1330",
   "title": "Default Filters with Custom Widget ",
   "date": 1474639669,
   "body": "Hi All, \n\nI'm trying to get my head around using default filtering with custom widgets and I've come to a frustrating dead-end. \n\nI have a car search function (make, model, price...) that I'm placing across a website and I need to search all makes and models etc which is working great, but in some places I need to default filter the search form by make e.g. Hyundai, but the rest of the makes still need to be selectable  - basically a pre-selected value for an attribute - so I tried default filters (https://community.algolia.com/instantsearch.js/documentation/#default-filters).\n\nHere's what I've got so far:\n\n```\nvar search = instantsearch({\n  [...],\n  urlSync: true,\n  searchParameters: {\n    facetsRefinements: {\n      make: ['Hyundai']\n    },\n  }\n});\n```\n\nWith this added, I only get the value 'Hyundai' in the drop down along with the title 'All makes' BUT I don't get any 'hits'. The error I get in the console is \"Error: make is not defined in the facets attribute of the helper configuration\". I've googled and have seen a few solutions but none work for me. Reading the documentation on helpers, that made me more confused as I'm unsure as to how to \"connect\" helpers with instsantsearch when initiating searches. \n\nI then read about facets that aren't defined by adding to the above:\n\n```\nfacets: ['make']\n```\n\nThis then pulls back all hits that are only Hyundai but leaves my select dropdown completely blank (I imagine this overrides the custom widget use). I've got a feeling I'm approaching this in the wrong way as I all I need to is to a pre-selected value for the attributeName 'make' as if someone has already selected Hyundai. \n\nHopefully this is not too confusing! Any pointers would be great and many thanks in advance.\n",
@@ -18,86 +17,5 @@
     "number": 1330,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1474876644,
-      "body": "Hi @JonnyTurnerUK sorry for the late response. I believe you are using a custom widget, could you maybe give us the code of the custom widget here?\n\nWhat may be the source of your issues here is that ultimately you would want to use a \"disjunctive facets\" that would allow you to not only refine on a facets but keep showing the other facet values.\n\nFor this to work, I would advise you to change facets and facetsRefinements to disjunctiveFacets and disjunctiveFacetsRefinements.\n\nThe use case of default selected filters is very important to us because more and more frequent. This is today a pain to use and we want to make it easier.\n",
-      "user": 123822,
-      "id": 249503340,
-      "reactions": {}
-    },
-    {
-      "date": 1474884757,
-      "body": "Hi @vvo, no probs at all, really appreciate the help. Sure, I've pasted the custom widget code below that was from this thread - https://github.com/algolia/instantsearch.js/issues/1022. I tried disjunctiveFacets as mentioned above but get the same result in the way that the stock gets filtered, there's 'Hyundai' in the refined values but nothing in the dropdown.\n\n```\ninstantsearch.widgets.customSelectorWidget = function customSelectorWidget(options) {\n    var container = options.container;\n    var attributeName = options.attributeName;\n    var limit = options.limit || 10;\n    var title = options.title || 'All';\n\n    container = document.querySelector(container);\n    var selectElement = null;\n    var currentlySelectedValue = null;\n    return {\n        getConfiguration: function getConfiguration() {\n            return {\n                hierarchicalFacets: [{\n                    name: attributeName,\n                    attributes: [attributeName]\n            }]\n        };\n    },\n\n    init: function init(options) {\n        var helper = options.helper;\n        container.innerHTML = '<label class=\"field select\"><select></select><i class=\"arrow\"></i></label>';\n        selectElement = container.querySelector('select');\n\n        selectElement.addEventListener('change', function() {\n            var selectedIndex = selectElement.selectedIndex;\n            var selectedValue = selectElement.options[selectedIndex].value;\n            if (selectedValue === '__EMPTY__') {\n                selectedValue = currentlySelectedValue;\n            }\n            helper.toggleRefinement(attributeName, selectedValue);\n            helper.search();\n            currentlySelectedValue = selectedValue;\n        });\n    },\n\n    render: function render(options) {\n\n        var results = options.results;\n        var sortBy = ['name:asc', 'count:desc'];\n        var facetValues = results.getFacetValues(attributeName, {sortBy: sortBy}).data;\n\n        if(facetValues){\n            facetValues = facetValues.slice(0, limit);\n            var innerOptions = ['<option value=\"__EMPTY__\">' + title + '</option>'];\n            facetValues.forEach(function(facetValue) {\n                var selected = facetValue.isRefined ? 'selected=\"selected\"' : '';\n            innerOptions.push('<option value=\"' + facetValue.name + '\" ' + selected + '>' + facetValue.name + \" (\" + facetValue.count + ')</option>');\n            });\n                selectElement.innerHTML = innerOptions.join('\\n');\n            }\n        }\n    }\n};\n\nsearch.addWidget(\n    instantsearch.widgets.customSelectorWidget({\n        container: '#make',\n        attributeName: 'make',\n        limit: 50,\n        title: 'All makes',\n    })\n);\n```\n\nThanks again,\n",
-      "user": 654547,
-      "id": 249531501,
-      "reactions": {}
-    },
-    {
-      "date": 1474884852,
-      "body": "Hi again, do you think you could work into getting a functionnal jsFiddle http://jsfiddle.net/ for us to hack on it? That way, once you have the jsFiddle up and running, and that you can show us the behavior that is not expected. We can easily help you on it.\n\nThanks a lot for using instantsearch.js\n",
-      "user": 123822,
-      "id": 249531829,
-      "reactions": {}
-    },
-    {
-      "date": 1474884941,
-      "body": "Definitely, I'll work on it now and try and get something asap for you. \n",
-      "user": 654547,
-      "id": 249532162,
-      "reactions": {}
-    },
-    {
-      "date": 1474886703,
-      "body": "@vvo - managed to create something here with the Ikea credentials - https://jsfiddle.net/JonnyTurnerUK/3cjth7s2/5/\n\nIn this case, I'm using 'Material' as opposed to 'Make' so therefore, on load, the dropdown should be populated with all other materials with Glass selected within it. Hope this makes sense.\n",
-      "user": 654547,
-      "id": 249537604,
-      "reactions": {}
-    },
-    {
-      "date": 1474893847,
-      "body": "Ok I think I just fixed it by doing this:\n\n``` js\n  searchParameters: {\n    hierarchicalFacetsRefinements: {\n      materials: ['Glass']\n    }\n  }\n```\n\nLet me know how it goes\n",
-      "user": 123822,
-      "id": 249559002,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1474894109,
-      "body": "Awesome!!! I tried various types of facets, it turns out that 'Hyundai' should have been 'HYUNDAI' also for it to be selected in the hierarchy too. \n\nDOH! Thanks a lot for that. Much appreciated.\n",
-      "user": 654547,
-      "id": 249559912,
-      "reactions": {}
-    },
-    {
-      "date": 1474895532,
-      "body": "Great! Clearly this is our fault for now, not being good at this default selected game :) Happy coding\n",
-      "user": 123822,
-      "id": 249565334,
-      "reactions": {}
-    },
-    {
-      "date": 1485358571,
-      "body": "Just wanted to chime in -- hit a brick wall with a similar issue for awhile before discovering this thread. I had `menu` widgets, which when prefiltered were not showing as selected. \r\n\r\nMy fix was also to change `facetsRefinements` to `hierarchicalFacetsRefinements`. Even though my facets are not hierarchical. Maybe update [the documentation](https://community.algolia.com/instantsearch.js/documentation/#default-filters) to recommend using `hierarchicalFacetsRefinements` instead?\r\n\r\nThanks!",
-      "user": 3852999,
-      "id": 275140583,
-      "reactions": {}
-    },
-    {
-      "date": 1485359277,
-      "body": "Definitely gonna do that, thanks!",
-      "user": 123822,
-      "id": 275144112,
-      "reactions": {}
-    },
-    {
-      "date": 1485359835,
-      "body": "Done https://github.com/algolia/instantsearch.js/commit/19756c331e2a2965a974f1b75c3ca36bf489b266",
-      "user": 123822,
-      "id": 275147053,
-      "reactions": {}
-    }
-  ]
+  }
 }

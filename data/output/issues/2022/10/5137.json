@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5137",
   "title": "Color refinement list for InstantSearch.js",
   "date": 1665565141,
   "body": "We currently provide a [ColorRefinementList widget for React InstantSearch](https://www.algolia.com/doc/api-reference/widgets/color-refinement-list/react/), and we'd like to gather interest in porting this widget to InstantSearch.js.\r\n\r\n## What's a color refinement list?\r\n\r\nA color refinement list is an InstantSearch widget that filters results based on color facet values. The widget only displays the most relevant colors for the current search context.\r\n\r\nIt shares similarities with a standard refinement list, but it displays **color indicators** instead of text facet values. This helps users **quickly visualize** the kind of color that products have in your index.\r\n\r\n<p align=\"center\"><img src=\"https://camo.githubusercontent.com/42907e1db6e840f9de3bf06430c022c17c564a98f28b3203dd3a58a61e817412/68747470733a2f2f692e6962622e636f2f376b44674b38562f6578616d706c652e676966\" /></p>\r\n\r\n[**See Live Demo →**](https://codesandbox.io/s/github/algolia/react-instantsearch-widget-color-refinement-list?file=/example/index.tsx)\r\n\r\n## How to show your interest?\r\n\r\nSimply add a \"👍\" reaction on this issue, and optionally subscribe to its notifications. We will share updates here.",
@@ -33,28 +32,5 @@
       "🚀": 2
     },
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1669826697,
-      "body": "Commenting on behalf of a prospect, they'd like to implement visual facets through a similar widget with vanilla js (on their custom Magento theme). Today they've built the following:\r\n\r\n<img width=\"299\" alt=\"image\" src=\"https://user-images.githubusercontent.com/1452326/204857285-69c873ee-869b-465a-8c75-27c268dfd7c9.png\">\r\n",
-      "user": 1452326,
-      "id": 1332450168,
-      "reactions": {}
-    },
-    {
-      "date": 1696241636,
-      "body": "Hi, it's been a year since this was posted. Just wanted to check if there's been any progress? Is this feature in your roadmap? If so, do you have an ETA? Thanks.\r\n\r\nBTW, are there any examples/demos on how to implement this feature using React Instantsearch v7?",
-      "user": 866622,
-      "id": 1742751061,
-      "reactions": {}
-    },
-    {
-      "date": 1696247136,
-      "body": "This is currently not on a short-term roadmap, but it's fairly straightforward to do in a custom widget, as you can see in this example for React InstantSearch Hooks (same as React InstantSearch v7, just change the package names): https://github.com/algolia-samples/storefront-demo-nextjs/blob/main/components/ColorRefinementList.tsx\r\n\r\n```jsx\r\nimport { CheckIcon } from '@heroicons/react/24/outline';\r\nimport { useRefinementList, type RefinementListProps } from 'react-instantsearch-hooks';\r\n\r\ntype ColorRefinementListProps = RefinementListProps & {\r\n  classNames: Pick<RefinementListProps, 'classNames'> &\r\n    Partial<{\r\n      swatch: string;\r\n      swatchIcon: string;\r\n    }>;\r\n};\r\n\r\nfunction cx(\r\n  ...classNames: Array<string | number | boolean | undefined | null>\r\n) {\r\n  return classNames.filter(Boolean).join(' ');\r\n}\r\n\r\nfunction extractColorFacet(facet: string) {\r\n  const [label, color] = facet.split(';');\r\n\r\n  return { label, color };\r\n}\r\n\r\nexport function ColorRefinementList({\r\n  searchable,\r\n  searchablePlaceholder,\r\n  attribute,\r\n  operator,\r\n  limit,\r\n  showMore,\r\n  showMoreLimit,\r\n  sortBy,\r\n  escapeFacetValues,\r\n  transformItems,\r\n  classNames = {},\r\n  className,\r\n  ...props\r\n}: ColorRefinementListProps) {\r\n  const { canRefine, items, refine } = useRefinementList({\r\n    attribute,\r\n    operator,\r\n    limit,\r\n    showMore,\r\n    showMoreLimit,\r\n    sortBy,\r\n    escapeFacetValues,\r\n    transformItems,\r\n  });\r\n\r\n  return (\r\n    <div\r\n      {...props}\r\n      className={cx(\r\n        'ais-ColorRefinementList',\r\n        classNames.root,\r\n        !canRefine &&\r\n          cx(\r\n            'ais-ColorRefinementList--noRefinement',\r\n            classNames.noRefinementRoot\r\n          ),\r\n        className\r\n      )}\r\n    >\r\n      <ul className={cx('ais-ColorRefinementList-list', classNames.list)}>\r\n        {items.map((item) => {\r\n          const { label, color } = extractColorFacet(item.label);\r\n\r\n          return (\r\n            <li\r\n              key={item.value}\r\n              className={cx(\r\n                'ais-ColorRefinementList-item',\r\n                classNames.item,\r\n                item.isRefined &&\r\n                  cx(\r\n                    'ais-ColorRefinementList-item--selected',\r\n                    classNames.selectedItem\r\n                  )\r\n              )}\r\n            >\r\n              <label\r\n                className={cx(\r\n                  'ais-ColorRefinementList-label',\r\n                  classNames.label\r\n                )}\r\n              >\r\n                <input\r\n                  checked={item.isRefined}\r\n                  className={cx(\r\n                    'ais-ColorRefinementList-checkbox',\r\n                    classNames.checkbox\r\n                  )}\r\n                  type=\"checkbox\"\r\n                  value={item.value}\r\n                  onChange={() => refine(item.value)}\r\n                />\r\n                <div\r\n                  style={{\r\n                    background: color.startsWith('#') ? color : `url(${color})`,\r\n                  }}\r\n                  className={cx(\r\n                    'ais-ColorRefinementList-swatch',\r\n                    classNames.swatch\r\n                  )}\r\n                >\r\n                  {item.isRefined && (\r\n                    <CheckIcon\r\n                      className={cx(\r\n                        'ais-ColorRefinementList-swatchIcon',\r\n                        classNames.swatchIcon\r\n                      )}\r\n                    />\r\n                  )}\r\n                </div>\r\n                <span\r\n                  className={cx(\r\n                    'ais-ColorRefinementList-labelText',\r\n                    classNames.labelText\r\n                  )}\r\n                >\r\n                  {label}\r\n                </span>\r\n                <span\r\n                  className={cx(\r\n                    'ais-ColorRefinementList-count',\r\n                    classNames.count\r\n                  )}\r\n                >\r\n                  {item.count}\r\n                </span>\r\n              </label>\r\n            </li>\r\n          );\r\n        })}\r\n      </ul>\r\n    </div>\r\n  );\r\n}\r\n```",
-      "user": 6270048,
-      "id": 1742867141,
-      "reactions": {}
-    }
-  ]
+  }
 }

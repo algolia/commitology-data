@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2044",
   "title": "Change searchParameters at runtime",
   "date": 1489168792,
   "body": "Hello,\r\nI've an issue with instantsearch.js.\r\n\r\nI'm trying to change the value of searchParameters.distinct at runtime but the search results is broken.\r\n\r\nHow can I change the parameter at runtime? Perhaps instantsearch exposes some method?\r\n\r\n\r\nThis i my code:\r\n\r\n**Algolia**\r\n```\r\nvar search = instantsearch({\r\n    appId: APPID,\r\n    apiKey: APIKEY,\r\n    indexName: 'products',\r\n    urlSync: true,\r\n    searchParameters: {\r\n        distinct: true\r\n    }\r\n});\r\n\r\nsearch.addWidget(\r\n    instantsearch.widgets.hits({\r\n        container: '#products',\r\n        templates: {\r\n            item: getTemplate('product'),\r\n            empty: getTemplate('no-results')\r\n        }\r\n    })\r\n);\r\n\r\nsearch.addWidget(\r\n    instantsearch.widgets.refinementList({\r\n        container: '#facet_cat_color',\r\n        attributeName: 'cat_color',\r\n        sortBy: ['isRefined', 'count:desc', 'name:asc'],\r\n        operator: 'or'\r\n);\r\nsearch.start();\r\n```\r\n\r\n**App**\r\n```\r\n$('#products-list').delegate('#facet_cat_color .ais-refinement-list--item', 'click', function() {\r\n    if ($('#facet_cat_color .ais-refinement-list--item.ais-refinement-list--item__active').length) {\r\n        search.helper.state.distinct = false;\r\n    } else {\r\n        search.helper.state.distinct = true;\r\n    }\r\n    search.start();\r\n});\r\n\r\n```\r\n**Bug: What is the expected behavior?**\r\nChange the search parameter\r\n\r\n**What project are you opening an issue for?**\r\n- instantsearch.js\r\n\r\n**What is the version you are using? Always use the latest one before opening a bug issue.**\r\ninstantsearch.js 1.11.2\r\n\r\n\r\n\r\nThanks\r\n",
@@ -11,35 +10,5 @@
     "number": 2044,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1489423191,
-      "body": "@MorenoDiDomenico Thanks for opening this issue.\r\n\r\nHere is an example that uses the searchFunction and methods to interogate the state of search instead of the DOM:\r\n\r\n```js\r\nconst search = instantsearch({\r\n  appId: APPID,\r\n  apiKey: APIKEY,\r\n  indexName: 'products',\r\n  urlSync: true,\r\n  searchFunction: function(h) {\r\n    if (search.helper.hasRefinements('cat_color')) {\r\n      search.helper.setQueryParameter('distinct', true);\r\n    } else {\r\n      search.helper.setQueryParameter('distinct', false);\r\n    }\r\n\r\n    h.search();\r\n  },\r\n});\r\n```",
-      "user": 393765,
-      "id": 286165462,
-      "reactions": {}
-    },
-    {
-      "date": 1489423816,
-      "body": "Thanks for your reply,\r\n\r\nI just found a solution (see above) but I suppose your is better.\r\n\r\n```\r\nvar search = instantsearch({\r\n    appId: APPID,\r\n    apiKey: APPKEY,\r\n    indexName: 'products',\r\n    urlSync: true,\r\n    searchFunction: function(helper){\r\n        if (helper.state.disjunctiveFacetsRefinements.cat_color) {\r\n            search.helper.state.distinct = false;\r\n        } else {\r\n            search.helper.state.distinct = true;\r\n        }\r\n        helper.search();\r\n    }\r\n});\r\n```\r\n\r\nThanks again.\r\n\r\n",
-      "user": 501663,
-      "id": 286168682,
-      "reactions": {}
-    },
-    {
-      "date": 1489511881,
-      "body": "Hello, \r\nI noticed that searchFunction() override the pagination behaviour, which now is broken.\r\n\r\nHow can I implement it?\r\n\r\nThanks.",
-      "user": 501663,
-      "id": 286494461,
-      "reactions": {}
-    },
-    {
-      "date": 1490030137,
-      "body": "@MorenoDiDomenico helper.setQueryParameter resets the page to 0. In order to prevent you can reassign the current page value or you can do the following:\r\n\r\n```js\r\nsearchFunction: function(h) {\r\n    if (search.helper.hasRefinements('cat_color')) {\r\n      search.helper.setState(search.helper.state.setQueryParameter('distinct', true));\r\n    } else {\r\n      search.helper.setState(search.helper.state.setQueryParameter('distinct', false));\r\n    }\r\n\r\n    h.search();\r\n}\r\n```\r\n\r\nYou can do this because setState does not impact the pagination.",
-      "user": 393765,
-      "id": 287831001,
-      "reactions": {}
-    }
-  ]
+  }
 }

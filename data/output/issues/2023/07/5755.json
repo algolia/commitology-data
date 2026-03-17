@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5755",
   "title": "`useCurrentRefinements` has erroneous behavior in `6.46.0`",
   "date": 1689358607,
   "body": "### 🐛 Current behavior\n\n**react-instantsearch-hooks**\r\n\r\nAfter upgrading from 6.43.0 to 6.46.0, we are running into an issue where the `items` value pulled from `useCurrentRefinements` is causing multiple, additional re-renders. It occurs whenever we use pagination (through `useInfiniteHits`) to load additional results.\r\n\r\nThis issue was **not** occurring in versions prior to 6.46.0.\n\n### 🔍 Steps to reproduce\n\nIn a component utilizing `useCurrentRefinements`, and utilizing pagination to load additional results, try loading in more results and notice that the `items` value from `useCurrentRefinements` is subsequently updated and causes the component to re-render.\n\n### Live reproduction\n\nnull\n\n### 💭 Expected behavior\n\n`items` from `useCurrentRefinements` should not cause a re-render after paginating additional items. \n\n### Package version\n\n6.46.0\n\n### Operating system\n\nreact-instantsearch-hooks\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,49 +17,5 @@
     "number": 5755,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1689581296,
-      "body": "I'm surprised this is the case as the logic should be equivalent, but this is likely caused by https://github.com/algolia/instantsearch/pull/5696. To try out if that's the issue, can you verify if 6.45.1 does not have the described issue?\r\n\r\nDo you have a reproduction of this behaviour so we can verify what's going on?",
-      "user": 6270048,
-      "id": 1637566806,
-      "reactions": {}
-    },
-    {
-      "date": 1689768588,
-      "body": "I am facing same issue with latest",
-      "user": 95462949,
-      "id": 1641969137,
-      "reactions": {}
-    },
-    {
-      "date": 1689769389,
-      "body": "Can you create a reproduction that shows how a render causes an issue @SupriyaPKalghatgi?",
-      "user": 6270048,
-      "id": 1641987009,
-      "reactions": {}
-    },
-    {
-      "date": 1689871342,
-      "body": "Hello @Haroenv 👋 \r\n\r\nSome context regarding @joshsmith-watchbox's comment: Our `scrollToTop()` function is being called multiple times when the `OnEndReached` pagination is successful. It appears that the `currentRefinement` hook is triggering the useEffect whenever new data is loaded. \r\n\r\n```\r\n  const scrollToTop = () => {\r\n\t\tflatListRef.current?.scrollToOffset({ offset: 0 })\r\n\t}\r\n\r\n\tuseEffect(() => {\r\n\t\tscrollToTop() \r\n\t}, [currentRefinements])\r\n\t\r\n        const onEndReached = () => {\r\n\t   if (!isLastPage) {\r\n\t       showMore()\r\n\t   }\r\n\t}\r\n\t\r\n\treturn (\r\n\t<FlatList\r\n\t\tref={flatListRef}\r\n\t\tdata={hits}\r\n\t        style={styles.flatListContainer}\r\n\t\tonEndReached={onEndReached}\r\n\t\tListHeaderComponent={renderHeaderComponent}\r\n\t\tListFooterComponent={renderFooterComponent}\r\n\t\trenderItem={({ item, index }) => (\r\n\t\t\t\t  <Hit hit={item} index={index} />\r\n\t\t\t\t)}\r\n\t\t/>\r\n\t)\r\n```",
-      "user": 12478104,
-      "id": 1644250517,
-      "reactions": {}
-    },
-    {
-      "date": 1690056645,
-      "body": "Also happening for me (only on production builds, using NextJS and hosted on Vercel for more context).",
-      "user": 748144,
-      "id": 1646663012,
-      "reactions": {}
-    },
-    {
-      "date": 1690186809,
-      "body": "Thanks for this report, I now see what's happening. We don't have any guarantees on how many times our hooks render, as just like in other React concepts (think strict mode) components should be resilient against rendering multiple times.\r\n\r\nWe're thus not guaranteeing that the `items` reference stays the same when the widget/hook renders multiple times.\r\n\r\nInstead of putting an array in the dependency of useEffect, you need to put a primitive (like a string), this actually breaks \"rules of hooks\" otherwise:\r\n\r\n```js\r\nuseEffect(() => cleanup, [items.join()])\r\n```\r\n\r\nAs this was the only code that was shared, I'll assume that all other commenters fall in the same case. Feel free to comment again and we can have a further look if your use case isn't fixed by this.",
-      "user": 6270048,
-      "id": 1647437789,
-      "reactions": {}
-    }
-  ]
+  }
 }

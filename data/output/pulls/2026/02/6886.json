@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:6886",
   "title": "feat(build): unify build system across monorepo",
   "date": 1770111848,
   "body": "## Summary\n\nThis PR unifies the build system across the entire monorepo by standardizing on **Rollup + SWC** for package builds and **Vite** for examples\n\nRelated: [FX-3692](https://algolia.atlassian.net/browse/FX-3692)\n\n## Changes\n\n### Build pipeline\n- Migrate transpilation from **Babel to SWC** for all packages\n- Simplify Babel config to **Jest/Storybook only**\n- Introduce shared Rollup configuration (`scripts/build/rollup.base.mjs`, `rollup.plugins.mjs`) to eliminate duplicated build logic across packages\n- Rewrite the Babel extension resolver as a Rollup plugin (`rollup-plugin-extension-resolver`) with CJS/ESM support and tests\n- Add a Rollup plugin to wrap warnings with `__DEV__` checks (replaces the Babel equivalent)\n- Add shared JSX pragma fix plugins and banner generation\n- Bump bundlesize thresholds slightly to reflect the new output (negligible deltas)\n\n### Package configs\n- Convert all package Rollup configs from `.js` to `.mjs` and refactor them to use the shared base config\n- Packages affected: `instantsearch.js`, `react-instantsearch`, `react-instantsearch-core`, `react-instantsearch-nextjs`, `react-instantsearch-router-nextjs`, `vue-instantsearch`, `algolia-experiences`, `algoliasearch-helper`, `instantsearch-ui-components`, `instantsearch-codemods`\n\n### Examples\n- Migrate all examples from **Parcel to Vite** (JS, React, Vue)\n- Migrate the React SSR example from **Webpack to Vite**\n- Add symlinks for UMD example local packages\n\n## Known issues\n\n- Vue SSR example is still not building\n\n## Breaking / Compatibility\n- IE11 compatibility unchanged (targets unchanged)\n- Build output filenames unchanged\n\n[FX-3692]: https://algolia.atlassian.net/browse/FX-3692?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ",
@@ -11,37 +10,5 @@
     "number": 6886,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1770113203,
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/6886/builds/667697) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 16126241d078a58eba2b00501ef2c53cf5828508:\n\n|Sandbox| Source |\n|--|--|\n|[example-instantsearch-getting-started](https://codesandbox.io/s/example-instantsearch-getting-started-96pzkd)| Configuration |\n|[example-react-instantsearch-getting-started](https://codesandbox.io/s/example-react-instantsearch-getting-started-pwz8my)| Configuration |\n|[example-react-instantsearch-next-app-dir-example](https://codesandbox.io/s/example-react-instantsearch-next-app-dir-example-83jkp5)| Configuration |\n|[example-react-instantsearch-next-routing-example](https://codesandbox.io/s/example-react-instantsearch-next-routing-example-wff798)| Configuration |\n|[example-vue-instantsearch-getting-started](https://codesandbox.io/s/example-vue-instantsearch-getting-started-ys896y)| Configuration |\n",
-      "user": 54081388,
-      "id": 3840342674,
-      "reactions": {}
-    },
-    {
-      "date": 1770308731,
-      "body": "are we still creating the same files / names as before? Otherwise it would be a breaking change I fear",
-      "user": 6270048,
-      "id": 3854755117,
-      "reactions": {}
-    },
-    {
-      "date": 1770319693,
-      "body": "> are we still creating the same files / names as before? Otherwise it would be a breaking change I fear\r\n\r\nYes, the output files and names are the same (UMD bundle file names + ESM/CJS output directories)",
-      "user": 662153,
-      "id": 3855770273,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1770894600,
-      "body": "> I notice that the cjs and esm builds for React InstantSearch (for example) are now bundled, but the original files are still importable as well (to avoid breaking change). This means however that identities between those are not equivalent anymore. If you use `<InstantSearch` from the root import and a widget or connector from its specific file, those will not match. Is there a way in rollup to avoid that? or build with swc directly to get a similar output as babel did before?\r\n\r\nIt should be better now. I used the `preserveModules: true` setting and multiple source entries with Rollup. I also disabled sourcemap generation.",
-      "user": 662153,
-      "id": 3890252531,
-      "reactions": {}
-    }
-  ]
+  }
 }

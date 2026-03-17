@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6409",
   "title": "React InstantSearch NextJS not compatible with NextJS 15 (stable release as of 10/21): Not handling async request apis",
   "date": 1729749572,
   "body": "### 🐛 Current behavior\n\nNextJS 15 became the official release on Monday, but InstantSearch Next doesn't work with the new asynchronous request apis causing several errors. InstantSearchNext.tsx and useInstantSearchRouting.ts both access headers incorrectly. Didn't see any references to Next15 compatibility in any issues or PRs, so wanted to open this up for people in the same boat as me.\n\n### 🔍 Steps to reproduce\n\n1. Setup NextJS project\r\n2. Use React InstantSearch NextJS\r\n3. Error!\n\n### Live reproduction\n\nN/A\n\n### 💭 Expected behavior\n\nN/A\n\n### Package version\n\nreact-instantsearch-nextjs 0.3.15\n\n### Operating system\n\nAll\n\n### Browser\n\nAll\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -20,71 +19,5 @@
       "👍️": 11
     },
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1730649719,
-      "body": "these are the headers being used:\r\n `headers().get('x-nonce')`\r\n`headers().get('x-forwarded-proto')`\r\n`headers().get('host')`. `headers()`\r\n\r\n\r\nshould be awaited before using its value. info: https://nextjs.org/docs/messages/sync-dynamic-apis\r\n\r\n\r\n![image](https://github.com/user-attachments/assets/8b817621-4280-4446-8c97-586969d77df1)\r\n",
-      "user": 13868698,
-      "id": 2453477594,
-      "reactions": {}
-    },
-    {
-      "date": 1730726581,
-      "body": "Maybe will it be fixed here?\r\n\r\nhttps://github.com/algolia/instantsearch/pull/6382",
-      "user": 26466516,
-      "id": 2454706298,
-      "reactions": {}
-    },
-    {
-      "date": 1730810749,
-      "body": "> Maybe will it be fixed here?\r\n> \r\n> #6382\r\n\r\nIt's not there",
-      "user": 13868698,
-      "id": 2457076150,
-      "reactions": {}
-    },
-    {
-      "date": 1730813404,
-      "body": "We'd be happy to look into a solution for this, and also accept a community PR. For now it seemed complex as the places we're using the headers are synchronous and early in the life cycle, so it's not clear where it should become asynchronous",
-      "user": 6270048,
-      "id": 2457190065,
-      "reactions": {
-        "👍️": 3
-      }
-    },
-    {
-      "date": 1731263077,
-      "body": "It makes sense. Maybe the way to go with it is to pass `headers` as a prop to `InstantSearchNext`. I took a quick look, and I believe this could be the easiest way to go. I'm not sure if `React.use()` will work given the scenario, and I don't think we can make `InstantSearchNext` a server component, right @Haroenv?",
-      "user": 26466516,
-      "id": 2466836258,
-      "reactions": {}
-    },
-    {
-      "date": 1731401732,
-      "body": "The component indeed needs to be mounted client-side as well so it can't be server-only. Passing headers top-level could be an option. If you pass headers, the synchronous calls could be conditional and there won't be a warning anymore right? \r\n\r\nIf that works, we'd be happy to receive a pull request that accepts \"static\" headers as alternative to reading them synchronous already. Thanks!",
-      "user": 6270048,
-      "id": 2469942800,
-      "reactions": {}
-    },
-    {
-      "date": 1731947490,
-      "body": "I get a different error when updating to NextJS 15 using `npx @next/codemod@canary upgrade latest` with the react 19 codemods - _'InstantSearch' cannot be used as a JSX component_.\r\n\r\nSame with all instantsearch react components 🤔 \r\n\r\n<img width=\"846\" alt=\"Screenshot 2024-11-18 at 15 17 34\" src=\"https://github.com/user-attachments/assets/74925ddb-33f6-4c01-bba0-a7b57cccc112\">\r\n",
-      "user": 72021142,
-      "id": 2483539183,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1732000434,
-      "body": "> I get a different error when updating to NextJS 15 using `npx @next/codemod@canary upgrade latest` with the react 19 codemods - _'InstantSearch' cannot be used as a JSX component_.\r\n> \r\n> Same with all instantsearch react components 🤔\r\n> \r\n> <img alt=\"Screenshot 2024-11-18 at 15 17 34\" width=\"846\" src=\"https://private-user-images.githubusercontent.com/72021142/387305506-74925ddb-33f6-4c01-bba0-a7b57cccc112.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzIwMDAzMDUsIm5iZiI6MTczMjAwMDAwNSwicGF0aCI6Ii83MjAyMTE0Mi8zODczMDU1MDYtNzQ5MjVkZGItMzNmNi00YzAxLWJiYTAtYTdiNTdjY2NjMTEyLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDExMTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMTE5VDA3MDY0NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTA0MWVkNDU0ODVlZGI4ZGUzY2QzYjAzODZjNzkyMjQ1MDNkODEzZGQ3YjM0OGVmZTM0ZGVmNzcxNTM2ZTIwOGEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.cIYRcdOweR8Jz5GvG5xfiOa5umee31FpcdUFtm3a4dQ\">\r\n\r\nI managed to fix this by manually declaring and defining the types in the `global.d.ts` file in my root project and exporting the component type accordingly to the new TypeScript rules introduced:\r\n```\r\ndeclare module 'react-instantsearch' {\r\n  export function RangeInput(props: RangeInputProps): ReactNode;\r\n  export function SortBy(props: SortByProps): ReactNode;\r\n  export function InstantSearch(props: InstantSearchProps): ReactNode;\r\n  export function Configure(props: ConfigureProps): ReactNode;\r\n  export function Hits(props: HitsProps): ReactNode;\r\n}\r\n\r\n// For Next.js library\r\ndeclare module 'react-instantsearch-nextjs' {\r\n  export function InstantSearchNext(props: InstantSearchNextProps): ReactNode;\r\n}\r\n```\r\n\r\nThis ensures that TypeScript recognizes these components and provides proper type checking and IntelliSense support, this is likely a temporary solution until the library maintainers update their type definitions to be compatible with the latest Next.js and TypeScript versions. \r\n\r\n@Haroenv hopefully this will be helpful for future references to this issue",
-      "user": 68327588,
-      "id": 2484866245,
-      "reactions": {
-        "❤️": 1,
-        "👍️": 2,
-        "😕": 1
-      }
-    }
-  ]
+  }
 }

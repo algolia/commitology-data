@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1431",
   "title": "How to trigger event?",
   "date": 1476779645,
   "body": "Say, for example: I want to trigger the clear filters action on demand how would I go about that? I noticed that the script does not use normal registration of events (or from what the Chrome debugger says at least)\n",
@@ -18,65 +17,5 @@
     "number": 1431,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1476794706,
-      "body": "Hi @Sammaye could you maybe create a small jsFiddle to show how far you went in term of trying to trigger a click on the clear button programmatically?\n\nThanks\n",
-      "user": 123822,
-      "id": 254495807,
-      "reactions": {}
-    },
-    {
-      "date": 1476798994,
-      "body": "I can actually do better: I can give over a URL:\n\nhttps://nhbs-webapp-sammaye.c9users.io/browse/beta-search?q=&hPP=20&idx=titles&p=0&is_v=1\n\nBasically in the source code you will see:\n\n``` javsascript\n$('#navSearchForm .site-search-input').on('keyup', function(){\n    console.log($('#navSearchForm .site-search-input').val().length);\n    if($('#navSearchForm .site-search-input').val().length <= 0){\n        console.log(search);\n        $('.btn-clear-all-filters').trigger('click');\n    }\n});\n```\n\nI have checked it gets down to: `console.log(search);` but I inspect the elements in the debugger and their events are empty and I cannot seem to trigger the button's click\n",
-      "user": 323996,
-      "id": 254515184,
-      "reactions": {}
-    },
-    {
-      "date": 1476799288,
-      "body": "Indeed jQuery.trigger will not work here since jQuery.trigger only triggers events that were registered through jQuery event handling.\n\nYou might have better results by using this: https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Creating_and_triggering_events#Triggering_built-in_events\n\nOr any non jQuery way to trigger a click. Try this and if it does not work you will have to create a [custom widget](https://community.algolia.com/instantsearch.js/documentation/#custom-widgets) and use the [helper](https://community.algolia.com/algoliasearch-helper-js/) inside it.\n",
-      "user": 123822,
-      "id": 254516606,
-      "reactions": {}
-    },
-    {
-      "date": 1476799508,
-      "body": "Problem is that code is IE 11 and up by that document. Is there anything that support less? I mean we run the js on jquery 1.13 and it seems to work just great so maybe there is a hacky way?\n",
-      "user": 323996,
-      "id": 254517666,
-      "reactions": {}
-    },
-    {
-      "date": 1476801108,
-      "body": "Ok so actually I misread the document, the old fashioned way (which I had forgotten since using jQuery) works\n",
-      "user": 323996,
-      "id": 254526200,
-      "reactions": {}
-    },
-    {
-      "date": 1476806969,
-      "body": "Awesome, can you provide the detailed fix you used? For further reference.\n",
-      "user": 123822,
-      "id": 254557840,
-      "reactions": {}
-    },
-    {
-      "date": 1476809120,
-      "body": "So, I changed my function to be:\n\n``` javascript\nvar event; // The custom event that will be created\n$('#navSearchForm .site-search-input').on('keyup', function(){\n    if($('#navSearchForm .site-search-input').val().length <= 0){\n        if(document.createEvent){\n            event = document.createEvent(\"Event\");\n            event.initEvent(\"click\", true, true);\n        }else{\n            event = document.createEventObject();\n            event.eventType = \"click\";\n        }\n        event.eventName = \"click\";\n\n        if(document.createEvent){\n            document\n                .getElementsByClassName('btn-clear-all-filters')[0]\n                .dispatchEvent(event);\n        }else{\n            document\n                .getElementsByClassName('btn-clear-all-filters')[0]\n                .fireEvent(\"on\" + event.eventType, event);\n        }\n    }\n});\n```\n",
-      "user": 323996,
-      "id": 254567659,
-      "reactions": {}
-    },
-    {
-      "date": 1476809313,
-      "body": "Thanks!\n",
-      "user": 123822,
-      "id": 254568564,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

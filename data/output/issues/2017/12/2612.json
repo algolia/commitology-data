@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2612",
   "title": "Webpack and Typescript, v2.3.0 Error: Can't resolve 'react'",
   "date": 1512165948,
   "body": "I'm using Webpack 3 and Typescript, and I have been including `instantsearch.js` in my files like so:\r\n```typescript\r\nimport * as instantsearch from 'instantsearch.js';\r\n```\r\nThis has been working fine.\r\n\r\nI recently tried upgrading from `2.0.2` to `2.3.0` and [I followed your es6 example in your v2 documentation](https://community.algolia.com/instantsearch.js/v2/guides/usage.html#optimize-your-build-with-tree-shaking):\r\n```typescript\r\nimport instantsearch from 'instantsearch.js/es';\r\nimport { searchBox } from 'instantsearch.js/es/widgets';\r\nconst search = instantsearch(/* parameters */);\r\nsearch.addWidget(\r\n    searchBox({\r\n        container: '#search-input'\r\n    })\r\n);\r\n```\r\nHowever I am running into trouble.\r\nI get the following errors when I try initializing a widget.\r\n```bash\r\nERROR in ./node_modules/instantsearch.js/es/components/MenuSelect.js\r\nModule not found: Error: Can't resolve 'react' in 'C:\\Users\\mattucci\\Documents\\Visual-Studio-2017\\Projects\\Ontariocolleges\\Ontariocolleges\\node_modules\\instantsearch.js\\es\\components'\r\n @ ./node_modules/instantsearch.js/es/components/MenuSelect.js 11:0-41\r\n @ ./node_modules/instantsearch.js/es/widgets/menu-select/menu-select.js\r\n @ ./node_modules/instantsearch.js/es/widgets/index.js\r\n @ ./Content/Scripts/search/search-programs-instantsearch.ts\r\n @ ./Content/Scripts/pages/program-search.ts\r\n\r\nERROR in ./node_modules/instantsearch.js/es/widgets/menu-select/menu-select.js\r\nModule not found: Error: Can't resolve 'react' in 'C:\\Users\\mattucci\\Documents\\Visual-Studio-2017\\Projects\\Ontariocolleges\\Ontariocolleges\\node_modules\\instantsearch.js\\es\\widgets\\menu-select'\r\n @ ./node_modules/instantsearch.js/es/widgets/menu-select/menu-select.js 1:0-26\r\n @ ./node_modules/instantsearch.js/es/widgets/index.js\r\n @ ./Content/Scripts/search/search-programs-instantsearch.ts\r\n @ ./Content/Scripts/pages/program-search.ts\r\n\r\nERROR in ./node_modules/instantsearch.js/es/widgets/menu-select/menu-select.js\r\nModule not found: Error: Can't resolve 'react-dom' in 'C:\\Users\\mattucci\\Documents\\Visual-Studio-2017\\Projects\\Ontariocolleges\\Ontariocolleges\\node_modules\\instantsearch.js\\es\\widgets\\menu-select'\r\n @ ./node_modules/instantsearch.js/es/widgets/menu-select/menu-select.js 2:0-33\r\n @ ./node_modules/instantsearch.js/es/widgets/index.js\r\n @ ./Content/Scripts/search/search-programs-instantsearch.ts\r\n @ ./Content/Scripts/pages/program-search.ts\r\n```\r\nWhat am I doing wrong in including the widget modules and why is it asking for react as a dependency? :(",
@@ -18,108 +17,5 @@
     "number": 2612,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1512230375,
-      "body": "Could you make this available as a repository so we can help debug? \r\n\r\nCan you try adding preact as alias for react too? https://github.com/developit/preact-compat#usage-with-webpack",
-      "user": 6270048,
-      "id": 348701172,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1512381118,
-      "body": "@Giovanni-Mattucci Is menu-select the only widget that triggers the error? Have you had the error  when using 2.0.2?\r\n\r\nThanks",
-      "user": 393765,
-      "id": 348912455,
-      "reactions": {}
-    },
-    {
-      "date": 1512397050,
-      "body": "@Haroenv @bobylito So I added the alias in webpack and now everything is working fine 👍\r\n```js\r\nresolve: {\r\n            extensions: ['.ts', '.js'],\r\n            alias: {\r\n                'react': 'preact-compat',\r\n                'react-dom': 'preact-compat'\r\n            }\r\n}\r\n```\r\n@bobylito I never had the issue with 2.0.2, and it is only ~~those two widgets~~ the one widget `MenuSelect` that the error comes up for, which I am not using by the way. [(update)](https://github.com/algolia/instantsearch.js/issues/2612#issuecomment-349061638)\r\n\r\nOh and @Haroenv, sorry I can't put up my code, I'm working with a private repo.",
-      "user": 3605905,
-      "id": 348974441,
-      "reactions": {
-        "🎉": 1,
-        "👍️": 2,
-        "🚀": 1
-      }
-    },
-    {
-      "date": 1512405875,
-      "body": "> @Haroenv @bobylito So I added the alias in webpack and now everything is working fine 👍\r\n\r\nOk, so we have a quick fix 👍 \r\n\r\n> @bobylito I never had the issue with 2.0.2, and it is only those two widgets that the error comes up for, which I am not using by the way.\r\n\r\nThat is very very helpful. By the way, which is the second widget?\r\n\r\n> Oh and @Haroenv, sorry I can't put up my code, I'm working with a private repo.\r\n\r\nThat's understood thanks. We'll have to try to reproduce the issue on our side.\r\n",
-      "user": 393765,
-      "id": 349022091,
-      "reactions": {}
-    },
-    {
-      "date": 1512405911,
-      "body": "Do you happen to use InstantSearch.js with Angular or another framework?",
-      "user": 393765,
-      "id": 349022286,
-      "reactions": {}
-    },
-    {
-      "date": 1512409753,
-      "body": "We should document somewhere that in some cases you'll need to alias react to preact, or else we can maybe do the transform with babel?",
-      "user": 6270048,
-      "id": 349044554,
-      "reactions": {}
-    },
-    {
-      "date": 1512412886,
-      "body": "@bobylito oh sorry I was confused, only that one module, MenuSelect. I looked quickly at the error and saw two different files, `MenuSelect.js` and `menu-select.js` and thought it was two different modules.\r\n\r\nWe do use instantsearch with Angular, but an older version. Haven't started using the new Angular native instantsearch. We will look into using it once [this issue is closed](https://github.com/algolia/angular-instantsearch/issues/44), it's a big one for us. \r\n",
-      "user": 3605905,
-      "id": 349061638,
-      "reactions": {}
-    },
-    {
-      "date": 1512472011,
-      "body": "If you're integrating into a framework, you shouldn't need any widgets. The idea is that you should be able to delegate all the rendering using connectors, which don't have any dependency on React for sure.",
-      "user": 393765,
-      "id": 349271906,
-      "reactions": {}
-    },
-    {
-      "date": 1518619721,
-      "body": "@bobylito I've removed the [aliases](https://github.com/algolia/instantsearch.js/issues/2612#issuecomment-348974441) since upgrading to `2.5.1` and I'm not having the problem anymore :) \r\n\r\nI see the fix got incorporated into `2.3.2` so I guess we can consider this closed?",
-      "user": 3605905,
-      "id": 365629550,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1518621032,
-      "body": "This should have been fixed since #2618. All references now point to `preact-compat` or `preact` in the code. Thanks for reminding us of this issue @Giovanni-Mattucci ",
-      "user": 6270048,
-      "id": 365636667,
-      "reactions": {
-        "🎉": 1
-      }
-    },
-    {
-      "date": 1520697031,
-      "body": "@Giovanni-Mattucci Is there a chance to get in contact with you? We are using Laravel with Laravel-mix (Webpack) and want to upgrade instantsearch.js from version 2.0.2 to 2.6.* but we are getting Reference Errors in our JS Files and we have no idea why that happens after upgrade to version 2.6.*",
-      "user": 35344186,
-      "id": 372039849,
-      "reactions": {}
-    },
-    {
-      "date": 1520697769,
-      "body": "Please post a reproduction repository @devprojectsapps?",
-      "user": 6270048,
-      "id": 372040741,
-      "reactions": {}
-    },
-    {
-      "date": 1520704077,
-      "body": "@devprojectsapps yes, please post reproduction repo and details of the error if you are looking for help. We would need to see what kind of JS compiling environment you have. I am using Webpack + Typescript and CommonJS modules.",
-      "user": 3605905,
-      "id": 372049003,
-      "reactions": {}
-    }
-  ]
+  }
 }

@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6479",
   "title": "Duplicate Results in scopedResults with Routing Enabled in NextJS",
   "date": 1734519073,
   "body": "### 🐛 Current behavior\n\nWhen routing is enabled, navigating from one page to another page that displays search results (where a search parameter maps to the query used by Algolia) leads to duplicated entries in the scopedResults array returned by the useInstantSearch hook.\r\n\r\nThis issue occurs in a setup where we are using multi-index search with `InstantSearchNext`.\r\n\n\n### 🔍 Steps to reproduce\n\n**Steps to Reproduce:**  \r\n1. Open the homepage and ensure the browser’s developer tools are open with the console tab selected.  \r\n2. Click the button labeled \"Click\"  \r\n3. The user is navigated to the search results page, where the search parameter is set to `q=london`.  \r\n4. Observe the `scopedResults` array in the console:  \r\n   - Initially, it logs a single array containing the default index.  \r\n   - Shortly after, it updates to a much larger array, which includes duplicate entries for the indexes on the page.  \n\n### Live reproduction\n\nhttps://codesandbox.io/p/devbox/beautiful-maria-g85swl\n\n### 💭 Expected behavior\n\nThe scopedResults do not contain duplicates.\n\n### Package version\n\nnext 15.0.4, react-instantsearch 7.13.9, react-instantsearch-nextjs 0.3.20, algoliasearch 5.17.1\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,79 +17,5 @@
     "number": 6479,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1734525856,
-      "body": "There's multiple things going on here:\r\n\r\n1. multiple results\r\n\r\nThis is because the main index has the same index name as the explicitly rendered index. This seems like a bug in useInstantSearch where it reads the results for all indices without deduplicating by indexId.\r\n\r\n2. not all results showing up initially.\r\n\r\nThis will be related to timing where useInstantSearch is called _before_ it renders the child indices, and thus they aren't available in scoped results. In theory they should be available as the search happens backend and all results are available for the other widgets, so this likely is also a bug in useInstantSearch. You can work around this by rendering your scopedResults using code _after_ the indices are mounted (in a child component of the Search in your example, underneath the Index components.\r\n\r\nI'd like to look into if this pattern can be made possible in InstantSearch and the duplicate results can be fixed.\r\n\r\nWhat use case are you trying to create with scopedResults? Maybe you could use `useConnector(connectAutocomplete)` instead and it normally will be correct. ",
-      "user": 6270048,
-      "id": 2551232166,
-      "reactions": {}
-    },
-    {
-      "date": 1734529882,
-      "body": "We are using `scopedResults` to calculate the total number of hits returned across all indices. However, due to the duplicate results, the total hit count we calculate is incorrect.  \r\n\r\nIf this can be achieved using `useConnector`, could you kindly provide an example demonstrating how to implement it?  ",
-      "user": 95747586,
-      "id": 2551378437,
-      "reactions": {}
-    },
-    {
-      "date": 1734533197,
-      "body": "The duplicate can be solved by removing (filtering out) the first result, as it's the same as the result of the root index. I've checked and unfortunately connectAutocomplete has the same behaviour.\r\n\r\nFor ensuring this always renders the results (even on the server, before we find where the bug is happening), you can render the stats after the indices are mounted.",
-      "user": 6270048,
-      "id": 2551506881,
-      "reactions": {}
-    },
-    {
-      "date": 1734596923,
-      "body": "I’m not sure how removing the first result would resolve the duplication issue in `scopedResults`. The problem isn’t limited to the root index being duplicated—all indexes rendered on the search page are duplicated. I’ve attached a screenshot of the logs from the sandbox below to illustrate this. As shown, `scopedResults` contains 247 entries, including duplicates for both the root index and the indexes rendered on the page.\r\n\r\n<img width=\"575\" alt=\"image\" src=\"https://github.com/user-attachments/assets/2f75cd08-dab8-4361-a74f-028c379548cb\" />\r\n\r\n\r\nAdditionally, if you navigate to the search page by clicking the \"Click\" button and then refresh the page, the duplicates are no longer present, and `scopedResults` appears correct, apart from the root index being listed twice.\r\n\r\nThe duplication of indexes in `scopedResults` only seems to occur when navigating to the search page from another page, not when the search page is loaded directly. \r\n",
-      "user": 95747586,
-      "id": 2553064520,
-      "reactions": {}
-    },
-    {
-      "date": 1734597390,
-      "body": "That's weird, I can't reproduce it! I just see three results in the output:\r\n\r\n<img width=\"615\" alt=\"Screenshot 2024-12-19 at 09 35 53\" src=\"https://github.com/user-attachments/assets/cf815d3a-014b-476c-ad2a-3957c85d787d\" />\r\n\r\nAre you reproducing that on codesandbox? do you need to do anything special for it to happen?",
-      "user": 6270048,
-      "id": 2553079570,
-      "reactions": {}
-    },
-    {
-      "date": 1734597952,
-      "body": "That’s strange, I’m reproducing this issue on the provided CodeSandbox using the following steps:\r\n\r\n1. Click the \"Click\" button on the home page.\r\n2. Wait for the results to load in the console.\r\n3. Observe that `scopedResults` contains a large number of entries in the array, including duplicates.\r\n\r\nI’ve attached a video below showing the issue as it appears for me in the CodeSandbox.\r\n\r\nhttps://github.com/user-attachments/assets/2a67743f-3c89-4b20-b420-6cf040ac871f\r\n\r\n",
-      "user": 95747586,
-      "id": 2553097267,
-      "reactions": {}
-    },
-    {
-      "date": 1734606707,
-      "body": "Ah I see, only when you're loading the page on a navigation, not when it's loaded ad-hoc. I can reproduce it but I don't find the source of the problem yet.",
-      "user": 6270048,
-      "id": 2553444088,
-      "reactions": {}
-    },
-    {
-      "date": 1737104222,
-      "body": "Hey @AmeerSapadmi  @Haroenv ! My team and I are also encountering issues with scoped results. Are there any updates on this topic?",
-      "user": 87373908,
-      "id": 2597738009,
-      "reactions": {}
-    },
-    {
-      "date": 1737105737,
-      "body": "@aymeric-giraudet is working on a solution. He's expecting it could be related to a shared next InstantSearch root component, so maybe it's an option to put the root only on a single page in your case to avoid this.",
-      "user": 6270048,
-      "id": 2597787519,
-      "reactions": {
-        "🚀": 1
-      }
-    },
-    {
-      "date": 1737108718,
-      "body": "Awesome! May the force be with you @aymeric-giraudet!",
-      "user": 87373908,
-      "id": 2597888110,
-      "reactions": {}
-    }
-  ]
+  }
 }

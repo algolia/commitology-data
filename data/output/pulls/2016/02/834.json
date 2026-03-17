@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:834",
   "title": "Perf improvements: shouldComponentUpdate, less bind, Number.prototype.toLocaleString",
   "date": 1455125892,
   "body": "This is a pretty big PR splitted in 3 main improvements:\n- use babel specific [react optimizations](https://facebook.github.io/react/blog/2015/10/07/react-v0.14.html#compiler-optimizations) 95f940c078fba362592245c4c23422f51d317c63\n- stop passing the locale to Number.prototype.formatNumber (see https://jsperf.com/number-prototype-tolocalestring) b05655444d69786a534cb6a0ab714cd65e1119ef\n- use shouldComponent update and compare props before asking to re-render b91603fe0d2b59e0911809656baabd99879ff76c\n\nTo measure the results, I used the [instant search demo](https://github.com/algolia/examples/tree/master/instant-search/instantsearch.js).\n\nWarming up the interface with some queries, I then did 10 (manual) JavaScript profile measurements. I would:\n- hit \"start profiling\"\n- put \"c\" letter in searchbox\n- hit \"stop profiling\"\n\nDoing so 10 times, taking the fastest render time.\n\nIn the JS flame chart, the main instantsearch.js render() function highlighted. Then you have the profiling table with the slowest calls.\n\n**BEFORE**\n![2016-02-10-181541_1946x616_scrot](https://cloud.githubusercontent.com/assets/123822/12955578/05e35428-d024-11e5-8659-e9c31007f1bf.png)\n![2016-02-10-181726_985x773_scrot](https://cloud.githubusercontent.com/assets/123822/12955584/19b092ea-d024-11e5-8683-73c79f94ea2b.png)\n\nRender is ~33ms, createElement and formatNumber are the two most called functions.\n\n**AFTER**\n\n![2016-02-10-181559_2125x633_scrot](https://cloud.githubusercontent.com/assets/123822/12955604/2a46a34c-d024-11e5-813e-b2da03663d89.png)\n![2016-02-10-181701_975x608_scrot](https://cloud.githubusercontent.com/assets/123822/12955611/30a65a0c-d024-11e5-9419-200979b0e37a.png)\n\nRender is ~23ms\n\nSo that's 10ms better, or 30% faster.\n\nWe still have room for improvements, it seems that now a good time is spent in the helper (parseNumbers) and in the slider (adding pips).\n",
@@ -11,49 +10,5 @@
     "number": 834,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1455125907,
-      "body": "By analyzing the blame information on this pull request, we identified @pixelastic, @maxiloc and @Jerskouille to be potential reviewers\n",
-      "user": 16079583,
-      "id": 182496429,
-      "reactions": {}
-    },
-    {
-      "date": 1455141159,
-      "body": "I can't believe that < 100 `formatNumber` calls would take 3ms, just wow. Great profiling :+1: \n",
-      "user": 5095856,
-      "id": 182597602,
-      "reactions": {}
-    },
-    {
-      "date": 1455146440,
-      "body": "I would also unfold a few minified functions (`r` or just run the code without minification :tired_face:) to see what code is behind, a bunch of them are still consuming 2-5% of the time.\n",
-      "user": 29529,
-      "id": 182632189,
-      "reactions": {}
-    },
-    {
-      "date": 1455183023,
-      "body": "> I would also unfold a few minified functions (r or just run the code without minification ) to see what code is behind, a bunch of them are still consuming 2-5% of the time.\n\nWe can do so by running the dev example, here it was using a production build to precisely measure the results. But if we want to go further, we can, come at my performance office when you want :D\n",
-      "user": 123822,
-      "id": 182780786,
-      "reactions": {}
-    },
-    {
-      "date": 1455183058,
-      "body": "> I can't believe that < 100 formatNumber calls would take 3ms, just wow. Great profiling\n\nYes, I was like \"COME.ON!\", thanks :)\n",
-      "user": 123822,
-      "id": 182780889,
-      "reactions": {}
-    },
-    {
-      "date": 1455195935,
-      "body": "So we stll have room for improvements but we can iterate on it later on.\n",
-      "user": 123822,
-      "id": 182855273,
-      "reactions": {}
-    }
-  ]
+  }
 }

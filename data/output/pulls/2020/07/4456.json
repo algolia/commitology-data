@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:4456",
   "title": "feat(insights): send events from hits and refinementList (2/4)",
   "date": 1595924005,
   "body": "<!--\r\n  Thanks for submitting a pull request!\r\n  Please provide enough information so that others can review your pull request.\r\n-->\r\n\r\n## Summary\r\n\r\nThis PR improves `insights` middleware to send events.\r\nThis PR also\r\n- exposes `sendEvent` to `connectRefinementList`\r\n- exposes `sendEvent` and `bindEvent` to `connectHits`\r\n- exposes `bindEvent` to `Hits` and its temlate\r\nto demonstrate how in practice it could work.\r\n\r\n[example](https://codesandbox.io/s/instantsearchjs-c9s30?file=/src/app.js) → It works when you check something in the `refinementList` and click any buttons in the `hits` and the custom hits widgets. (You can see the network panel of your browser to inspect the events sent to Algolia Insights)\r\n\r\n**Stacked PRs**\r\n1. [introduce `insights` middleware](https://github.com/algolia/instantsearch.js/pull/4446)\r\n2. [send events from hits and refinementList](https://github.com/algolia/instantsearch.js/pull/4456) ← current\r\n3. [implement sendEvent in all the connectors](https://github.com/algolia/instantsearch.js/pull/4463)\r\n4. [add tests](https://github.com/algolia/instantsearch.js/pull/4464)\r\n\r\n## Two cases\r\n\r\n1. The facet related connectors will run `sendEvent('click', ...)` along with `refine` and expose `sendEvent` to component layer.\r\n2. The hit related connectors will run `sendEvent('view', ...)` when rendering items and expose `sendEvent` to component layer. It will also expose `bindEvent` to templates which will be handled by insightsListener.\r\n\r\nWe expose `instantSearchInstance.sendEventToInsights()`:\r\n- which is called in connectors\r\n- which can be used by users when they manually want to send events\r\n\r\n## Details about the design\r\n\r\n<details>\r\n<summary>How to let users sendEvent from `hits` and `infiniteHits`?</summary>\r\n\r\n### `click` or `conversion` events from `connectHits`\r\n\r\nWe need to provide a way for users to send `click` or `conversion` events.\r\n\r\n#### Case 1. custom widget\r\n\r\nUsers can create custom components by using connectors:\r\n\r\n```js\r\nlet listener;\r\nconst renderFn = (renderOptions) => {\r\n  const { hits, sendEvent } = renderOptions;\r\n\r\n  const elem = /* ... */;\r\n  if (listener) {\r\n    elem.removeEventListener(\"click\", listener);\r\n  }\r\n  listener = (event) => {\r\n    const index = /* ... */;\r\n    const hit = hits[index];\r\n    sendEvent('conversion', hit, \"Product Bookmarked\");  // or 'click'\r\n    // ↑ I've got feedback from Mathieu that we cannot use default event names for 'click' and 'conversion' in the context of hits.\r\n    // It's because there can be many different types of clicks and conversions. Moreover the event names are used by Perso. So we should leave it to the users.\r\n  }\r\n  elem.addEventListener(\"click\", listener);\r\n};\r\nconst customWidget = connectHits(renderFn);\r\n```\r\n\r\nAnd they can use `sendEvent` exposed by the connector. So this it looks okay in this case.\r\n\r\n#### Case 2. template\r\n\r\n`hits` and `infiniteHits` widgets are normally used with the `item` template.\r\n\r\n```js\r\ntemplates: {\r\n  item(hit) {\r\n    const html = /* ... */;\r\n    return html;\r\n  },\r\n},\r\n```\r\n\r\nIn this case, even if we expose `sendEvent` as in `item(hit, sendEvent, eventName)`, it's not easy to use because at this stage we don't have DOM element to attach event listeners.\r\n\r\nAnd even if we try to add event listeners outside the InstantSearch lifecycle,\r\n\r\n```js\r\nsearch.addWidgets([\r\n  hits({\r\n    container: \"#hits\",\r\n    templates: {\r\n      item(hit) {\r\n        /* ... */\r\n      },\r\n    },\r\n  }),\r\n]);\r\n\r\ndocument.querySelector(\"#hits\").addEventListener(\"click\", (event) => {\r\n  // How do we get `hit` object here?\r\n});\r\n```\r\n\r\nSo, in the end, we go back to what we've been doing:\r\n\r\n```js\r\ntemplates: {\r\n  item: (hit) => `\r\n    <button ${instantsearch.insights(\"clickedObjectIDsAfterSearch\", {\r\n      eventName: \"click-result\",\r\n      objectIDs: [hit.objectID],\r\n    })}>\r\n      Click event\r\n    </button>\r\n  `;\r\n}\r\n```\r\n\r\nSimilarly,\r\n\r\n```js\r\ntemplates: {\r\n  item: (hit, bindEvent) => `\r\n    <button ${bindEvent(\"click\", hit, \"Product Bookmarked\")}>\r\n      Click event\r\n    </button>\r\n  `;\r\n}\r\n```\r\n\r\n`bindEvent` is similar to `sendEvent`, but instead of delivering it to `insights` middleware, it returns a string like the following:\r\n\r\n```js\r\nreturn `data-insights-event=\"${btoa(JSON.stringify({ widgetType, eventType, aaMethod, payload ))}\"`\r\n```\r\n\r\nAnd we can extend [insightsListener](https://github.com/algolia/instantsearch.js/blob/master/src/lib/insights/listener.tsx#L26:L26) to handle this data- attribute.\r\n\r\nAccording to this addition, I'm in favor of deprecating the old way of\r\n\r\n```js\r\n    <button ${instantsearch.insights(\"clickedObjectIDsAfterSearch\", {\r\n      eventName: \"click-result\",\r\n      objectIDs: [hit.objectID],\r\n    })}>\r\n      Click event\r\n    </button>\r\n```\r\nand things related to it (for example, `withInsights` and `withInsightsListener`).\r\n</details>\r\n\r\n<details>\r\n<summary>Sending custom events</summary>\r\n\r\nIf users want to send raw custom event without any implication, they can call `search.sendEventToInsights(args)` and `args` will be sent to `insights` middleware if being used.\r\nThe minimum `args` for Algolia Insights is `{ aaMethod, payload }`. The full signature is `{ widgetType, eventType, aaMethod, payload }`.\r\n\r\n</details>\r\n\r\n<details>\r\n<summary>Default event names</summary>\r\n\r\n### Facet\r\nWe normally send only `click` event from these connectors: connectRefinementList, connectBreadcrumb, ...\r\nAnd its default event name is `Filter Applied`, which makes sense.\r\n\r\n### Hit\r\nHere we could have all of three types of events:\r\n- view\r\n- click\r\n- conversion\r\n\r\nIn case of `view`, we can safely use `Hits Viewed` as a default event name.\r\n\r\nHowever in case of `click` or `conversion`, we cannot force any default event name because there can be different types of events and if we use a default name for all, it can affect the quality of personalization. So we do not have any default name and let users decide.\r\n</details>",
@@ -13,92 +12,5 @@
       "👍️": 1
     },
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1595924120,
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch.js/pr/4456/builds/50667) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 6ee7a40cd3f07019f87eb5b956fa68bc43db34ce:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-dc8g0)| Configuration |\n|[InstantSearch.js](https://codesandbox.io/s/instantsearchjs-9sspy)| PR |\n",
-      "user": 54081388,
-      "id": 664850592,
-      "reactions": {}
-    },
-    {
-      "date": 1596035954,
-      "body": "After discussing with Mathieu, \r\nin case of hit releated events, we cannot use a default event name for \"click\" and \"conversion\".\r\nSo the signature becomes\r\n\r\n```js\r\nsendEvent(eventType, hits, eventName);\r\n\r\nsendEvent(\"conversion\", hits, \"Product Bookmarked\");\r\n```\r\n\r\nI've added this in the summary of this PR.",
-      "user": 499898,
-      "id": 665728289,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1596036572,
-      "body": "> ✅ for the API now, exact events still need to be validated IMO\r\n\r\n@Haroenv Do you mean you want to see a sample or to see all the events (which we defined) to be implemented?\r\n\r\nIf the former, [this example](https://codesandbox.io/s/instantsearchjs-c9s30?file=/src/app.js) correctly sends events to Insights when you click any buttons in the hits or custom hits.",
-      "user": 499898,
-      "id": 665734270,
-      "reactions": {}
-    },
-    {
-      "date": 1596100870,
-      "body": "only hits & refinementlist seem to have been implemented, not menu, hierarchical menu etc, is that expected?",
-      "user": 6270048,
-      "id": 666253520,
-      "reactions": {}
-    },
-    {
-      "date": 1596100936,
-      "body": "> only hits & refinementlist seem to have been implemented, not menu, hierarchical menu etc, is that expected?\r\n\r\nIt's intended. This PR seems to be big enough, so I was thinking of stacking another PR on top of this.",
-      "user": 499898,
-      "id": 666254049,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1596197104,
-      "body": "unit tests and lint are fixed in [the next(3rd) PR](https://github.com/algolia/instantsearch.js/pull/4463)",
-      "user": 499898,
-      "id": 667086507,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1598867495,
-      "body": "At every render we now send `widgetCount + search = widgetCount + 1` network requests, which is linear and seems huge. We could achieve `1 + 1 = 2` network requests if we batch the calls to the Algolia `events` endpoint.\r\n\r\nWould it be possible to do so?",
-      "user": 6137112,
-      "id": 683681463,
-      "reactions": {}
-    },
-    {
-      "date": 1598968767,
-      "body": "only the (infinite)hits widget sends view events, right?",
-      "user": 6270048,
-      "id": 684874992,
-      "reactions": {}
-    },
-    {
-      "date": 1598980852,
-      "body": "@Haroenv If you refine an item in a RefinementList, it calls the `events` endpoint twice:\r\n\r\n- RefinementList: filter clicked\r\n- Hits: viewed\r\n\r\nMy point was that we should (at some point) batch these two in a single network request.",
-      "user": 6137112,
-      "id": 685013033,
-      "reactions": {}
-    },
-    {
-      "date": 1599049397,
-      "body": "> @Haroenv If you refine an item in a RefinementList, it calls the `events` endpoint twice:\r\n> \r\n>     * RefinementList: filter clicked\r\n> \r\n>     * Hits: viewed\r\n> \r\n> \r\n> My point was that we should (at some point) batch these two in a single network request.\r\n\r\n@francoischalifour I missed your feedback before.\r\n\r\n(1) When a page is rendered, `view` event will be sent from hits/infiniteHits.\r\n(2) And when user clicks on refinementList, then `click` will be sent.\r\n\r\nThere should be a time gap between (1) and (2).\r\n(1) is programmatic and (2) is triggered by user action.\r\n\r\nIf there are a bunch of events sent programmatically, then we could batch them in a bucket of 1 second or something like that. For example, if a user has multiple hits or infiniteHits widgets on a single page, then multiple `view` events could be sent.\r\n\r\nLet me know what you think. We can improve this later including more opinions :) ",
-      "user": 499898,
-      "id": 685697611,
-      "reactions": {}
-    },
-    {
-      "date": 1599049639,
-      "body": "We could wait for the next tick before sending all events as a batch (which is what we're doing in the JavaScript search helper I believe).\r\n\r\nThat's not a blocker at all, just wanted everybody to be aware of that.",
-      "user": 6137112,
-      "id": 685699933,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

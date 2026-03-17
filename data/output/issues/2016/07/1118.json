@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1118",
   "title": "Appending pagination after click",
   "date": 1467721632,
   "body": "Hello,\n\nI contacted email support and Sylvain Utard asked me to ask this here, since he thinks that is makes a lot of sense to integrate it by default in instantsearch.js.\n\nI'm building a pagination widget that appends the results. I based it on the infinite scrolling widget.\n\nCode:\n\n``` js\nfunction getTemplate(templateName) {\n  return document.getElementById(templateName + '-template').innerHTML;\n}\n\n\nfunction getParameterByName(name, url) {\n    if (!url) url = window.location.href;\n    name = name.replace(/[\\[\\]]/g, \"\\\\$&\");\n    var regex = new RegExp(\"[?&]\" + name + \"(=([^&#]*)|&|#|$)\"),\n        results = regex.exec(url);\n    if (!results) return null;\n    if (!results[2]) return '';\n    return decodeURIComponent(results[2].replace(/\\+/g, \" \"));\n}\n\n\nvar cursor;\nvar index;\nvar page;\nvar nbPages;\nvar loading;\nvar hoganTemplate;\nvar hoganTemplateItem;\nvar paginator\n\nvar hitsDiv = document.getElementById('hits');\n\nfunction renderTemplate(hoganTemplate, res) {\n\n  var results = document.createElement('div');\n  results.innerHTML = hoganTemplate.render(res);\n  return results;\n}\n\nfunction searchNewRecords(scope) {\n    addSearchedRecords.call(scope);\n}\n\n\n\nfunction addSearchedRecords() {\n\n  if (!loading && page < nbPages - 1) {\n    loading = true;\n    page += 1;\n    var stateObject = {paginator: (page+1)};\n\n    history.pushState(stateObject, '', '?paginator='+stateObject.paginator);\n\n    helper.searchOnce({page: page}, appendSearchResults.bind(this));\n  }\n  else if(page >= nbPages - 1)\n  {\n      document.getElementById('bcPagination').className=\"hidden\";\n  }\n}\n\nfunction appendSearchResults(err, res, state) {\n  if (err) { throw err; }\n\n  page = res.page;\n  _.assign(res, {pageNo: page + 1});\n  loading = false;\n\n  var container = this.container;\n  hoganTemplateItem = this.hoganTemplateItem;\n _.forEach(res.hits, function(value)\n {\n  var result = renderTemplate(hoganTemplateItem, value);\n  container.appendChild(result);\n});\n  if (page === nbPages - 1 && (this.args.results.nbHits > nbPages * this.args.results.hitsPerPage)) {\n    index = helper.client.initIndex(this.args.state.index);\n  }\n}\n\n\nfunction appendBrowsedResults(err, res) {\n  if (err) { throw err; }\n\n  cursor = res.cursor;\n  var result = renderTemplate(hoganTemplateItem, res);\n  this.container.appendChild(result);\n\n  loading = false;\n}\n\nfunction initialRender(container, args, hoganTemplateItem, hoganTemplateEmpty, parent) {\n  var results;\n\n  if (args.results.nbHits) {\n    _.assign(args.results, {pageNo: page + 1});\n    results = renderTemplate(hoganTemplateItem, args.results);\n  } else {\n    results = renderTemplate(hoganTemplateEmpty, args.results);\n  }\n\n  container.innerHTML = '';\n  container.appendChild(results);\n\n}\n\nfunction bcPagination(options) {\n  var container = document.querySelector(options.container);\n  var templates = options.templates;\n  var hoganTemplateItem = Hogan.compile(templates.item);\n  var hoganTemplateEmpty = Hogan.compile(templates.empty);\n  var offset = parseInt(options.offset, 10);\n\n  if (!container) {\n    throw new Error('BCPagination: cannot select \\'' + options.container + '\\'');\n  }\n\n  return {\n    init: function ({helper}) {\n      page = undefined;\n      nbPages = undefined;\n      paginator = getParameterByName('paginator');\n\n      //initialRender(container, args, hoganTemplateItem, hoganTemplateEmpty);\n    },\n\n    render: function (args) {\n      helper = args.helper;\n      page = args.state.page;\n      nbPages = args.results.nbPages;\n      paginator = page;\n\n      var scope = {\n        hoganTemplateItem: hoganTemplateItem,\n        hoganTemplateEmpty: hoganTemplateEmpty,\n        container: container,\n        args: args,\n        offset: offset\n      };\n\n      initialRender(container, args, hoganTemplateItem, hoganTemplateEmpty);\n\n      var $bcPage = this;\n\n      if (args.results.nbHits) {\n          if(nbPages > 1){\n              document.getElementById('bcPagination').className=\"text-center\";\n          }\n          else{\n              document.getElementById('bcPagination').className=\"hidden\";\n          }\n\n          $(document).on('click', '#bcPagination a', function(e)\n          {\n                e.preventDefault();\n                searchNewRecords(scope);\n           });\n    }\n\n    }\n\n  };\n}\n\ninstantsearch.widgets.bcPagination = bcPagination;\n\nsearch.addWidget(\n    instantsearch.widgets.bcPagination({\n    container: '#hits',\n    hitsPerPage: 10,\n    templates: {\n      item: getTemplate('hit'),\n      empty: getTemplate('no-results')\n    }\n  })\n  );\n```\n\nThe default functionality is working, but I also want to save the state in the url so when a page is reloaded or a visitor uses the back button in the browser the same amount of items are loaded (so when a user visited page 5 before there should be 40 extra results loaded automatically). \n\nI'm quite sure I can build the initial loading, but the main issue is in de history.pushState, I can't figure out how to retrieve the other filters' data.. \n\nHow do I use the Instantsearch functions for this? Since I saw there were some functions in the instantsearch.js file that handle this functionality? \n\nOr if there is going to be a default widget that handles this type of pagination, when can I expect this? Since I'm sure your code will be much better than mine and when it's integrated in the instantsearch.js project it will be more future proof.\n",
@@ -18,58 +17,5 @@
     "number": 1118,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1467728051,
-      "body": "Hi @Maaark, could you provide a jsFiddle for us to work on? That would speed a lot the debugging process. Thanks!\n",
-      "user": 123822,
-      "id": 230490126,
-      "reactions": {}
-    },
-    {
-      "date": 1467730371,
-      "body": "@Maaark Do you just want a pagination widget that displays \"show more\" and once clicked show more results? You will be able to show maximum 1000 hits (but that's already a lot).\n",
-      "user": 123822,
-      "id": 230501691,
-      "reactions": {}
-    },
-    {
-      "date": 1467730569,
-      "body": "Yeah, that part is already working, but the issue is that we want to store the state in the url, like the other widgets already do. So there should be a extra query parameter in the url, for example paginator=5.\n\nWhen the visitor refreshes the page or when he visited a productpage and uses the back button in the browser we need to show the number of results that the visitor was looking at, for example 50 products.\n",
-      "user": 1912128,
-      "id": 230502788,
-      "reactions": {}
-    },
-    {
-      "date": 1467746864,
-      "body": "Hi @Maaark, I just made a showMorePaginator widget that you can see in action here: http://codepen.io/vvo/pen/jAwXoo\n\nHere's the code:\n\n``` js\nvar paginatorShowMore = {\n  init: function(args) {\n    var helper = args.helper;\n    document\n      .querySelector('#show-more')\n      .addEventListener('click', function() {\n        helper\n          .setQueryParameter('hitsPerPage',\n          helper.getQueryParameter('hitsPerPage') + defaultHitsPerPage\n        )\n        .search();\n      });\n  },\n  render: function(args) {\n    var helper = args.helper;\n    var currentHitsPerPage = helper.getQueryParameter('hitsPerPage');\n    if (currentHitsPerPage > defaultHitsPerPage) {\n      var hitsIndexToScroll = currentHitsPerPage - defaultHitsPerPage;\n      document\n        .querySelectorAll('.ais-hits--item')\n        [hitsIndexToScroll].scrollIntoView();\n        // if we are showing 50 hits, make sure\n        // the 39th hit is visible in the viewport\n        // this also handles url refresh/url copy paste\n    }\n  }\n};\n\nsearch.addWidget(paginatorShowMore);\n```\n\nYou should be able to throw a lot of your ccurrent code, let me know how it goes.\n",
-      "user": 123822,
-      "id": 230577672,
-      "reactions": {}
-    },
-    {
-      "date": 1467747836,
-      "body": "Woow... that simple :) Awesome!\nI tried it before by setting the hitsperpage, but each time I clicked the button the page loading got slower and slower, when I had 200 results per page it was unusable, but your code doesn't has this issue :)\n\nI do have 1 issue with your code, when I apply a filter I want to reset the hitsperpage to the default value, how do I do that?\n",
-      "user": 1912128,
-      "id": 230581694,
-      "reactions": {}
-    },
-    {
-      "date": 1467750561,
-      "body": "> when I apply a filter I want to reset the hitsperpage to the default value, how do I do that?\n\nHmm this is not currently doable sadly, we have #1068 that would allow you to do custom actions when you refine on something.\n\nIn the meantime I do not see any quickfix to do that.\n",
-      "user": 123822,
-      "id": 230593297,
-      "reactions": {}
-    },
-    {
-      "date": 1467759395,
-      "body": "Ok, no problem. This is good enough for now 👍 \n",
-      "user": 1912128,
-      "id": 230626736,
-      "reactions": {
-        "❤️": 1
-      }
-    }
-  ]
+  }
 }

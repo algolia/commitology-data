@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:938",
   "title": "How to dynamically update searchParameters?",
   "date": 1458560528,
   "body": "I want to update the [SearchParameter](https://community.algolia.com/algoliasearch-helper-js/docs/SearchParameters.html) `restrictSearchableAttributes` according to a user selection in a dropdown next to the search box. \n\nUpdating `search.searchParameters` like `search.restrictSearchableAttributes = 'mynumbers'` does not work.\n\nHow can I set searchParameters **after** the initial setup:\n\n```\nvar search = instantsearch({\n    ...\n    searchParameters: {\n        restrictSearchableAttributes: 'text',\n    }\n})\n\n$('#x').on('click', function() {\n    // How to update \"restrictSearchableAttributes\" here (and start a new search)?\n    // ?\n\n    // This does NOT work:\n    search.restrictSearchableAttributes = 'mynumbers';\n    search.start();\n})\n```\n",
@@ -14,58 +13,5 @@
       "😕": 1
     },
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1458565368,
-      "body": "You would have to build your own [custom widget](https://community.algolia.com/instantsearch.js/documentation/#custom-widgets):\n\n``` js\nvar customWidget = {\n  init: function(options) {\n    $('x').onClick(function() {\n      options.helper.setQueryParameter('restrictSearchableAttributes', ...);\n    });\n  }\n};\n\nsearch.addWidget(customWidget);\n```\n\nLet me know.\n",
-      "user": 123822,
-      "id": 199261615,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1458566946,
-      "body": "It works, by adding this additional widget! Thanks a lot!\n\nIs there a way to reset a setting? Like to remove `restrictSearchableAttributes` afterwards?  `delete options.helper.restrictSearchableAttribute;` does not work. \n",
-      "user": 36167,
-      "id": 199277258,
-      "reactions": {}
-    },
-    {
-      "date": 1458567302,
-      "body": "Can you try options.helper.setQueryParameter('restrictableSearchableAttributes');\n\nJust passing no value should remove it\n",
-      "user": 123822,
-      "id": 199279923,
-      "reactions": {}
-    },
-    {
-      "date": 1458567598,
-      "body": "`options.helper.setQueryParameter('restrictableSearchableAttributes')` does not work. The previous value is still set. I tried already null, false, ''. But they all raise an error from the API. \n",
-      "user": 36167,
-      "id": 199283175,
-      "reactions": {}
-    },
-    {
-      "date": 1458568936,
-      "body": "Ah I think what I missed in the custom widget, you need to call helper.search() at the end of the line:\n\n``` js\n options.helper.setQueryParameter('restrictSearchableAttributes', ...);\n options.helper.search();\n```\n\nI just tried this and it worked well:\n\n``` js\nvar algoliasearch = require(\"algoliasearch\");\nvar helper = require(\"algoliasearch-helper\")\nvar client = algoliasearch('appid', 'key');\nvar helper = helper(client, 'indexName');\nhelper.setQueryParameter('restrictSearchableAttributes', ['categories']);\nhelper.search()\nhelper.setQueryParameter('restrictSearchableAttributes'); // not sent\nhelper.search()\n```\n\nThe \"helper\" you are using is this: https://github.com/algolia/algoliasearch-helper-js\n",
-      "user": 123822,
-      "id": 199297766,
-      "reactions": {}
-    },
-    {
-      "date": 1458568981,
-      "body": "If it's really not working can you give me a reproducible website where you have the issue, or a github project, or send an email to support@algolia.com with a private url if you need to.\n",
-      "user": 123822,
-      "id": 199298112,
-      "reactions": {}
-    },
-    {
-      "date": 1458573529,
-      "body": "`options.helper.search();` did the job! Thanks for your help, @vvo! I'll come back to your offer and contact you via the support forms later this week.\n",
-      "user": 36167,
-      "id": 199335114,
-      "reactions": {}
-    }
-  ]
+  }
 }

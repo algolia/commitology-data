@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5530",
   "title": "createInstantSearchRouterNext without SSR clears state when filters are applied",
   "date": 1678164692,
   "body": "### 🐛 Current behavior\n\nClicking refinements briefly shows the filtered items, and then reverts the selection when using createInstantSearchRouterNext in client-side only mode.\n\n### 🔍 Steps to reproduce\n\n1. Clone https://github.com/jmotes-lapero/algolia-issues-repro\r\n2. `npm install`\r\n3. `npm run dev`\r\n4. Try to apply facet filters\n\n### Live reproduction\n\nhttps://codesandbox.io/s/github/jmotes-lapero/algolia-issues-repro\n\n### 💭 Expected behavior\n\nCheckboxes should persist and search results filtered by the new facet value.\n\n### Package version\n\nreact-instantsearch-hooks-router-nextjs 6.40.1\n\n### Operating system\n\nUbuntu Linux\n\n### Browser\n\nChrome\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,66 +17,5 @@
     "number": 5530,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1678180062,
-      "body": "Hi @jmotes-lapero,\r\n\r\nThank you for raising this issue.\r\n\r\nI had a look, and the issue is because the `fallbackComponent` provided to `DynamicWidgets` is an inline component, so the reference changes each render which makes it remount thus clearing the state.\r\nOur [documentation does show the proper usage](https://www.algolia.com/doc/api-reference/widgets/dynamic-facets/react-hooks/#widget-param-fallbackcomponent) although maybe we should mention it should be a stable reference.\r\n\r\nSo the problem is not related to the router itself but the usage of `DynamicWidgets`, and can be fixed just by changing this line : \r\n```diff\r\n<DynamicWidgets\r\n  facets={[]} \r\n-  fallbackComponent={(props) => <RefinementList {...props} />}\r\n+  fallbackComponent={RefinementList}\r\n/>\r\n```\r\nMy guess is maybe you're seeing it now because `react-instantsearch-hooks-router-nextjs` does a `push` with the Next.js router, which rerenders the whole page whereas before it wouldn't and `fallbackComponent` would have stayed the same.",
-      "user": 9158954,
-      "id": 1457807046,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1678223694,
-      "body": "Thanks for the quick reply @aymeric-giraudet! This did indeed fix my minimal reproduction.\r\n\r\n~~However, the issue originated in a codebase that doesn't use DynamicWidgets at all - it just loops over an array of hardcoded refinements and renders a custom `<RefinementList />` (that's built using the useRefinements hook) directly. Any ideas on how to fix it there? Do I need to add the DynamicWidgets component to my main project?~~\r\n\r\nEdit: Nevermind! I'll try to create another minimal reproduction that illustrates the issue there. I tried adding a simple loop to this repo and it still worked fine.",
-      "user": 10137,
-      "id": 1458884553,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1678266925,
-      "body": "As long as the component references are stable, no inline components, I don't think there should be an issue :) ",
-      "user": 6270048,
-      "id": 1459822426,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1679067081,
-      "body": "Just wanted to chime in and say I'm also experiencing this issue using custom `RefinementList` components",
-      "user": 1160882,
-      "id": 1474018539,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1679067546,
-      "body": "@lewisflude I traced my last problem with this to some inline dynamic component binding logic that I had in a parent component.  Not sure if that helps you but thought I'd mention just incase :)",
-      "user": 1943254,
-      "id": 1474028713,
-      "reactions": {}
-    },
-    {
-      "date": 1679067714,
-      "body": "Thanks @jmotes! Is there any chance you could go into more detail?",
-      "user": 1160882,
-      "id": 1474032594,
-      "reactions": {}
-    },
-    {
-      "date": 1679068050,
-      "body": "@lewisflude here's a screenshot of most of the diff. I essentially just moved the switch statement to it's own function component, ensuring React would keep a stable reference to the component.\r\n\r\nI'm rendering pages from a CMS here, where one of the pages contained our Search block that's powered by Algolia.\r\n\r\n<img width=\"1006\" alt=\"image\" src=\"https://user-images.githubusercontent.com/1943254/225953374-d979ef59-c181-482a-b939-ecbaacf21541.png\">\r\n",
-      "user": 1943254,
-      "id": 1474040280,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

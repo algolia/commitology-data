@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6002",
   "title": "NextJS `router.query` is stale after hitting back button",
   "date": 1705417864,
   "body": "### 🐛 Current behavior\r\n\r\nIf you hit a filter value, `router.query` gets populated correctly with the new URL. If you hit the browser back button, the facet selection gets cleared but `router.query` still has the old filter selection and the component doesn't even get re-rendered.\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n1. Click on any Brand filter.\r\n2. In dev tools you will see `router.query` being logged with the brand filter.\r\n3. Hit the back button.\r\n4. In dev tools you won't see anything logged because `router.query` hasn't been updated.\r\n\r\n### Live reproduction\r\n\r\nhttps://codesandbox.io/p/devbox/nextjs-routing-issue-x9p8gy\r\n\r\n### 💭 Expected behavior\r\n\r\nI expect:\r\n1. `router.query` to have a new value\r\n2.  That new value to be an empty object\r\n3.  The component to re-render and trigger a log of `router.query`\r\n\r\n### Package version\r\n\r\nalgoliasearch 4.14.3, react-instantsearch 7.5.1, NextJS 12.3.4\r\n\r\n### Operating system\r\n\r\nMac 11.6.5\r\n\r\n### Browser\r\n\r\nChrome 113.0.5672.126\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,72 +17,5 @@
     "number": 6002,
     "reactions": {},
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1705418972,
-      "body": "Is this the same as #5987? If you patch InstantSearch to use `history.pushState` instead of the next router, does it work?",
-      "user": 6270048,
-      "id": 1893979262,
-      "reactions": {}
-    },
-    {
-      "date": 1705419433,
-      "body": "@Haroenv I'm using NextJS 12.3.4, which only has a page router.\r\n\r\nHow can I patch it to use `history.pushState`? The same as the Remix example in the docs?",
-      "user": 10588097,
-      "id": 1893995499,
-      "reactions": {}
-    },
-    {
-      "date": 1705420307,
-      "body": "Ah I misunderstood the problem, that's indeed not related. If you add a button unrelated to InstantSearch that pushes to the router like this (https://codesandbox.io/p/devbox/nextjs-routing-issue-forked-t7w35v?file=%2Fpages%2Findex.tsx%3A60%2C1-64%2C16):\r\n\r\n```jsx\r\n      <button type=\"button\" onClick={() => {\r\n        router.push('?something=true', undefined, {shallow: true})\r\n      }}>\r\n        add to url\r\n      </button>\r\n```\r\n\r\nIt behaves the exact same. I believe because the push is shallow, next doesn't consider that the router and app component needs to re-render, but only what has listeners to the beforePopState router event.\r\n\r\nWhat use case do you have for having the `router` being updated, does it cause downstream issues? I wonder if something can be said to the router in the beforePopState function (https://github.com/algolia/instantsearch/blob/bbb27fc8839e7b775b599f411f6e8336771b0466/packages/react-instantsearch-router-nextjs/src/index.ts#L147) à la \"there was an update, please render root again\", but not sure if that's possible. Maybe emitting a `routeChangeComplete` is possible, but I wouldn't bet on it.\r\n\r\nI don't believe the router should be \"not shallow\", as then the backend gets fetched, which is definitely a waste of resources.",
-      "user": 6270048,
-      "id": 1894022343,
-      "reactions": {}
-    },
-    {
-      "date": 1705420774,
-      "body": "@Haroenv I'll give you an example from our app:\r\n\r\n1. Navigate to https://www.ajmadison.com/c/dryers/\r\n2. The title is Dyers\r\n3. Click on Fuel Type: Electric\r\n4. The tile Electric Dryers\r\n5. Hit the back button\r\n6. The title is still Electric Dryers\r\n\r\nWe use `router.query` to calculate the title, that's why we can't rely on a shallow update.\r\nSame goes for which facets are shown on the page, they are dependent on the current route.\r\n\r\nWhat would the alternative be? Should I be checking `useInstantSearch` instead?\r\n\r\nWould it be possible add an option for `shallow: false`?",
-      "user": 10588097,
-      "id": 1894036888,
-      "reactions": {}
-    },
-    {
-      "date": 1705422120,
-      "body": "I'm not convinced `shallow: false` would even solve the issue if that's what's going on, however using `useInstantSearch` definitely will be updated with the ui at all times, so I recommend you use that for your source of truth instead of `router`. Does that work for you?",
-      "user": 6270048,
-      "id": 1894077470,
-      "reactions": {}
-    },
-    {
-      "date": 1705422234,
-      "body": "I will try using `useInstantSearch`. If I'm not mistaken, I had issues relying on it early on, which is why I resorted to `router.query`. I'll give it another try.",
-      "user": 10588097,
-      "id": 1894081000,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1705424094,
-      "body": "I guess an issue you may have is if it's inside InstantSearch, there may be a chance of a render where the component doesn't render (although I think that's just a client rendering potential problem, shouldn't happen when you server side render)",
-      "user": 6270048,
-      "id": 1894137461,
-      "reactions": {}
-    },
-    {
-      "date": 1757168818,
-      "body": "@Haroenv  @avremel \nis this fixed as i have the same issues with react-instantsearch,\n when hitting borwser back button in `nextjs js 14 pages router`\nthen clicking on the pagination button doesn update the url params for that , \nis there something which can be done , it is urgent and i cannot rerender the whole component , how to make the instantsearch active again :) and i guess it is skipping the first push after hitting back button\n\ne.g user on `page=3` -----> hit back button  ------ `page=2` ------ hit pagination forward button ---  page param is still on `page=2` but ui or table data is correctly update for page 3 then again i will hit the pagination forward button and it sync and jumps to `page=4` in url\n\n\ncan this be fixed by tweaking something , idk whether nextjs cache makes this do it or something else",
-      "user": 29339322,
-      "id": 3262279381,
-      "reactions": {}
-    },
-    {
-      "date": 1759286380,
-      "body": "@Haroenv  any resolution on the above comment, how can solve the pagination is not synced with url after hitting the back button in nextjs \n",
-      "user": 29339322,
-      "id": 3354493250,
-      "reactions": {}
-    }
-  ]
+  }
 }

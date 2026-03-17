@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:5523",
   "title": "fix(insights): call `init` only if it has not been called before",
   "date": 1677773005,
   "body": "**Summary**\r\n\r\n[FX-2272](https://algolia.atlassian.net/browse/FX-2272)\r\n\r\nAlternative to #5529\r\n\r\nIf `init` has already been called outside on `search-insights`, calling `init` in the insights middleware would clear the previous options and we want to avoid that behavior.\r\n\r\n**Result**\r\n\r\nWe make sure `init` is called only if it has not been called before in the `sendEventToInsights` method:\r\n\r\n- First, we try to send the event.\r\n- If it fails, we catch the error, meaning that `search-insights` is not initialized yet and we `init` before sending the event.\r\n- Then, if the `search-insights` queue length has changed in the meantime, it means that `search-insights` is not yet loaded.\r\n- If `init` has not already been added to the queue, we add it and make sure to put it in the first position in the queue.\r\n\r\n> **It's just a PoC for now, don't merge!**\r\n\r\n[FX-2272]: https://algolia.atlassian.net/browse/FX-2272?atlOrigin=eyJpIjoiNWRkNTljNzYxNjVmNDY3MDlhMDU5Y2ZhYzA5YTRkZjUiLCJwIjoiZ2l0aHViLWNvbS1KU1cifQ",
@@ -11,46 +10,5 @@
     "number": 5523,
     "reactions": {},
     "state": "draft"
-  },
-  "comments": [
-    {
-      "date": 1677773153,
-      "body": "let's make this pr to feat/automatic-insights maybe?",
-      "user": 6270048,
-      "id": 1452118485,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1677773241,
-      "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/5523/builds/354566) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit d2b82192e4a558e5b580a3a90d335a88ea2b7e59:\n\n|Sandbox| Source |\n|--|--|\n|[InstantSearch.js](https://codesandbox.io/s/instantsearch-js-cli2qp)| Configuration |\n|[react-instantsearch-app](https://codesandbox.io/s/react-instantsearch-app-5l94be)| Configuration |\n|[example-react-instantsearch-hooks-default-theme](https://codesandbox.io/s/example-react-instantsearch-hooks-default-theme-tm3qx5)| Configuration |\n|[example-vue-instantsearch-default-theme](https://codesandbox.io/s/example-vue-instantsearch-default-theme-vpdmio)| Configuration |\n",
-      "user": 54081388,
-      "id": 1452121609,
-      "reactions": {}
-    },
-    {
-      "date": 1677775952,
-      "body": "> I just thought of a flaw on this approach. It means that we don't apply the userToken that gets created by `useCookie`/`setUserToken` _before_ the first event\r\n\r\nI'm not sure to understand how it can be an issue?",
-      "user": 662153,
-      "id": 1452195226,
-      "reactions": {}
-    },
-    {
-      "date": 1677776049,
-      "body": "I'd like to see what happens when a customer has `setUserToken` (but not init), does that still get updated in the helper state? Essentially: see the tests that are breaking now",
-      "user": 6270048,
-      "id": 1452197638,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1678359622,
-      "body": "Closing in favor of #5529 ",
-      "user": 662153,
-      "id": 1461808107,
-      "reactions": {}
-    }
-  ]
+  }
 }

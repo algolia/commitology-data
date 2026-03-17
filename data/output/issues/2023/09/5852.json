@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5852",
   "title": "Routing removes non-InstantSearch query params",
   "date": 1695035303,
   "body": "### 🐛 Current behavior\n\nAccess to the route https://qqsx4m-3000.csb.app?test=\"test\" remove the query param https://qqsx4m-3000.csb.app\n\n### 🔍 Steps to reproduce\n\n1. Enter to the codesandbox\r\n2. Replace the url with a query param, example ?test=\"test\"\r\n3. Reload the url\r\n4. The query param should be removed\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/next13-4-4-forked-rdd5h9\n\n### 💭 Expected behavior\n\nThe query param should not be removed\n\n### Package version\n\n7.0.3\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -20,78 +19,5 @@
       "👍️": 1
     },
     "state": "ignored"
-  },
-  "comments": [
-    {
-      "date": 1695300094,
-      "body": "Hi @RodrigoTomeES,\r\n\r\nDo you mean it removes search params that are unrelated to InstantSearch ? If so, that's how the InstantSearch router functions, regardless of the framework used.\r\n\r\nWhen I got to https://qqsx4m-3000.csb.app/?instant_search%5BrefinementList%5D%5Bbrand%5D%5B0%5D=Samsung however it doesn't remove the param as it's recognized by InstantSearch.\r\n\r\nIf you want non InstantSearch params to be persisted, you can implement your own `createURL` and `parseURL` to persist your other parameters : https://www.algolia.com/doc/guides/building-search-ui/going-further/routing-urls/react/#rewriting-urls-manually",
-      "user": 9158954,
-      "id": 1729489757,
-      "reactions": {}
-    },
-    {
-      "date": 1695367477,
-      "body": "@aymeric-giraudet Yes, I mean that it removes search params that are unrelated to InstantSerch for example if the URL has UTM params we can't track it because InstantSearch removes it. I think that resolve it implementing our own `createURL` and `parseURL` it's a lot of work for a simple problem or is there a simple way to implement it?. Is there no way to disable this behavior?",
-      "user": 13077343,
-      "id": 1730933179,
-      "reactions": {}
-    },
-    {
-      "date": 1697549251,
-      "body": "@aymeric-giraudet hi, is there any plan to add an option to disabled this behavior? thanks!",
-      "user": 13077343,
-      "id": 1766419244,
-      "reactions": {}
-    },
-    {
-      "date": 1697618167,
-      "body": "InstantSearch is the source of truth for routing. If you want certain keys to stay you can:\r\n\r\n1. read the utm parameters before starting InstantSearch and store them\r\n2. in `router.createURL`, add the utm parameters back to the URL\r\n\r\nWe don't yet have a manner of simplifying this.",
-      "user": 6270048,
-      "id": 1767961339,
-      "reactions": {}
-    },
-    {
-      "date": 1697619726,
-      "body": "@Haroenv Okay, I will implement it, but I don't understand why Instant search remove extra query params by default 😅. Thanks!\r\n\r\nI will put here the code when I implemented it and then close the issue.",
-      "user": 13077343,
-      "id": 1768005974,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1699279418,
-      "body": "I've achieved the same issue for UTM query params with Next + ReactInstantSearch.\r\n\r\nI had to migrate from [React instant search v6 to v7](https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/react/).\r\nI set `serverStateProps` props to my `<InstantSearch />` component.\r\n\r\nThen in [createInstantSearchRouterNext](https://www.algolia.com/doc/api-reference/widgets/instantsearch-next-router/react/) in `routerOptions`, I wrote parseURL and createURL methods like this :\r\n\r\n```\r\nparseURL({ qsModule, location }) {\r\n  return qsModule.parse(location.search.slice(1));\r\n}\r\n``` \r\n\r\n```\r\ncreateURL({ qsModule, location, routeState }) {\r\n  const { origin, pathname, hash } = location;\r\n\r\n  const queriesFromUrl = qsModule.parse(location.search.slice(1));\r\n\r\n  // Get all extraneous queries from the URL used for UTM\r\n  const utmQueries = Object.keys(queriesFromUrl)\r\n    .filter((key) => !Object.keys(routeState).includes(key))\r\n    .reduce((acc, cur) => {\r\n      acc[cur] = queriesFromUrl[cur];\r\n\r\n      return acc;\r\n    }, {});\r\n\r\n  // Create query string with facet filters and UTM queries\r\n  const queryString = qsModule.stringify({ ...routeState, ...utmQueries });\r\n\r\n  return `${origin}${pathname}${queryString ? `?${queryString}` : ''}${hash}`;\r\n}\r\n```\r\n\r\nI hope it will help!\r\n",
-      "user": 32106478,
-      "id": 1794894183,
-      "reactions": {
-        "👍️": 3
-      }
-    },
-    {
-      "date": 1699284802,
-      "body": "@Hashs7 thanks for sharing your code! I will try it because I didn't have time to implement it yet",
-      "user": 13077343,
-      "id": 1795132777,
-      "reactions": {
-        "🎉": 1
-      }
-    },
-    {
-      "date": 1699449842,
-      "body": "Hi! We had been implemented the solution of @Hashs7 and it works perfectly so I will close the issue but I think this use case should be added to the Algolia documentation and how to fix it @Haroenv \n\nThanks you so much to all",
-      "user": 13077343,
-      "id": 1801885370,
-      "reactions": {}
-    },
-    {
-      "date": 1699524759,
-      "body": "Thanks, I've just added code similar to the one shared by @Hashs7 to the documentation. Thanks for your contribution and testing!",
-      "user": 6270048,
-      "id": 1803541569,
-      "reactions": {
-        "❤️": 1
-      }
-    }
-  ]
+  }
 }

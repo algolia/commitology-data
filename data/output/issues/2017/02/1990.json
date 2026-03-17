@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1990",
   "title": "Connectors inside connectors may produce infinite loops",
   "date": 1487342259,
   "body": "Having connectors inside connectors can sometimes not work as expected.\r\n\r\nLet's take an example that produce such an infinite loop: \r\n\r\n```js\r\nconst CustomHits = connectHits(props => {\r\n  // infinite loop\r\n  const hits = props.hits.map(hit => {\r\n    const rl = <RefinementList \r\n                            attributeName=\"materials\"\r\n                            transformItems={items => items}\r\n               />;\r\n    return <div>{hit.name} {rl}</div>;\r\n  });\r\n  return <div>{hits}</div>;\r\n});\r\n```\r\n\r\nWhen the `hits` renders, the `componentWillReceiveProps` of the `refinementList` is called. Because the reference of the `transformItems`change each time, then it calls a new search, and we end up in an infinite loop.\r\n\r\nThis is fixable on the user side by doing this:\r\n\r\n```js\r\nconst transformItems = (items) => items;\r\nconst CustomHits = connectHits(props => {\r\n  // infinite loop\r\n  const hits = props.hits.map(hit => {\r\n    const rl = <RefinementList \r\n                            attributeName=\"materials\"\r\n                            transformItems={transformItems}\r\n               />;\r\n    return <div>{hit.name} {rl}</div>;\r\n  });\r\n  return <div>{hits}</div>;\r\n});\r\n```\r\n\r\nHowever this might not be intuitive for everybody. We probably need to add something about it in a guide on the documentation website.  Also to avoid any issue of this type, we can do a deepEqual when checking if a component should update instead of a shallow equal, but it will results to something less efficient. \r\n\r\nNesting connectors means that they do not register at the same time, which is causing two searches to be triggered. I believe that's why including the <Stats/> inside the <SearchBox/> on a very big index, also triggered an infinite loop (the stats numbers changed between the two searches). \r\n",
@@ -26,6 +25,5 @@
       "❤️": 6
     },
     "state": "closed"
-  },
-  "comments": []
+  }
 }

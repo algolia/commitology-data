@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1377",
   "title": "[refinementList]: sortBy does not correctly sort UTF8 chars",
   "date": 1475568067,
   "body": "![image](https://cloud.githubusercontent.com/assets/283419/19066308/f36ab3d6-8a18-11e6-90eb-cb6046694540.png)\n\nWhen using the the `name` sorting (or keeping the default one), facets starting with an accented character are put at the end.\n\nInstead of the default sorting on strings, we could use [localeCompare](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String/localeCompare). It needs to know the user locale, but this is already an information we can pass to the main instance (to specify how to format numbers), so we could re-use it here as well.\n\nIt will require a change in the Helper as well I guess.\n",
@@ -18,54 +17,5 @@
     "number": 1377,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1475609590,
-      "body": "The helper uses lodash sortBy I believe. Do you know how to do it with lodash? Searched a bit without luck\n",
-      "user": 123822,
-      "id": 251489090,
-      "reactions": {}
-    },
-    {
-      "date": 1475662450,
-      "body": "Seems there is no way to pass a custom sort function to `sortBy`. What can be done though, is use a normalized string through `_.deburr`.\n\nSomething like\n\n``` javascript\nvar facets = _.sortBy(facetValues, (facet) => { return _.deburr(facet.name) });\n```\n\nThis will convert `Éric` to `Eric` before applying the sort. Not perfect, but closer to what we want to achieve here.\n",
-      "user": 283419,
-      "id": 251635920,
-      "reactions": {
-        "👍️": 5,
-        "😄": 2
-      }
-    },
-    {
-      "date": 1475666802,
-      "body": "Ok so this looks like a helper improvement then. I wonder if we could make it the new default without breaking anything that people are expecting. But clearly your example shows that today at least for french names, doesn't make sense.\n",
-      "user": 123822,
-      "id": 251648887,
-      "reactions": {}
-    },
-    {
-      "date": 1475673480,
-      "body": "@pixelastic, @vvo is right, that's probably something we can look at, but on the Helper side of things. Can you fill in your issue there?\n",
-      "user": 393765,
-      "id": 251671514,
-      "reactions": {}
-    },
-    {
-      "date": 1475679379,
-      "body": "Done.\n\nThanks :)\n",
-      "user": 283419,
-      "id": 251699425,
-      "reactions": {}
-    },
-    {
-      "date": 1544704806,
-      "body": "You can use the `sortBy` argument to pass a regular JS sort function to override the sorting behaviour.\r\n\r\n```js\r\nsearch.addWidget(\r\n  instantsearch.widgets.refinementList({\r\n    container: '#brand-list',\r\n    attributeName: 'brand',\r\n    sortBy({ name: a }, { name: b }) {\r\n      return a.localeCompare(b);\r\n    },\r\n  })\r\n);\r\n```\r\n\r\nhttps://codesandbox.io/s/713rl3zwzq\r\n\r\nSorting can also be done in `transformItems` if you so prefer.",
-      "user": 6270048,
-      "id": 446954367,
-      "reactions": {
-        "👍️": 1
-      }
-    }
-  ]
+  }
 }

@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6110",
   "title": "Configure page is ignored, how to reset page to 0 ?",
   "date": 1711701409,
   "body": "### 🐛 Current behavior\r\n\r\ni'm using `InstantSearch` `Configure` and `useInfiniteHits` to fetch data from algolia\r\n\r\nmy data in algolia hits are like this \r\n\r\n```\r\n{ 'name': 'adidas', 'univers':'sport' },\r\n{ 'name': 'kfc', 'univers':'food' },\r\n{ 'name': 'macdonald', 'univers':'food' },\r\n{ 'name': 'pathé', 'univers':'cinema' },\r\n```\r\n\r\nmy probleme is i cannot reset search page to 0 no matter what i try, or maybe clear all the cache ?\r\n\r\n\r\nfor example i have 400 data, i show them all in the flatlist with `infinityHits` pagination and `showMore`, ` hitsPerPage={50}` is set so my page become equal to 8 now, \r\n\r\nnow the user want to filter data and show only `univers:food` for example ( and there is only 20 hits of food), \r\ni look on the HTTP query , page still set to 8 but facefilter is changed. so result is null because pagination window start at page 8 instead of 0\r\n\r\nHOW TO RESET THIS DAMN PAGE please ?\r\n\r\n \r\ni even try to useMemo to force unmount `Configure` and `InfiniteHits`\r\n\r\nmy tsx look like this in very simplified way\r\n\r\n### 🔍 Steps to reproduce\r\n\r\n\r\n```\r\nimport {InstantSearch} from 'react-instantsearch-core';\r\nimport {Configure} from 'react-instantsearch-core';\r\nimport {useInfiniteHits} from 'react-instantsearch-core';\r\n\r\n\r\nconst MySearch = ( ) =>{\r\n\r\n  const [algoliaRefreshKey, setAlgoliaRefreshKey] = useState(0);\r\n  const [filtersSelected, setFiltersSelected] = useState<string[]>([]);\r\n\r\n  const selectFilter = (name: string) => {\r\n    if (filtersSelected.includes(name)) {\r\n      setFiltersSelected(filtersSelected.filter(filter => { return filter !== name; }));\r\n    } else {\r\n      setFiltersSelected(filtersSelected.concat(name));\r\n    }\r\n    setAlgoliaRefreshKey(algoliaRefreshKey + 1);\r\n  };\r\n\r\n\r\n  const memoizedAlgoliaSearchConfigure = useMemo(() => {\r\n    return (\r\n      <Configure\r\n        facetFilters={[\r\n          filtersSelected.map(item => {\r\n            return `univers:${item}`;\r\n          }),\r\n        ]}\r\n        page={0}\r\n        hitsPerPage={50}\r\n        key={algoliaRefreshKey}\r\n      />\r\n    );\r\n  }, [algoliaRefreshKey, filtersSelected]);\r\n\r\n  const memoizedInfiniteHits = useMemo(() => {\r\n    return (\r\n      <InfiniteHits />\r\n    );\r\n  }, [algoliaRefreshKey, filtersSelected]);\r\n\r\n return (\r\n  <InstantSearch   searchClient={searchClient}   indexName={indexName}>\r\n       {memoizedAlgoliaSearchConfigure}\r\n\r\n        <ScrollView  horizontal>\r\n              <Button onPress={()=>selectFilter('food')} />\r\n              <Button onPress={()=>selectFilter('sport')} />\r\n              <Button onPress={()=>selectFilter('shoping')} />\r\n              <Button onPress={()=>selectFilter('cinema')} />\r\n        </ScrollView>\r\n\r\n        {memoizedInfiniteHits}\r\n          \r\n   </InstantSearch>\r\n)\r\n\r\n}\r\n\r\nconst InfiniteHits = ()=>{\r\n  const {hits, isLastPage, showMore} = useInfiniteHits( );\r\n  return (\r\n    <FlatList data={hits} ... \r\n      onEndReached={() => { if (!isLastPage) {   showMore();  }\r\n    }}/>\r\n  )\r\n}\r\n```\r\n\r\n\r\n### Live reproduction\r\n\r\ncannot have link now\r\n\r\n### 💭 Expected behavior\r\n\r\ni want to reset the page to 0 before new query is fetched , when i add a new facetfilter for example\r\n\r\n or how to use `resetPage()` ?\r\n\r\n\r\nthank you very much\r\n\r\n### Package version\r\n\r\nreact-instantsearch-core 7.3.0\r\n\r\n### Operating system\r\n\r\nmacos \r\n\r\n### Browser\r\n\r\nreactnative 0.73.5\r\n\r\n### Code of Conduct\r\n\r\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,30 +17,5 @@
     "number": 6110,
     "reactions": {},
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1711703880,
-      "body": "I think you want `useMenu().refine` or `useRefinementList().refine` instead of recoding that behaviour with Configure 🤔 \r\n",
-      "user": 6270048,
-      "id": 2026927976,
-      "reactions": {
-        "👀": 1
-      }
-    },
-    {
-      "date": 1711704907,
-      "body": "refine is not for just adding a string search ?\r\n\r\ni use it in same screen because user can filter from inputText too   \r\n\r\n\r\nthe refine signature is \r\n\r\n```\r\nconst {query, refine} = useSearchBox({});\r\nconst refine: (value: string) => void\r\n```\r\n\r\nbut my probleme is i can have same `query` ( like `mcdo` that user typed in textInput ) then he press `food` filter , so i need to run a query \r\nwith search = \"mcdo\" and facetFilters with `food` \r\n\r\n",
-      "user": 7910081,
-      "id": 2026947908,
-      "reactions": {}
-    },
-    {
-      "date": 1711712033,
-      "body": "That's `refine` of the search box widget, every widget has its own refine function to do the refining action",
-      "user": 6270048,
-      "id": 2027117136,
-      "reactions": {}
-    }
-  ]
+  }
 }

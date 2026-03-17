@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:4343",
   "title": "Question: Change hitsPerPage when filtering ?",
   "date": 1583237348,
   "body": "Hello,\r\n\r\nIt is possible to update hitsPerPage defined in Configure widget when filtering on a \"Menu\" widget  like the demo : https://www.algolia.com/search/\r\n\r\n**My code :**\r\n> index.js\r\n```javascript\r\nimport algoliasearch from 'algoliasearch/lite'\r\nimport instantsearch from 'instantsearch.js'\r\nimport searchBox from './Searchbox'\r\nimport menu from './Menu'\r\nimport { advert, bpDoc, demarche, post, tribeEvents, uptUsers } from './Indices'\r\n\r\nconst searchClient = algoliasearch('XXXXXX', 'XXXXXX')\r\n\r\nconst search = instantsearch({\r\n  indexName: 'wp_searchable_posts',\r\n  searchClient,\r\n})\r\n\r\nsearch.addWidgets([\r\n  searchBox,\r\n  menu,\r\n  advert,\r\n  post,\r\n])\r\n\r\nsearch.start()\r\n```\r\n> Menu/index.js\r\n```javascript\r\nimport { menu } from 'instantsearch.js/es/widgets'\r\n\r\nexport default menu({\r\n  container: '#algolia-menu',\r\n  attribute: 'post_type',\r\n  sortBy: ['name:asc'],\r\n  templates: {\r\n    item(item) {\r\n      const { url, label } = item\r\n\r\n      switch (label) {\r\n        case 'advert':\r\n          return `\r\n            <a href=\"${url}\">\r\n              <span>Petites annonces</span>\r\n            </a>\r\n          `\r\n        case 'post':\r\n          return `\r\n            <a href=\"${url}\">\r\n              <span>Actualités</span>\r\n            </a>\r\n          `\r\n        default:\r\n          return `\r\n            <a href=\"${url}\">\r\n              <span>${label}</span>\r\n            </a>\r\n          `\r\n      }\r\n    },\r\n  },\r\n})\r\n```\r\n\r\n> Indices/index.js\r\n```javascript\r\nimport { configure, hits, index } from 'instantsearch.js/es/widgets'\r\nimport { hitsTemplate } from './templates'\r\nimport { customConfigure, customPagination } from './../customWidget'\r\n\r\n// Custom Post Type : advert\r\nexport const advert = index({\r\n  indexName: 'wp_posts_advert',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-advert',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n        empty: `<style>#advert { display: none; }</style>`\r\n      }\r\n    }),\r\n\r\n    configure({\r\n      hitsPerPage: 4,\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : post\r\nexport const post = index({\r\n  indexName: 'wp_posts_post',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-post',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n        empty: `<style>#post { display: none; }</style>`\r\n      }\r\n    }),\r\n\r\n    configure({\r\n      hitsPerPage: 3,\r\n    }),\r\n  ])\r\n```\r\n\r\nThanks for help.",
@@ -11,51 +10,5 @@
     "number": 4343,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1583237595,
-      "body": "Hi there,\r\n\r\nYou can do it as it's mentioned in #2213 .\r\n\r\n```js\r\nconst search = instantsearch({\r\n  indexName: 'instant_search',\r\n  searchClient,\r\n  searchFunction: helper => {\r\n    helper.setQueryParameter('hitsPerPage', 5).search();\r\n  },\r\n});\r\n```",
-      "user": 499898,
-      "id": 593920219,
-      "reactions": {}
-    },
-    {
-      "date": 1583238668,
-      "body": ">  It is possible to update hitsPerPage defined in Configure\r\n\r\nTwo other options:\r\n\r\n1. use connectConfigure instead of configure and call its `refine` function when it needs to change\r\n2. remove the old configure widget, and add a new one with the new hitsPerPage",
-      "user": 6270048,
-      "id": 593926865,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1583240000,
-      "body": "Thanks for answering ! It's very helpful.\r\n\r\n> use connectConfigure instead of configure and call its refine function when it needs to change\r\n\r\n@Haroenv there is a best practice to detect if the user has filtered with the Menu widget in my custom configure function ?",
-      "user": 2543936,
-      "id": 593935530,
-      "reactions": {}
-    },
-    {
-      "date": 1583241289,
-      "body": "Could  you clarify when you want to change hitsPerPage? When a user interacts with a menu in any way?\r\n\r\nA draft or rough sketch of the expected UI would be helpful!",
-      "user": 6270048,
-      "id": 593944042,
-      "reactions": {}
-    },
-    {
-      "date": 1583242264,
-      "body": "The [Algolia demo](https://www.algolia.com/search/) is exactly what I want.\r\n\r\nBy default, **Website** has a hitsPerPage: 6.\r\n\r\nWhen I click on **Website** in the **Menu** (before the searchbox), the hitsPerPage of **Website** changes to 16.\r\n\r\nWhen I reclick on the **Website** in the **Menu**, the hitsPerPage of **Website** returns to 6.\r\n_______________________\r\nIn my code, I try to refine the hitsPerPage based on the `hierarchicalFacetsRefinements` but I get an infinite loop.\r\n\r\n```javascript\r\nconst renderConfigure = (renderOptions, isFirstRender) => {\r\n  const { refine, instantSearchInstance } = renderOptions\r\n\r\n  if (instantSearchInstance.helper) {\r\n    const hierarchicalFacetsRefinements = instantSearchInstance.helper.state.hierarchicalFacetsRefinements['post_type']\r\n\r\n    if (hierarchicalFacetsRefinements.length > 0) {\r\n      refine({ hitsPerPage: 16 })\r\n    } else {\r\n      refine({ hitsPerPage: 6 })\r\n    }\r\n  }\r\n}\r\n```",
-      "user": 2543936,
-      "id": 593950785,
-      "reactions": {}
-    },
-    {
-      "date": 1583244977,
-      "body": "I found a way but it's very dirty 😄 In my `renderConfigure` function I check if `hierarchicalFacetsRefinements` is not empty and the value of the attribute of the container defined in the `customConfigure` options, then I refine my hitsPerPage.\r\n\r\n> Indices/index.js\r\n```javascript\r\nimport { hits, index } from 'instantsearch.js/es/widgets'\r\nimport { hitsTemplate } from './templates'\r\nimport { customConfigure, customPagination } from './../customWidget'\r\n\r\n// Custom Post Type : advert\r\nexport const advert = index({\r\n  indexName: 'wp_posts_advert',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-advert',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-advert',\r\n      hitsPerPage: 4,\r\n      multiplicator: 3,\r\n      searchParameters: {\r\n        hitsPerPage: 4,\r\n      },\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : bp_doc\r\nexport const bpDoc = index({\r\n  indexName: 'wp_posts_bp_doc',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-bp-doc',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-bp-doc',\r\n      hitsPerPage: 5,\r\n      multiplicator: 4,\r\n      searchParameters: {\r\n        hitsPerPage: 5,\r\n      },\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : demarche\r\nexport const demarche = index({\r\n  indexName: 'wp_posts_demarche',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-demarche',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-demarche',\r\n      hitsPerPage: 6,\r\n      multiplicator: 2,\r\n      searchParameters: {\r\n        hitsPerPage: 6,\r\n      },\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : post\r\nexport const post = index({\r\n  indexName: 'wp_posts_post',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-post',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-post',\r\n      hitsPerPage: 3,\r\n      multiplicator: 4,\r\n      searchParameters: {\r\n        hitsPerPage: 3,\r\n      },\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : tribe_events\r\nexport const tribeEvents = index({\r\n  indexName: 'wp_posts_tribe_events',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-tribe-events',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-tribe-events',\r\n      hitsPerPage: 4,\r\n      multiplicator: 3,\r\n      searchParameters: {\r\n        hitsPerPage: 4,\r\n      },\r\n    }),\r\n  ])\r\n\r\n// Custom Post Type : upt_user\r\nexport const uptUsers = index({\r\n  indexName: 'wp_posts_upt_user',\r\n})\r\n  .addWidgets([\r\n    hits({\r\n      container: '#algolia-hits-upt-user',\r\n      templates: {\r\n        item(hit) {\r\n          return hitsTemplate(hit)\r\n        },\r\n      }\r\n    }),\r\n\r\n    customConfigure({\r\n      container: '#algolia-configure-upt-user',\r\n      hitsPerPage: 6,\r\n      multiplicator: 2,\r\n      searchParameters: {\r\n        hitsPerPage: 6,\r\n      },\r\n    }),\r\n  ])\r\n\r\n```\r\n\r\n> customWidget/index.js\r\n```javascript\r\nimport { connectConfigure } from 'instantsearch.js/es/connectors'\r\n/**\r\n * Custom configure\r\n * @param {Object} renderOptions object that contains informations for the configure\r\n */\r\nconst renderConfigure = renderOptions => {\r\n  const { refine, widgetParams } = renderOptions\r\n  const container = document.querySelector(widgetParams.container)\r\n\r\n  if (renderOptions.instantSearchInstance.helper) {\r\n    const hierarchicalFacetsRefinements = renderOptions.instantSearchInstance.helper.state.hierarchicalFacetsRefinements['post_type']\r\n\r\n    if (hierarchicalFacetsRefinements.length > 0 && container.getAttribute('data-filter') === 'false') {\r\n      container.setAttribute('data-filter', 'true')\r\n      refine({ hitsPerPage: widgetParams.hitsPerPage * widgetParams.multiplicator })\r\n    } else if (hierarchicalFacetsRefinements.length === 0 && container.getAttribute('data-filter') === 'true') {\r\n      container.setAttribute('data-filter', 'false')\r\n      refine({ hitsPerPage: widgetParams.hitsPerPage })\r\n    }\r\n  }\r\n}\r\n\r\nexport const customConfigure = connectConfigure(renderConfigure)\r\n```\r\n\r\n_____________\r\n\r\nIf you have a sexier way to do this, feel free to share it 😄 Anyway thanks for help.",
-      "user": 2543936,
-      "id": 593972502,
-      "reactions": {}
-    }
-  ]
+  }
 }

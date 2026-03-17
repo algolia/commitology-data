@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6309",
   "title": "react-instantsearch import fails in jest jsdom environment since 7.11.0",
   "date": 1722434105,
   "body": "### 🐛 Current behavior\n\nAfter upgrading to `react-instantsearch@7.11.0`, our tests started to fail with the following error:\r\n\r\n```\r\nSyntaxError: Unexpected token 'export'\r\n```\r\n\r\nWhen investigating the issue, we found out it was introduced with [this change](https://github.com/algolia/instantsearch/compare/react-instantsearch-core@7.10.0...react-instantsearch-core@7.11.0#diff-ab6f88a95338456e6f91ca8aa8699155153f09b67f8b2aab1bca4708e47eb9bf), as now `../widgets` is imported instead of `../widgets/index/index`, and where [./answers/answers](https://github.com/algolia/instantsearch/blob/3707501a19e582e8263a3ae5a9d51ff3f5263361/packages/instantsearch.js/src/widgets/index.ts#L3) is imported, where [preact is imported](https://github.com/algolia/instantsearch/blob/3707501a19e582e8263a3ae5a9d51ff3f5263361/packages/instantsearch.js/src/widgets/answers/answers.tsx#L4).\r\n\r\nPreact knows about this issue (https://github.com/preactjs/preact/issues/4406), but for now there is no plan on fixing it.\r\n\r\nFor now, I managed to get around this issue by adding a [testEnvironmentOptions.customExportConditions](https://jestjs.io/docs/configuration#testenvironmentoptions-object) jest configuration to our repository:\r\n\r\n```js\r\ntestEnvironmentOptions: {\r\n  customExportConditions: ['require'],\r\n}\r\n```\n\n### 🔍 Steps to reproduce\n\n1. Clone https://github.com/chrisvltn/algolia-jsdom-issue\r\n2. Run `npm install`\r\n3. Run `npm run test`\n\n### Live reproduction\n\nhttps://github.com/chrisvltn/algolia-jsdom-issue\n\n### 💭 Expected behavior\n\nTests to pass without runtime error.\n\n### Package version\n\nreact-instantsearch@7.11.0\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,16 +17,5 @@
     "number": 6309,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1722498067,
-      "body": "Thanks, that change wasn't intentional, the import should have only been changed for the types. I'll revert the change in code and you'll be able to verify that works again in your setup.\r\n\r\nSee #6310 for the PR and instructions on how to try it out in your setup",
-      "user": 6270048,
-      "id": 2262266859,
-      "reactions": {
-        "🎉": 1
-      }
-    }
-  ]
+  }
 }

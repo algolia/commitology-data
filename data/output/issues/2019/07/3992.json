@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:3992",
   "title": "Problem with hot addWidget",
   "date": 1564377429,
   "body": "Hi all!\r\n\r\nI got an error while working with `nuxt.js`, `ais-sort-by`, `ais-instant-search-ssr` and url routing. When page is loaded, I get items in `ais-hits` but afterwards (with some delay) I get errors which are related to addWidget and SortBy. I was looking into code and found out that this functionality can be buggy because this feature is experimental as mentioned in InstantSearch.js file. \r\n\r\nOn frontend I get this error: [url](https://drive.google.com/file/d/1x7MaX9T-ZRfhcwaWr3sZ0ezrtXw1XgR-/view?usp=sharing)\r\n\r\nI inspected by adding console.log(this.searchParameters) inside `addWidgets` (function of instantSearch lib) and found out that index is `undefined`. [url](https://drive.google.com/file/d/1LWmV1HRrZ3lv5KtfD1MOeIUWkN_WNkEA/view?usp=sharing)\r\n\r\nHere I'm getting error: [url](https://drive.google.com/file/d/1NszlT9g3_T4XVq95uyFhnFcBk6Ita3iA/view?usp=sharing)\r\n\r\nI've done configs and defined index at almost all possible places. In 2nd shared image, you can see that facets (also set by me) are present but index became undefined. I don't know why this is happening.\r\n\r\nIndex was present previously but it becomes undefined afterwards. **_Btw if I just comment out ais-sort-by then error do not occurs._**\r\n\r\nHere is my code for ais-sort-by:\r\n\r\n`<ais-sort-by :items=indexConfig />`\r\n\r\n```\r\nindexConfig() \r\n{\r\nreturn [{ value: process.env.vueAppAlgoliaIndexName, label: this.$t('product_search_list.Relevance')},\r\n\r\n{ value: `${process.env.vueAppAlgoliaIndexName}_preis_asc`, label: this.$t('product_search_list.PriceAsc') },\r\n\r\n { value: `${process.env.vueAppAlgoliaIndexName}_preis_desc`, label: this.$t('product_search_list.PriceDesc') },\r\n]\r\n},\r\n```\r\nThese are my configs for instant search:\r\n\r\n```\r\nimport algoliasearch from \"algoliasearch/lite\";\r\nimport { createInstantSearch } from \"vue-instantsearch\";\r\nimport { history as historyRouter } from 'instantsearch.js/es/lib/routers';\r\nimport { simple as simpleStateMapping } from 'instantsearch.js/es/lib/stateMappings';\r\n\r\nimport algolia from '~/services/algoliaClient';\r\n\r\nexport default function VueInstantSearchPlugin(_, inject) {\r\n\r\n  const { instantsearch } = createInstantSearch({\r\n    indexName: process.env.vueAppAlgoliaIndexName,\r\n    searchClient: algolia.algoliaClient,\r\n    routing: {\r\n      router: historyRouter(),\r\n      stateMapping: simpleStateMapping(),\r\n    },\r\n    async searchFunction(helper) {\r\n      // I even tried to set index using helper here but it didn't worked\r\n      await helper.setIndex(process.env.vueAppAlgoliaIndexName);\r\n      helper.state.index;\r\n      helper.search();\r\n    },\r\n    searchParameters: {\r\n      query: _.app.router.query,\r\n      index: process.env.vueAppAlgoliaIndexName,\r\n      disjunctiveFacets: [\r\n        'preis',\r\n        'companyName',\r\n        'productCondition_de',\r\n        'serviceType_de',\r\n        'kategorie',\r\n        'baujahr',\r\n        'priceNumber'\r\n      ],\r\n    },\r\n  });\r\n\r\n  inject(\"instantsearch\", instantsearch);\r\n}\r\n```\r\n\r\nIn nuxt.js we have layouts/default.vue file. In that file I've hydrated instant search inside beforeMount().\r\nHere is the code for it:\r\n\r\n```\r\nasync beforeMount() {\r\n    const uiState = this.$route.query || {};\r\n    const query = uiState.query || '';\r\n    const page = uiState.page - 1 || 0;\r\n    const $instantsearch = this.$instantsearch;\r\n    let searchState = await this.$instantsearch.findResultsState({\r\n      query,\r\n      page,\r\n      index: process.env.vueAppAlgoliaIndexName,\r\n      facets: [\r\n        'preis',\r\n        'companyName',\r\n        'productCondition_de',\r\n        'serviceType_de',\r\n        'kategorie',\r\n        'baujahr',\r\n        'priceNumber'\r\n      ],\r\n      disjunctiveFacets: [\r\n        'preis',\r\n        'companyName',\r\n        'productCondition_de',\r\n        'serviceType_de',\r\n        'kategorie',\r\n        'baujahr',\r\n        'priceNumber'\r\n      ]\r\n    });\r\n    let algoliaState =  await this.$instantsearch.getState();\r\n    this.$instantsearch.hydrate(algoliaState);\r\n    this.setLoading(false);\r\n```",
@@ -11,39 +10,5 @@
     "number": 3992,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1564399955,
-      "body": "Hi @Sirbuland, thanks for getting this to our attention, this indeed is a bug, which we managed to reduce thanks to your example. It's happening because 3.5.1 we made a change in how we deal with default values coming from URLs. \r\n\r\nCan you try this out in 3.4.0 of InstantSearch.js? You can use yarn resolutions to force that version to be used.",
-      "user": 6270048,
-      "id": 515954805,
-      "reactions": {}
-    },
-    {
-      "date": 1564401205,
-      "body": "Hi @Haroenv !\r\nThanks for your reply. I'll try using version 3.4.0 and update here about its results.",
-      "user": 23502541,
-      "id": 515960303,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1564553749,
-      "body": "Hi @Haroenv !\r\nIts still problematic with version 3.4.0. It do not give errors but the sort by is not still working fine. This widget disappears (dropdown menu) after some delay i-e 2-3 seconds. When page loads it is like this: [https://drive.google.com/file/d/16lTszOQHoNhUTPdVe63CmUmqpt-wK0G_/view?usp=sharing](dropdownPresent)\r\n\r\nAfter some time span it disappears: [https://drive.google.com/file/d/1EIGzJDuUNK9CdMZhXQccle73MXjoLRUk/view?usp=sharing](dropdownDisappears)\r\n\r\nThis was also happening previously when created this issue, but also give errors on browser's console. Now there is no error on console.\r\n\r\nI shifted to previous version of instantsearch.js by using resolutions in package.json.\r\n\r\n```\r\n\"resolutions\": {\r\n \"instantsearch.js\": \"3.4.0\",\r\n},\r\n```",
-      "user": 23502541,
-      "id": 516712453,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1623076375,
-      "body": "Sorry for not getting back here, but I think this has been fixed since. Please feel free to open a new issue with reproduction if this still happens now",
-      "user": 6270048,
-      "id": 855981500,
-      "reactions": {}
-    }
-  ]
+  }
 }

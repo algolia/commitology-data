@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1568",
   "title": "Wrong products filtered with starRating widget when decimal numbers are used in \"ranking\" attribute",
   "date": 1479314932,
   "body": "<!--\r\n  Thanks for participating in this project!\r\n  Please:\r\n    - make sure you are using the latest version of the library.\r\n    - do at least one GitHub search in current issues, maybe your question is already here\r\n-->\r\n\r\n**Do you want to request a *feature* or report a *bug*?**\r\n*Bug*\r\n\r\n**What is the current behavior?**\r\nWhen I have record with attribute `ranking: 4.1` and refine results with starRating widget and selecting **4 stars & Up** the record is not retrieved.\r\nIt's because IS sending query to Algolia with `facetFilters: [\"ranking:4\", \"ranking:5]` instead of `filters: [ranking>=4]`.\r\n\r\n**If the current behavior is a bug, please provide all the steps to reproduce and a minimal\r\n[JSFiddle](https://jsfiddle.net/) example or a repository on GitHub that we can `npm install`\r\nand `npm start`.**\r\nhttps://jsfiddle.net/JanPetr/97scwnf4/ - try to filter by **4 stars & Up** and **Apple** record won't be in results.\r\n\r\n**What is the expected behavior?**\r\nTo be able to get results with decimal values in attribute used for starRating widget.",
@@ -20,56 +19,5 @@
       "👍️": 1
     },
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1479422474,
-      "body": "@bobylito Can you help on this in discovering the reasoning for this? I think it's linked to disjunctive faceting VS numeric filters and getting counts for other values. Just want to ensure we could fix that in react-instantsearch (I think it's already using numeric filters in react-instantsearch though)\n",
-      "user": 123822,
-      "id": 261393017,
-      "reactions": {}
-    },
-    {
-      "date": 1488454573,
-      "body": "Agree with @JanPetr and not sure why this is implemented like this. The documentation also mentions that the filtering is a number, no specifics that it has to be an integer.\r\n\r\nRight now the only workaround is using a field with an integer number for the filter while having a decimal one for showing the decimal value in the hits. \r\n\r\nI really think is a major issue as it defies the purpose having this filter.",
-      "user": 5264935,
-      "id": 283630460,
-      "reactions": {}
-    },
-    {
-      "date": 1488480855,
-      "body": "o/ As you mentioned @vvo it's not possible to get counts unless we use facets and specific and small enough number of values. Basically 0-5 integers. We should document the expected structure better.",
-      "user": 393765,
-      "id": 283744387,
-      "reactions": {}
-    },
-    {
-      "date": 1488482795,
-      "body": "Cannot judge impact in changing this, but my assumption is that the vast majority has implemented this widget assuming that decimal numbers are handled and they are actually getting the wrong results when they use the star rating widget... in that sense I think it's a major issue, as I think people do not realize that.\r\n\r\nUpdating the documentation would at least help new implementations. \r\n\r\n",
-      "user": 5264935,
-      "id": 283753436,
-      "reactions": {}
-    },
-    {
-      "date": 1488557892,
-      "body": "@itibook maybe it could worth having two widgets. One for integer values that have the count and one based on numeric filter that won't have the counts?",
-      "user": 393765,
-      "id": 283997670,
-      "reactions": {}
-    },
-    {
-      "date": 1488570074,
-      "body": "Hi Alex / @bobylito  \r\nok I see what you mean... I did not even notice the \"count\" in the starRating widget.\r\n\r\n**Assumption**\r\n\r\nthe majority of current implementations of the widget is wrong as they most likely use non-integer values for the widget. (you could do some sample checking among your customers that use this widget to see if this is the case)\r\n\r\n**Solutions**\r\n\r\nAssuming most people have implemented the widget with non-integers, I'd suggest making a breaking change when you release v2 for InstantSearch.js (btw, any timeline?) so that the default behavior of the starRating widget is to handle non-integers. The reason for doing this is to make sure that people won't miss this important detail in the future. This will mean that the count is dropped, but I think it's better to drop the count by default than having wrong results because people misunderstand how the widget works.\r\n\r\nYou can create a second widget for people who want the count all costs. I have no data to back it up, but I don't think that the count on the starRating is a must have as filtering on the stars simply means you want a certain quality, it doesn't matter how many there are.\r\n\r\nIf you could simple sample check some implementation and see what people do in practice you could make a more data-driven decision. \r\n\r\nhope it helps! \r\n",
-      "user": 5264935,
-      "id": 284050717,
-      "reactions": {}
-    },
-    {
-      "date": 1498928553,
-      "body": "This can be done with a [numericRefinementList](https://community.algolia.com/instantsearch.js/v2/widgets/numericRefinementList.html)",
-      "user": 393765,
-      "id": 312443545,
-      "reactions": {}
-    }
-  ]
+  }
 }

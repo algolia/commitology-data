@@ -14,26 +14,16 @@ const algoliaConfig = {
     apiKey: process.env.ALGOLIA_ADMIN_API_KEY,
   },
   settings: {
-    distinct: 3,
-    attributeForDistinct: 'distinctKey',
-
-    searchableAttributes: [
-      'unordered(title)',
-      'unordered(body)',
-      'unordered(comment.body)',
-      'user.login',
-      'comment.user.login',
-    ],
+    searchableAttributes: ['unordered(title)', 'unordered(body)', 'user.login'],
     attributesToSnippet: ['body'],
 
     attributesForFaceting: [
-      'commit.state',
+      'type',
       'date',
+      'user.login',
+      'commit.state',
       'issue.state',
       'pull.state',
-      'type',
-      'user.login',
-      'comment.user.login',
       'pull.label.name',
     ],
 

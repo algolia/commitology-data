@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:3278",
   "title": "Duplicate facets inside the request",
   "date": 1542886830,
   "body": "Original Vue InstantSearch issue: https://github.com/algolia/vue-instantsearch/issues/587 \r\n\r\nThe issue seems to come from the [`enhanceConfiguration`](https://github.com/algolia/instantsearch.js/blob/develop/src/lib/InstantSearch.js#L484-L510) function that compute the initial search parameters. Inside this function we do a union on of both value when it's an array. It can leads to duplicated value like we have inside this issue. In most cases the problem won't be visible unless in that case with the hot reload.\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/1e86b2e74064c2334f2eb3c8793c3250b78fe27b/src/lib/InstantSearch.js#L496-L498\r\n\r\ncc @dulnan\r\n\r\n> https://codesandbox.io/s/1qoq47086j\r\n\r\n-----\r\n\r\n**Bug 🐞**\r\n\r\n### What is the current behavior?\r\nWhen using an ais-refinement-list and ais-menu, while also having routing (using historyRouter and simpleMapping) enabled, the hierarchical facets are added multiple times to the search parameters.\r\n\r\nA small CodeSandbox showing this behavior:\r\nhttps://codesandbox.io/s/9324rjjz3p\r\nUpon page load, using the browser's network activity inspector, the request to Algolia servers shows that `categories` has been added to `facets` twice.\r\n\r\nThe bug is especially noticeable when working locally, as every time one changes something in a Vue file and a refresh happens, the duplicated hierarchical facets are duplicated again. Which, due to routing with state mapping being enabled, will result in the app hanging for several seconds or even crashing.\r\n\r\n![image](https://user-images.githubusercontent.com/4155003/48899719-a0f4eb00-ee50-11e8-8ffe-45eb49314304.png)\r\n![image](https://user-images.githubusercontent.com/4155003/48899727-a6523580-ee50-11e8-9f36-ae9df2c31cd1.png)\r\n\r\n\r\nThis can best be reproduced by opening components/Facet.vue and adding a line break in the template, so a refresh happens.\r\n\r\n### What is the expected behavior?\r\nThe hierarchicalFacets should only be added once.\r\n\r\n### Does this happen only in specific situations?\r\nWhen using ais-menu or ais-refinement-list together with routing enabled.\r\n\r\n### What is the proposed solution?\r\nUnfortunately I haven't figured out exactly where the bug is coming from.\r\n\r\n### What is the version you are using?\r\n2.0.0-beta.1",
@@ -24,30 +23,5 @@
     "number": 3278,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1555513368,
-      "body": "Hello, is any advance on this?\r\n\r\nI have a similar problem, but is crashing the entire app.\r\n\r\n**I'm using vue-instantsearch**\r\n\r\nI have prepared this example, where I am adding a button to show / hide the menu.\r\n\r\n[![Edit Check extra request](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/5k08ro4mqk?fontsize=14)\r\n\r\n![image](https://user-images.githubusercontent.com/570080/56298304-4febd900-6108-11e9-87f4-9dddde626123.png)\r\n\r\nThis is a simplified example, but I found in the real application, that after several clicks on that button, Chrome crash.\r\n\r\nAnd it is because every time I click on the button, multiple requests are made to the algolia api.\r\n\r\n![image](https://user-images.githubusercontent.com/570080/56298483-993c2880-6108-11e9-8bf7-59d5c7311996.png)\r\n\r\n\r\nAnd in each of them, the 'facets' parameter is duplicated\r\n\r\n![image](https://user-images.githubusercontent.com/570080/56298530-ac4ef880-6108-11e9-9b77-6376bdf92040.png)\r\n\r\n![image](https://user-images.githubusercontent.com/570080/56298437-7f9ae100-6108-11e9-8d46-4f16b8b14083.png)\r\n\r\n\r\nAfter dismantling the entire application, and reassembling it component by component, I discovered that this is caused by the ais-configure\r\n\r\nWithout ais-configure this doesn't happen, and as you can see in the example, is a simple:\r\n\r\n`<ais-configure :hits-per-page.camel=\"4\"></ais-configure>`\r\n\r\nCan someone help me solve this, please?\r\n\r\nThank you",
-      "user": 570080,
-      "id": 484128687,
-      "reactions": {}
-    },
-    {
-      "date": 1557162574,
-      "body": "Hi @msassa, we've provided a workaround on the Vue InstantSearch [issue](https://github.com/algolia/vue-instantsearch/issues/663#issuecomment-489695804). Take a look if it can help!",
-      "user": 6513513,
-      "id": 489697490,
-      "reactions": {
-        "🎉": 1
-      }
-    },
-    {
-      "date": 1557173254,
-      "body": "Thank you so much !! \r\nI will continue the feedback in the https://github.com/algolia/vue-instantsearch/issues/663#issuecomment-489695804 if you are ok ",
-      "user": 570080,
-      "id": 489757399,
-      "reactions": {}
-    }
-  ]
+  }
 }

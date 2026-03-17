@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:4359",
   "title": "fix(index): support adding index widget with initial UI state",
   "date": 1584545114,
   "body": "Sorry for this larger pull request, if it proves too complicated for a single PR, we can split this up in three smaller PRs\r\n\r\n1. when hydrating (server or client) we add widgets, these shouldn't search yet, until started\r\n\r\nsince every added widget calls scheduleSearch if `init` has happened, this used to do a search, even before `start` was called, and thus with not yet the correct state\r\n\r\n2. make sure local ui state _keeps_ \"not yet mounted\" widgets on change\r\n\r\ne.g. initialUiState contains a few widgets, if you mount those one by one, after `init` on its index, each widget would cause a change event on the helper, which used to erase non-valid state, since it starts from an empty ui state. This is now fixed by using the previous local ui state as base, but a special provision for `isPageReset`\r\n\r\n3. prevent mutation in escapeHits\r\n\r\nIt's okay to do `results.hits = ...` inside connectHits, since that overrides just the value on `SearchResults`, however if we mutate within the inner hits, we are actually mutating `_rawResults`, which isn't what we want to achieve for server side rendering, since `_rawResults` gets serialised.\r\n\r\nFurther changes are just minor for tests\r\n\r\n## How to test this?\r\n\r\nTwo options:\r\n\r\n1. the tests themselves show a use case of uiState which shouldn't be removed\r\n2. https://github.com/algolia/vue-instantsearch/pull/764 has instructions",
@@ -11,28 +10,5 @@
     "number": 4359,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1588666132,
-      "body": "E2E test failure seems to be a fluke (cc @yannickcr), locally the URL updates as expected in those scenarios",
-      "user": 6270048,
-      "id": 623917339,
-      "reactions": {}
-    },
-    {
-      "date": 1588671664,
-      "body": "The e2e test seems to actually catch a bug; if a refinement is set again to the default value of the widget (usually nothing) the previous value for uiState is kept by the widget. This is expected on first render, but not later.",
-      "user": 6270048,
-      "id": 623956641,
-      "reactions": {}
-    },
-    {
-      "date": 1588672852,
-      "body": "The problem is related to this line\r\n\r\nhttps://github.com/algolia/instantsearch.js/blob/9ff71e2341acc5b09133e095c3285a2de162b846/src/widgets/index/index.ts#L418-L425\r\n\r\nBefore this pull request, every change to the helper, will erase the uiState which is \"still there\", since it was reduced from an empty object. This was causing issues in Vue InstantSearch, since every widget added on server side erased the initialUiState (except the first widget to be mounted).\r\n\r\nThe solution I saw was to base the new state of the existing state. The issue that pops up because of this is that when a widget refines, and later goes back to its default / unrefined state, all widgets have a guard that check \"if not refined, return uiState\", and thus they _keep_ the previously refined state in the URL & uiState.\r\n\r\nA change I can imagine is in all widgets themselves removing that condition and returning a uiState with explicitly `undefined` for those values, but that likely would break intialUiState & routing.",
-      "user": 6270048,
-      "id": 623964835,
-      "reactions": {}
-    }
-  ]
+  }
 }

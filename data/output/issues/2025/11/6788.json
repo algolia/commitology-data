@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6788",
   "title": "useRelatedProducts hook causes hydration error in SSR setup",
   "date": 1762249287,
   "body": "### 🐛 Current behavior\n\nAt the moment I'm experiencing issues with the `useRelatedProducts` hook provided by `react-instantsearch`, specifically in an SSR setup.\n\nAt the moment, whenever components which use the `useRelatedProducts` hook are served by the server along with Algolia server state an hydration error occurs. On closer inspection it seems like the internal state of the hook does not seem to be stable. At the first render it will contain the results as provided by the server to the `InstantSearchSSRProvider`, however on re-render it will be empty, causing hydration issues.\n\n### 🔍 Steps to reproduce\n\n1. Clone my repository which is linked below.\n2. Install dependencies: `nvm use && corepack enable && pnpm install`\n3. Run the client-only build using `pnpm start-client`, which should work as intended.\n4. Run the SSR build using `pnpm start-server`, which should throw hydration errors.\n\nSee the project README for a more detailed description.\n\n### Live reproduction\n\nhttps://github.com/daanjo3/algolia-recommendations-ssr\n\n### 💭 Expected behavior\n\nI would expect the state (and thus the resulting `items` field) of the `useRelatedProducts` hook to remain stable across re-renders, as long as no dependencies change. \n\n### Package version\n\nalgoliasearch 5.41.0, instantsearch.js 4.81.0, react-instantsearch 7.17.0, react 18.3.1, react-dom 18.3.1\n\n### Operating system\n\nArch Linux, MacOS\n\n### Browser\n\nMozilla Firefox 144.0.2, Google Chrome 141.0.7390.107\n\n### Code of Conduct\n\n- [x] I agree to follow this project's Code of Conduct",
@@ -20,35 +19,5 @@
       "👍️": 1
     },
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1762337741,
-      "body": "Hi, thanks for providing a reproduction example. I looked at it and it seems the hydration error comes from:\n- not properly rendering App's HTML server-side\n- rendering a different value for \"Using client type: xxx\" between SSR / CSR\n\nTo fix the first issue, you'll need to wrap your App component within `<InstantSearchSSRProvider>` in both your browser (main) and server implementations.\n\n**App.tsx**\n```tsx\n// ...\ntype AppProps = {\n  serverState?: InstantSearchServerState;\n};\n\nconst App: React.FX<AppProps> = ({ serverState }) => (\n  <React.StrictMode>\n    <InstantSearchSSRProvider {...serverState}>\n      {/* ... */}\n    </InstantSearchSSRProvider>\n  </React.StrictMode>\n);\n```\n\n**main.tsx**:\n```tsx\n// ...\nif (serverState) {\n  hydrateRoot(\n    container,\n    <App serverState={serverState} />\n  );\n  \n  delete window.ALGOLIA_SERVER_STATE;\n} else {\n  // ...\n}\n```\n\n**server.tsx**\n```tsx\n// ...\nconst html = htmlTemplate.replace('replace me', () => `${renderToString(<App serverState={state} />)}<script>window.ALGOLIA_SERVER_STATE = ${JSON.stringify(state)};</script>`);\n```\n\nTo fix the second issue, do not conditionally display the type of the search client in App.tsx. If it changes it will throw an invariant error during hydration.\n\n**App.tsx**\n```diff\n- <li>Using client type: {typeof window === 'undefined' ? 'algoliasearch (full)' : 'liteClient'}</li>\n+ <li>Using client type: liteClient</li>\n```",
-      "user": 154633,
-      "id": 3490344942,
-      "reactions": {}
-    },
-    {
-      "date": 1762352932,
-      "body": "Hi, thank you for the quick reply! I've made the recommended changes. However, I'm still running into hydration errors. In my updated example you can see in the console logs that the `useRelatedProducts` hook briefly returns 0 items on re-renders.",
-      "user": 11770202,
-      "id": 3491528504,
-      "reactions": {}
-    },
-    {
-      "date": 1762525335,
-      "body": "The extra checks from `<StrictMode>` in development mode seem to cause the hook to discard the state. We'll look into this behavior, but it has no impact in production mode.",
-      "user": 154633,
-      "id": 3502846379,
-      "reactions": {}
-    },
-    {
-      "date": 1762847708,
-      "body": "Thanks for looking into it. It's unfortunate that we get these issues with `StrictMode`, but thanks for confirming it.",
-      "user": 11770202,
-      "id": 3515416020,
-      "reactions": {}
-    }
-  ]
+  }
 }

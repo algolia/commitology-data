@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1924",
   "title": "Make search function provide a better API",
   "date": 1485561297,
   "body": "This is a feature for instantsearch.js V2 -- breaking change\r\n\r\nRight now, we have a function that can be given to the instantsearch factory called searchFunction. This function is given a helper that can't be modified, only the search function can be really used. Instead we could only provide a single function `search` as a parameter.\r\n\r\n## API proposal\r\n\r\n```js\r\ninstantsearch({\r\n  searchFunction: (search, searchParameters) => {\r\n     search(searchParameters.setQuery(''));\r\n  };\r\n});\r\n```\r\n\r\nIn this example, the function will prevent the query to be set.",
@@ -18,65 +17,5 @@
     "number": 1924,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1485767356,
-      "body": "Yes to this. This is a breaking change it seems?",
-      "user": 123822,
-      "id": 276011140,
-      "reactions": {}
-    },
-    {
-      "date": 1486029219,
-      "body": "Yes it is!",
-      "user": 393765,
-      "id": 276913415,
-      "reactions": {}
-    },
-    {
-      "date": 1487077853,
-      "body": "I've found myself confused on when I need to use `instantsearch.helper` and when I need to use the shallow-clone of it in `searchFunction`.\r\n\r\nBecause the `searchFunction` param is just a shallow clone with `.search()`, if I need any other methods (e.g. `setQueryParameter`), I need to use `instantsearch.helper`. However, once I actually `.search`, I need to use the helper from the `searchFunction` param, or the search won't work.\r\n\r\nHere's an example. I want to prevent initial searching, listen for a map event and `setQueryParameter`, and then search. To do this, I have to juggle between both of the helpers, which seems icky and confusing.\r\n\r\n```\r\nvar myMap = Leaflet.map('my-map');\r\nvar clonedHelper;\r\n\r\nvar instantSearch = new InstantSearch({\r\n  searchFunction: (helper) => {\r\n    clonedHelper = helper;\r\n  }\r\n});\r\n\r\nmap.on('moveend', (event) => {\r\n  instantSearch.helper.setQueryParameter('insideBoundingBox', '...');\r\n  clonedHelper.search();\r\n\r\n  // Doesn't work\r\n  // instantSearch.helper.search();\r\n});\r\n```",
-      "user": 18329,
-      "id": 279703066,
-      "reactions": {}
-    },
-    {
-      "date": 1487079931,
-      "body": "Hi @timkelty Actually we failed you here, we are not providing enough resources for the kind of use case you have. The correct way (as instantsearch.js is designed) is to create a custom widget for you map component:\r\n\r\n```js\r\nvar mapWidget = {\r\n  init: function({helper}) {\r\n    this.map = Leaflet.map('my-map');\r\n    map.on('moveend', (event) => {\r\n      helper.setQueryParameter('insideBoundingBox', '...').search();\r\n    });\r\n  }\r\n}\r\n```\r\n\r\nI hope this will help you.",
-      "user": 393765,
-      "id": 279710522,
-      "reactions": {}
-    },
-    {
-      "date": 1487080197,
-      "body": "@bobylito ah, thanks! That helps a lot.\r\n\r\nSorry to hijack the issue!",
-      "user": 18329,
-      "id": 279711541,
-      "reactions": {}
-    },
-    {
-      "date": 1487081187,
-      "body": "@timkelty Power to the user!! We want to hear from you :D",
-      "user": 393765,
-      "id": 279715568,
-      "reactions": {}
-    },
-    {
-      "date": 1493826987,
-      "body": "After using this method a few times, using the fake helper while wanting to change the values before doing a search feels terribly clunky. However JS has prototypal inheritance and we could leverage it to provide a lightweight helper that actually triggers the search.\r\n\r\nNew proposal would be:\r\n\r\n```javascript\r\ninstantsearch({\r\n  searchFunction: (helper) => {\r\n     helper.setQuery('new value').search());\r\n  };\r\n});\r\n```\r\n\r\nThis means that it will feel like the original helper with the same interface and we won't need to actually get the helper instance on the instantsearch object.",
-      "user": 393765,
-      "id": 298954783,
-      "reactions": {
-        "👍️": 2
-      }
-    },
-    {
-      "date": 1496953588,
-      "body": "We've implemented the latest proposal in the latest beta of instantsearch.js v2. It works fine except that now it poses problem for custom widget that want to bind on the help lifecycle as well. This is because of the behavior of an event emitter behavior as a prototype (with the use of immutable objects which don't update their values in place). see #2176 ",
-      "user": 393765,
-      "id": 307217598,
-      "reactions": {}
-    }
-  ]
+  }
 }

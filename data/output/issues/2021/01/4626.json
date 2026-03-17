@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:4626",
   "title": "connectRange does not trigger an update when both range bounds are set to undefined",
   "date": 1610715349,
   "body": "## 🐛 Bug description\r\n\r\nI'm working on a `connectRange()` implementation with a custom slider library (noUiSlider) and have run into the issue that `connectRange` will not trigger an update when I call `refine([undefined, undefined])`. I have tracked down the code that ultimately causes this behaviour, which is [this `if`-statement][issue-source] in the `connectRange` source code.\r\n\r\nI have also found that this issue **only occurs** when I have an override for the `onStateChange` method on the `InstantSearchOptions` object passed to the `instantsearch()` factory function. If I remove this override everything works as expected.\r\n \r\n## 🔍 Bug reproduction\r\n\r\n1. Create and register a `connnectRange()` widget\r\n2. Have an override of `onStateChange()` in the configuration passed to the `instantsearch()` factory function, exactly as [the documentation][onstatechange-doc] shows:\r\n\r\n    ```typescript\r\n    {\r\n        onStateChange({ uiState, setUiState })\r\n        {\r\n            setUiState(uiState)\r\n        }\r\n    }\r\n    ```\r\n3. Restrict one bound of the range (UI updates as expected)\r\n4. Reset that bound to match the corresponding range min/max value. (UI does not update)\r\n\r\n\r\n<!-- A live example helps a lot! Fork the sandbox, reproduce the bug and paste the URL here: -->\r\n\r\n**Live reproduction:**\r\n\r\nIn this [live example][live-example] perform the following steps:\r\n1. click down the max-value of the price number input, and watch the results count go down\r\n2. click back up the max-value, then the results count should go back up, but it doesn't. Nor does the hits list update as expected.\r\n3. click on any pagination link, and watch the results count update now. \r\n\r\n    _Because of the observation in step 3, it looks like it that the bounds are updated internally, because if I have any other interaction afterwards that triggers an update of the search results, the reset bounds do get noticed and my UI updates using the `undefined` bounds._\r\n\r\n4. Comment (disable) the `onStateChange` override\r\n5. Perform steps 1 to 3 again, and see everything work as expected.\r\n\r\n## 💭 Expected behavior\r\n\r\nThe [refine() documentation][refine-docblock] states:\r\n\r\n> You can use `undefined` to remove a previously set bound or to set an infinite bound.\r\n\r\nThis makes me expect that when the state is for instance `[10, undefined]` and then I call `refine([undefined, undefined])` that the lower bound `10` is being removed, and then a new search is triggered, regardless of other non-related options such as the `onStateChange` method.\r\n\r\n## Environment\r\n\r\n- OS: macOS\r\n- Browser: Chrome - Version 87.0.4280.88 (Official Build) (x86_64)\r\n- instantsearch.js version: `4.10.0-experimental-typescript.0`\r\n\r\n\r\n[live-example]: https://codesandbox.io/s/agitated-bhaskara-s78pq\r\n[onstatechange-doc]: https://www.algolia.com/doc/api-reference/widgets/instantsearch/js/#widget-param-onstatechange\r\n[refine-docblock]: https://github.com/algolia/instantsearch.js/blob/v4.11.0/src/connectors/range/connectRange.ts#L38\r\n[issue-source]: https://github.com/algolia/instantsearch.js/blob/v4.11.0/src/connectors/range/connectRange.ts#L329",
@@ -11,44 +10,5 @@
     "number": 4626,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1610731174,
-      "body": "Thank you @JJWesterkamp a lot for your effort to open this issue.\r\nWe'll get it fixed and you can follow the progress via #4627.",
-      "user": 499898,
-      "id": 761071297,
-      "reactions": {}
-    },
-    {
-      "date": 1610731382,
-      "body": "@eunjae-lee Thank you very much!",
-      "user": 12270687,
-      "id": 761073161,
-      "reactions": {}
-    },
-    {
-      "date": 1611049517,
-      "body": "@eunjae-lee I'm not sure if it is related to this issue, but I also found that the initial `renderOptions` passed to the connector callback argument are incorrect if a range filter is set at initialisation time. For example:\r\n\r\n```typescript\r\nconnectRange((renderOptions, isFirstRender) => {\r\n    renderOptions.start[0] // Should be the initial lower bound filter if set\r\n    renderOptions.start[1] // Should be the initial upper bound filter if set\r\n})\r\n```\r\n\r\nBut regardless of how I supply this state, I always get passed the range limits min/max. I have tried:\r\n1. Setting the `initialUiState`:\r\n    ```typescript\r\n    instantsearch({\r\n        // ...\r\n        initialUiState: {\r\n            [indexName]: {\r\n                range: {\r\n                    price: '150:1500',\r\n                }\r\n            },\r\n        },\r\n    })\r\n    ```\r\n2. Use state mapping with the history router:\r\n    ```typescript\r\n    routeToState(routeState: RouteState): UiState {\r\n        return {\r\n            [indexName]: {\r\n                range: {\r\n                    price: '150:1500'\r\n                },\r\n            },\r\n        }\r\n    }\r\n    ```\r\n\r\nAm I missing something?\r\nThanks in advance!\r\n\r\n**EDIT**\r\nThis also happens outside controlled mode.\r\n\r\n",
-      "user": 12270687,
-      "id": 762726449,
-      "reactions": {}
-    },
-    {
-      "date": 1611070426,
-      "body": "Hey @JJWesterkamp I just tested it and in https://github.com/algolia/instantsearch.js/pull/4627 it will be fixed as well.\r\nI just added a test to make sure it works there :) ",
-      "user": 499898,
-      "id": 762920841,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1612345730,
-      "body": "Hello @JJWesterkamp , this has been released in 4.13.2",
-      "user": 499898,
-      "id": 772377755,
-      "reactions": {}
-    }
-  ]
+  }
 }

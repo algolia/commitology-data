@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:5198",
   "title": "[create-instantsearch-app] Allow more flexible dependencies",
   "date": 1528277953,
   "body": "The way we fetch the correct library version for each template right now is defined by the [`libraryName` property on each template configuration](https://github.com/algolia/create-instantsearch-app/blob/6e674b707223b5bf5097205e17b7e52cefbfcfda/templates/InstantSearch.js/.template.js#L5). Then, we [fetch the library versions](https://github.com/algolia/create-instantsearch-app/blob/6e674b707223b5bf5097205e17b7e52cefbfcfda/packages/cli/cli.js#L127) based on this name.\r\n\r\nThis is fine for now but won't work as soon as we release new major versions (i.e. InstantSearch 3) because we will rely on the libraries `instantsearch.js` and `algoliasearch`.\r\n\r\nHere is my proposal.\r\n\r\n## Template configuration file\r\n\r\nWhat I propose is to remove this `libraryName` property and to add a `dependencies` property in the `.template.js` file:\r\n\r\n```javascript\r\nmodule.exports = {\r\n  dependencies: [\r\n    {\r\n      title: 'InstantSearch.js',\r\n      name: 'instantsearch.js',\r\n    },\r\n    {\r\n      title: 'JavaScript Client',\r\n      name: 'algoliasearch',\r\n    },\r\n  ]\r\n};\r\n```\r\n\r\n## CLI\r\n\r\nThen, in the CLI, we prompt all these dependencies (instead of the current \"InstantSearch version\"). It would look like so:\r\n\r\n```\r\nInstantSearch.js version: 2.8.0\r\nJavaScript Client version: 2.5.0\r\n```\r\n\r\nWe can then add these versions in a `versions` key in the config passed to `createInstantSearchApp()`.\r\n\r\n## Templates\r\n\r\nUsing Handlebars, we'll be able to access them in the template:\r\n\r\n```hbs\r\n{{versions.[instantsearch.js]}}\r\n{{versions.[algoliasearch]}}\r\n```\r\n\r\nI think this solution is more future proof; I already needed such a feature for installing templates without dependencies, and other templates depending on CSS libraries to fetch on npm.\r\n\r\n---\r\n\r\nLet me know what you think.",
@@ -18,14 +17,5 @@
     "number": 5198,
     "reactions": {},
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1528278587,
-      "body": "To go further, I think it'd be a good idea to go with the array version and to add the `getVersions()` function (like the current [fetch function](https://github.com/algolia/create-instantsearch-app/blob/master/packages/shared/utils.js#L111)) for each dependency. We'll need that for iOS templates that need to retrieve versions from Cocoapod and not npm.\r\n\r\nThe [current fetch function](https://github.com/algolia/create-instantsearch-app/blob/master/packages/shared/utils.js#L111) would be the default one but could be overriden like so:\r\n\r\n```javascript\r\nconst client = algoliasearch(algoliaConfig.appId, algoliaConfig.apiKey);\r\nconst index = client.initIndex(algoliaConfig.indexName);\r\n\r\nmodule.exports = {\r\n  dependencies: [\r\n    {\r\n      title: 'InstantSearch iOS',\r\n      name: 'instantsearch-ios',\r\n      async getVersions() {\r\n        const library = await index.getObject('cocoapods');\r\n\r\n        return Object.keys(library.versions).reverse();\r\n      }\r\n    },\r\n    {\r\n      title: 'JavaScript Client',\r\n      name: 'algoliasearch',\r\n      getVersions() {\r\n        return ['1.0.0']\r\n      }\r\n    },\r\n    {\r\n      title: 'JavaScript Helper',\r\n      name: 'algoliasearch-helper'\r\n      // Fetch from npm as default\r\n    },\r\n  ]\r\n};\r\n```\r\n\r\nIn the CLI, we'll have to call this function if specified, otherwise, call the current fetch function.\r\n\r\nThoughts?",
-      "user": 6137112,
-      "id": 1354836421,
-      "reactions": {}
-    }
-  ]
+  }
 }

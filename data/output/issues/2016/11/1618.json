@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:1618",
   "title": "how do i use cWRP with Instantsearch widget?",
   "date": 1480396736,
   "body": "I have a page which contains links that open the same page again but with a different query, since the component remains the same, react will not unmount and mount back again.\r\n\r\nI want the parameters to change when the same page is opened up with a different query.\r\n\r\nBasically I want to trigger change of state programmatically in my cWRP.\r\n\r\nI am using react-instantsearch beta 18",
@@ -18,77 +17,5 @@
     "number": 1618,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1480411910,
-      "body": "Hi @harshmaur, what is \"cWRP\"?\r\n\r\nYou should be able to inject state on your `<InstantSearch/>` instance and update the query accordingly, see https://community.algolia.com/instantsearch.js/react/guides/advanced-topics.html#url-routing",
-      "user": 123822,
-      "id": 263520466,
-      "reactions": {}
-    },
-    {
-      "date": 1480415996,
-      "body": "Sorry, its `componentWillReceiveProps`. \r\n\r\nI have a case like this. \r\n\r\nhttps://cl.ly/0m2y1r091N3i\r\n\r\nI have a page which has instantsearch widget loaded in. Below I have similar products, which open up the same page only. So ultimately react does not unmount the component and nothing is changed. For that I use `cWRP` to check for change of any route and change the state. ",
-      "user": 12210058,
-      "id": 263535999,
-      "reactions": {}
-    },
-    {
-      "date": 1480417108,
-      "body": "@harshmaur Do you need to wrap this product page as a whole in an `<InstantSearch>`? I would say only the simliar product part needs to be udpated.\r\n\r\nAs for the page not being updated I fail at seeing how this is a react-instantsearch issue? I would first try to do it without using `<InstantSearch/>` and bind similar product to static data and see if you are able to update the page. This look more of a generic react routing issue rather than a react-instantsearch issue?",
-      "user": 123822,
-      "id": 263540189,
-      "reactions": {}
-    },
-    {
-      "date": 1480418608,
-      "body": "My whole page contains two instantsearch instances. Everything else other than Similar products are in one instance and similar is in another. My first instance basically looks at the url and fetches the route to put some query in filters. On clicking similar product, my route changes, but Instantsearch would not know about it as it sees there is literally no change. Its not a react-instantsearch problem but a react problem. For that react provides cWRP which says if there is a change in the prop, do something that you want to do and update other components. \r\n\r\nSo basically I want to know how can I update instantsearch instance to take the new route and render accordingly. ",
-      "user": 12210058,
-      "id": 263545496,
-      "reactions": {}
-    },
-    {
-      "date": 1480425107,
-      "body": "@harshmaur can you provide a jsbin/small repo with a simplified example showing us the issue ? \r\n\r\nIn order to have the InstantSearch instance updated you need to pass a new `state` props. I assume that because the route is changing, then the `componentWillReceiveProps` of the component to render will be triggered. Then you need to parse the url to reconstruct the state, and use that state to update the InstantSearch instance. ",
-      "user": 6885378,
-      "id": 263566217,
-      "reactions": {}
-    },
-    {
-      "date": 1480426644,
-      "body": "I am not doing any url syncs. I am normally getting the slugs from `this.props.params.slug` to find slug and use this in instantsearch like this in my `render()`\r\n\r\n```jsx\r\n<InstantSearch appId={ALGOLIA_APPID}\r\n                apiKey={ALGOLIA_APIKEY}\r\n                indexName={LOWESTINDEX}\r\n                searchParameters={{\r\n                    distinct: false,\r\n                    filters: `slug: ${slug} AND instock: 1`\r\n                }}>\r\n```\r\n\r\nWhen this slug changes, I need to get the new slug. \r\n\r\n```jsx\r\ncomponentWillReceiveProps(nextProps) {\r\n    if(this.props.params.slug !== nextProps.params.slug){\r\n      \r\n   // Change the state here.... and have Instantsearch take the new slug. \r\n    }\r\n  }\r\n```\r\n\r\nI am not sure if I can provide a working jsbin example or not. If the above description is not clear, I can try to do it. \r\n",
-      "user": 12210058,
-      "id": 263571672,
-      "reactions": {}
-    },
-    {
-      "date": 1480431369,
-      "body": "Behavior: if the `searchParameters` props is updated, nothing will happen because `searchParameters` are not updated internally. \r\n\r\nThere's two things here: \r\n\r\n* we never update the `searchParameters` property once `InstantSearch` is mounted. It means that a user will never be able to change them once `InstantSearch` is mounted. \r\n* when `InstantSearch` is uncontrolled (meaning that the state is not handle externally), we do not perform a new search. So even if we were updating the `searchParameters`, nothing would happen.\r\n\r\n**Solutions to achieve this use-case**: add a VirtualWidget with the `slug` param as the defaultRefinement.  \r\n\r\n@vvo, @bobylito: wdyt about this? If we don't allow the searchParameters to be updated, maybe we should be clear about that in our documentation. Also, VirtualWidgets can be used in many different ways, I guess we can improve the guide about them :) \r\n\r\n",
-      "user": 6885378,
-      "id": 263591834,
-      "reactions": {}
-    },
-    {
-      "date": 1480433738,
-      "body": "> Solutions to achieve this use-case: add a VirtualWidget with the slug param as the defaultRefinement.\r\n\r\nThis solution looks like a workaround (good one). But still in react I would expect that updating any prop on InstantSearch would actually do what I want: update the corresponding linked behaviors. What do you think?\r\n\r\nUltimately we might just have a state with:\r\n\r\n```\r\nsearchParameters: {\r\n  page: 0,\r\n  filters: ...\r\n  distinct: ...\r\n},\r\nwidgets: {\r\n  menu: {\r\n    brands: 'Sony'\r\n  }\r\n}\r\n```\r\n\r\nBut in the meantime, what about we allow updating searchParameters?\r\n\r\nAnd users will be able to update any searchParameters (sorry this is confusing, I am not really talking about SearchParameters from the helper here, just all API parameters that are not handled by widgets.)",
-      "user": 123822,
-      "id": 263603374,
-      "reactions": {}
-    },
-    {
-      "date": 1480435502,
-      "body": "Well I don't disagree, I think you expect `searchParameters` to update. Also, it's the case with all the other props (algoliaClient, apiKey...). \r\n\r\nOne thing we need to check is: what are the side effects if we perform a search from `componentWillReceiveProps` for an uncontrolled `InstantSearch`. ",
-      "user": 6885378,
-      "id": 263613123,
-      "reactions": {}
-    },
-    {
-      "date": 1480436462,
-      "body": "> One thing we need to check is: what are the side effects if we perform a search from componentWillReceiveProps for an uncontrolled InstantSearch.\r\n\r\nI have no idea for now what is the effect\r\n",
-      "user": 123822,
-      "id": 263618142,
-      "reactions": {}
-    }
-  ]
+  }
 }

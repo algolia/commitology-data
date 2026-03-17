@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:4102",
   "title": "Use a more typesafe pattern for \"static\" values in render parameters",
   "date": 1567502801,
   "body": "Currently we use three patterns for storing functions like `refine` etc. to both init and render. We need to make sure we never reassign the function reference directly, because that means if someone with a custom connector has an event listener in a conditional, they \"lose\" the reference (this is the same problem as with useEffect in React, for which they have the dependency array).\r\n\r\n```js\r\nconst customWidget = connectSomething(\r\n  ({ refine, widgetParams: { container } }, firstRender) => {\r\n    if (firstRender) {\r\n      const btn = document.createElement('button');\r\n      container.appendChild(btn);\r\n      btn.addEventListener('click', () => refine());\r\n    }\r\n  }\r\n);\r\n```\r\n\r\nthis previous code only works, because we make sure the \"refine\" reference can become state without issue, and always stays the same for us.\r\n\r\nThe problem is that we use many methods to do this. As far as I can tell we have the following methods:\r\n\r\n1. \"public\" method & reassign private method\r\n\r\n```js\r\nconst widget = {\r\n  _refine() {\r\n    return refine();\r\n  },\r\n  init() {\r\n    refine = xxx;\r\n    renderFn({\r\n      refine: this._refine,\r\n    });\r\n  },\r\n  render() {\r\n    renderFn({\r\n      refine: this._refine,\r\n    });\r\n  },\r\n};\r\n```\r\n\r\n2. \"private\" container & reassign within that\r\n\r\nI'm not actually sure if this works as we think it does, we need to check that this doesn't erase the reference\r\n\r\n```js\r\nconst createWidget = () => {\r\n  const connectorState = {};\r\n  return {\r\n    init() {\r\n      connectorState.refine = xxx;\r\n      renderFn({\r\n        refine: connectorState.refine,\r\n      });\r\n    },\r\n    render() {\r\n      renderFn({\r\n        refine: connectorState.refine,\r\n      });\r\n    },\r\n  };\r\n};\r\n```\r\n\r\n3. Set in `init` and never override\r\n\r\n```js\r\nconst widget = {\r\n  init() {\r\n    this._refine = xxx;\r\n    renderFn({\r\n      refine: this._refine,\r\n    });\r\n  },\r\n  render() {\r\n    renderFn({\r\n      refine: this._refine,\r\n    });\r\n  },\r\n};\r\n```\r\n\r\n---\r\n\r\nPersonally I think that all of these methods have big flaws, because they're:\r\n\r\n1. inconsistent\r\n2. hard to remember\r\n3. hard to test for\r\n\r\nA good solution would be more automatic, harder to forget, easy to convert all functions to.\r\n\r\nThere's two suggestions I have:\r\n\r\n1. remove `init`\r\n\r\nWe don't really have much use for it (we don't use this function to render in vanilla, Vue, nor Angular), and could do with the simplicity of purely a render function. The downside is that this would become hard to pass `isFirstRender`, but that can be solved like this:\r\n\r\n```js\r\nconst createWidget = () => {\r\n  let isFirstRender = true;\r\n  return {\r\n    render() {\r\n      renderFn({}, isFirstRender);\r\n      // maybe this can be done more efficient if we see it hurts perf\r\n      isFirstRender = true;\r\n    },\r\n  };\r\n};\r\n```\r\n\r\n1. return an object in `init`.\r\n\r\nThis object can then be passed to `render` as well, and will contain all cached methods, instead of on the instance, which is definitely confusing (the less `this`, the more happy IMHO).\r\n\r\n```js\r\nconst widget = {\r\n  init() {\r\n    const connectorState = {\r\n      refine: xxx\r\n    }\r\n    renderFn({\r\n      refine: refine,\r\n    });\r\n    return connectorState\r\n  },\r\n  render(stuff, connectorState) {\r\n    renderFn({\r\n      refine: connectorState.refine,\r\n    });\r\n  },\r\n};\r\n```\r\n\r\nThis is close to method 2, which is used in the TypeScript connectors, because it avoid pitfalls with `this`, but avoids the fact that we need to type the \"connectorState\", as `Partial<ConnectorState>`, even though everything is always defined when we are using it in `render`\r\n\r\nThis also avoids issues where we implicitly need the order between init & render, but aren't able to enforce that in any way, if the output becomes an argument, it becomes clear when rendering is out-of-order.\r\n\r\n\r\n---\r\n---\r\n\r\nNow that I've written all of this, I'm realising it probably should have been an RFC, I'll convert it once we have a first bit of feedback here :)",
@@ -20,21 +19,5 @@
       "👍️": 1
     },
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1568015671,
-      "body": "I agree with this.\r\nPersonally I prefer the first suggestion as long as `init` itself doesn't bring us much value.\r\nIf we can merge the usage of `init` and `render` into one `render` function, we can do in `render` what `init` used to do, for example, assigning variables using `helper`. And they will be done only once by using `isFirstRender`.",
-      "user": 499898,
-      "id": 529343516,
-      "reactions": {}
-    },
-    {
-      "date": 1623076514,
-      "body": "this is solved in all connectors now that they're migrated",
-      "user": 6270048,
-      "id": 855983397,
-      "reactions": {}
-    }
-  ]
+  }
 }

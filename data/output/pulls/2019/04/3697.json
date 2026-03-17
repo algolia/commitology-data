@@ -1,6 +1,5 @@
 {
   "type": "pull",
-  "distinctKey": "pull:3697",
   "title": "chore(build): remove PropTypes from builds",
   "date": 1555429345,
   "body": "## Description\r\n\r\nPropTypes were still mostly present in the bundles (both UMD and ES/CJS) despite the usage of the plugin `babel-plugin-transform-react-remove-prop-types`. As opposed to React InstantSearch, there's no reasons to expose PropTypes in our bundles. This PR aims at removing those.\r\n\r\n- For the UMD bundle, I introduced the `ignore` Rollup plugin to ignore the `prop-types` package.\r\n- For the ES/CJS bundle, I added `{ removeImport: true }`, which defaults to `false`, to remove all traces of `prop-types` imports ([see documentation](https://github.com/oliviertassinari/babel-plugin-transform-react-remove-prop-types#removeimport)).\r\n\r\nThe PropTypes remaining come from [`preact-rheostat`](https://github.com/algolia/rheostat), which will be addressed in a later PR.\r\n\r\n## Result\r\n\r\n\r\n**Before the change**\r\n\r\n```\r\n┌────────────────────────────────────────────────────┐\r\n│                                                    │\r\n│   Destination: dist/instantsearch.development.js   │\r\n│   Bundle Size:  1.03 MB                            │\r\n│   Gzipped Size:  79.8 KB                           │\r\n│                                                    │\r\n└────────────────────────────────────────────────────┘\r\n\r\n┌───────────────────────────────────────────────────────┐\r\n│                                                       │\r\n│   Destination: dist/instantsearch.production.min.js   │\r\n│   Bundle Size:  284.36 KB                             │\r\n│   Gzipped Size:  78.96 KB                             │\r\n│                                                       │\r\n└───────────────────────────────────────────────────────┘\r\n```\r\n\r\n**After the change**\r\n\r\n```\r\n┌────────────────────────────────────────────────────┐\r\n│                                                    │\r\n│   Destination: dist/instantsearch.development.js   │\r\n│   Bundle Size:  1.02 MB                            │\r\n│   Gzipped Size:  78.52 KB                          │\r\n│                                                    │\r\n└────────────────────────────────────────────────────┘\r\n\r\n┌───────────────────────────────────────────────────────┐\r\n│                                                       │\r\n│   Destination: dist/instantsearch.production.min.js   │\r\n│   Bundle Size:  280.44 KB                             │\r\n│   Gzipped Size:  77.67 KB                             │\r\n│                                                       │\r\n└───────────────────────────────────────────────────────┘\r\n```\r\n\r\n## Related\r\n\r\n- IFW-626",
@@ -11,76 +10,5 @@
     "number": 3697,
     "reactions": {},
     "state": "merged"
-  },
-  "comments": [
-    {
-      "date": 1555429488,
-      "body": "Deploy preview for *instantsearchjs* ready!\n\nBuilt with commit 158c432531706377dc3d48bbcb4d7409e2f31e69\n\nhttps://deploy-preview-3697--instantsearchjs.netlify.com",
-      "user": 16079583,
-      "id": 483717899,
-      "reactions": {}
-    },
-    {
-      "date": 1555430150,
-      "body": "Although the UMD is a bit smaller, the GZIP version seems to be a be bigger according to Bundlesize.",
-      "user": 6137112,
-      "id": 483722431,
-      "reactions": {}
-    },
-    {
-      "date": 1555447686,
-      "body": "Did you look at the bundles themselves? It might just be decreased repetition. When looking with @tkrugg earlier I saw some more unexpected dependencies in the bundle",
-      "user": 6270048,
-      "id": 483837195,
-      "reactions": {}
-    },
-    {
-      "date": 1555448264,
-      "body": "Yes, the bundles look fine regarding PropTypes. From what I understand, the only remaining PropTypes are the ones part of Preact internals.",
-      "user": 6137112,
-      "id": 483840427,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1555504076,
-      "body": "It looks like the `propTypes` are part of the build because of Rheostat. The module is a noop but we have the import inside the output. We might want to also remove them from it to actually save some space.",
-      "user": 6513513,
-      "id": 484061670,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1555513521,
-      "body": "@samouss You mean in [`preact-rheostat`](https://github.com/algolia/rheostat) itself, right? That would be in a future PR.",
-      "user": 6137112,
-      "id": 484129815,
-      "reactions": {}
-    },
-    {
-      "date": 1555514829,
-      "body": "@francoischalifour Yes. You want to merge even with the size increase?",
-      "user": 6513513,
-      "id": 484139070,
-      "reactions": {}
-    },
-    {
-      "date": 1555516019,
-      "body": "I'm not exactly sure of the Bundlesize report but this is the actual result: after this PR, the bundle is slightly lighter.\r\n\r\n**Before the change**\r\n\r\n```\r\n┌────────────────────────────────────────────────────┐\r\n│                                                    │\r\n│   Destination: dist/instantsearch.development.js   │\r\n│   Bundle Size:  1.03 MB                            │\r\n│   Gzipped Size:  79.8 KB                           │\r\n│                                                    │\r\n└────────────────────────────────────────────────────┘\r\n\r\n┌───────────────────────────────────────────────────────┐\r\n│                                                       │\r\n│   Destination: dist/instantsearch.production.min.js   │\r\n│   Bundle Size:  284.36 KB                             │\r\n│   Gzipped Size:  78.96 KB                             │\r\n│                                                       │\r\n└───────────────────────────────────────────────────────┘\r\n```\r\n\r\n**After the change**\r\n\r\n```\r\n┌────────────────────────────────────────────────────┐\r\n│                                                    │\r\n│   Destination: dist/instantsearch.development.js   │\r\n│   Bundle Size:  1.02 MB                            │\r\n│   Gzipped Size:  78.52 KB                          │\r\n│                                                    │\r\n└────────────────────────────────────────────────────┘\r\n\r\n┌───────────────────────────────────────────────────────┐\r\n│                                                       │\r\n│   Destination: dist/instantsearch.production.min.js   │\r\n│   Bundle Size:  280.44 KB                             │\r\n│   Gzipped Size:  77.67 KB                             │\r\n│                                                       │\r\n└───────────────────────────────────────────────────────┘\r\n```",
-      "user": 6137112,
-      "id": 484147195,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1555516264,
-      "body": "@samouss I updated the branch and this time, we can notice the bundle size decrease on Bundlesize.",
-      "user": 6137112,
-      "id": 484148927,
-      "reactions": {}
-    }
-  ]
+  }
 }

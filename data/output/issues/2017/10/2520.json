@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:2520",
   "title": "connectHits sortable table access to helper",
   "date": 1508846549,
   "body": "**What is your use case for such a feature?**\r\nI would like to build a sortable table custom widget that combines the functionality of the hits and sort widgets.  \r\n\r\n**What is your proposed API entry? The new option to add? What is the behavior?**\r\nAll that is needed is to add the helper object to the init parameters in src/connectors/hits/connectHits.js  This would allow the custom widget to call the setIndex().search() method to trigger the search, sort and redraw.\r\n\r\n(If there's a better way, I'm all ears)",
@@ -18,100 +17,5 @@
     "number": 2520,
     "reactions": {},
     "state": "closed"
-  },
-  "comments": [
-    {
-      "date": 1508846818,
-      "body": "Working on this with @rogerroelofs, would love to find a solution!",
-      "user": 18329,
-      "id": 338968181,
-      "reactions": {}
-    },
-    {
-      "date": 1508852117,
-      "body": "Hi @rogerroelofs and @timkelty, thanks for opening this issue.\r\n\r\nWe've chosen to make the API of the connectors an abstraction over the Helper. Adding it would be practical but not in the spirit of the connectors.\r\n\r\nWhy not use the hits widget for the body of the table and use a custom widget (based on connectors) for the each column header?",
-      "user": 393765,
-      "id": 338991906,
-      "reactions": {}
-    },
-    {
-      "date": 1508852685,
-      "body": "@bobylito So you're suggesting something like this? (pseudocode)\r\n\r\n```\r\n<table>\r\n\t<thead>\r\n\t\t<tr>\r\n\t\t\t<td>{{ customWidget({asc: 'productsAsc', desc: 'productsDesc'}))}}</td>\r\n\t\t\t<td>{{ customWidget({asc: 'productsPriceAsc', desc: 'productsPriceDesc'}))}}</td>\r\n\t\t</tr>\r\n\t</thead>\r\n\t<tbody>\r\n\t\t{{ hitsWidget }}\r\n\t</tbody>\r\n</table>\r\n```\r\n\r\nWe were trying to create a single widget for the entire thing, so that we could pass a single `columns` array and not have to worry as much about our column counts lining up.",
-      "user": 18329,
-      "id": 338994848,
-      "reactions": {}
-    },
-    {
-      "date": 1508853233,
-      "body": "I thought you wanted to have custom sort for each column. I had some excel / spreadsheet layout in mind, I was wrong :)\r\n\r\nCan you show me what the design should be?",
-      "user": 393765,
-      "id": 338997913,
-      "reactions": {}
-    },
-    {
-      "date": 1508853329,
-      "body": "> I thought you wanted to have custom sort for each column.\r\n\r\n@bobylito No, that's what we're after - I think you had it right…here's our mockup:\r\nhttps://www.evernote.com/l/AAL7CNj5QzlOi7n8JkMr3UAv_sPy1imVArM\r\n\r\nWe could achieve this using the `hits` widget as-is, and creating a \"toggle index\" widget that would toggle between sorted/slave indexes.\r\n\r\nThe drawback to this managing & lining up the columns between the templating. For this reason, we wanted to create a single widget that accepted settings like:\r\n```\r\n{\r\n    container: someDomElement,\r\n    columns: [\r\n        {\r\n            templates: {\r\n                header: ``,\r\n                cell: ``,\r\n            },\r\n            ascIndex: 'productsByRatingAsc',\r\n            descIndex: 'productsByRatingDesc',\r\n        },\r\n    ],\r\n}\r\n```",
-      "user": 18329,
-      "id": 338998439,
-      "reactions": {}
-    },
-    {
-      "date": 1508853739,
-      "body": "So yes I would for what I proposed first. It is the most straightforward approach.\r\n\r\nBut then I don't know what is your need for reusability or If it needs to be configurable and managed by some end-users. Is it the case?",
-      "user": 393765,
-      "id": 339000686,
-      "reactions": {}
-    },
-    {
-      "date": 1508853828,
-      "body": "> But then I don't know what is your need for reusability or If it needs to be configurable and managed by some end-users. Is it the case?\r\n\r\nEither approach works for us, it just seemed like an opportunity to share a configurable widget with the community, as it seemed like there were quite a few people asking for a \"sortable IS table\" widget.",
-      "user": 18329,
-      "id": 339001127,
-      "reactions": {
-        "❤️": 2
-      }
-    },
-    {
-      "date": 1508853938,
-      "body": "The other option of course is to just not use (or use a forked version of) `connectHits`, which is what we're doing. We just wanted it to behave as much like `hits` as possible.\r\n\r\nWe'll proceed with this route, but if you have any other ideas how we might leverage `connectHits`, let us know!",
-      "user": 18329,
-      "id": 339001713,
-      "reactions": {}
-    },
-    {
-      "date": 1508854153,
-      "body": "I'm wondering if the \"table component\" couldn't be \r\n\r\n```\r\n---------------\r\nconnectSortBy\r\n---------------\r\nconnectHits\r\n---------------\r\n```\r\n\r\nThis all together wouldn't be a \"single widget\", but still something you can import and add options to",
-      "user": 6270048,
-      "id": 339002896,
-      "reactions": {}
-    },
-    {
-      "date": 1508854303,
-      "body": "> Either approach works for us, it just seemed like an opportunity to share a configurable widget with the community, as it seemed like there were quite a few people asking for a \"sortable IS table\" widget.\r\n\r\nThat would be a great idea :)\r\n\r\n> The other option of course is to just not use (or use a forked version of) connectHits, which is what we're doing.\r\n\r\nThat would be too bad indeed. How do you see the API of a table widget? Why use a connector in this context? I'd be happy to see what you've come up with.",
-      "user": 393765,
-      "id": 339003763,
-      "reactions": {}
-    },
-    {
-      "date": 1508854501,
-      "body": "@rogerroelofs is doing the heavy lifting, want to share what the API is currently looking like? ",
-      "user": 18329,
-      "id": 339004814,
-      "reactions": {}
-    },
-    {
-      "date": 1508856770,
-      "body": "I am modeling after the hits widget as much as possible.  If we were just doing a table I might have preferred an api closer to https://github.com/react-tools/react-table but our use case is a bit more complicated than that.\r\n\r\nHere's what I have so far.  It is the hits api + a columns object\r\n```      \r\ndataTableWidget({\r\n        container: this.$container.find(this.config.selectors.dataTable)[0],\r\n        hitsPerPage: this.config.hitsPerPage,\r\n        transformData: (data) => {\r\n           ...\r\n        },\r\n        templates: {\r\n          allItems: `\r\n        {{#hits}}\r\n          {{#fullWidthAd}}\r\n            <tr>\r\n              <td colspan=\"{{columns.length}}\">{{{ fullWidthAd }}}</td>\r\n            </tr>\r\n          {{/fullWidthAd}}\r\n            <tr>\r\n              <td></td>\r\n              <td>{{ manufacturer.0.title }}</td>\r\n              <td>{{ title }}</td>\r\n              <td>{{ ratingAvg }}</td>\r\n              <td>{{ reviewTotal }}</td>\r\n            </tr>\r\n        {{/hits}}\r\n`,\r\n          empty: config.templates.noResults\r\n        },\r\n        columns: [\r\n          {\r\n            templates: {\r\n              header: ``,\r\n            },\r\n          },\r\n          {\r\n            templates: {\r\n              header: `Brand`,\r\n            },\r\n          },\r\n          {\r\n            templates: {\r\n              header: `Product`,\r\n            },\r\n          },\r\n          {\r\n            templates: {\r\n              header: `Review Score`,\r\n            },\r\n            ascIndex: 'productsByRatingAsc',\r\n            descIndex: 'productsByRatingDesc',\r\n          },\r\n          {\r\n            templates: {\r\n              header: `# of Reviews`,\r\n              cell: `{{ reviewTotal }}`,\r\n            },\r\n            ascIndex: 'productsByReviewTotalAsc',\r\n            descIndex: 'productsByReviewTotalDesc',\r\n          },\r\n        ]\r\n      })\r\n```",
-      "user": 193984,
-      "id": 339017732,
-      "reactions": {}
-    },
-    {
-      "date": 1573812241,
-      "body": "Sorry for not responding further here. IIRC it was taken up via support and now this thread no longer seems useful, which is why I'll close it :)",
-      "user": 6270048,
-      "id": 554296516,
-      "reactions": {}
-    }
-  ]
+  }
 }

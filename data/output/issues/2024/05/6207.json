@@ -1,6 +1,5 @@
 {
   "type": "issue",
-  "distinctKey": "issue:6207",
   "title": "Vue 3 <ais-dynamic-widgets> does not work with child v-for <ais-panel>s",
   "date": 1716235420,
   "body": "### 🐛 Current behavior\n\nIf an `<ais-dynamic-widgets>` component is used with an array of children `<ais-panel v-for=\"item in someArray\">`, the components do not render.\r\n\r\nThis worked as expected in Vue2, but does not work in Vue3\n\n### 🔍 Steps to reproduce\n\nGiven the following example array\r\n\r\n```ts\r\nconst sampleData = [{\r\n  attribute: 'specifications.power-source',\r\n  label: 'Power Source',\r\n},\r\n{\r\n  attribute: 'specifications.blowing-force',\r\n  label: 'Blowing Force',\r\n}]\r\n```\r\n\r\nThe following sample template will `not` render in Vue3, however, it will render in Vue2.\r\n\r\n```html\r\n<!--[ais-instant-search boiler plate wrapper removed for brevity]-->\r\n<ais-dynamic-widgets>\r\n  <ais-panel v-for=\"(item,index) in sampleData\" :key=\"index\">\r\n    <ais-refinement-list  :attribute=\"item.attribute\" />\r\n  </ais-panel>\r\n</ais-dynamic-widgets>\r\n```\r\n\r\n\r\nIf you remove the `v-for` from consideration and directly access the array index, the dynamic components will render as expected.\r\n```html\r\n<ais-dynamic-widgets>\r\n  <ais-panel>\r\n    <ais-refinement-list  :attribute=\"sampleData[0].attribute\" />\r\n  </ais-panel>\r\n  <ais-panel>\r\n    <ais-refinement-list  :attribute=\"sampleData[1].attribute\" />\r\n  </ais-panel>\r\n</ais-dynamic-widgets>\r\n```\n\n### Live reproduction\n\nNone\n\n### 💭 Expected behavior\n\n`ais-dynamic-widgets` should behave the same way as it did in Vue 2, with children rendering properly with the use of `v-for`\n\n### Package version\n\nvue-instantsearch 4.16.1\n\n### Operating system\n\n_No response_\n\n### Browser\n\n_No response_\n\n### Code of Conduct\n\n- [X] I agree to follow this project's Code of Conduct",
@@ -18,37 +17,5 @@
     "number": 6207,
     "reactions": {},
     "state": "open"
-  },
-  "comments": [
-    {
-      "date": 1716279274,
-      "body": "I wonder if this is related to the traversing of the children. Do you mind adding an (unused) prop `:attribute` to the `ais-panel` directly? If that is the problem, it likely means that the entire looping context is seen as a single child",
-      "user": 6270048,
-      "id": 2122034475,
-      "reactions": {}
-    },
-    {
-      "date": 1716292158,
-      "body": "The following made no difference and did not work.\r\n\r\n```html\r\n<ais-dynamic-widgets>\r\n  <ais-panel v-for=\"(item,index) in sampleData\" :key=\"index\" :attribute=\"item.attribute\">\r\n    <ais-refinement-list  :attribute=\"item.attribute\" />\r\n  </ais-panel>\r\n</ais-dynamic-widgets>\r\n```\r\n\r\nI also suspect it is related to the iteration of the children but have not been able to confirm yet.\r\n",
-      "user": 38296289,
-      "id": 2122455538,
-      "reactions": {
-        "👍️": 1
-      }
-    },
-    {
-      "date": 1753997720,
-      "body": "Hi team. \nWe are facing the same issue using vue-instantsearch `4.21.0`.\n\nWe have a big list of facets, I was thinking to create a configuration array like bellow and then loop with dynamic component pattern in Vue, but looks like can't loop inside the `ais-dynamic-widgets`.\n\nconfig would be something like this: \n```js\nconst facetsConfig = [\n// ...\n{\n    name: 'AisRefinementList',\n    label: 'Brand',\n    description: '',\n    enabled: true,\n    componentProps: {\n      attribute: 'brand_name',\n      searchable: true,\n      searchablePlaceholder: 'Search brands...',\n      limit: 10,\n      showMore: true,\n      showMoreLimit: 20,\n    },\n  },\n// ...\n]\n```\n\nand then we could loop over the config: \n```html\n<AisDynamicWidgets>\n  <template\n    v-for=\"facet in facetsConfig\"\n    :key=\"facet.name\"\n  >\n    <AisPanel v-if=\"facet.enabled\">\n      <template #header=\"{ hasRefinements }\">\n        <p>{{ facet.label }} <span v-if=\"!hasRefinements\">(no results)</span></p>\n      </template>\n      <component\n        :is=\"facet.name\"\n        v-bind=\"facet.componentProps\"\n      />\n    </AisPanel>\n  </template>\n</AisDynamicWidgets>\n```",
-      "user": 2191898,
-      "id": 3141407213,
-      "reactions": {}
-    },
-    {
-      "date": 1754031591,
-      "body": "You can investigate in https://github.com/algolia/instantsearch/blob/4170d7c9a3ee4adc729330a7cba90527aca2dbc5/packages/vue-instantsearch/src/components/DynamicWidgets.js#L71-L81 whether the value of `getDefaultSlot` in this case is actually an array that is traversable to get a map of all widgets.\n\nWhat you can do as well is fork the dynamic widgets widget and change the code where it searches children for what to render for which attribute with a Map you create yourself that you would have used to render in the children of dynamic widgets.",
-      "user": 6270048,
-      "id": 3143069713,
-      "reactions": {}
-    }
-  ]
+  }
 }
