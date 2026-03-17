@@ -1,0 +1,17 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:1794894183",
+  "date": 1699279418,
+  "body": "I've achieved the same issue for UTM query params with Next + ReactInstantSearch.\r\n\r\nI had to migrate from [React instant search v6 to v7](https://www.algolia.com/doc/guides/building-search-ui/upgrade-guides/react/).\r\nI set `serverStateProps` props to my `<InstantSearch />` component.\r\n\r\nThen in [createInstantSearchRouterNext](https://www.algolia.com/doc/api-reference/widgets/instantsearch-next-router/react/) in `routerOptions`, I wrote parseURL and createURL methods like this :\r\n\r\n```\r\nparseURL({ qsModule, location }) {\r\n  return qsModule.parse(location.search.slice(1));\r\n}\r\n``` \r\n\r\n```\r\ncreateURL({ qsModule, location, routeState }) {\r\n  const { origin, pathname, hash } = location;\r\n\r\n  const queriesFromUrl = qsModule.parse(location.search.slice(1));\r\n\r\n  // Get all extraneous queries from the URL used for UTM\r\n  const utmQueries = Object.keys(queriesFromUrl)\r\n    .filter((key) => !Object.keys(routeState).includes(key))\r\n    .reduce((acc, cur) => {\r\n      acc[cur] = queriesFromUrl[cur];\r\n\r\n      return acc;\r\n    }, {});\r\n\r\n  // Create query string with facet filters and UTM queries\r\n  const queryString = qsModule.stringify({ ...routeState, ...utmQueries });\r\n\r\n  return `${origin}${pathname}${queryString ? `?${queryString}` : ''}${hash}`;\r\n}\r\n```\r\n\r\nI hope it will help!\r\n",
+  "user": 32106478,
+  "parent": {
+    "type": "issue",
+    "number": 5852
+  },
+  "comment": {
+    "id": 1794894183,
+    "reactions": {
+      "👍️": 3
+    }
+  }
+}

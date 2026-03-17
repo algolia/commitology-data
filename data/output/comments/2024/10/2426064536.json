@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:2426064536",
+  "date": 1729501530,
+  "body": "Hey @pkutsenko,\r\n\r\nTried changing it to a component on this branch : https://github.com/algolia/instantsearch/commit/68c8c577592b24b1ce83166d8c4c947db290022c and I get the exact same results, so that's not the issue.\r\n\r\nI identified another memory leak in the Node.js requester in `algoliasearch`. Some handlers that retain responses as string are not cleared. By using the fetch requester instead (install the `@algolia/requester-fetch`) and use that instead : \r\n```js\r\nimport { liteClient as algoliasearch } from 'algoliasearch/lite';\r\nimport { createFetchRequester } from '@algolia/requester-fetch';\r\nconst searchClient = algoliasearch(\r\n  appId,\r\n  apiKey,\r\n  { requester: createFetchRequester() }\r\n);\r\n```\r\n\r\n_Note that I'm using `algoliasearch` v5 with `@algolia/requester-fetch` matching the same version, should still work with v4 though but you can update if it doesn't work_\r\n\r\nNow after 500 parallel requests it goes down to 40Mb at the end rather than 160Mb. That's using `react-instantsearch-nextjs` at `0.3.14` of course.\r\n\r\nI still see some retained objects but I think it's Next.js/webpack at this point which we can't do anything about.",
+  "user": 9158954,
+  "parent": {
+    "type": "pull",
+    "number": 6372
+  },
+  "comment": {
+    "id": 2426064536,
+    "reactions": {}
+  }
+}

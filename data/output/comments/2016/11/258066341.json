@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:258066341",
+  "date": 1478150444,
+  "body": "@kievechua React's [componentDidMount()](https://facebook.github.io/react/docs/react-component.html#componentwillmount) lifecycle method isn't called on the server during server-side rendering, so you could remove the `(IsClient)` conditional and use `componentDidMount` to render the client-side only components there.\n\nThe problem is that you will likely get an error / warning in the console from react stating that the rendered components sent from the server don't match the client rendered components, thereby defeating the purpose of server side rendering.\n\nThe way I get around that is by keeping track of a reactive variable _(I'm using Meteor)_ called `initialRender`. It's set to `true` by default, and then I set it to `false` in the main App component's `componentDidMount` method. Then that triggers another render after the initial render which renders the client-side only components.\n\nExample:\n\n``` javascript\nconst App = ({initialRender}) => {\n  componentDidMount() {\n    // if it's true set it to false\n    (initialRender === true) && AppState.set({initialRender: false})\n  }\n\n  render() {\n    // (...)\n  }\n```\n\nThen I can check the state of `initialRender` with `AppState.get('initialRender')` in any other components that need it. (the top-most component's `componentDidMount` fires last, so we can count on all the other components having been already rendered at that point)\n\nAdmittedly, it's a bit of a mess compared to using universal javascript that can render on the server.\n",
+  "user": 1509662,
+  "parent": {
+    "type": "issue",
+    "number": 1489
+  },
+  "comment": {
+    "id": 258066341,
+    "reactions": {}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:141921543",
+  "date": 1442827125,
+  "body": "For reference, prototype.js:\n1. overwrite .bind in < 1.7.2.\n2. does a bad job with the polyfill (not forwarding .prototype etc).\n\nYou can just insert this:\n\n``` js\n// Magento is using a very old prototype.js version with a poor Function.prototype.bind\n// forced overloading, we redefine it here so that our code works\n// ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind\nFunction.prototype.bind = function(oThis) {\n  if (typeof this !== 'function') {\n    // closest thing possible to the ECMAScript 5\n    // internal IsCallable function\n    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');\n  }\n\n  var aArgs   = Array.prototype.slice.call(arguments, 1),\n      fToBind = this,\n      fNOP    = function() {},\n      fBound  = function() {\n        return fToBind.apply(this instanceof fNOP\n               ? this\n               : oThis,\n               aArgs.concat(Array.prototype.slice.call(arguments)));\n      };\n\n  if (this.prototype) {\n    // native functions don't have a prototype\n    fNOP.prototype = this.prototype;\n  }\n  fBound.prototype = new fNOP();\n\n  return fBound;\n};\n```\n\nBefore inserting instantsearch.js\n",
+  "user": 123822,
+  "parent": {
+    "type": "issue",
+    "number": 97
+  },
+  "comment": {
+    "id": 141921543,
+    "reactions": {
+      "👍️": 1
+    }
+  }
+}

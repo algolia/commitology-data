@@ -1,0 +1,17 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:1363061676",
+  "date": 1610575309,
+  "body": "Hi @Haroenv I'm just circling back to this. I've managed to get this work on the web by using: \r\n\r\n```js\r\n<CustomHits\r\n  cache={createInfiniteHitsSessionStorageCache(\"ais.tattoos\")}\r\n/>\r\n```\r\n\r\nCombined with:\r\n\r\n```js\r\nimport _objectWithoutProperties from \"@babel/runtime/helpers/esm/objectWithoutProperties\"\r\nimport isEqual from \"react-fast-compare\"\r\n\r\nfunction getStateWithoutPage(state) {\r\n  var _ref = state || {},\r\n    // page = _ref.page,\r\n    rest = _objectWithoutProperties(_ref, [\"page\"])\r\n\r\n  return rest\r\n}\r\n\r\nfunction hasSessionStorage() {\r\n  return (\r\n    typeof window !== \"undefined\" &&\r\n    typeof window.sessionStorage !== \"undefined\"\r\n  )\r\n}\r\n\r\nexport default function createInfiniteHitsSessionStorageCache(\r\n  KEY = \"ais.infiniteHits\"\r\n) {\r\n  return {\r\n    read: function read(_ref2) {\r\n      var state = _ref2.state\r\n\r\n      if (!hasSessionStorage()) {\r\n        return null\r\n      }\r\n\r\n      try {\r\n        var cache = JSON.parse(window.sessionStorage.getItem(KEY))\r\n        return cache && isEqual(cache.state, getStateWithoutPage(state))\r\n          ? cache.hits\r\n          : null\r\n      } catch (error) {\r\n        if (error instanceof SyntaxError) {\r\n          try {\r\n            window.sessionStorage.removeItem(KEY)\r\n          } catch (err) {\r\n            // do nothing\r\n          }\r\n        }\r\n\r\n        return null\r\n      }\r\n    },\r\n    write: function write(_ref3) {\r\n      var state = _ref3.state,\r\n        hits = _ref3.hits\r\n\r\n      if (!hasSessionStorage()) {\r\n        return\r\n      }\r\n\r\n      try {\r\n        window.sessionStorage.setItem(\r\n          KEY,\r\n          JSON.stringify({\r\n            state: getStateWithoutPage(state),\r\n            hits: hits,\r\n          })\r\n        )\r\n      } catch (error) {\r\n        // do nothing\r\n      }\r\n    },\r\n  }\r\n}\r\n```\r\n\r\nThis allows me to create a different store for each page. \r\nHowever, I'm still a bit stuck on how best to implement this in `react-native`.\r\n\r\nDo you have a guide for clearing the cache for multiple `connectInfiniteHits` and there no solution where we can clear the internal cache without having to create our own?\r\n\r\nThanks and Happy New Year!\r\n\r\n",
+  "user": 40461,
+  "parent": {
+    "type": "issue",
+    "number": 5263
+  },
+  "comment": {
+    "id": 1363061676,
+    "reactions": {
+      "👍️": 1
+    }
+  }
+}

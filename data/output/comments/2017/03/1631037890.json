@@ -1,0 +1,17 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:1631037890",
+  "date": 1489160040,
+  "body": "@thomo13 sure!\r\n\r\nMy scenario:\r\n\r\n- A `trips` index search (in this case with [Geo-Search](https://www.algolia.com/doc/guides/geo-search/geo-search-overview/) params). These are displayed as \"cards\" on the page.\r\n- The derived search is on the `locations` index, which we place as map (Leaflet) marker pins.\r\n\r\nA super-simplified version looks something like: \r\n\r\n```\r\nhelper\r\n.setIndex('trips')\r\n.setQueryParameter('insideBoundingBox', getGeoFilterParam('insideBoundingBox', map));\r\n.search();\r\n\r\nlocationsHelper = helper.derive(function(searchParams) {\r\n    searchParams = searchParams\r\n    .clearRefinements()\r\n    .setIndex('locations')\r\n    .setHitsPerPage('1000');\r\n\r\n    if (refineLocations) {\r\n      searchParams = refineLocations(searchParams);\r\n    }\r\n\r\n    return searchParams;\r\n});\r\n```\r\n\r\nWhat's nice about this is my derived search still inherits the params from the original, so it is also geo-filtered. `clearRefinements` is there because I also have a bunch of other facet/filtering widgets that can filter `trips`, but I never want `locations` to be filtered, except by geo. I also always want to show as many pins as possible, hence the `setHitsPerPage('1000')`.\r\n\r\nThe part I wrestled with initially was understanding that all the `SearchParameter` setters return a new instance, and that is what you need to return from the `helper.derive` callback.\r\n\r\nMeaning that this won't work, because the methods are not mutative:\r\n\r\n```\r\nhelper.derive(function(searchParams) {\r\n    searchParams\r\n    .setIndex('locations')\r\n\r\n    return searchParams;\r\n}\r\n```\r\n\r\n[From the docs](https://community.algolia.com/algoliasearch-helper-js/reference.html#searchparameters):\r\n\r\n> SearchParameter is an immutable class. Each setter method returns a new instance with the modification, and does not modify the object it is called on.\r\n\r\n\r\nIn actuality this is all being done via a custom instantsearch widget. I'm happy to share that, but there's a lot more going on there too, so I'll start with this.",
+  "user": 18329,
+  "parent": {
+    "type": "issue",
+    "number": 5708
+  },
+  "comment": {
+    "id": 1631037890,
+    "reactions": {
+      "❤️": 2
+    }
+  }
+}

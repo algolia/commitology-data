@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:249531501",
+  "date": 1474884757,
+  "body": "Hi @vvo, no probs at all, really appreciate the help. Sure, I've pasted the custom widget code below that was from this thread - https://github.com/algolia/instantsearch.js/issues/1022. I tried disjunctiveFacets as mentioned above but get the same result in the way that the stock gets filtered, there's 'Hyundai' in the refined values but nothing in the dropdown.\n\n```\ninstantsearch.widgets.customSelectorWidget = function customSelectorWidget(options) {\n    var container = options.container;\n    var attributeName = options.attributeName;\n    var limit = options.limit || 10;\n    var title = options.title || 'All';\n\n    container = document.querySelector(container);\n    var selectElement = null;\n    var currentlySelectedValue = null;\n    return {\n        getConfiguration: function getConfiguration() {\n            return {\n                hierarchicalFacets: [{\n                    name: attributeName,\n                    attributes: [attributeName]\n            }]\n        };\n    },\n\n    init: function init(options) {\n        var helper = options.helper;\n        container.innerHTML = '<label class=\"field select\"><select></select><i class=\"arrow\"></i></label>';\n        selectElement = container.querySelector('select');\n\n        selectElement.addEventListener('change', function() {\n            var selectedIndex = selectElement.selectedIndex;\n            var selectedValue = selectElement.options[selectedIndex].value;\n            if (selectedValue === '__EMPTY__') {\n                selectedValue = currentlySelectedValue;\n            }\n            helper.toggleRefinement(attributeName, selectedValue);\n            helper.search();\n            currentlySelectedValue = selectedValue;\n        });\n    },\n\n    render: function render(options) {\n\n        var results = options.results;\n        var sortBy = ['name:asc', 'count:desc'];\n        var facetValues = results.getFacetValues(attributeName, {sortBy: sortBy}).data;\n\n        if(facetValues){\n            facetValues = facetValues.slice(0, limit);\n            var innerOptions = ['<option value=\"__EMPTY__\">' + title + '</option>'];\n            facetValues.forEach(function(facetValue) {\n                var selected = facetValue.isRefined ? 'selected=\"selected\"' : '';\n            innerOptions.push('<option value=\"' + facetValue.name + '\" ' + selected + '>' + facetValue.name + \" (\" + facetValue.count + ')</option>');\n            });\n                selectElement.innerHTML = innerOptions.join('\\n');\n            }\n        }\n    }\n};\n\nsearch.addWidget(\n    instantsearch.widgets.customSelectorWidget({\n        container: '#make',\n        attributeName: 'make',\n        limit: 50,\n        title: 'All makes',\n    })\n);\n```\n\nThanks again,\n",
+  "user": 654547,
+  "parent": {
+    "type": "issue",
+    "number": 1330
+  },
+  "comment": {
+    "id": 249531501,
+    "reactions": {}
+  }
+}

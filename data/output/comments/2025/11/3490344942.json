@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:3490344942",
+  "date": 1762337741,
+  "body": "Hi, thanks for providing a reproduction example. I looked at it and it seems the hydration error comes from:\n- not properly rendering App's HTML server-side\n- rendering a different value for \"Using client type: xxx\" between SSR / CSR\n\nTo fix the first issue, you'll need to wrap your App component within `<InstantSearchSSRProvider>` in both your browser (main) and server implementations.\n\n**App.tsx**\n```tsx\n// ...\ntype AppProps = {\n  serverState?: InstantSearchServerState;\n};\n\nconst App: React.FX<AppProps> = ({ serverState }) => (\n  <React.StrictMode>\n    <InstantSearchSSRProvider {...serverState}>\n      {/* ... */}\n    </InstantSearchSSRProvider>\n  </React.StrictMode>\n);\n```\n\n**main.tsx**:\n```tsx\n// ...\nif (serverState) {\n  hydrateRoot(\n    container,\n    <App serverState={serverState} />\n  );\n  \n  delete window.ALGOLIA_SERVER_STATE;\n} else {\n  // ...\n}\n```\n\n**server.tsx**\n```tsx\n// ...\nconst html = htmlTemplate.replace('replace me', () => `${renderToString(<App serverState={state} />)}<script>window.ALGOLIA_SERVER_STATE = ${JSON.stringify(state)};</script>`);\n```\n\nTo fix the second issue, do not conditionally display the type of the search client in App.tsx. If it changes it will throw an invariant error during hydration.\n\n**App.tsx**\n```diff\n- <li>Using client type: {typeof window === 'undefined' ? 'algoliasearch (full)' : 'liteClient'}</li>\n+ <li>Using client type: liteClient</li>\n```",
+  "user": 154633,
+  "parent": {
+    "type": "issue",
+    "number": 6788
+  },
+  "comment": {
+    "id": 3490344942,
+    "reactions": {}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:2769387629",
+  "date": 1743514553,
+  "body": "This error happens every time the search client throws an error. I don't agree with @Haroenv and think this should be handled differently.\n\nI updated a local fork to also listen for the \"error\" event. After this change, everything works fine.\n\n```\nconst waitForResults = () =>\n    new Promise<void>((resolve, reject) => {\n      const helper = search.mainHelper!\n\n      let searchReceived = false;\n      let recommendReceived = false;\n\n      search.mainHelper!.derivedHelpers[0].once('result', () => {\n        searchReceived = true;\n        if (!search._hasRecommendWidget || recommendReceived) {\n          resolve();\n        }\n      });\n      search.mainHelper!.derivedHelpers[0].once('recommend:result', () => {\n        recommendReceived = true;\n        if (!search._hasSearchWidget || searchReceived) {\n          resolve();\n        }\n      });\n\n+      // However, we listen to errors that can happen on any derived helper because\n+      // any error is critical.\n+      helper.on('error', (error) => {\n+        reject(error);\n+      });\n+      search.on('error', (error) => {\n+        reject(error);\n+      });\n+      helper.derivedHelpers.forEach((derivedHelper) =>\n+        derivedHelper.on('error', (error) => {\n+          reject(error);\n+        })\n+     );\n    });\n```",
+  "user": 159125244,
+  "parent": {
+    "type": "issue",
+    "number": 6525
+  },
+  "comment": {
+    "id": 2769387629,
+    "reactions": {
+      "👍️": 3
+    }
+  }
+}

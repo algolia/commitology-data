@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:2606849099",
+  "date": 1737541542,
+  "body": "Seems like my hydration errors come from the use of \"useInstantSearch\". If I use \"useInstantSearchContext\" then it works without errors\n\n## Using `useInstantSearch`\nError : nbHits on the server is not the same as on the client therefore rendering callback and hiding children (which then changes on the client)\n```js\nimport React from 'react';\nimport { useInstantSearch } from 'react-instantsearch';\nimport { twMerge } from 'tailwind-merge';\n\ninterface NoResultsBoundaryProps {\n  fallback: React.ReactNode | null;\n  children: React.ReactNode;\n}\n\nexport const NoResultsBoundary: React.FC<NoResultsBoundaryProps> = ({\n  children,\n  fallback,\n}) => {\n  const { results } = useInstantSearch();\n \n  const hasResults = React.useMemo(() => {\n    return results.nbHits > 0;\n  }, [results]);\n\n  return (\n    <>\n      {!hasResults && <div>{fallback}</div>}\n      <div className={twMerge(hasResults ? '' : 'hidden')}>{children}</div>\n    </>\n  );\n};\n````\n\n## Using `useInstantSearchContext`\nNo errors\n```js\nimport React from 'react';\nimport { useInstantSearchContext } from 'react-instantsearch';\nimport { twMerge } from 'tailwind-merge';\n\ninterface NoResultsBoundaryProps {\n  fallback: React.ReactNode | null;\n  children: React.ReactNode;\n  mainIndex?: string;\n}\n\nexport const NoResultsBoundary: React.FC<NoResultsBoundaryProps> = ({\n  children,\n  fallback,\n  mainIndex = 'my_index',\n}) => {\n  const { renderState } = useInstantSearchContext();\n\n  const hasResults = React.useMemo(\n    () => (renderState?.[mainIndex]?.hits?.items.length || 0) > 0,\n    [renderState, mainIndex],\n  );\n\n  return (\n    <>\n      {!hasResults && <div>{fallback}</div>}\n      <div className={twMerge(hasResults ? '' : 'hidden')}>{children}</div>\n    </>\n  );\n};\n```\n### Thoughts\nChanging to `useInstantSearchContext` then fixes the hydration error and the routing issue. \nIs it an intended behavior that routing fails on hydration errors? Maybe an explicit error / warning could be useful in such cases to inform users ",
+  "user": 21955112,
+  "parent": {
+    "type": "issue",
+    "number": 6541
+  },
+  "comment": {
+    "id": 2606849099,
+    "reactions": {}
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "comment",
+  "distinctKey": "comment:2772749894",
+  "date": 1743604163,
+  "body": "Mock algoliasearch client is lacking the cache object:\n```\nimport { SearchQuery } from 'algoliasearch/lite';\n\nconst requestsCache = new Map<string, Promise<Response>>();\nconst resultsCache = new Map<string, any>();\n\nfunction makeCacheKey(requests: SearchQuery[]) {\n  // You can go further here, like sorting individual values inside the requests\n  // to make sure the key is always the same for the same requests.\n  // We're keeping it simple here for the sake of the example.\n  return JSON.stringify(requests);\n}\n\nexport async function search(requests: SearchQuery[]) {\n  try {\n    const key = makeCacheKey(requests);\n    if (resultsCache.has(key)) {\n      return resultsCache.get(key);\n    }\n    let request;\n    if (requestsCache.has(key)) {\n      request = requestsCache.get(key)!;\n    } else {\n      request = fetch(`http://localhost:3001/api/search`, {\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n        },\n        body: JSON.stringify({ requests }),\n      });\n      requestsCache.set(key, request);\n    }\n    const response = await request;\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! Status: ${response.status} `);\n    }\n\n    const results = await response.json();\n\n    if (!results || !Array.isArray(results.results)) {\n      console.error('Unexpected response format:', results);\n      return { results: [] };\n    }\n\n    resultsCache.set(key, results);\n\n    return results;\n  } catch (error) {\n    console.error('Error fetching search results:', error);\n    return { results: [] };\n  }\n}\n\nexport const searchClient = {\n  search,\n  clearCache() {\n    requestsCache.clear();\n    resultsCache.clear();\n  },\n};\n```",
+  "user": 17079039,
+  "parent": {
+    "type": "issue",
+    "number": 6599
+  },
+  "comment": {
+    "id": 2772749894,
+    "reactions": {}
+  }
+}
