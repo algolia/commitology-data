@@ -1,10 +1,7 @@
-import { consoleError } from 'firost';
+import { consoleError, consoleInfo } from 'firost';
 import indexing from 'algolia-indexing';
 import { repoName } from '../../lib/config.js';
-import {
-  getCommitsRecords,
-  getIssuesAndPullsRecords,
-} from '../../lib/helpers/record.js';
+import { getRecords } from '../../lib/helpers/record.js';
 
 // Algolia
 const algoliaConfig = {
@@ -40,10 +37,8 @@ if (!credentials.apiKey) {
   process.exit(1);
 }
 
-const records = [
-  ...(await getIssuesAndPullsRecords()),
-  ...(await getCommitsRecords()),
-];
+consoleInfo('Getting all records...');
+const records = await getRecords();
 
 indexing.verbose();
 indexing.config({
