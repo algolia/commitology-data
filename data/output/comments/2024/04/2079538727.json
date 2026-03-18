@@ -1,6 +1,5 @@
 {
   "type": "comment",
-  "distinctKey": "comment:2079538727",
   "date": 1714142723,
   "body": "Hi @jrfilocao,\r\n\r\nI've had a look and the message gives correct information, the `<InstantSearch>` component was not mounted because you are conditionally rendering it based on if `username` from `UserContext` is defined or not. This is not an issue on our end. You should wrap into a context in `getServerSideProps` : \r\n\r\n```jsx\r\nexport async function getServerSideProps({ req }) {\r\n  const protocol = req.headers.referer?.split(\"://\")[0] || \"http\";\r\n  const serverUrl = `${protocol}://${req.headers.host}${req.url}`;\r\n\r\n  const serverState = await getServerState(\r\n    <UserContext.Provider value={{ username: \"somebody\" }}>\r\n      <SearchResult serverUrl={serverUrl} />\r\n    </UserContext.Provider>,\r\n    { renderToString }\r\n  );\r\n\r\n  return {\r\n    props: {\r\n      serverState,\r\n      serverUrl,\r\n    },\r\n  };\r\n}\r\n```\r\n\r\nAlso since search page is hidden behind a login page, you may want to only render it client-side as server-side rendering is mostly for SEO purposes.\r\n\r\nI will close this issue as I replied to the subject and solved it.\r\n\r\nIf you have further issues please refer to our docs : https://www.algolia.com/doc/ and you may contact our support if documentation is not clear enough.",
   "user": 9158954,
@@ -9,6 +8,7 @@
     "number": 6124
   },
   "comment": {
+    "githubAppId": null,
     "id": 2079538727,
     "reactions": {
       "❤️": 1

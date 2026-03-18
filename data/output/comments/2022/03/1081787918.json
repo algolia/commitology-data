@@ -1,6 +1,5 @@
 {
   "type": "comment",
-  "distinctKey": "comment:1081787918",
   "date": 1648555522,
   "body": "I can't think of a good solution for that problem right now without forking the library, the concept of min and max encodes both the visual and filter range. What I can think of is transforming the response to filter out the outliers instead of setting min and max:\r\n\r\n```\r\nconst originalSearch = searchClient.search;\r\nsearchClient.search = function (requests) {\r\n  return originalSearch(requests).then(({ results }) => ({\r\n    results: results.map((result) => {\r\n      if (!result.facets_stats || !result.facets_stats.price) {\r\n        return result;\r\n      }\r\n\r\n      return {\r\n        ...result,\r\n        facets_stats: {\r\n          ...result.facets_stats,\r\n          price: {\r\n            ...result.facets_stats.price,\r\n            // override the maximum\r\n            max: 2000,\r\n          },\r\n        },\r\n      };\r\n    }),\r\n  }));\r\n};\r\n```\r\n\r\nhttps://codesandbox.io/s/busy-goodall-ktjqt1?file=/src/app.js:139-683",
   "user": 6270048,
@@ -9,6 +8,7 @@
     "number": 5037
   },
   "comment": {
+    "githubAppId": null,
     "id": 1081787918,
     "reactions": {}
   }

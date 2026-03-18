@@ -1,6 +1,5 @@
 {
   "type": "comment",
-  "distinctKey": "comment:1653188889",
   "date": 1690448148,
   "body": "Hey @lluzak !\r\n\r\nA userland solution would be to create a custom cache that bails the first `read`/`write` : \r\n\r\n```ts\r\nconst cache = createInfiniteHitsSessionStorageCache();\r\n\r\nconst ssrSafeCache: typeof cache & {\r\n  firstReadDone: boolean;\r\n  firstWriteDone: boolean;\r\n} = {\r\n  firstReadDone: false,\r\n  firstWriteDone: false,\r\n  read({ state }) {\r\n    if (!this.firstReadDone) {\r\n      this.firstReadDone = true;\r\n      return null;\r\n    }\r\n    return cache.read({ state });\r\n  },\r\n  write({ state, hits }) {\r\n    if (!this.firstWriteDone) {\r\n      this.firstWriteDone = true;\r\n      return;\r\n    }\r\n    cache.write({ state, hits });\r\n  },\r\n};\r\n```\r\n\r\nYou can see it in action there : https://codesandbox.io/p/sandbox/confident-moon-vhm9rq?file=%2Fpages%2Findex.tsx%3A24%2C1-46%2C3\r\n\r\nUnfortunately this will lead to a small layout shift, but let me know if it works for you !\r\n\r\nI'll look if it's possible to handle it directly in the lib, if not we can document or package this SSR-safe cache.",
   "user": 9158954,
@@ -9,6 +8,7 @@
     "number": 5772
   },
   "comment": {
+    "githubAppId": null,
     "id": 1653188889,
     "reactions": {
       "👀": 4

@@ -1,6 +1,5 @@
 {
   "type": "comment",
-  "distinctKey": "comment:2507383887",
   "date": 1732871552,
   "body": "Hi @aymeric-giraudet, your suggestion fixes the UI error, thank you very much for you response!\r\n\r\nI've doublechecked my code again, especially the part where I'm [detecting the empty query results and returning the formatted response](https://www.algolia.com/doc/guides/building-search-ui/going-further/conditional-requests/react/#detecting-empty-search-requests):\r\n\r\n```\r\nconst searchClient = algoliaClient\r\n  ? {\r\n      ...algoliaClient,\r\n      search(requests: any) {\r\n        if (requests.every(({ params }: any) => !params.query)) {\r\n          return Promise.resolve({\r\n            results: requests.map(() => ({\r\n              hits: [],\r\n              nbHits: 0,\r\n              nbPages: 0,\r\n              page: 0,\r\n              processingTimeMS: 0,\r\n              hitsPerPage: 0,\r\n              exhaustiveNbHits: false,\r\n              query: \"\",\r\n              params: \"\",\r\n            })),\r\n          });\r\n        }\r\n        return algoliaClient.search(requests);\r\n      },\r\n    }\r\n  : null;\r\n```\r\nI've noticed that I'm not returning the `__isArtificial` flag here, so it's not present in the client and therefore causes the UI render to be different from server (thought it's not in the docs as well).\r\n\r\nadding the `__isArtificial: true` to the response seems to fix my issue:\r\n\r\n```\r\nconst searchClient = algoliaClient\r\n  ? {\r\n      ...algoliaClient,\r\n      search(requests: any) {\r\n        if (requests.every(({ params }: any) => !params.query)) {\r\n          return Promise.resolve({\r\n            results: requests.map(() => ({\r\n              hits: [],\r\n              ...\r\n              __isArtificial: true,\r\n            })),\r\n          });\r\n        }\r\n        return algoliaClient.search(requests);\r\n      },\r\n    }\r\n  : null;\r\n```\r\n\r\nThank you again for your help! I will mark this issue as closed.",
   "user": 23526237,
@@ -9,6 +8,7 @@
     "number": 6451
   },
   "comment": {
+    "githubAppId": null,
     "id": 2507383887,
     "reactions": {}
   }
