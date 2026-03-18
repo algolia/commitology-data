@@ -17,7 +17,8 @@ const algoliaConfig = {
     attributesForFaceting: [
       'type',
       'date',
-      'user.login',
+      'searchable(user.facet)', // For the User filter widget
+      'user.login', // Actual facetting
       'commit.state',
       'issue.state',
       'pull.state',
