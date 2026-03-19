@@ -25,8 +25,20 @@ const algoliaConfig = {
       'pull.label.name',
     ],
 
-    // By default, display chronologically
+    // By default, display chronologically (newest first)
     customRanking: ['desc(date)'],
+
+    // Replicas for alternative sorting
+    replicas: {
+      // Oldest to newest
+      oldest: {
+        customRanking: ['asc(date)'],
+      },
+      // Most comments first
+      most_commented: {
+        customRanking: ['desc(commentCount)'],
+      },
+    },
   },
 };
 

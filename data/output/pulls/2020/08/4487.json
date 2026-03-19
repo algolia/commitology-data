@@ -4,8 +4,8 @@
   "date": 1598281758,
   "body": "This fixes duplicate entries in the router that happen when `router.write` is called even though `uiState` hasn't changed.\n\n## Explanation\n\nWe used to call the `write` method of the router at every state change. A state change happens at each UI interaction or **whenever a widget is mounted/unmounted**. The latter is problematic in component-based flavors of InstantSearch (Vue InstantSearch is the only one relying on InstantSearch 4 right now) because widgets are often added/removed.\n\nThe duplicate entry detection check was happening in the [history router itself](https://github.com/algolia/instantsearch.js/blob/3cf43c7187841cf961a0280307af1a5f7a4e8da7/src/lib/routers/history.ts#L131-L135), which meant that whenever users opt-out of this default router and implemented their own, they would get this issue.\n\nThis fix checks that `router.write` needs to be called in the router middleware itself. Since it's one level above the history router, or custom user implementation, it will get fixed no matter the router implementations. We check that the `routeState` is different from the last received to call `router.write`. We base the check on `routeState`, and not `uiState`, because users might plug their own logic in `stateToRoute` that returns a `routeState` that differs from `uiState`; the two do not necessarily change at the same time.\n\n## Related\n\n* \\#4392\n* algolia/vue-instantsearch#841\n* Closes algolia/vue-instantsearch#839\n",
   "user": 6137112,
+  "commentCount": 1,
   "pull": {
-    "commentCount": 1,
     "labels": [],
     "number": 4487,
     "reactions": {},
