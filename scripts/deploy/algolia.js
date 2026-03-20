@@ -38,6 +38,14 @@ const algoliaConfig = {
       most_commented: {
         customRanking: ['desc(commentCount)'],
       },
+      // Most files changed
+      most_files_changed: {
+        customRanking: ['desc(pull.changedFilesCount)'],
+      },
+      // Most lines deleted
+      most_lines_deleted: {
+        customRanking: ['desc(pull.deletedLinesCount)'],
+      },
     },
   },
 };

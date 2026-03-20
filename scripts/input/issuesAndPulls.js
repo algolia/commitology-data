@@ -1,8 +1,9 @@
 import { _, dayjs, pMap } from 'golgoth';
-import { absolute, sleep, spinner, writeJson } from 'firost';
+import { absolute, exists, sleep, spinner, writeJson } from 'firost';
 import {
   getIssuesAndPulls,
   getIssuesAndPullsCount,
+  getPullRequestDetails,
 } from '../../lib/helpers/github.js';
 import {
   fieldOrder,
@@ -41,7 +42,17 @@ await pMap(
           `${number}.json`,
         );
 
-        await writeJson(itemContent, itemPath, {
+        if (await exists(itemPath)) {
+          return;
+        }
+
+        let dataToSave = itemContent;
+
+        if (isPullRequest) {
+          dataToSave = await getPullRequestDetails(number);
+        }
+
+        await writeJson(dataToSave, itemPath, {
           sort: fieldOrder.input,
         });
       },
