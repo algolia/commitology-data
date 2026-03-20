@@ -3,6 +3,7 @@
   "date": 1456313272,
   "body": "@candypaint I must say you will have to implement this widget yourself using our:\n\n* widget API: https://community.algolia.com/instantsearch.js/documentation/#custom-widgets\n* algoliasearch-helper: https://github.com/algolia/algoliasearch-helper-js\n\nThis is basically the only tools we use to build custom widgets. If you have some coding experience this is feasible.\n\nLet's say you want to build a menu on the \"categories\" attribute name:\n\n## 1. `getConfiguration`\n\nWe want to inform the helper that we want to add a new attribute for faceting.\n\n```js\nvar selectCategories = {\n  getConfiguration: function() {\n    return {\n      hierarchicalFacets: [{\n        name: 'categories',\n        attributes: ['categories']\n      }]\n    }\n  }\n};\n```\n\n## 2. `init`\n\nWe will bind the `change` event on the select and refine the value using the helper.\n\nHere's the `select` html that you need to put in your page\n\n```html\n<select id=\"select-categories\"></select>\n```\n\nThe the widget code you complete:\n\n```js\nvar selectCategories = {\n  getConfiguration...,\n  $selectCategories: document.querySelector('#select-categories'),\n  this._refine: function(helper, changeEvent) {\n    // this is where we refine the categories\n    helper.toggleRefinement('categories', changeEvent.target.value);\n    // now trigger a new search\n    helper.search();\n  },\n  init: function(params) {\n    this._refine = this._refine.bind(this, params.helper);\n    // regular HTML/JS coding to create or bind to an existing select box change event\n    this.$mySelect.addEventListener('change', this._refine);\n  }\n};\n```\n\n## 3. `render`\n\nWe are going to rebuild the select values at each new result set, be it an action on the select or a new query or an action on another widget.\n\n```js\nvar selectCategories = {\n  getConfiguration...,\n  $selectCategories...,\n  this._refine...,\n  init...,\n  render: function(params) {\n    var hasCategorySelected = params.helper.hasRefinements('categories');\n    var all = {name: 'All', value: ''};\n    if (!hasCategorySelected) {\n      all.isRefined = true;\n    }\n    var results = [all];\n    results = results.concat(params.results.getFacetValues('categories').data || []);\n    var selectValues = results.map(function(result) {\n      return '<option value=\"' + result.value + '\"' + result.isRefined ? ' selected' : '' + '>' + result.name + '<option>';\n    });\n    this.$selectCategories.innerHTML = selectValues;\n  }\n};\n```\n\n## 4. `addWidget`\n\n```js\nsearch.addWidget(selectCategories);\nsearch.start(); // should already be present in your page\n```\n\n## Conclusion\n\nSome steps might not be accurate and the code might fail but that's the general idea. If you have any question, add it here.\n",
   "user": 123822,
+  "reactionCount": 1,
   "parent": {
     "type": "issue",
     "number": 868
@@ -11,7 +12,8 @@
     "githubAppId": null,
     "id": 188206988,
     "reactions": {
-      "👍️": 1
+      "+1": 1,
+      "total_count": 1
     }
   }
 }

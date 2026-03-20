@@ -5,6 +5,7 @@
   "body": "`urlSync` makes it hard, if not impossible, to maintain custom parameters in a URL.\n\nI have the example of a client who needs to keep a location label along with geo coordinates in the URL, along with the usual instantsearch.js search params.\r\nBecause of the debouncing delay that has been introduced, the workaround given in #960 does not work anymore: anything set on the URL is overriden after the debounce delay.\n\nThis is causing issues in implementations like this client's one, so I'd like to propose a solution to make it possible to have custom params living with the search ones in harmony ☮️\n\nThe main idea is to make `urlSync` the central point for handling URL params.\n\n### Using a hook function\n\nConsidering the library's current design, it looks like the most sensible thing to do would be to have a hook in the `urlSync` config object, that allows one to provide extra parameters that should be serialized on the URL:\n\n```js\nconst search = instantsearch({\r\n  // ...\r\n  urlSync: {\r\n     customParameters: () => ({ location: \"Paris, Ile de France\", latLng: \"48.864716,2.349014\" })\r\n  }\r\n});\n```\n\n(yes, I know `aroundLatLng` can be serialized using  `trackedParameters`; it's just an example 🙂 )\n\nThe returned value from this hook would be used to enrich the URL params at the moment `urlSync` changes the History state and changes the URL.\\\nThis allows anyone to maintain their own list of params very easily.\n\n### An actual urlSync API\n\nI'd love to see something more usable than this \"throw everything in this function\" hook.\n\nWhat about making `urlSync` an actual object that has the role of managing the URL params for instantsearch? We could then have something like this:\n\n```js\n// Initialize...\r\nconst search = instantsearch(options);\r\n\r\n// At some point, my custom param value changes:\r\nsearch.urlSync.setParam('Location', 'Paris, Ile de France');\n```\n\nIt would then provide an interface to set and get values from the URL, either custom or \"official\" one, and make it easier to manage in a large application.\n\nLooking forward to your feedback!\n",
   "user": 314079,
   "commentCount": 5,
+  "reactionCount": 3,
   "issue": {
     "labels": [
       {
@@ -31,7 +32,8 @@
     ],
     "number": 2172,
     "reactions": {
-      "👍️": 3
+      "+1": 3,
+      "total_count": 3
     },
     "state": "closed"
   }

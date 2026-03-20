@@ -3,6 +3,7 @@
   "date": 1762426653,
   "body": "@WillyReyno Same issue for us.  @vercel/oidc is ESM-only and breaks Metro.\n\nWe resolved it temporary by mocking AI module during bundling, blocking it in the end.\n\n@vercel/oidc is a transitive dependency of @ai-sdk/gateway (via instantsearch).\nThis config blocks it and mocks it so the app can bundle\n\n```\n// Learn more https://docs.expo.io/guides/customizing-metro\nconst { getDefaultConfig } = require('expo/metro-config');\n\nconst config = getDefaultConfig(__dirname);\n\n// Adds support for `mjs` files (for i18n-js)\nconfig.resolver.sourceExts.push('mjs');\n\n// Ensure node_modules are properly resolved\nconfig.resolver.platforms = ['ios', 'android', 'native', 'web'];\nconfig.resolver.unstable_enableSymlinks = false;\n\n// Alias problematic packages to empty mocks (as suggested by package authors)\n// @vercel/oidc is an ESM-only package used by @ai-sdk/gateway but not needed in React Native\n// Since we're not using the chat component, we can alias it to an empty package\nconst path = require('path');\nconst originalResolveRequest = config.resolver.resolveRequest;\nconfig.resolver.resolveRequest = (context, moduleName, platform) => {\n  // Alias @vercel/oidc to empty mock (not needed for React Native, only for chat component)\n  if (moduleName === '@vercel/oidc') {\n    return {\n      filePath: path.resolve(__dirname, 'metro-mocks/@vercel/oidc.js'),\n      type: 'sourceFile',\n    };\n  }\n  // Use default resolver for everything else\n  if (originalResolveRequest) {\n    return originalResolveRequest(context, moduleName, platform);\n  }\n  return context.resolveRequest(context, moduleName, platform);\n};\n\nmodule.exports = config;\n\n```\n\nwhere metro-mocks/@vercel/oidc.js is:\n\n```\nmodule.exports = {};\n\n```\n",
   "user": 73392170,
+  "reactionCount": 3,
   "parent": {
     "type": "issue",
     "number": 6798
@@ -11,8 +12,9 @@
     "githubAppId": null,
     "id": 3496567417,
     "reactions": {
-      "👀": 1,
-      "👍️": 2
+      "+1": 2,
+      "eyes": 1,
+      "total_count": 3
     }
   }
 }

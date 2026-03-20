@@ -3,6 +3,7 @@
   "date": 1679609112,
   "body": "@sarahdayan @Haroenv I figured what was causing the duplicate queries on page load and found a workaround so thought I'd post incase anyone else encounters this!\n\nIt only happens if Next.js middleware is in place. I think this bug explains why: https://github.com/vercel/next.js/issues/38267\n\nAs I mentioned before, it was still happening when memo'ing the search client - which should have allowed us to handle the middleware re-renders issue, but my `useMemo` dependency array included an object that contained the app ID and public key. Breaking those out into scalars first allows React to more easily calculate that it doesn't need to re-create the search client on the re-render:\n\n```js\nconst { appID, indexName, publicKey } = algoliaCredentials;\r\n\r\nconst searchClient = useMemo(\r\n\t() => (appID && publicKey ? algoliasearch(appID, publicKey) : null),\r\n\t[appID, publicKey]\r\n);\n```\n\n@Haroenv also, this does work great in our app's React Context - as long as it's memo'd. Thanks for the push in the right direction!\n",
   "user": 1943254,
+  "reactionCount": 0,
   "parent": {
     "type": "issue",
     "number": 5539

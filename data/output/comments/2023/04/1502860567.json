@@ -3,6 +3,7 @@
   "date": 1681199736,
   "body": "Before looking more in detail, I'd like to already say that InstantSearchSSRProvider is designed for one having a single InstantSearch component as its child. We should have a warning (or maybe even error) if there are multiple, as they will share the states.\n\nThe pattern you may be looking for could be \"multiple root indices\":\n\n```jsx\nconst searchClient = algoliasearch();\r\nsearchFn = searchClient.search;\r\nsearchClient.search = (queries) => {\r\n  queries.shift();\r\n  return searchFn(queries).then(({ results }) => ({\r\n    results: [\r\n      {\r\n        hits: [],\r\n        nbHits: 0,\r\n        nbPages: 0,\r\n        page: 0,\r\n        processingTimeMS: 0,\r\n        hitsPerPage: 0,\r\n        exhaustiveNbHits: false,\r\n        query: '',\r\n        params: '',\r\n      },\r\n      ...results,\r\n    ],\r\n  }));\r\n};\r\n\r\nfunction App() {\r\n  return (\r\n    <InstantSearch indexName=\"_root_index_\" searchClient={searchClient}>\r\n      <Index indexName=\"1\" />\r\n      <Index indexName=\"2\" />\r\n    </InstantSearch>\r\n  );\r\n}\n```\n\nIndex 1 and index 2 will not share any state in this setup.\n",
   "user": 6270048,
+  "reactionCount": 1,
   "parent": {
     "type": "issue",
     "number": 5585
@@ -11,7 +12,8 @@
     "githubAppId": null,
     "id": 1502860567,
     "reactions": {
-      "👍️": 1
+      "+1": 1,
+      "total_count": 1
     }
   }
 }

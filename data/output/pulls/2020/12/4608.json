@@ -5,6 +5,7 @@
   "body": "## Summary\n\nThis PR accepts new `initParams` at `insights` middleware for initializing `insightsClient`.\n\n```js\nconst middleware = createInsightsMiddleware({\r\n  insightsClient,\r\n  insightsInitParams: {\r\n    useCookie: false,\r\n  },\r\n})\n```\n\nIt can be used to disable cookie like above. (The `useCookie` option is being implemented at the moment in https://github.com/algolia/search-insights.js/pull/236)\n\n### An extra thought about `useCookie: false`\n\nhttps://codesandbox.io/s/instantsearchjs-forked-5wu8h?file=/src/app.js:976-1197\n\nIf user passes `useCookie: false`, the `insightsClient` won't have any token at the time of initialization (because it will skip generating an anonymous user token).\n\nWhen the insights middleware will try to send events, `insightsClient` will throw, saying userToken is missing. However in that case, it doesn't make sense to send events when userToken is not specified. So they will have to postpone adding insights middleware.\n\n```js\nsearch.start();\r\n\r\nconst insights = createInsightsMiddleware({\r\n  insightsClient,\r\n  insightsInitParams: {\r\n    useCookie: false,\r\n  },\r\n});\r\n\r\nsetTimeout(() => {\r\n  // Whenever a user token is ready,\r\n  // the insights middleware can be used.\r\n  // It doesn't necessarily have to be used from the beginning.\r\n  insightsClient('setUserToken', 'user-token-1');\r\n  search.use(insights);\r\n}, 3000);\n```\n",
   "user": 499898,
   "commentCount": 5,
+  "reactionCount": 0,
   "pull": {
     "addedLinesCount": 27,
     "changedFilesCount": 2,

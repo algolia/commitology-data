@@ -5,6 +5,7 @@
   "body": "This is the cause of the UMD e2e failure in `next`.\n\nBasically the flow is:\n\n1. source code that destructures something in arguments:\n\n```js\nfunction fn({ one, two }) {}\n```\n\n2. esm output of source code\n\n```js\nfunction fn(_ref) {\r\n  let {\r\n    one,\r\n    two,\r\n  } = _ref\n```\n\n3. umd production output (using uglify)\n\n```js\nfunction fn(e) {\r\n  var { one: e, two: t } = e\n```\n\nnote the reused variable name\n\n4. output after import through parcel of the prod umd import\n\n```js\nfunction fn(e) {\r\n  var e = e.one,\r\n    t = e.two;\n```\n\nThis fixes it by changing step 3 by using terser to:\n\n```js\nfunction fn(e) {\r\n  let { one: t, two: n } = e;\r\n}\n```\n\nnote that it doesn't reuse the `e` variable and thus no longer bugs and has this output in parcel:\n\n```js\nfunction fn(e) {\r\n  var t = e.one,\r\n    n = e.two;\r\n}\n```\n\nThis issue started showing up once we changed the browser output of the js umd build to keep destructuring, which had this \"rename-bug\". Updating to terser is the right solution for the future as it's actually kept updated unlike uglify.\n",
   "user": 6270048,
   "commentCount": 1,
+  "reactionCount": 0,
   "pull": {
     "addedLinesCount": 32,
     "changedFilesCount": 6,

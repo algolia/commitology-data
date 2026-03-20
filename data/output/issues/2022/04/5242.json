@@ -5,6 +5,7 @@
   "body": "Howdy!\n\nWe are using `useInfiniteHits` to return us a nice list with results for our overview page that has a 'load more items' option. We are doing this all client side, and aren't working with the SSR provider just yet\n\nWe started meddling with routing and controlling the UI state through the `initialUiState` prop on the `InstantSearch` component. Now let's say the state we provide in the `initialUiState` is as follows\n\n```\n      initialUiState={{\r\n        products: {\r\n          configure: {\r\n            hitsPerPage: 10,\r\n          },\r\n          menu: {\r\n            currency: 'euro',\r\n          },\r\n        },\r\n      }}\n```\n\nThe state throughout the application that is retrieved through the hooks is reflecting this initial UI state nicely - so far all good except for this one:\n\n```\n  const { hits, results, showMore } = useInfiniteHits(props);\n```\n\nThe first set of `hits` (the first 10, based on the configuration provided in `initialUiState`) seem to be *any* hit, so: hits that are not filtered based on the `initialUiState`, but simply the first 10 of the `products` index it's default ordering.\n\nNow this is where it gets a bit funky:\n\nIn the `results` prop, the correct 10 items are actually provided - so Algolia did actually run the query and does have the correct hits. Of course, the `results.hits` are only the items of the current page, so we can't use this prop with our `showMore` set-up.\n\nOnce we initiate the `showMore`, and thus load the next 10 results (to get a total of 20 hits): the `hits` prop is still showing the first 10 items to be *any* hit. The next 10 (page 2), are the items we would expect to show up on page 2.\n\nOnce we turn on a random facet or sorting option, and turn it back again to a state that matches the `initialUiState` as provided, everything is correct. It seems to 'trigger' something that makes the output of useInifniteHits go to the correct state (just one extra rerender that fixes it?)\n\ntl;dr: It seems to be that the first set of hits in the `hits` property of `useInifniteHits` doesn't reflect a filtered items, based on the initialUiState provided. `results.hits` actually has the correct items, but since we are implementing a 'click here to show more' scenario, we can't use this.\n\nLet me know if this makes sense, if it doesn't I'm happy to try to replicate the situation\n",
   "user": 10176709,
   "commentCount": 6,
+  "reactionCount": 1,
   "issue": {
     "labels": [
       {
@@ -17,7 +18,8 @@
     ],
     "number": 5242,
     "reactions": {
-      "❤️": 1
+      "heart": 1,
+      "total_count": 1
     },
     "state": "open"
   }

@@ -5,6 +5,7 @@
   "body": "## 🐛 Bug description\n\n`useInfiniteHits` cache functionality breaks when hooks are used in a certain way for custom search UI components. With components from instantsearch library everything works fine.\n\nCache `read` callback is called multiple times and initially state doesn't include all the facets when coming back to search page and it doesn't match with what is in cache before `write` is called and cache resets.\n\n```javascript\n return cache && isEqual(cache.state, getStateWithoutPage(state)) ? cache.hits : null;\n```\n\nhttps://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/infiniteHitsCache/sessionStorage.ts#L29\n\nExample includes custom cache where it is easy to see that `read` function is called multiple times and state is not up to date until later and `write` gets called before state gets matched from session storage:\n\n```javascript\nconst customCache = {\r\n  write: ({ hits, state }) => {\r\n    console.log(\"WRITE\");\r\n    sessionStorage.setItem(\r\n      KEY,\r\n      JSON.stringify({\r\n        state: getStateWithoutPage(state),\r\n        hits: hits\r\n      })\r\n    );\r\n  },\r\n  read: ({ state }) => {\r\n    console.log(state);\r\n    var cache = JSON.parse(sessionStorage.getItem(KEY));\r\n    return cache && dequal(state, getStateWithoutPage(state))\r\n      ? cache.hits\r\n      : null;\r\n  }\r\n};\n```\n\nConsole logs when coming back from product page\n\n<img width=\"993\" alt=\"Screenshot 2022-09-12 at 12 45 12\" src=\"https://user-images.githubusercontent.com/15219142/189624431-9830a0a4-7371-46fe-b1b3-f99402ee8b2c.png\">\n\nIn the logs you can see that disjunctiveFacets is empty array at first and it won't match with the one in cache. `write`gets called and cache basically resets.\n\n`<InstantSearchFilters />` can be uncommented to check working functionality\n\n```javascript\n <div>\r\n        <CustomInfiniteHits />\r\n        {/* <InfiniteHits hitComponent={Hit} cache={cache} /> */}\r\n      </div>\r\n      <div>\r\n        {/* Cache resets when custom components with hooks is used */}\r\n        <CustomFilters attributesToRender={attributesToRender} />\r\n        {/* Cache works correctly with ready made UI components */}\r\n        {/* <InstantSearchFilters /> */}\r\n </div>\n```\n\n## 🔍 Bug reproduction\n\n**Steps to reproduce the behavior:**\n\n1. Go to https://codesandbox.io/s/musing-cori-g9895q\n2. Click \"Show more\"\n3. Click product to go to product page\n4. Go back to search page\n5. Results should have 40 items but has only 20.\n\n**Live reproduction:**\n\nhttps://codesandbox.io/s/musing-cori-g9895q\n\n## 💭 Expected behavior\n\nWhen more products have been fetched with \"Show more\" button and user navigates to a product page and back, search results should still have all the previously fetched products visible.\n\n## Environment\n\n* React InstantSearch Hooks version: 6.32.1\n* React version:  18.2.0\n* Browser: Chrome 104.0.5112.79\n* OS: macOS\n",
   "user": 15219142,
   "commentCount": 5,
+  "reactionCount": 11,
   "issue": {
     "labels": [
       {
@@ -17,8 +18,9 @@
     ],
     "number": 5239,
     "reactions": {
-      "👀": 5,
-      "👍️": 6
+      "+1": 6,
+      "eyes": 5,
+      "total_count": 11
     },
     "state": "open"
   }

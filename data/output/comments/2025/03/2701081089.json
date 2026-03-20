@@ -3,6 +3,7 @@
   "date": 1741184344,
   "body": "The short version is that you’re adding `objectID` to the route state in `stateToRoute`, but then ignoring (and removing) it in `routeToState`.\nBecause your state mapping is asymmetric, the router sees “changes” and triggers a second query.\n\nConcretely, in stateToRoute:\n\nif (typeof window !== \"undefined\") {\nobjectID =\nnew URLSearchParams(window.location.search).get(\"objectID\") || undefined;\n}\n\n…you add objectID to the route state that’s returned.\n\nBut in routeToState:\n\nrouteToState(routeState = {} as UiState) {\nreturn Object.keys(routeState).reduce(\n(state, indexId) => ({\n...state,\n\\[indexId]: cleanState(routeState\\[indexId] || {}),\n}),\n{} as UiState\n);\n}\n\n…you never read that objectID key nor put it back into the returned UiState.\nConsequently, your router sees “an extra key” (objectID) vanish, so it re-syncs the route and triggers a new query.\n\nFix would be either removing that objectID logic or handling it more consistently: make routeToState store that key in uiState the same way it’s set in stateToRoute. That consistency will keep the route state stable and avoid the unwanted query.\n\nI haven't had the time to dive into insights for now but it seems like there was no initialisation of our insights library.\n",
   "user": 17079039,
+  "reactionCount": 0,
   "parent": {
     "type": "issue",
     "number": 6599
