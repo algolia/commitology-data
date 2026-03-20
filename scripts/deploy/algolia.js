@@ -38,6 +38,10 @@ const algoliaConfig = {
       most_commented: {
         customRanking: ['desc(commentCount)'],
       },
+      // Most reactions first
+      most_reacted: {
+        customRanking: ['desc(reactionCount)'],
+      },
       // Most files changed
       most_files_changed: {
         customRanking: ['desc(pull.changedFilesCount)'],
