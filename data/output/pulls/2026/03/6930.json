@@ -1,0 +1,17 @@
+{
+  "type": "pull",
+  "title": "feat(react-instantsearch-core): add batched mode to DynamicWidgets for scalable facet rendering",
+  "date": 1773759201,
+  "body": "# Batched Mode for Dynamic Widgets\n\n## Problem\n\nWhen rendering many facets (200+) with DynamicWidgets, each facet creates a new widget lifecycle using per-facet connectors (RefinementList, HierarchicalMenu). This causes:\n\n* Expensive mounting/unmounting of connectors\n* O(n) widget registry overhead\n* Application crashes or severe slowdowns with unlimited facets\n\n## Solution\n\nIntroduces explicit `mode=\"batched\"` option to DynamicWidgets that:\n\n1. **Skips per-widget mounting** - All facets render through a single fallback component instead of mounting individual connectors\n2. **Passes facet metadata** - Fallback components receive:`attribute`, `canRefine`, `facetValues`\n3. **Maintains backward compatibility** - Default mode=\\default\\ preserves existing behavior\n\n## Implementation Details\n\n### Type Definition\n\n```typescript\nmode?: 'default' | 'batched';\n```\n\n### Rendering Strategy\n\n**Default Mode** (backward compatible):\n\n* Each facet with an explicit widget renders the widget\n* Facets without widgets render through fallback\n* Facet metadata passed to fallback\n\n**Batched Mode** (high-facet optimized):\n\n* All facets bypass individual widget mounting\n* All facets render through fallback component\n* Reduces widget chain to O(1) from O(n)\n\n## Performance Impact\n\n* **Before**: 200 facets → ~500ms slowdown / unlimited facets → crash\n* **After (batched)**: 200+ facets → interactive performance maintained\n\n## Testing\n\n* ✅ New test: \"passes facet metadata to fallbackComponent\" - validates metadata flow\n* ✅ New test: \"renders all facets through fallbackComponent in batched mode\" - validates batched rendering\n* ✅ All existing tests pass (regression testing)\n\n## Files Changed\n\n* `packages/react-instantsearch-core/src/components/DynamicWidgets.tsx` - Added batched mode support\n* `packages/react-instantsearch-core/src/components/__tests__/DynamicWidgets.test.tsx` - Added tests\n\n## Related\n\n* Builds on PR #6929 (facet metadata passthrough)\n* Addresses issue with unlimited facet rendering\n* Part of two-phase optimization strategy\n\n## Usage Example\n\n```jsx\n// High-facet scenario - use batched mode\r\n<DynamicWidgets mode=\"batched\" fallbackComponent={MyFacetComponent}>\r\n  {/* Widget definitions optional in batched mode */}\r\n</DynamicWidgets>\n```\n",
+  "user": 6270048,
+  "commentCount": 0,
+  "pull": {
+    "addedLinesCount": 314,
+    "changedFilesCount": 2,
+    "deletedLinesCount": 4,
+    "labels": [],
+    "number": 6930,
+    "reactions": {},
+    "state": "draft"
+  }
+}
