@@ -8,6 +8,9 @@ import {
 import { inputDirectory as pullInputDirectory } from '../../lib/helpers/pull.js';
 
 const ISSUES_PER_PAGE = 100;
+const PAGES_CONCURRENCY = 6;
+const ITEMS_CONCURRENCY = 15;
+const SLEEP_BETWEEN_PAGES = 300;
 
 const itemCount = await getIssuesAndPullsCount();
 const pageCount = _.ceil(itemCount / ISSUES_PER_PAGE);
@@ -45,11 +48,6 @@ await pMap(
         const basicPath = absolute(pullDirectory, 'basic.json');
         const detailedPath = absolute(pullDirectory, 'detailed.json');
 
-        // Skip if both files already exist
-        if ((await exists(basicPath)) && (await exists(detailedPath))) {
-          return;
-        }
-
         // Save basic info
         if (!(await exists(basicPath))) {
           await writeJson(itemContent, basicPath);
@@ -61,12 +59,12 @@ await pMap(
           await writeJson(detailedData, detailedPath);
         }
       },
-      { concurrency: 10 },
+      { concurrency: ITEMS_CONCURRENCY },
     );
 
     progress.tick(`${tickMessage} (Throttling for rate limit...)`);
-    await sleep(1000);
+    await sleep(SLEEP_BETWEEN_PAGES);
   },
-  { concurrency: 5 },
+  { concurrency: PAGES_CONCURRENCY },
 );
 progress.success('All pull requests fetched');
