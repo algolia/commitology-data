@@ -13,7 +13,7 @@ import { commentsDirectory, inputDirectory } from '../../lib/helpers/issue.js';
 
 const CONCURRENCY = 10;
 
-const allIssues = await glob('./**/*.json', { cwd: inputDirectory });
+const allIssues = await glob('./**/issue.json', { cwd: inputDirectory });
 const maxIssueCount = allIssues.length;
 const progress = spinner();
 

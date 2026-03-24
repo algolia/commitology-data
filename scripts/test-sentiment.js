@@ -1,4 +1,4 @@
-import { analyzeSentiment } from '../lib/helpers/claude.js';
+import { getSentiment } from '../lib/helpers/claude.js';
 
 /**
  * Test script to verify Claude API integration
@@ -30,7 +30,10 @@ async function testSentiment() {
     console.log(`Expected: ${testCase.expected}`);
 
     try {
-      const result = await analyzeSentiment(testCase.title, testCase.body);
+      const result = await getSentiment({
+        title: testCase.title,
+        body: testCase.body,
+      });
       console.log(
         `Result:   ${result.primary}`,
         result.emotions.length > 0 ? `(${result.emotions.join(', ')})` : '',
