@@ -5,7 +5,7 @@ import { inputDirectory } from '../../lib/helpers/issue.js';
 
 const CONCURRENCY = 10;
 
-const allIssues = await glob('./2015/*/**/issue.json', {
+const allIssues = await glob('./**/issue.json', {
   cwd: inputDirectory,
 });
 const maxIssueCount = allIssues.length;
