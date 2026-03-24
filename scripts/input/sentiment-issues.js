@@ -1,18 +1,18 @@
 import { _, pMap } from 'golgoth';
 import { exists, glob, readJson, spinner, writeJson } from 'firost';
-import { getSentiment } from '../../lib/helpers/claude.js';
+import { fieldOrder, getSentiment } from '../../lib/helpers/claude.js';
 import { inputDirectory } from '../../lib/helpers/issue.js';
 
 const CONCURRENCY = 10;
 
-const allIssues = await glob('./2015/08/**/issue.json', {
+const allIssues = await glob('./2015/*/**/issue.json', {
   cwd: inputDirectory,
 });
 const maxIssueCount = allIssues.length;
 const progress = spinner();
 
 await pMap(
-  allIssues,
+  _.slice(allIssues, 30),
   async (issuePath, issueIndex) => {
     const issueContent = await readJson(issuePath);
 
@@ -28,7 +28,7 @@ await pMap(
 
     const sentiment = await getSentiment({ title, body });
 
-    await writeJson(sentiment, sentimentPath);
+    await writeJson(sentiment, sentimentPath, { sort: fieldOrder });
   },
   { concurrency: CONCURRENCY },
 );
