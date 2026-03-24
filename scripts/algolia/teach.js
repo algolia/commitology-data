@@ -1,32 +1,44 @@
-import { dayjs } from 'golgoth';
-import { absolute, consoleError, consoleInfo, gitRoot, write } from 'firost';
-import { updateAgentPrompt } from '../../lib/helpers/algolia.js';
+#!/usr/bin/env node
+import { _, dayjs } from 'golgoth';
+import { absolute, gitRoot, read, write, writeJson } from 'firost';
+import {
+  getAgentConfig,
+  updateAgentConfig,
+} from '../../lib/helpers/algolia.js';
 
-// Get the prompt from CLI argument
-const prompt = process.argv[2];
+// Load local configuration files
+const newInstructions = await read(
+  absolute(gitRoot(), 'data/agent/instructions.md'),
+);
+const newConfig = JSON.parse(
+  await read(absolute(gitRoot(), 'data/agent/config.json')),
+);
+const newAgentConfig = {
+  instructions: newInstructions,
+  ...newConfig,
+};
 
-if (!prompt) {
-  consoleError('Please provide a prompt as an argument');
-  consoleError('Usage: yarn run algolia:prompt "Your prompt here"');
-  process.exit(1);
+// Fetch current agent configuration from API
+const currentAgentConfig = await getAgentConfig();
+
+// Exit early if nothing changed
+if (_.isEqual(currentAgentConfig, newAgentConfig)) {
+  process.exit(0);
 }
 
-// Save current version to data/agent/prompt.md (committable)
-const currentPromptPath = absolute(gitRoot(), 'data/agent/prompt.md');
-await write(prompt, currentPromptPath);
-
-// Save backup of the prompt in tmp/, in case we want to go back
+// Backup current config before updating
 const timestamp = dayjs().format('YYYY-MM-DD_HH-mm-ss');
-const filename = `${timestamp}.md`;
-const backupPath = absolute(gitRoot(), 'tmp/prompt', filename);
-await write(prompt, backupPath);
+const backupDir = absolute(gitRoot(), 'tmp/agent', timestamp);
 
-// Update agent prompt in Algolia
-consoleInfo('Updating agent prompt in Algolia...');
-try {
-  await updateAgentPrompt(prompt);
-  consoleInfo('✓ Agent prompt updated successfully in Algolia');
-} catch (error) {
-  consoleError('Error updating agent prompt:', error.message);
-  process.exit(1);
-}
+await write(currentAgentConfig.instructions, `${backupDir}/instructions.md`);
+await writeJson(
+  {
+    providerId: currentAgentConfig.providerId,
+    model: currentAgentConfig.model,
+    tools: currentAgentConfig.tools,
+  },
+  `${backupDir}/config.json`,
+);
+
+// Update agent configuration
+await updateAgentConfig(newAgentConfig);
