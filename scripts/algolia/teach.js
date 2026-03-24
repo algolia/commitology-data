@@ -11,11 +11,15 @@ if (!prompt) {
   process.exit(1);
 }
 
-// Save backup of the prompt, in case we want to go back
+// Save current version to data/agent/prompt.md (committable)
+const currentPromptPath = absolute(gitRoot(), 'data/agent/prompt.md');
+await write(prompt, currentPromptPath);
+
+// Save backup of the prompt in tmp/, in case we want to go back
 const timestamp = dayjs().format('YYYY-MM-DD_HH-mm-ss');
 const filename = `${timestamp}.md`;
-const filepath = absolute(gitRoot(), 'tmp/prompt', filename);
-await write(prompt, filepath);
+const backupPath = absolute(gitRoot(), 'tmp/prompt', filename);
+await write(prompt, backupPath);
 
 // Update agent prompt in Algolia
 consoleInfo('Updating agent prompt in Algolia...');
