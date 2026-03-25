@@ -10,10 +10,10 @@ const progress = spinner();
 
 await forEachInputComment(
   async (inputComment) => {
-    const { index, max, data } = inputComment;
+    const { index, max, data, filepath } = inputComment;
     progress.tick(`[${index}/${max}] Comment #${data.id}`);
 
-    const commentData = await normalizeComment(data);
+    const commentData = await normalizeComment(data, filepath);
     const commentPath = getOutputPath(commentData);
 
     await writeJson(commentData, commentPath, {
