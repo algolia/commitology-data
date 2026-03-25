@@ -1,14 +1,15 @@
 import { consoleError, consoleInfo } from 'firost';
 import indexing from 'algolia-indexing';
+import { getKey } from 'keyleth';
 import { repoName } from '../../lib/config.js';
 import { getRecords } from '../../lib/helpers/record.js';
 
 // Algolia
 const algoliaConfig = {
   credentials: {
-    appId: process.env.ALGOLIA_APP_ID || 'OKF83BFQS4', // dx-public
-    indexName: process.env.ALGOLIA_INDEX_NAME || `commitology_${repoName}`,
-    apiKey: process.env.ALGOLIA_ADMIN_API_KEY,
+    appId: await getKey('ALGOLIA_APP_ID', 'OKF83BFQS4'), // dx-public
+    indexName: await getKey('ALGOLIA_INDEX_NAME', `commitology_${repoName}`),
+    apiKey: await getKey('ALGOLIA_ADMIN_API_KEY'),
   },
   settings: {
     searchableAttributes: ['unordered(title)', 'unordered(body)', 'user.login'],
@@ -48,13 +49,13 @@ const algoliaConfig = {
     ],
 
     // By default, display chronologically (newest first)
-    customRanking: ['desc(date)'],
+    customRanking: ['desc(date.timestamp)'],
 
     // Replicas for alternative sorting
     replicas: {
       // Oldest to newest
       oldest: {
-        customRanking: ['asc(date)'],
+        customRanking: ['asc(date.timestamp)'],
       },
       // Most comments first
       most_commented: {
@@ -66,11 +67,11 @@ const algoliaConfig = {
       },
       // Most files changed
       most_files_changed: {
-        customRanking: ['desc(pull.changedFilesCount)'],
+        customRanking: ['desc(diff.changedFiles)'],
       },
       // Most lines deleted
       most_lines_deleted: {
-        customRanking: ['desc(pull.deletedLinesCount)'],
+        customRanking: ['desc(diff.deletedLines)'],
       },
     },
   },
