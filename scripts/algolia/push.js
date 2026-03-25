@@ -33,6 +33,10 @@ const algoliaConfig = {
       'sentiment.primary',
       'sentiment.emotions',
       'sentiment.score',
+      // Diff
+      'diff.addedLines',
+      'diff.changedFiles',
+      'diff.deletedLines',
       // Commit
       'commit.state',
       // Issue
