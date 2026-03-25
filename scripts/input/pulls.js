@@ -1,70 +1,87 @@
-import { _, dayjs, pMap } from 'golgoth';
+import { dayjs, pMap } from 'golgoth';
 import { absolute, exists, sleep, spinner, writeJson } from 'firost';
 import {
   getIssuesAndPulls,
-  getIssuesAndPullsCount,
   getPullRequestDetails,
 } from '../../lib/helpers/github.js';
 import { inputDirectory as pullInputDirectory } from '../../lib/helpers/pull.js';
 
 const ISSUES_PER_PAGE = 100;
-const PAGES_CONCURRENCY = 6;
 const ITEMS_CONCURRENCY = 15;
 const SLEEP_BETWEEN_PAGES = 300;
 
-const itemCount = await getIssuesAndPullsCount();
-const pageCount = _.ceil(itemCount / ISSUES_PER_PAGE);
-
 const progress = spinner();
 
-await pMap(
-  _.range(pageCount),
-  async (page) => {
-    const tickMessage = `Fetching page ${page}/${pageCount}`;
-    progress.tick(tickMessage);
+let page = 1;
+let shouldContinue = true;
 
-    const items = await getIssuesAndPulls({
-      page: page + 1,
-      perPage: ISSUES_PER_PAGE,
-    });
+while (shouldContinue) {
+  const tickMessage = `Fetching page ${page}`;
+  progress.tick(tickMessage);
 
-    await pMap(
-      items,
-      async (itemContent) => {
-        const { pull_request, number, created_at } = itemContent;
-        const isPullRequest = !!pull_request;
+  const items = await getIssuesAndPulls({
+    page,
+    perPage: ISSUES_PER_PAGE,
+  });
 
-        // Skip issues
-        if (!isPullRequest) {
-          return;
-        }
+  // If we get no items, we've reached the end
+  if (items.length === 0) {
+    progress.tick('No more items to fetch');
+    break;
+  }
 
-        const datePath = dayjs(created_at).format('YYYY/MM');
-        const pullDirectory = absolute(
-          pullInputDirectory,
-          datePath,
-          `${number}`,
-        );
-        const basicPath = absolute(pullDirectory, 'basic.json');
-        const detailedPath = absolute(pullDirectory, 'detailed.json');
+  let newItemsCount = 0;
 
-        // Save basic info
-        if (!(await exists(basicPath))) {
-          await writeJson(itemContent, basicPath);
-        }
+  await pMap(
+    items,
+    async (itemContent) => {
+      const { pull_request, number, created_at } = itemContent;
+      const isPullRequest = !!pull_request;
 
-        // Fetch and save detailed info
-        if (!(await exists(detailedPath))) {
-          const detailedData = await getPullRequestDetails(number);
-          await writeJson(detailedData, detailedPath);
-        }
-      },
-      { concurrency: ITEMS_CONCURRENCY },
-    );
+      // Skip issues
+      if (!isPullRequest) {
+        return;
+      }
 
-    progress.tick(`${tickMessage} (Throttling for rate limit...)`);
+      const datePath = dayjs(created_at).format('YYYY/MM');
+      const pullDirectory = absolute(pullInputDirectory, datePath, `${number}`);
+      const basicPath = absolute(pullDirectory, 'basic.json');
+      const detailedPath = absolute(pullDirectory, 'detailed.json');
+
+      let isNew = false;
+
+      // Save basic info
+      if (!(await exists(basicPath))) {
+        await writeJson(itemContent, basicPath);
+        isNew = true;
+      }
+
+      // Fetch and save detailed info
+      if (!(await exists(detailedPath))) {
+        const detailedData = await getPullRequestDetails(number);
+        await writeJson(detailedData, detailedPath);
+        isNew = true;
+      }
+
+      if (isNew) {
+        newItemsCount++;
+      }
+    },
+    { concurrency: ITEMS_CONCURRENCY },
+  );
+
+  progress.tick(
+    `${tickMessage} - ${newItemsCount} new items saved (Throttling for rate limit...)`,
+  );
+
+  // If no new items were saved in this page, stop pagination
+  if (newItemsCount === 0) {
+    progress.tick('All pull requests already up to date, stopping pagination');
+    shouldContinue = false;
+  } else {
     await sleep(SLEEP_BETWEEN_PAGES);
-  },
-  { concurrency: PAGES_CONCURRENCY },
-);
-progress.success('All pull requests fetched');
+    page++;
+  }
+}
+
+progress.success(`All pull requests fetched (stopped at page ${page})`);

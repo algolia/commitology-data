@@ -18,7 +18,9 @@ const algoliaConfig = {
       'type',
       'date',
       'searchable(user.facet)', // For the User filter widget
-      'user.login', // Actual facetting
+      'user.login',
+      'user.isBot',
+      'user.isOrganization',
       'commit.state',
       'issue.state',
       'pull.state',

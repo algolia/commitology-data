@@ -1,51 +1,31 @@
-import { _, dayjs, pMap } from 'golgoth';
-import { absolute, exists, sleep, spinner, writeJson } from 'firost';
-import {
-  getIssuesAndPulls,
-  getIssuesAndPullsCount,
-} from '../../lib/helpers/github.js';
+import { dayjs, pMap } from 'golgoth';
+import { absolute, exists, spinner, writeJson } from 'firost';
 import {
   fieldOrder,
+  forEachGitHubIssueYear,
+  forEachGitHubPageOfYear,
   inputDirectory as issueInputDirectory,
 } from '../../lib/helpers/issue.js';
 
-const ISSUES_PER_PAGE = 100;
-const PAGES_CONCURRENCY = 6;
-const ITEMS_CONCURRENCY = 15;
-const SLEEP_BETWEEN_PAGES = 300;
-
-const itemCount = await getIssuesAndPullsCount();
-const pageCount = _.ceil(itemCount / ISSUES_PER_PAGE);
+const WRITE_CONCURRENCY = 15;
 
 const progress = spinner();
 
-await pMap(
-  _.range(pageCount),
-  async (page) => {
-    const tickMessage = `Fetching page ${page}/${pageCount}`;
-    progress.tick(tickMessage);
+await forEachGitHubIssueYear(async (year) => {
+  return await forEachGitHubPageOfYear(year, async (issues, page) => {
+    progress.tick(`Year ${year}, page ${page}`);
 
-    const items = await getIssuesAndPulls({
-      page: page + 1,
-      perPage: ISSUES_PER_PAGE,
-    });
-
+    // Save new issues
+    let savedCount = 0;
     await pMap(
-      items,
-      async (itemContent) => {
-        const { pull_request, number, created_at } = itemContent;
-        const isPullRequest = !!pull_request;
-
-        // Skip pull requests
-        if (isPullRequest) {
-          return;
-        }
-
+      issues,
+      async (issue) => {
+        const { number, created_at } = issue;
         const datePath = dayjs(created_at).format('YYYY/MM');
         const itemPath = absolute(
           issueInputDirectory,
           datePath,
-          `${number}`,
+          number,
           'issue.json',
         );
 
@@ -53,16 +33,17 @@ await pMap(
           return;
         }
 
-        await writeJson(itemContent, itemPath, {
+        await writeJson(issue, itemPath, {
           sort: fieldOrder.input,
         });
+        savedCount++;
       },
-      { concurrency: ITEMS_CONCURRENCY },
+      { concurrency: WRITE_CONCURRENCY },
     );
 
-    progress.tick(`${tickMessage} (Throttling for rate limit...)`);
-    await sleep(SLEEP_BETWEEN_PAGES);
-  },
-  { concurrency: PAGES_CONCURRENCY },
-);
+    // Continue only if we saved new items
+    return savedCount > 0;
+  });
+});
+
 progress.success('All issues fetched');
