@@ -4,6 +4,7 @@ import { fieldOrder, getSentiment } from '../../lib/helpers/claude.js';
 import { forEachInputIssue } from '../../lib/helpers/issue.js';
 
 const progress = spinner();
+let hasUpdatedSentiment = false;
 
 await forEachInputIssue(
   async ({ filepath, data, index, max }) => {
@@ -17,8 +18,13 @@ await forEachInputIssue(
 
     const sentiment = await getSentiment({ title, body });
     await writeJson(sentiment, sentimentPath, { sort: fieldOrder });
+    hasUpdatedSentiment = true;
   },
   { concurrency: 30 },
 );
 
-progress.success('All sentiment from issues generated');
+if (hasUpdatedSentiment) {
+  progress.success('All sentiment from issues generated');
+} else {
+  progress.success('No new sentiment to generate for issues');
+}
