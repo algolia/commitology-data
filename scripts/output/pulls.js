@@ -10,10 +10,10 @@ const progress = spinner();
 
 await forEachInputPull(
   async (inputPull) => {
-    const { index, max, data } = inputPull;
-    progress.tick(`[${index}/${max}] ${data.title}`);
+    const { index, max, filepath } = inputPull;
+    progress.tick(`[${index}/${max}] ${filepath}`);
 
-    const pullData = await normalizePull(data);
+    const pullData = await normalizePull(filepath);
     const pullPath = getOutputPath(pullData);
 
     await writeJson(pullData, pullPath, {
