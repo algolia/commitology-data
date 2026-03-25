@@ -10,10 +10,10 @@ const progress = spinner();
 
 await forEachInputIssue(
   async (inputIssue) => {
-    const { index, max, data } = inputIssue;
-    progress.tick(`[${index}/${max}] ${data.title}`);
+    const { index, max, filepath } = inputIssue;
+    progress.tick(`[${index}/${max}] ${filepath}`);
 
-    const issueData = await normalizeIssue(data);
+    const issueData = await normalizeIssue(filepath);
     const issuePath = getOutputPath(issueData);
 
     await writeJson(issueData, issuePath, {
