@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "[create-instantsearch-app] Allow more flexible dependencies",
-  "date": 1528277953,
+  "date": {
+    "day": 6,
+    "hour": 9,
+    "minute": 39,
+    "month": 6,
+    "second": 13,
+    "timestamp": 1528277953,
+    "year": 2018
+  },
   "body": "The way we fetch the correct library version for each template right now is defined by the [`libraryName` property on each template configuration](https://github.com/algolia/create-instantsearch-app/blob/6e674b707223b5bf5097205e17b7e52cefbfcfda/templates/InstantSearch.js/.template.js#L5). Then, we [fetch the library versions](https://github.com/algolia/create-instantsearch-app/blob/6e674b707223b5bf5097205e17b7e52cefbfcfda/packages/cli/cli.js#L127) based on this name.\n\nThis is fine for now but won't work as soon as we release new major versions (i.e. InstantSearch 3) because we will rely on the libraries `instantsearch.js` and `algoliasearch`.\n\nHere is my proposal.\n\n## Template configuration file\n\nWhat I propose is to remove this `libraryName` property and to add a `dependencies` property in the `.template.js` file:\n\n```javascript\nmodule.exports = {\r\n  dependencies: [\r\n    {\r\n      title: 'InstantSearch.js',\r\n      name: 'instantsearch.js',\r\n    },\r\n    {\r\n      title: 'JavaScript Client',\r\n      name: 'algoliasearch',\r\n    },\r\n  ]\r\n};\n```\n\n## CLI\n\nThen, in the CLI, we prompt all these dependencies (instead of the current \"InstantSearch version\"). It would look like so:\n\n```\nInstantSearch.js version: 2.8.0\r\nJavaScript Client version: 2.5.0\n```\n\nWe can then add these versions in a `versions` key in the config passed to `createInstantSearchApp()`.\n\n## Templates\n\nUsing Handlebars, we'll be able to access them in the template:\n\n```hbs\n{{versions.[instantsearch.js]}}\r\n{{versions.[algoliasearch]}}\n```\n\nI think this solution is more future proof; I already needed such a feature for installing templates without dependencies, and other templates depending on CSS libraries to fetch on npm.\n\n***\n\nLet me know what you think.\n",
   "user": 6137112,
   "commentCount": 1,

@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "JSX types are augmented incorrectly when importing an instantsearch package",
-  "date": 1695039037,
+  "date": {
+    "day": 18,
+    "hour": 12,
+    "minute": 10,
+    "month": 9,
+    "second": 37,
+    "timestamp": 1695039037,
+    "year": 2023
+  },
   "body": "### 🐛 Current behavior\n\nImporting the package seems to import globally augmented versions of various types in the `JSX` namespace. This has the side effect of clashing and being incorrect against the versions in `@types/react` and `@types/react-dom`.\n\nThis seems to have been caused by https://github.com/algolia/ui-components/pull/16 which declares the augmentations inside a `global` block, affecting anything that imports these packages.\n\n### 🔍 Steps to reproduce\n\nAn example is included in the CodeSandbox below - see src/App.tsx.\n\nThe `Name` component has been supplied with a `ref` prop, which should be a TypeScript error because `Name` does not list that props in its type. However, due to the global augmentation of `InstristicAttributes`, this is not an error and the `@ts-expect-error` comment is incorrectly reported as unused.\n\nCommenting out the import for `react-instantsearch` correctly reports an error for the `ref` prop not existing on the component.\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/algolia-ts-issue-43d7hp?file=/src/App.tsx\n\n### 💭 Expected behavior\n\nImporting any of the instantsearch or ui-components packages should not be incorrectly augmenting the types for the project they are imported into. Specifically in this case, they should not be adding a `ref` prop to all JSX elements.\n\nIt now means that all of our components can appear to take a ref according to their types, leading to confusion as to which components actually do take a ref at runtime.\n\nI believe the solution here is to declare the JSX types needed inside a `.d.ts` file within the repository and include it as a reference in the tsconfig.json, so that it can exist only at build time for compilation and not at runtime where it interferes with existing declarations.\n\n### Package version\n\nreact-instantsearch 7.0.3\n\n### Operating system\n\nmacOS 13.4.1\n\n### Browser\n\nChrome 117.0.5938.88\n\n### Code of Conduct\n\n* \\[X] I agree to follow this project's Code of Conduct\n",
   "user": 57462397,
   "commentCount": 7,

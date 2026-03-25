@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "Improve load-time performance of widgets",
-  "date": 1705510120,
+  "date": {
+    "day": 17,
+    "hour": 16,
+    "minute": 48,
+    "month": 1,
+    "second": 40,
+    "timestamp": 1705510120,
+    "year": 2024
+  },
   "body": "When mounting a lot of widgets, the time to mount can add up quite a bit. This issue highlights a couple ways to deal with it. These PRs are ordered in the ordering they should end up in `master`.\n\nTimes are for an extreme app which mounts hundreds of widgets using DynamicWidgets.\n\nThe applied changed in 🟢 are available in InstantSearch.js 4.64.1, React InstantSearch 7.5.3, Vue InstantSearch 4.13.5\n\n## swap clearRefinements for individual refinement clearing methods which are more efficient 🟢\n\n* PR: #6004\n* impact: 650ms -> 350ms\n\n## Fix sort of facet values in requestBuilder 🟢\n\n* PR: #6007\n* sort the facet values in a non-mutating manner for cache hit rate\n* issue is shown in failing test in #6006\n\n## avoid a copy of parameters to set in `setQueryParameters` and `new SearchParameters` 🟢\n\n* PR: #6006\n* impact: 350ms -> 120ms\n\n## Don't recompute search parameters for every widget 🔴\n\n* privateHelperSetState function needs to loop through every already added widget, and this is called once per addWidgets. In react there's one addWidgets for every widget, instead of being able to call addWidgets once for all widgets at once\n* impact: 120ms -> ~70ms(?) (only an estimate, this was completely removing the code completely)\n* relevant code:\r\n  https://github.com/algolia/instantsearch/blob/2258d899fab887d495af8f31905f0974f53e8e47/packages/instantsearch.js/src/widgets/index/index.ts#L326-L333\n\n## Don't clean up \"unused\" UiState and parameters 🔴\n\n* For the moment this is too much code to change to be able to measure, but we have a decent amount of impact cleaning up the impact of a widget no longer being mounted in getWidgetSearchParameters and getWidgetUiState. This would be more efficient if we left the empty values in place instead of looping and checking if every value is empty.\n* This isn't straightforward to change, as UiState is passed to routing for example where we need to be sure empty values are removed (they aren't today), as well as for inheriting parameters with multi-index, where an empty values implies a child index takes preference over a parent index, even if it has no refinements.\n",
   "user": 6270048,
   "commentCount": 4,

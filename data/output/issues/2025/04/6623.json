@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "Updating Secured API key for react-instantsearch isn't updating the URL for insights (analytics) network call with correct API key",
-  "date": 1744128012,
+  "date": {
+    "day": 8,
+    "hour": 16,
+    "minute": 0,
+    "month": 4,
+    "second": 12,
+    "timestamp": 1744128012,
+    "year": 2025
+  },
   "body": "### 🐛 Current behavior\n\nHi team\n\nI am not sure whether this is a bug or not, but I was unable to find the documentation pertaining to `react-instantsearch` with updating Secured API key.\n\nSo, we have implemented SECURED API key to fetch the key with an expiry time from our backend. We are fetching and updating the API key when we get the error : **Invalid Application-ID or API key** while doing a query to Algolia.\n\nWe have `insights={true}` but we can see that the event analytics is still pointing to the previous incorrect API key. We are getting correct data from the server for Search, but the analytics is getting **401 Unauthorized error**.\nThis is our implementation of updating the key for `searchClient`\n\n```js\nconst { addMiddlewares, error } = useInstantSearch();\n\n  useEffect(() => {\n    const middleware = ({ instantSearchInstance }) => {\n      function handleError(searchError) {\n\n        if (searchError.message === \"Invalid Application-ID or API key\") {\n          CLIENT.setClientApiKey({\n            apiKey: newAPIKey,\n          });\n\n          instantSearchInstance.refresh();\n        }\n      }\n\n      return {\n        subscribe() {\n          instantSearchInstance.addListener(\"error\", handleError);\n        },\n        unsubscribe() {\n          instantSearchInstance.removeListener(\"error\", handleError);\n        },\n      };\n    };\n\n    return addMiddlewares(middleware);\n  }, [addMiddlewares]);\n\n```\n\nAlso, one more additional question for this implementation:\n\nSince we get the expiry time in our API key, is there a way we can check the expiry before the ALGOLIA query is called? And then can we set the new API key for making the query?\n\n**P.S.**: In the Codesandbox, I am not fetching a key from backend, but I am just using an incorrect API key at the start. Then, when I get the invalid API key error, I update the API with the corrrect data.\n\n### 🔍 Steps to reproduce\n\n1. Go to <https://mvkzz9.csb.app/>\n2. Open the network tab\n3. Click on any filter. See the query is coming correct, but the **events** network call getting 401 error due to the previous incorrect API key\n\n### Live reproduction\n\nhttps://codesandbox.io/p/sandbox/mvkzz9\n\n### 💭 Expected behavior\n\nAnalytic Events at first will be denied due to incorrect API key, but after updating the API key, it should work properly (the query param with the API key should get updated).\n\n### Package version\n\n\"algoliasearch\": \"^5.11.0\",     \"react-instantsearch\": \"7.15.5\", \"react\": \"^18.3.1\",     \"react-dom\": \"^18.3.1\",\n\n### Operating system\n\nMacOs 15.4\n\n### Browser\n\nMicrosoft Edge Version 134.0.3124.95 (Official build) (arm64)\n\n### Code of Conduct\n\n* \\[x] I agree to follow this project's Code of Conduct\n",
   "user": 23236141,
   "commentCount": 0,

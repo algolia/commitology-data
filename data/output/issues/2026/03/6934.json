@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "[react-instantsearch-nextjs@1.1.2] `Cannot find module 'next/headers'` at runtime on Vercel/Lambda after upgrade from 1.0.7",
-  "date": 1773918595,
+  "date": {
+    "day": 19,
+    "hour": 11,
+    "minute": 9,
+    "month": 3,
+    "second": 55,
+    "timestamp": 1773918595,
+    "year": 2026
+  },
   "body": "### 🐛 Current behavior\n\nAfter upgrading `react-instantsearch-nextjs` from `1.0.7` to `1.1.2`, pages using `<InstantSearchNext>` fail at runtime on Vercel (serverless/Lambda) with:\n\n```\nError: Cannot find module 'next/headers'\n```\n\nThe build succeeds without errors, but all page requests served by Lambda return a 500.\n\n> \\[!NOTE]\n> The following problem analysis was done using AI Agents and could be wrong - I just appended it as a hint.\n\n**Root cause:** `1.1.2` changed `useNextHeaders.js` from a top-level static import to a dynamic `require()` inside the function body:\n\n```js\n// 1.1.2 — BROKEN on Lambda\nvar useNextHeaders = function useNextHeaders() {\n    var isServer = typeof window === 'undefined';\n    if (isServer) {\n        // Dynamic require to avoid bundling next/headers in client components\n        var nextHeadersModule = require('next/headers'); // 💥 fails at runtime\n        ...\n    }\n};\n```\n\n```\n// 1.0.7 — works correctly\nvar _headers = require(\"next/headers\"); // static, top-level — bundler resolves this correctly\n```\n\nThe dynamic `require()` bypasses Next.js's static analysis at build time. The `next/headers` module is never bundled into the Lambda output, so it is absent at runtime.\n\n1.0.7's static top-level require is correctly analyzed by the bundler and included in the Lambda bundle.\n\n### 🔍 Steps to reproduce\n\n1. Use Next.js App Router on Vercel (or any Node.js Lambda/serverless environment)\n2. Use `<InstantSearchNext>` from `react-instantsearch-nextjs`\n3. Upgrade `react-instantsearch-nextjs` from `1.0.7` to `1.1.2`\n4. Deploy — build succeeds, but all pages rendering `<InstantSearchNext>` return 500 at runtime\n\n### Live reproduction\n\nN/A — only reproducible in a serverless/Lambda deployment (not next dev or next start on a regular server, where `next/headers` is available in the Node.js module graph)\n\n### 💭 Expected behavior\n\n`react-instantsearch-nextjs@1.1.2` should work on Vercel / serverless deployments the same as `1.0.7`.\n\nThe dynamic `require('next/headers')` pattern does not work in Lambda environments where the module must be statically bundled at build time. The intent (avoiding bundling `next/headers` in client components) could likely be achieved via a different mechanism — for example, marking the file with a server-only guard, using Next.js `serverExternalPackages` or splitting the server/client entry points in `package.json` `exports`.\n\n### Package version\n\nreact-instantsearch-nextjs: 1.1.2 (regression from 1.0.7) react-instantsearch: 7.28.0 next: 16.1.6\n\n### Operating system\n\nAll (only affects serverless/Lambda deployment targets)\n\n### Browser\n\nAll\n\n### Code of Conduct\n\n* \\[x] I agree to follow this project's Code of Conduct\n",
   "user": 19175730,
   "commentCount": 1,

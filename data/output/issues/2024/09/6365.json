@@ -1,7 +1,15 @@
 {
   "type": "issue",
   "title": "react-instantsearch-core introduces DOM types into react native Apps.",
-  "date": 1726582935,
+  "date": {
+    "day": 17,
+    "hour": 14,
+    "minute": 22,
+    "month": 9,
+    "second": 15,
+    "timestamp": 1726582935,
+    "year": 2024
+  },
   "body": "### 🐛 Current behavior\n\n\"react-instantsearch-core\": \"^7.13.1\" introduces DOM types into react native apps. We have experienced this issue with \t\t\"react-instantsearch-hooks\": \"^6.33.0\" as well.\n\nThis causes invalid code in react native to be accepted as valid by tsc causing crashes at run time in our Apps. (At run time typescript/javascript support is provided by hermes.)\n\nAll variables and functions valid in DOM environment (eg. close() , the window global , ScrollY,  StyleSheet ) and thousands of other variables / functions are considered valid due to node\\_modules/typescript/lib/lib.dom.d.ts being included.\n\nVia the tsconfig *explainFiles* flag i was able to determine the responsible node modules. https://www.typescriptlang.org/tsconfig/#explainFiles\n\n```\nnode_modules/typescript/lib/lib.dom.d.ts\r\n  Library referenced via 'dom' from file 'node_modules/preact/src/jsx.d.ts'\r\nnode_modules/preact/src/index.d.ts\r\n  Imported via \"preact\" from file 'node_modules/instantsearch.js/..........' with packageId 'preact/src/index.d.ts@10.21.0'\r\nnode_modules/instantsearch.js/es/index.d.ts\r\n  Imported via 'instantsearch.js' from file 'node_modules/react-instantsearch-core/......' with packageId 'instantsearch.js/es/index.d.ts@4.74.1'\n```\n\n### 🔍 Steps to reproduce\n\n1. Add `\"react-instantsearch-core\": \"^7.13.1\"` to a react native App\n2. In any source file import { InstantSearch } from 'react-instantsearch-core';\n3. Edit any App source file and call the close() method.\n4. run tsc (or within VSCode) . It fails to mark the close() call as an error as in a DOM environment close() calls the global window.close()\n\n### Live reproduction\n\nhttps://itdoesntseemtobefeasibletoreproRN.com\n\n### 💭 Expected behavior\n\ntsc should flag close() as an undefined function when running under React Native.\r\nUsing instantsearch-core / instantsearch.js treats any code valid in a browser environment as valid, even when invalid for react-native.\n\n### Package version\n\n\"react-instantsearch-core\": \"^7.13.1\"\n\n### Operating system\n\nNA\n\n### Browser\n\nNA\n\n### Code of Conduct\n\n* \\[X] I agree to follow this project's Code of Conduct\n",
   "user": 11714669,
   "commentCount": 1,
