@@ -10,9 +10,9 @@ const progress = spinner();
 
 await forEachInputCommit(
   async (inputCommit) => {
-    const { index, max, data } = inputCommit;
-    progress.tick(`[${index}/${max}] ${data.subject}`);
-    const commitData = await normalizeCommit(data);
+    const { index, max, filepath } = inputCommit;
+    progress.tick(`[${index}/${max}] ${filepath}`);
+    const commitData = await normalizeCommit(filepath);
     const commitPath = getOutputPath(commitData);
 
     await writeJson(commitData, commitPath, {
