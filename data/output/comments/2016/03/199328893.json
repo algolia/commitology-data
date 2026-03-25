@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1458572699,
+  "date": {
+    "day": 21,
+    "hour": 15,
+    "minute": 4,
+    "month": 3,
+    "second": 59,
+    "timestamp": 1458572699,
+    "year": 2016
+  },
   "body": "For the record, here is how it's done on the [steamDB](https://steamdb.info/instantsearch/) implementation:\n\nWe first populate a secondary index (`tags_facets`) with the list of all possible `tags` values. We then create a search box to search into them. On this specific implementation, it was using autocomplete.js, but we might be able to internalize it into instantsearch.js directly.\n\nSearching into that search box works really well for the empty query, but not out-of-the-box with more advanced queries. For example, if I have already started a search on the primary index for the query `foo` and filtered by `type:game`, then my search inside the list of facets will return too many results.\n\nTo fix that, what we do is calculate the intersection between the list of tags found in `tags_facets`, and the list of `tags` already displayed in the primary query.\n\nOnce again, this works quite well, until you have a huge list of tags. If that's the case, then the intersection will only be done on the small subset (`maxValuePerFacet`) that you retrieved from the API. In the `refinementList` widget, this is handled by the `limit` options.\n\nTo workaround that, we kept the initial limit to `10`, but defined a `showMore` limit to `1000` (which is the max the API can retrieve). That way our intersection is correctly computed with as many tags as possible. It worked in our case because we only had ~300 different tags, but would have missed some values if we had more than 1000.\n",
   "user": 283419,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.7
+  },
   "parent": {
     "type": "issue",
     "number": 939

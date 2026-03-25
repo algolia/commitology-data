@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1506517847,
+  "date": {
+    "day": 27,
+    "hour": 13,
+    "minute": 10,
+    "month": 9,
+    "second": 47,
+    "timestamp": 1506517847,
+    "year": 2017
+  },
   "body": "@darthsitthiander I've looked to your repo, you did not take the same approach as the other components you implemented. You need to follow this kind of pattern without references to jQuery in your DOM operations.\n\nAnd here is a correct pagination component for AngularJS:\n\n```ts\nimport { Component, OnInit } from '@angular/core';\r\nimport { InstantSearchService } from '../../services/instantsearch.service';\r\nimport { connectPagination } from 'instantsearch.js/connectors';\r\n\r\n@Component({\r\n  selector: 'app-pagination',\r\n  template: `\r\n    <div class=\"is-pagination-root\">\r\n      <ul>\r\n        <li\r\n          *ngFor=\"let page of pages\"\r\n          (click)=\"state.refine(page)\"\r\n          [ngClass]=\"{'active': page === state.currentRefinement}\"\r\n        >\r\n          {{page + 1}}\r\n        </li>\r\n      </ul>\r\n    </div>\r\n  `,\r\n  styles: [`\r\n    ul, li {\r\n      margin: 0;\r\n      padding: 0;\r\n      display: inline-block;\r\n    }\r\n\r\n    li {\r\n      cursor: pointer;\r\n      margin-right: 5px;\r\n    }\r\n\r\n    li.active {\r\n      color: red;\r\n      font-weight: bold;\r\n    }\r\n  `]\r\n})\r\nexport class PaginationComponent implements OnInit {\r\n  state: {\r\n    currentRefinement: number,\r\n    nbPages: number,\r\n    refine: Function\r\n  } = {\r\n    currentRefinement: 0,\r\n    nbPages: 0,\r\n    refine: () => {}\r\n  };\r\n\r\n  constructor(private instantSearchService: InstantSearchService) {}\r\n\r\n  get pages(): number[] {\r\n\r\n    return Array\r\n      .apply(null, {length: this.state.nbPages})\r\n      .map(Number.call, Number)\r\n  }\r\n\r\n  ngOnInit() {\r\n    const widget = connectPagination(this.updateState);\r\n    this.instantSearchService.search.addWidget(widget({ maxPages: 10 }));\r\n  }\r\n\r\n  updateState = (state, isFirstRendering) => {\r\n    if (isFirstRendering) {\r\n      return Promise.resolve(null).then(() => {\r\n        this.state = state;\r\n      })\r\n    }\r\n\r\n    this.state = state;\r\n  }\r\n}\n```\n\nAnyway, like @Haroenv said we are planning a real angular-instantsearch library to simplify the usage 👍\n",
   "user": 893837,
   "reactionCount": 3,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.7
+  },
   "parent": {
     "type": "issue",
     "number": 2073

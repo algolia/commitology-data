@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1591114407,
+  "date": {
+    "day": 2,
+    "hour": 16,
+    "minute": 13,
+    "month": 6,
+    "second": 27,
+    "timestamp": 1591114407,
+    "year": 2020
+  },
   "body": "This one is honestly a lot of work to build a demo to repro. Just ignore my OP in this thread, since I identified the cause in the 2nd comment, which is:\n\nYou may want to consider sorting values in a refinement list before building the HTTP request to be sent. Otherwise, if a user has a custom refinement and calls `refine(value)` with a *non-alphabetical* order, e.g. where value is `['wide','narrow']`, algolia will send 2 http requests--the first containing the non-alphabetized refinement list items (initiated via `onExternalStateUpdate()`) and the 2nd containing the list now alphabetized (initiated via `onWidgetsUpdate()`).\n\nThe first request contains:\n\n```\nfacetFilters: [\"foo:wide\",\"foo:narrow\"]\n```\n\nand the 2nd contains the same but is alphabetized:\n\n```\nfacetFilters: [\"foo:narrow\",\"foo:wide\"]\n```\n\n**The takeaway is that, because the ordering is different in the request URL, the request cache will miss, even though the URL is the same otherwise**, thus causing 2x requests to Algolia when any UI element is changed and this condition exists.\n\n**The solution in my code**: use  `refine(values.sort())` in my custom refinement.\r\n**Suggested solution**: consider sorting refinement list values alphabetically in the lib before building the request URL\n\nI have this fixed in my code, so no worries on that, just depends if you think this affects others or not.\n",
   "user": 41795874,
   "reactionCount": 1,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5258

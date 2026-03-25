@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1674829992,
+  "date": {
+    "day": 27,
+    "hour": 14,
+    "minute": 33,
+    "month": 1,
+    "second": 12,
+    "timestamp": 1674829992,
+    "year": 2023
+  },
   "body": "Hi @jsancho,\n\nAre you using `setIndexUiState` only to address the fact that the state gets cleared when `FiltersSideBar` is unmounted ?\n\nThere is a specific guide for persisting state when hiding widgets : https://www.algolia.com/doc/guides/building-search-ui/widgets/show-and-hide-widgets/react-hooks/\n\nI checked your code, and in your case you can hide your `FiltersSideBar` with CSS `display: none;` rather than unmounting it. It would be much simpler to handle, you wouldn't need virtual widgets anymore either.\r\nSo instead of doing `{showFilters && <FiltersSideBar />` you could do `<FilterSideBar show={showFilters} />` in which you would do something like `<aside style={{ display: show ? \"block\" : \"none\" }}>` or with a class if you want.\n\nIf you absolutely have to unmount it, you can follow what's in the \"Persist the state on unmount\" section. You don't need to handle it on each widget. In this case I think you could go back to using `refine` functions and only call `setUiState` once to persist when unmounting `FiltersSideBar`.\n\nNow as for the second issue, you can use the `Configure` component directly in `DateFilters` :\n\n```ts\nexport const DateFilters = ({ index }: IProps) => {\r\n  const [filters, setFilters] = useState<IDateFilters>({\r\n    dateField: defaultDateField,\r\n    timeRange: getTimeRangeForPeriod(defaultTimePeriod)\r\n  });\r\n\r\n  const onChangeDateField = (dateField: string) => {\r\n    setFilters(prev => ({ ...prev, dateField }));\r\n  };\r\n\r\n  const onChangeTimePeriod = (timePeriod: TimePeriod) => {\r\n    const timeRange = getTimeRangeForPeriod(timePeriod);\r\n    setFilters(prev => ({ ...prev, timeRange }));\r\n  };\r\n\r\n  const filter = `${filters.dateField}TimeStamp: ${filters.timeRange}`;\r\n\r\n  return (\r\n    <>\r\n      <DateFieldDropdown\r\n        index={index}\r\n        defaultValue={defaultDateField}\r\n        onChangeDateField={onChangeDateField}\r\n      />\r\n      <TimePeriodDropDown\r\n        defaultValue={defaultTimePeriod}\r\n        onChangeTimePeriod={onChangeTimePeriod}\r\n      />\r\n      <Configure filters={filter} />\r\n    </>\r\n  );\r\n};\n```\n\nWith this I can see the URL gets updated !\n\nHope this helps !\n",
   "user": 9158954,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5443

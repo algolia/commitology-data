@@ -1,0 +1,29 @@
+{
+  "type": "comment",
+  "date": {
+    "day": 23,
+    "hour": 17,
+    "minute": 41,
+    "month": 3,
+    "second": 35,
+    "timestamp": 1774287695,
+    "year": 2026
+  },
+  "body": "Re-tested `fix/vue-setup` after the `extensionResolver` fix (the `instantsearch.js/es.js` issue is resolved — thanks for the quick turnaround).\n\nThe production build now **succeeds**, but the widgets are **still blank** — the render functions are not reaching the components.\n\n## What's happening\n\nI built `vue-instantsearch` from the latest `fix/vue-setup`, installed the tarball in the reproduction project, and ran `vite build`. The build completes without errors. However, inspecting the bundled output shows that widget component definitions (e.g. `AisSearchBox`) contain props, data, computed, methods — but **no render function**.\n\nThe bridge files are structured correctly:\n\n```js\n// SearchBox.vue.js (bridge)\nimport e from \"./SearchBox.vue2.js\";\nimport {render as r} from \"./SearchBox.vue3.js\";\ne.render = r;   // <-- mutation of the imported object\nexport {e as default};\n```\n\nAnd the entry now correctly exports from the bridge:\n\n```js\nexport {default as AisSearchBox} from \"./components/SearchBox.vue.js\";\n```\n\nBut Rolldown (Vite 8's production bundler) optimizes away the `e.render = r` mutation. It resolves the re-export chain and links `AisSearchBox` directly to the `.vue2.js` definition object, bypassing the bridge's side-effect assignment entirely. The result in the bundle is a component object with no `render` property.\n\n## Why mutation doesn't survive bundling\n\nThe bridge pattern relies on mutating a shared module reference:\n\n```js\nimport obj from \"./X.vue2.js\";   // get the object\nobj.render = render;              // mutate it\nexport { obj as default };        // re-export the same reference\n```\n\nRolldown (and likely other modern bundlers) treats `export {default as Foo} from \"./X.vue.js\"` as a direct re-export and resolves it transitively to `./X.vue2.js`, discarding the bridge module and its mutation.\n\n## Suggested approach\n\nThe bridge files should produce a **new object** with the render function included, rather than mutating the import:\n\n```js\n// Instead of mutation:\nimport component from \"./SearchBox.vue2.js\";\nimport {render} from \"./SearchBox.vue3.js\";\ncomponent.render = render;\nexport {component as default};\n\n// Use composition:\nimport component from \"./SearchBox.vue2.js\";\nimport {render} from \"./SearchBox.vue3.js\";\nexport default { ...component, render };\n```\n\nThis makes the export self-contained with no reliance on mutation order or side effects, which should survive any bundler optimization.\n\n## Reproduction steps\n\n```bash\n# Clone and build the fix branch\ngit clone https://github.com/algolia/instantsearch.git --branch fix/vue-setup --single-branch --depth 1 /tmp/instantsearch-fix\ncd /tmp/instantsearch-fix\nyarn install --ignore-scripts\ncd packages/instantsearch-ui-components && yarn build\ncd ../vue-instantsearch && yarn build && yarn pack\n\n# Install in reproduction project (attached to original issue)\ncd /path/to/vue-instantsearch-render-bug\nnpm install /tmp/instantsearch-fix/packages/vue-instantsearch/vue-instantsearch-v4.24.2.tgz\nnpm run build && npx vite preview\n# -> widgets are blank, no render functions in bundle\n```\n\n## Environment\n\n* Node: 25.8.0\n* Vite: 8.0.0 (Rolldown)\n* vue-instantsearch: built from `fix/vue-setup` at fdaa978\n",
+  "user": 725790,
+  "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
+  "parent": {
+    "type": "issue",
+    "number": 6932
+  },
+  "comment": {
+    "githubAppId": null,
+    "id": 4112518639,
+    "reactions": {}
+  }
+}

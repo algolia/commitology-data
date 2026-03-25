@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1772628190,
+  "date": {
+    "day": 4,
+    "hour": 12,
+    "minute": 43,
+    "month": 3,
+    "second": 10,
+    "timestamp": 1772628190,
+    "year": 2026
+  },
   "body": "# AI Analysis (take it with a grain of salt)\n\n## Why `useClearRefinements` is `undefined` when auto-mocking `react-instantsearch` after v7.26.0\n\n### Summary\n\nAfter bumping `react-instantsearch` to v7.26.0, `jest.mock('react-instantsearch')` (bare auto-mock) produces `undefined` for hooks like `useClearRefinements` and `useInstantSearch`, instead of the expected `jest.fn()` stubs.\n\n### Root Cause\n\n`react-instantsearch` v7.26.0 switched its build toolchain from **Babel to Rollup**, which changed the CJS output in two ways:\n\n#### 1. The `__esModule` flag was removed\n\n**v7.24.0** (Babel):\n\n```js\nObject.defineProperty(exports, \"__esModule\", { value: true });\n```\n\n**v7.26.0** (Rollup):\n\n```js\n'use strict';\n// no __esModule\n```\n\n#### 2. Hooks are re-exported from `react-instantsearch-core` via dynamic getters\n\nHooks like `useClearRefinements` don't live directly in `react-instantsearch` — they are dynamically re-exported from `react-instantsearch-core` at the bottom of the CJS entry point:\n\n```js\n// react-instantsearch/dist/cjs/index.js (v7.26.0)\nObject.keys(reactInstantsearchCore).forEach(function (k) {\n  if (k !== 'default' && !Object.prototype.hasOwnProperty.call(exports, k))\n    Object.defineProperty(exports, k, {\n      enumerable: true,\n      get: function () {\n        return reactInstantsearchCore[k];\n      },\n    });\n});\n```\n\nWhen `jest.mock('react-instantsearch')` is called without a factory, Jest loads the real module to inspect its shape and generate `jest.fn()` replacements. The combination of the missing `__esModule` flag (which changes Babel/TS import interop behavior) and the getter-based dynamic re-exports causes Jest's auto-mock to fail to capture these properties — they end up as `undefined` instead of `jest.fn()`.\n\nWithout the mock, the real module is loaded and the getters resolve correctly, which is why removing the mock makes the function defined again.\n\n### Fix\n\nReplace the bare `jest.mock('react-instantsearch')` with an explicit factory:\n\n```js\njest.mock('react-instantsearch', () => ({\n  ...jest.requireActual('react-instantsearch'),\n  useClearRefinements: jest.fn(),\n  useInstantSearch: jest.fn(),\n}));\n```\n\nThis bypasses the auto-mock entirely and explicitly provides `jest.fn()` stubs for the hooks under test.\n",
   "user": 3777724,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 6916

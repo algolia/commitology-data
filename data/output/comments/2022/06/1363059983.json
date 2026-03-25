@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1654673405,
+  "date": {
+    "day": 8,
+    "hour": 7,
+    "minute": 30,
+    "month": 6,
+    "second": 5,
+    "timestamp": 1654673405,
+    "year": 2022
+  },
   "body": "I'm running into issue no. 2 here as well, the broken back button. I think it's caused by the instantsearch.js history implementation performing it's own history mutations, over here:\n\nhttps://github.com/algolia/instantsearch.js/blob/0a517609de103eef4f8edfefe6e28a1d79a14209/src/lib/routers/history.ts#L142\n\ne.g., try the following on any app rendered by next.js (in this example I'll use https://nextjs.org/)\n\n1. visit https://nextjs.org/\n2. open dev tools console\n3. run command `history.pushState({}, '', '/test-foo-bar')` and see the url get updated to the new pathname.\r\n   (*this mimics an updated url due to filtering*)\n4. click the nav item \"Showcase\"\r\n   (*this mimics clicking a search result*)\n5. hit the back button\n6. the pathname goes from `/showcase` to `/test-foo-bar`, in the UI nothing happens, you'll stay on the \"showcase\" page.\n\n***\n\n\\~The algolia hook history API needs something like custom routing method in order to fix this.~\n\n\\~e.g. calling context:~\n\n```tsx\nimport { InstantSearch } from \"react-instantsearch-hooks-web\";\r\nimport { history } from 'instantsearch.js/es/lib/routers';\r\nimport { useRouter } from \"next/router\";\r\n\r\nconst router = useRouter();\r\n\r\n<InstantSearch\r\n  routing={{\r\n    router: history({\r\n      // please note that `onUpdate` is not an existing part of the api\r\n      onUpdate: (url) => router.push(url),\r\n    })\r\n  }}\r\n/>\n```\n\n\\~When an `onUpdate` is provided the history instance should obviously no more do it's own history mutations.~\n\n\\~This also alllows us to perform a `history.replace()` instead of `history.push()` which makes more sense in some filtering contexts.~\n\nEdit: the above is already possible with a custom history handler as [suggested below](https://github.com/algolia/instantsearch.js/issues/5241).\n",
   "user": 85814,
   "reactionCount": 1,
+  "sentiment": {
+    "emotions": ["frustration", "confusion"],
+    "primary": "negative",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5241

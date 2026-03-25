@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1676558305,
+  "date": {
+    "day": 16,
+    "hour": 14,
+    "minute": 38,
+    "month": 2,
+    "second": 25,
+    "timestamp": 1676558305,
+    "year": 2023
+  },
   "body": "Hi @LefanTan, thanks for raising this issue and providing a CodeSandbox for it !\n\nIndeed this is something we have overlooked, `Configure` does not persist in the URL. However calling `setUiState` without it doesn't seem to override the `SearchParameters` so it doesn't trigger any new network request nor a re-render.\n\nWhat's causing the re-render is actually the push action with the Next.js router, here's a screenshot of React DevTools profiler on the CodeSandbox you sent : <img width=\"1491\" alt=\"image\" src=\"https://user-images.githubusercontent.com/9158954/219392359-5157b024-084f-4cd9-b2e0-1f08d07dd714.png\">\n\nThere are 5 renders when clicking on a refinement list item :\n\n1. Upon clicking on the refinement list item, it is re-rendered to show that it's checked\n2. After receiving results from Algolia, we update the UI accordingly\n3. Seems to be re-rendering Next.js links before the route push ?\n4. Route has changed, `hydrateRoot`  is called and re-renders the whole page\n5. `RouteAnnouncer` gets re-rerendered\n\nThat's 2 renders by InstantSearch, which is normal, and 3 by Next.js router.\n\nYou can notice that even if `setUiState` is called twice, it actually doesn't trigger a render the second time, it's the Next router that does.\n\nThis is more of a drawback from having to use Next.js router in order to have functioning `popState` actions. I think there are ways to push Next.js compatible state without triggering a re-render of the whole page, but I wouldn't recommend it as it's not future-proof.\r\nI think the second render (4th one actually) is fine as it's done in a debounced manner after the user has totally typed their query, and it's done when they would normally look at the results.\n\nNow I'm aware this creates unnecessary noise when using a custom `onStateChange`, so I'll still look for a fix for that (I think if we call `setUiState` only when the push wasn't from InstantSearch should do the trick), but be aware that this won't change the fact that a whole re-render is done when the URL changes.\n",
   "user": 9158954,
   "reactionCount": 2,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5481

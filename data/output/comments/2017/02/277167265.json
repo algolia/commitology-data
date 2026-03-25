@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1486099354,
+  "date": {
+    "day": 3,
+    "hour": 5,
+    "minute": 22,
+    "month": 2,
+    "second": 34,
+    "timestamp": 1486099354,
+    "year": 2017
+  },
   "body": "Thanks for that. I was initially using Algolia's React component. I managed to follow the example and get a rudimentary version working (based on the example shown at https://github.com/algolia/instantsearch.js/blob/v2/packages/react-instantsearch/examples/autocomplete/src/App-Hits-And-Facets.js )\n\nI had slight problems with:\n\n* How to style them and whether the Algolia provided css files will be sufficient\n* How to add selection handlers on the list (currently it is unelectable)\n* How to add keyboard events to enable selection using arrow keys/the enter key\n\n***\n\nIn the end, using this code below has done the trick - I'm not sure whether that is an inefficient way to do it or if it can be improved? Will happily post it in the community forums if it looks good and might help others trying to build an autocomplete dropdown style search box:\n\n```\nimport React, { Component } from 'react';\r\nimport AutoComplete from 'material-ui/AutoComplete';\r\nimport algoliaSearch from 'algoliasearch/reactnative';\r\n\r\nclass SearchAlgolia extends Component {\r\n\tconstructor(props) {\r\n\t\tsuper (props);\r\n\t\tthis.state = {\r\n\t\t\tsearchResults: [],\r\n\t\t\tsearchText: ''\r\n\t\t};\r\n\t\t\r\n\t\tthis.handleUpdate = this.handleUpdate.bind(this);\r\n\t\tthis.onSelect = this.onSelect.bind(this);\r\n\t\t\r\n\t\t//Algolia\r\n\t\tthis.client = algoliaSearch(`AlgoliaId`, `API Key`);\r\n\t\tthis.index = this.client.initIndex(`getstarted_actors`);\r\n\t}\r\n\thandleUpdate(value) {\r\n\t\tthis.setState({searchText: value});\r\n\t\tthis.index.search(value, (err, content)=>{\r\n\t\t\tif (err) {\r\n\t\t\t\tconsole.log(err);\r\n\t\t\t\tthis.setState({searchResults: [`Error! - ${err.message}`]})\r\n\t\t\t} else {\r\n\t\t\t\tconsole.log(content);\r\n\t\t\t\tthis.setState({searchResults: content.hits})\r\n\t\t\t}\r\n\t\t});\r\n\t}\r\n\tonSelect(chosenRequest, index) {\r\n\t\tconsole.log(chosenRequest);\r\n\t}\r\n\trender() {\r\n\t\tconst dataSourceConfig = {\r\n\t\t\ttext: `name`,\r\n\t\t\tvalue: 'objectID'\r\n\t\t};\r\n\t\treturn (\r\n\t\t\t<div>\r\n\t\t\t\t<AutoComplete\r\n\t\t\t\t\tfloatingLabelText=\"Search\"\r\n\t\t\t\t\tfloatingLabelFixed={true}\r\n\t\t\t\t\thintText=\"Type here...\"\r\n\t\t\t\t\tfilter={AutoComplete.noFilter}\r\n\t\t\t\t\tdataSource={this.state.searchResults}\r\n\t\t\t\t\tdataSourceConfig={dataSourceConfig}\r\n\t\t\t\t\tmaxSearchResults={12}\r\n\t\t\t\t\tonNewRequest={this.onSelect}\r\n\t\t\t\t\tonUpdateInput={this.handleUpdate}\r\n\t\t\t\t\tfullWidth={true}\r\n\t\t\t\t\tstyle={{width: \"80%\"}}\r\n\t\t\t\t  searchText={this.state.searchText}\r\n\t\t\t\t/>\r\n\t\t\t</div>\r\n\t\t)\r\n\t}\r\n};\r\n\r\nexport default SearchAlgolia;\n```\n",
   "user": 15634303,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 1257

@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1650448625,
+  "date": {
+    "day": 20,
+    "hour": 9,
+    "minute": 57,
+    "month": 4,
+    "second": 5,
+    "timestamp": 1650448625,
+    "year": 2022
+  },
   "body": "The correct way to integrate would be to use `router.events`, as well as making sure you don't send a Next router.push due to an InstantSearch navigation, this can be done as follows: https://codesandbox.io/s/infallible-fog-ehsvqo?file=/pages/index.js\n\n```js\nconst pathToSearchState = (path) =>\r\n  path.includes(\"?\") ? qs.parse(path.substring(path.indexOf(\"?\") + 1)) : {};\r\n\r\nconst createURL = (state) => `?${qs.stringify(state)}`;\r\n\r\nexport default function IndexPage() {\r\n  const searchClient = algoliasearch(\r\n    \"latency\",\r\n    \"6be0576ff61c053d5f9a3225e2a90f76\"\r\n  );\r\n  const router = useRouter();\r\n  const [searchState, setSearchState] = useState(\r\n    pathToSearchState(router.asPath)\r\n  );\r\n  const debouncedSetState = useRef();\r\n\r\n  useEffect(() => {\r\n    const listener = () => {\r\n      setSearchState(pathToSearchState(router.asPath));\r\n    };\r\n\r\n    router.events.on(\"routeChangeComplete\", listener);\r\n\r\n    return () => router.events.off(\"routeChangeComplete\", listener);\r\n  }, [router]);\r\n\r\n  return (\r\n      <InstantSearch\r\n        searchState={searchState}\r\n        searchClient={searchClient}\r\n        indexName=\"instant_search\"\r\n        onSearchStateChange={(nextSearchState) => {\r\n          clearTimeout(debouncedSetState.current);\r\n\r\n          debouncedSetState.current = setTimeout(() => {\r\n            const href = createURL(nextSearchState);\r\n\r\n            window.history.pushState(\r\n              window.history.state,\r\n              document.title,\r\n              href\r\n            );\r\n          }, 400);\r\n\r\n          setSearchState(nextSearchState);\r\n        }}\r\n      >\r\n // ...\n```\n\nthe debouncing of updating the URL isn't required, but recommended, as browsers tend to get slow if the query string is updated often.\n\nHope that helps!\n",
   "user": 6270048,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5244

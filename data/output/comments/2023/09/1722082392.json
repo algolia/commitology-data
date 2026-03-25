@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1694824956,
+  "date": {
+    "day": 16,
+    "hour": 0,
+    "minute": 42,
+    "month": 9,
+    "second": 36,
+    "timestamp": 1694824956,
+    "year": 2023
+  },
   "body": "I had a huge success using this branch on almost production ready website.\n\nThere is only thing to mention right now on getLocation method passed to the historyRouter is kind of problematic.\r\nImage a website with two pages /categories/first-category and /categories/second-category, both pages use InstantSearch Next SSR and both of the pages use the same index (with different filter query sent to Algolia). Navigation between pages using next/link causes the following errors:\n\n1. Navigation from /categories/first-category?indexName\\[page]=2 does not reset UI state on /categories/second-category. On the second URL 90% of times page is missing on the URL however the pagination is always at the 2nd. (even when you set key={pathName} on NextInstantSearchSSR).\n2. Navigation from any page to /categories/first-category, or from /categories/first-category to /categories/first-category causes the URL of the page to reset to the previous page (i.e. categories/first-category page displays but url reverts to / or second-category displays but url reverts to first-category) on half of the times (on iOS Safari, it is all of the times). Despite the URL on the browser bar is wrong, the correct page renders.\n\nI went for some debugging, I figured out that the issue is the next app router page change and window.location url change might happen out of order - i.e. the new component renders before window.location is actually updated.\n\nSo the following code was the key part of the solution. Instead of relying on window.location, relying on the path and query string came from nextjs router hooks on getLocation function solves the issues I mentioned here.\n\n```javascript\nfunction SomeComponent() {\r\n    const pathName = usePathname();\r\n    const searchParams = useSearchParams();\r\n\r\n    // storing them as a reference as I have no idea if the reference to the getLocation can update dynamically\r\n    const pathNameRef = useRef();\r\n    pathNameRef.current = pathName;\r\n    const queryStringRef = useRef();\r\n    queryStringRef.current = searchParams.toString();\r\n    \r\n    const routing = useMemo(() => ({\r\n        router: {\r\n            getLocation: () => {\r\n                if (typeof window === 'undefined') {\r\n                    const url = `${\r\n                        headers().get('x-forwarded-proto') || 'http'\r\n                    }://${headers().get('host')}${pathNameRef.current}?${searchParams}`;\r\n                    return new URL(url);\r\n                }\r\n\r\n                return new URL(`${window.location.protocol}//${window.location.host}${pathNameRef.current}?${queryStringRef.current}`);\r\n            },\r\n       }\r\n    }), [ pathNameRef, queryStringRef ]);\r\n    \r\n    return <NextInstantSearchSSR\r\n          key={pathName} // initially I tought this pathName here would solve the issues, it won't\r\n          searchClient={searchClient}\r\n          indexName=\"Products\"\r\n          routing={routing}\r\n      >\r\n        {/* Some other components*/ }\r\n    </NextInstantSearchSSR>\r\n}\n```\n",
   "user": 3593288,
   "reactionCount": 2,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "pull",
     "number": 5827

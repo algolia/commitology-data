@@ -1,0 +1,29 @@
+{
+  "type": "comment",
+  "date": {
+    "day": 17,
+    "hour": 16,
+    "minute": 40,
+    "month": 3,
+    "second": 27,
+    "timestamp": 1773765627,
+    "year": 2026
+  },
+  "body": "(not written by me, but by my pet)\n\nFollow-up design note after profiling:\n\nAt this point, the main takeaway is that incremental tuning of current DynamicWidgets + default connector widgets doesn’t get us to the desired scale. Even with progressive/idle/sticky mounting, the architecture still pays too much per-facet widget/connector cost.\n\nIf we were designing this from a blank slate, the direction should be a DynamicWidgets v2 architecture with these principles:\n\n1. Separate facet state from facet UI\n\n* Today each dynamic facet is effectively a full widget registration plus UI.\n* v2 should use one central dynamic facet engine/store and many cheap facet views.\n\n2. One shared dynamic facet store\n\n* Build a normalized store once per results update from:\n  * facet distributions\n  * renderingContent ordering\n  * current ui state/refinements\n  * per-attribute metadata\n* Expose per-attribute slices instead of instantiating a connector per facet.\n\n3. Widgets become render adapters in dynamic mode\n\n* `RefinementList`, `Menu`, `HierarchicalMenu`, etc. should support:\n  * standalone mode (current behavior)\n  * dynamic mode (consume precomputed shared facet state)\n* Under DynamicWidgets v2, these widgets should render from shared state instead of registering themselves independently.\n\n4. Centralized refinement actions\n\n* One dispatcher for actions like:\n  * toggleRefinement(attribute, value)\n  * setMenu(attribute, value)\n  * setHierarchical(attribute, path)\n  * searchFacetValues(attribute, query)\n* This preserves semantics without per-facet registration overhead.\n\n5. Sticky activation for advanced behaviors\n\n* Not every facet needs its full advanced behavior immediately.\n* Facets can start cheap and upgrade when:\n  * refined\n  * focused/interacted with\n  * visible in viewport\n  * searchable/showMore is used\n* Once upgraded, they stay upgraded for the session/query.\n\n6. Compatibility path\n\n* Keep current DynamicWidgets behavior for backward compatibility.\n* Introduce either DynamicWidgets v2 or an internal auto-upgrade path when children are supported standard widgets.\n* Unsupported custom widgets can continue using legacy connector mode.\n\nWhy this matters:\n\n* The real bottleneck is not just DOM count; it’s repeated widget registration, connector computation, React reconciliation, and GC pressure across hundreds of independent dynamic widgets.\n* A shared-state architecture is the path that can realistically scale to hundreds of facets while preserving semantics.\n\nIn short: if we want true scalability, DynamicWidgets should evolve from ‘many widgets managed dynamically’ to ‘one dynamic facet engine with many lightweight facet renderers’.\n",
+  "user": 6270048,
+  "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
+  "parent": {
+    "type": "pull",
+    "number": 6930
+  },
+  "comment": {
+    "githubAppId": null,
+    "id": 4076381162,
+    "reactions": {}
+  }
+}

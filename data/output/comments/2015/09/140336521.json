@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1442309460,
+  "date": {
+    "day": 15,
+    "hour": 9,
+    "minute": 31,
+    "month": 9,
+    "second": 0,
+    "timestamp": 1442309460,
+    "year": 2015
+  },
   "body": "But, this brings another point. I'll have to edit the current `_render` method of `instantsearch` to pass the relevant info to the render.\n\nI could pass the `numberLocale` config and then manage to call `utils.formatNumber` with this `numberLocale`. Or I could pass along the `formatNumber` method `bind`ed with the correct locale from the start. Or directly pass the whole `instantsearch` instance all the way to the render.\n\nThe last one one feels a bit overkill, though.\n\nIn any case, this means editing the `_render` method. I don't feel like adding a fourth attribute to `widget.render` so maybe we should change it as named parameters also. This would require updating all the widgets, so I'd rather ask what you think first.\n\n```javascript\n// Current method\n _render(helper, results, state) {\n    forEach(this.widgets, function(widget) {\n      if (widget.render) {\n        widget.render(results, state, helper);\n      }\n    });\n  }\n\n// Suggested change\n _render(helper, results, state) {\n   var instansearch = this;\n   // or var numberLocale = this.numberLocale (en-EN)\n   // or var formatNumber = this.formatNumber (method correctly bound to en-EN)\n   // or var templateHelpers = this.templateHelpers (list of template methods, correctly bound)\n    forEach(this.widgets, function(widget) {\n      if (widget.render) {\n        widget.render({\n          instantsearch: instantsearch,\n          // or numberLocale: numberLocal\n          // or formatNumber: formatNumber\n          // or templateHelpers: templateHelpers,\n          results: results,\n          state: state,\n          helper: helper\n        });\n      }\n    });\n  }\n```\n\nNote that if we pass the whole `instantsearch`, we do not need to pass `helper` as it is available through `instantsearch.helper`. But this feels like a god object to me. I'd go with passing the `templateHelpers` object (list of methods that can be used in templates, bound to the correct values for this instance -like `en-EN`-).\n",
   "user": 283419,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.7
+  },
   "parent": {
     "type": "issue",
     "number": 77

@@ -1,0 +1,29 @@
+{
+  "type": "comment",
+  "date": {
+    "day": 19,
+    "hour": 16,
+    "minute": 21,
+    "month": 3,
+    "second": 9,
+    "timestamp": 1773937269,
+    "year": 2026
+  },
+  "body": "Tested the `fix/vue-setup` branch against a minimal Vite 8 + Vue 3 reproduction.\n\n**Good news:** The core fix is correct. The built `vue3/es/src/instantsearch.js` now exports from `.vue.js` bridge files instead of `.vue2.js`:\n\n```js\n// Before (broken)\nexport{default as AisPanel}from\"./components/Panel.vue2.js\";\n\n// After (fixed)\nexport{default as AisPanel}from\"./components/Panel.vue.js\";\n```\n\n**Problem:** The new `extensionResolver` Rollup plugin introduces a secondary build failure when consuming the package with Vite 8. The plugin calls `require.resolve('instantsearch.js/es')` to normalize the import path; when that throws (due to `exports` conditions in newer Node/package configs), the fallback incorrectly appends `.js`, producing `instantsearch.js/es.js` instead of the correct `instantsearch.js/es` or `instantsearch.js/es/index.js`.\n\nThis causes the following error at build time:\n\n```\nError: [vite]: Rolldown failed to resolve import \"instantsearch.js/es.js\" from\n\".../node_modules/vue-instantsearch/vue3/es/src/components/InstantSearch.js\".\n```\n\nThe relevant fallback in `scripts/build/rollup-plugin-extension-resolver.cjs`:\n\n```js\n} catch {\n  // Fallback: append extension if missing\n  if (!hasExtension(sourcePath)) {\n    return `${sourcePath}${dstExtension}`;  // 'instantsearch.js/es' → 'instantsearch.js/es.js'\n  }\n  return sourcePath;\n}\n```\n\nThe `instantsearch.js` package only has an `es/` directory — there is no `es.js` file — so this resolved path is unresolvable.\n\n**Suggested fix for the plugin:** When `require.resolve` throws for an external module subpath, leave the import unchanged rather than appending an extension:\n\n```js\n} catch {\n  return sourcePath; // don't mutate paths we can't safely resolve\n}\n```\n\nEnvironment:\n\n* Node: 25.8.0\n* Vite: 8.0.0\n* vue-instantsearch: built from `fix/vue-setup` branch\n",
+  "user": 725790,
+  "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.8
+  },
+  "parent": {
+    "type": "issue",
+    "number": 6932
+  },
+  "comment": {
+    "githubAppId": null,
+    "id": 4091418498,
+    "reactions": {}
+  }
+}

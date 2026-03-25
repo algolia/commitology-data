@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1672847510,
+  "date": {
+    "day": 4,
+    "hour": 15,
+    "minute": 51,
+    "month": 1,
+    "second": 50,
+    "timestamp": 1672847510,
+    "year": 2023
+  },
   "body": "@Haroenv Thanks for the suggestion.\n\nI attempted that approach and I'm seeing some unpredictable behavior with that solution.\n\nObserved behavior:\n\n* First page is always requested\n* Another page (e.g. 1 or 2) is usually (~75% of the time) randomly populated in the cache with stale results\n  * Most of the time I'm only seeing a network request to Algolia for page 0\n  * Sometimes I do see multiple network request to Algolia for both page 0 and page N (e.g. 1 or 2)\n\nI added some console logs to see whats going on:\n\n```tsx\nfunction createMemoryCache() {\r\n  console.log('\\t\\t\\t\\t-CREATE MEMORY CACHE---');\r\n  let cachedHits;\r\n  let cachedState;\r\n  return {\r\n    read({ state }) {\r\n      console.log('\\t\\t\\t-MEMORY CACHE: READ-state', cachedState);\r\n      console.log('\\t\\t\\t-MEMORY CACHE: READ-cachedHits', cachedHits);\r\n      return isEqual(cachedState, getStateWithoutPage(state)) ? cachedHits : null;\r\n    },\r\n    write({ state, hits }) {\r\n      console.log('\\t\\t\\t-MEMORY CACHE: WRITE-state', state);\r\n      console.log('\\t\\t\\t-MEMORY CACHE: WRITE-cachedHits', hits);\r\n      cachedState = getStateWithoutPage(state);\r\n      cachedHits = hits;\r\n    },\r\n    clear() {\r\n      console.log('\\t\\t\\t-MEMORY CACHE: CLEAR');\r\n      cachedHits = undefined;\r\n      cachedState = undefined;\r\n    },\r\n  };\r\n}\n```\n\n#### Observed Scenario Example\n\n* The `onUserUpdate` callback example above is executed\n* Page 0 is being requested from Algolia via network request and loaded in the memory cache\n* Page 2 is NOT being requested from Algolia via network request\n* Page 2 is somehow being loaded in the memory cache with stale data\n* Page 1 is now \"skipped\" and cannot be scrolled to\n\nHere's what its showing in the console: <img width=\"426\" alt=\"image\" src=\"https://user-images.githubusercontent.com/105010140/210590302-a63b18c3-a007-484d-b2e3-9a20a4f61ac2.png\">\n\nFrom debugging the `createMemoryCache` here's what I've observed\n\n* After `cache.clear` is called, `cachedHits` and `cachedState` are `undefined` as expected\n* The first execution of custom `write` function after the `clear` is being called in the following state:\n  * `cachedHits` is `undefined` as expected due to `cache.clear` being called\n  * `cachedState` is `undefined` as expected due to `cache.clear` being called\n  * Deconstructed `hits` param of `write` function contains the updated `page 0` set of results (as expected)\n  * Deconstructed `state` param of `write` function is unpredictable\n    * **POTENTIAL CAUSE OF BUG**: Sometimes it has a `state` with `page=2` listed (this is when stale data seems to occur and page 1 is skipped and cannot be scrolled to)\n      * This is also sometimes randomly `page=1` which causes stale data to leak through and be cached as well\n    * Sometimes it has a state with `page=0` listed (this allows us to get into a \"fresh\" state as desired)\n\nAny thoughts on how to resolve the unpredictable behavior with the `state` param thats being sent to the `cache.write` function?\n",
   "user": 105010140,
   "reactionCount": 3,
+  "sentiment": {
+    "emotions": ["confusion", "frustration"],
+    "primary": "frustration",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5410

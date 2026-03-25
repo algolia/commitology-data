@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1692864498,
+  "date": {
+    "day": 24,
+    "hour": 8,
+    "minute": 8,
+    "month": 8,
+    "second": 18,
+    "timestamp": 1692864498,
+    "year": 2023
+  },
   "body": "I solved this by just doing it manually and build up the `serverState`. This solves a whole bunch of issues with hooks that depend on next router or any other provider. It seems odd that this solution is not documented as its way easier then dealing with a \"minimal version of your application\" (good luck keeping that in sync).\n\n```typescript\nimport {\r\n  InstantSearch,\r\n  InstantSearchServerState,\r\n  InstantSearchSSRProvider,\r\n} from 'react-instantsearch-hooks-web';\r\n\r\nconst SearchPage = ({ serverState }) => {\r\n  return (\r\n     <InstantSearchSSRProvider {...serverState}>\r\n       <InstantSearch indexName={indexName} searchClient={searchClient}>\r\n          {/* Whatever you want here */}\r\n       </InstantSearch>\r\n     </InstantSearchSSRProvider>\r\n  );\r\n};\r\n\r\nexport default SearchPage;\r\n\r\nexport const getStaticProps = async () => {\r\n  // index here is an instance of SearchIndex retrieved from `searchClient.initIndex`\r\n  const searchResults = await index.search('', {\r\n    hitsPerPage: 10,\r\n    // Ensure you also fetch the facets and filters you need\r\n    facets: ['city', 'experience.title'],\r\n    filters: `startDatetime >= ${todayTimeStamp}`,\r\n    maxValuesPerFacet: 10,\r\n    page: 0,\r\n  });\r\n\r\n  // We mimic the initialResults so everything can be populated SSR\r\n  const serverState: InstantSearchServerState = {\r\n    initialResults: {\r\n      [index.indexName]: {\r\n        state: {\r\n          facets: [],\r\n          index: index.indexName,\r\n          // Important to have the following 2 properties so useRefinementList items are populated correctly \r\n          disjunctiveFacets: ['city', 'experience.title'],\r\n          disjunctiveFacetsRefinements: { city: [], 'experience.title': [] },\r\n          // Again repeating the same data\r\n          hitsPerPage: 10,\r\n          maxValuesPerFacet: 10,\r\n        },\r\n        results: [searchResults],\r\n      },\r\n    },\r\n  };\r\n\r\n  return {\r\n    props: {\r\n      serverState,\r\n    },\r\n    revalidate: Duration.FIVE_MIN,\r\n  };\r\n};\n```\n\nThe above is a lot easier to work with since its framework agnostic and contains less magic. IMO Algolia could wrap this in a little helper function which returns the correctly typed server state.\n",
   "user": 1540483,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5650

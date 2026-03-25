@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1627475213,
+  "date": {
+    "day": 28,
+    "hour": 12,
+    "minute": 26,
+    "month": 7,
+    "second": 53,
+    "timestamp": 1627475213,
+    "year": 2021
+  },
   "body": "I found the origin of the problem, and it don't come from vue-instantsearch code.\n\nIt come from the behavior of vue-router :\n\n```\nwrite (routeState) {\r\n      //...\r\n      const fullPath = vueRouter.resolve({\r\n        query: routeState,\r\n      }).href\r\n      const route = createRouteFromRouteState(fullPath, routeState)\r\n      // route contains not only the query but also new path, shape look like this : { path, fullPath, query }\r\n      vueRouter.replace(route)\r\n    },\n```\n\nWhen i replace (or push) the new route, since the path change, vue-router destroy the current page and trigger a redirection. In my case obviously the component that matches the new route is the same, but its still destroyed and rendered again, that's what leaded to upcoming empty uiState : InstantSearch is removing all its widgets before my page is destroyed then send an empty uiState to all middlewares.\n\nIt leaded in tons of painful side-effects, filters that i tried to hide with `v-if` disappearing then reappearing, URL being set correctly then replaced with the root URL of the page, etc...\n\nI follow the example from the documentation, but in the documentation case, only query parameters are changed inside the `vueRouter.push` call, so current component is not destroyed :\n\nhttps://www.algolia.com/doc/guides/building-search-ui/going-further/routing-urls/vue/#combining-with-nuxtjs\n\n```\n write(routeState) {\r\n      // ...\r\n      vueRouter.push({\r\n        query: routeState,\r\n      });\r\n    },\n```\n\nI'm not sure about the workaround tho. i think i'll use `history.replaceState` to change the URL without triggering those undesired side-effects.\n\nMaybe there should be some information about it in the documentation ? I struggled to debug this, that said now that i know where it came from, it seems pretty obvious...\n",
   "user": 28545906,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["frustration", "confusion"],
+    "primary": "negative",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5390

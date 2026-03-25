@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1463512542,
+  "date": {
+    "day": 17,
+    "hour": 19,
+    "minute": 15,
+    "month": 5,
+    "second": 42,
+    "timestamp": 1463512542,
+    "year": 2016
+  },
   "body": "@bobylito I'm not sure I get your question.\n`_tags` only has to be used in your records if you want to use tag filters. But the \"unified filter parameter\" covers tags, facets and numeric refinements... so again, I'm not sure I get the question :)\n\nAs for removing predicates, it has to be thought carefully.\nI think the right way to deal with this is to see the entire boolean expression as a tree. Taking my previous example:\n\n```\n         ______ AND ______\n        |                 |\n     _ OR _             c=baz\n    |      |    \na=foo     b=bar\n```\n\nYou might want to remove the \"basic\" predicates like `a=foo` or the compound ones like `a=foo OR b=bar`. Whenever you remove something, the task is to keep the tree balanced: removing a basic predicate means replacing its parent compound predicate by the other basic predicate that was left on the expression.  So removing `a=foo` makes the `OR` unbalanced, we replace it with `b=bar` and the full expression becomes `b=bar AND c=baz`.\nIt's actually the same thing when removing a full compound predicate. If you remove `a=foo OR b=bar` here, then `AND` becomes unbalanced and you have to remove it, leaving you with only `c=baz`.\n\nSo to sum this up, whenever we remove a predicate, the action is to replace its parent predicate by the other predicate of the expression. If it has no parent, just delete the predicate.\n\nThe question that remains to me is: **how do we address/identify those predicates?**\n\nI think that covers everything?\n",
   "user": 314079,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude", "confusion"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5727

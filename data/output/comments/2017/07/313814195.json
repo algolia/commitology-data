@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1499469412,
+  "date": {
+    "day": 7,
+    "hour": 23,
+    "minute": 16,
+    "month": 7,
+    "second": 52,
+    "timestamp": 1499469412,
+    "year": 2017
+  },
   "body": "HI @iam4x,\r\nhow are you?\n\nMy name is Asaf, and I'm the author of [autodll-webpack-plugin](https://github.com/asfktz/autodll-webpack-plugin).\n\nI'm here because I searched GitHub for projects which currently implement my plugin to learn from their use cases, and see if they encountered any issues with it.\n\nI noticed that the Plugin's context is incorrect, it should point to the root of your project.\n\nSo instead of:\n\n```js\nnew AutoDllPlugin({\r\n    inject: true,\r\n    context: __dirname,\r\n    filename: '[name].[hash].js',\r\n    entry: {vendor: Object.keys(require('../package.json').dependencies)},\r\n})\n```\n\nIt should be:\n\n```js\nnew AutoDllPlugin({\r\n    inject: true,\r\n    context: path.join(__dirname, '..'),\r\n    filename: '[name].[hash].js',\r\n    entry: {vendor: Object.keys(require('../package.json').dependencies)},\r\n})\n```\n\nIncorrect context will result in having the same modules in both the DLL bundle **and** the main bundle.\n\nThat silent error comes from webpack's own DllPlugin itself.\r\nI plan to add warnings about it soon.\n\n**Stats before the change:**\n\n```\nTime: 8901ms\r\n                                Asset       Size  Chunks                    Chunk Names\r\n       bundle.bcfcc724970cd0307929.js    5.96 MB       0  [emitted]  [big]  bundle\r\ninstantsearch.bcfcc724970cd0307929.js     4.1 MB       1  [emitted]  [big]  instantsearch\r\n                           index.html  690 bytes          [emitted]\r\n       vendor.df506d98aa0c53bd74ce.js    1.43 MB          [emitted]  [big]\r\nChild html-webpack-plugin for \"index.html\":\r\n         Asset   Size  Chunks  Chunk Names\r\n    index.html  27 kB       0\n```\n\nAverage Rebuild:  ~950ms\n\n**Stats after the change:**\n\n```\nTime: 5516ms\r\n                                Asset       Size  Chunks                    Chunk Names\r\n       bundle.6873c9409851d5449e9d.js    3.96 MB       0  [emitted]  [big]  bundle\r\ninstantsearch.6873c9409851d5449e9d.js     2.1 MB       1  [emitted]  [big]  instantsearch\r\n                           index.html  690 bytes          [emitted]\r\n       vendor.df506d98aa0c53bd74ce.js    1.43 MB          [emitted]  [big]\r\nChild html-webpack-plugin for \"index.html\":\r\n         Asset   Size  Chunks  Chunk Names\r\n    index.html  27 kB       0\n```\n\nAverage Rebuild:  ~550ms\n\nYou can optimize it even more by adding the \"dev-novel\" module to the DLL entries too (It's currently in devDependencies)\n\nAverage Rebuild:  ~450ms\n\nAlso, please update to version 0.0.8 as it fixes a critical bug.\n\nTip: add `debug: true` to the Plugin's settings to see more clearly what the plugin is doing.\n\nPlease let me know if you need any further help.\r\nAsaf.\n",
   "user": 199747,
   "reactionCount": 4,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "pull",
     "number": 2218

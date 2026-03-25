@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1742468615,
+  "date": {
+    "day": 20,
+    "hour": 11,
+    "minute": 3,
+    "month": 3,
+    "second": 35,
+    "timestamp": 1742468615,
+    "year": 2025
+  },
   "body": "> With using push, i could go back with the back button when leaving the search page but after that, every back button click would not do anything until i reach the last item in the history on the search page (initial state when loading the search page).\n\nThis stems from `window.history.pushState({}, null, url);` and `Turbo.navigator.history.push(url);` meaning essentially the same thing.\n\nSee: https://github.com/hotwired/turbo/blob/3138f17574c27127c78697986ab1ac95dcca4d70/src/core/drive/history.js#L33\nand: https://github.com/hotwired/turbo/blob/3138f17574c27127c78697986ab1ac95dcca4d70/src/core/drive/history.js#L45\n\nSo it should be:\n\n```js\ninstantsearch({\n  routing: {\n    router: history({\n      cleanUrlOnDispose: false,\n      push: (url) => {\n         Turbo.navigator.history.push(new URL(url))\n      },\n    }),\n  },\n})\n```\n\nThe reason why we needed to call both before was because Turbo's push expects a URL object, instead of a string.\n",
   "user": 15870933,
   "reactionCount": 2,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 2998

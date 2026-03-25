@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1645640362,
+  "date": {
+    "day": 23,
+    "hour": 18,
+    "minute": 19,
+    "month": 2,
+    "second": 22,
+    "timestamp": 1645640362,
+    "year": 2022
+  },
   "body": "@allanohorn\n\nI got refresh to work in my App by manually clearing the Algolia Client cache.  I'm using a reactive variable titled searchVar with Apollo client, but any global state manager will work.  My searchVar has this shape:\n\n```\nSearchVar.tsx\r\n\r\n  import {SearchState} from 'react-instantsearch-core';\r\n\r\n  export interface SearchVar {\r\n  refresh: boolean;\r\n  searchState: SearchState;\r\n  }\n```\n\n```\nSearchScreen.tsx\r\n\r\n  const {refresh, searchState} = useReactiveVar(searchVar)\r\n\r\n  useEffect(() => {\r\n    if (refresh) {\r\n      algoliaClient\r\n        .clearCache()\r\n        .then(() => {\r\n         \r\n          //  LOGIC TO REFRESH THE TOKEN \r\n          //  AND RESET THE SEARCH STATE TO AN EMPTY OBJECT\r\n\r\n          searchVar({\r\n            refresh: false,         \r\n            searchState: {}\r\n          });\r\n        })\r\n        .catch(err => console.log('[SearchScreen] refresh ERROR', err));\r\n    }\r\n  }, [refresh]);\n```\n\nThen for the `InstantSearch` component I utilize a controlled searchState, onSearchStateChange, along with a refresh prop (but I'm not confident that actually does anything).\n\nMy `InstantSearch` looks like this:\n\n```\n      <InstantSearch\r\n        searchClient={algoliaClient}\r\n        indexName=\"items\"\r\n        searchState={searchState}\r\n        onSearchStateChange={(newState: SearchState) => {\r\n\r\n          //  UPDATE searchState BUT LEAVE REFRESH TOKEN UNTOUCHED\r\n          searchVar({...searchVar(), searchState: newState});\r\n\r\n        }}\r\n        refresh={refresh}>\r\n\r\n        <Header showHeader={showHeader} />\r\n\r\n        <Animated.View style={animatedStyles.content}>\r\n          <ConnectedSearchBox />\r\n          <ConnectedSearchResults />\r\n          <RefinementList />\r\n        </Animated.View>\r\n\r\n        <Footer showFooter={showFooter} />\r\n\r\n      </InstantSearch>\n```\n\nlet me know if that helps or if you have any questions\n",
   "user": 50343717,
   "reactionCount": 1,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5263

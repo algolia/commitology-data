@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1647474012,
+  "date": {
+    "day": 16,
+    "hour": 23,
+    "minute": 40,
+    "month": 3,
+    "second": 12,
+    "timestamp": 1647474012,
+    "year": 2022
+  },
   "body": "I ran into this myself - the fix is unfortunately fairly complex, but here's a hook I wrote that helps a bit\n\n```ts\n/** Account for many factors when determining if we can load the next page.\r\n *\r\n * This specifically handles this state transition:\r\n * 1. User scrolls to the end of the page\r\n * 2. Sentinel comes into view\r\n * 3. Next page is fetched - all searches should be paused until this is done\r\n * 4. Next page arrives (but sentinel is still visible!)\r\n * 5. New data renders, pushing sentinel off-screen\r\n * 6. Search can now be run again at a later point\r\n */\r\nfunction useRefineWhenAllowed(\r\n  inView: boolean,\r\n  hasMore: boolean,\r\n  searching: boolean,\r\n  refineNext: () => void\r\n) {\r\n  const [canSearch, setCanSearch] = useState(true);\r\n  useEffect(() => {\r\n    if (canSearch && inView && hasMore && !searching) {\r\n      setCanSearch(false);\r\n      refineNext();\r\n    }\r\n  }, [inView, refineNext, hasMore, searching, canSearch]);\r\n\r\n  // These have to be coordinated\r\n  useEffect(() => {\r\n    if (!searching && !inView) {\r\n      setCanSearch(true);\r\n    }\r\n  }, [inView, searching]);\r\n}\r\n\n```\n\nTo use:\n\n1. use something like `react-intersection-observer` to detect if your sentinel DOM node is visible, I use useInView here\n2. futher connect your component with `connectStateResults`\n\nthis looks like:\n\n```ts\nimport {\r\n  connectInfiniteHits,\r\n  connectStateResults,\r\n  InfiniteHitsProvided,\r\n  StateResultsProvided,\r\n} from \"react-instantsearch-core\";\r\nimport { useInView } from \"react-intersection-observer\";\r\n\r\nconst InfinitePageOfResults: FC<StateResultsProvided & InfiniteHitsProvided> = ({\r\n  hits, // from connectInfiniteHits\r\n  hasMore, // from connectInfiniteHits\r\n  refineNext, // from connectInfiniteHits\r\n  searching,  // from connectStateResults\r\n}) => {\r\n  const { ref: sentinelRef, inView } = useInView();\r\n\r\n  useRefineWhenAllowed(inView, hasMore, searching, refineNext);\r\n\r\n  <div>\r\n    <SearchResultsHere hits={hits} />\r\n    {hasMore && <div ref={sentinelRef}>Loading more...</div>}\r\n  </div>\r\n};\r\n\r\nexport const InfinitePage = connectInfiniteHits(connectStateResults(InfinitePageOfResults));\n```\n",
   "user": 135340,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.7
+  },
   "parent": {
     "type": "issue",
     "number": 5248

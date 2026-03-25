@@ -1,9 +1,22 @@
 {
   "type": "comment",
-  "date": 1662623608,
+  "date": {
+    "day": 8,
+    "hour": 7,
+    "minute": 53,
+    "month": 9,
+    "second": 28,
+    "timestamp": 1662623608,
+    "year": 2022
+  },
   "body": "A smaller reproduction is:\n\n```ts\n\r\ndescribe('integration', () => {\r\n  test('does not write to the URL on load', async () => {\r\n    const router = history({\r\n      writeDelay: 0,\r\n    });\r\n    const routerWriteSpy = jest.spyOn(router, 'write');\r\n    const search = instantsearch({\r\n      indexName: 'instant_search',\r\n      searchClient: createSearchClient({\r\n        // @ts-expect-error these types are not part of \"SearchClient\", but a real client exposes it\r\n        applicationID: 'abc',\r\n        apiKey: 'def',\r\n      }),\r\n      routing: {\r\n        router,\r\n      },\r\n    });\r\n\r\n    search.start();\r\n\r\n    search.use(\r\n      createInsightsMiddleware({\r\n        insightsClient(eventName, ...args) {\r\n          if (eventName === 'onUserTokenChange') {\r\n            const [cb] = args;\r\n            cb('token');\r\n          }\r\n        },\r\n      })\r\n    );\r\n\r\n    await wait(1);\r\n\r\n    expect(routerWriteSpy).toHaveBeenCalledTimes(0);\r\n  });\r\n});\n```\n\nessentially what happens is there are two parts in the insights middleware which add widgets:\n\nhttps://github.com/algolia/instantsearch.js/blob/55313e4ea4105b777f3f102e9f48a7e440496d25/src/middlewares/createInsightsMiddleware.ts#L109-L112\r\nhttps://github.com/algolia/instantsearch.js/blob/55313e4ea4105b777f3f102e9f48a7e440496d25/src/middlewares/createInsightsMiddleware.ts#L115-L121\n\nIf this code happens after start (eg with React InstantSearch Hooks, where start happens immediately) the resulting addWidget triggers the change event on middleware, thus a write in the URL, even though nothing meaningfully has changed.\n\nI think a way to solve this could be to add a static configure-like widget to InstantSearch root so global parameters can be set (should this be without searching, or is that no issue?) or maybe the main index helper can be used (although that seems counter to the regular idea of \"every parameter is owned by a widget\")\n",
   "user": 6270048,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.8
+  },
   "parent": {
     "type": "issue",
     "number": 5100
