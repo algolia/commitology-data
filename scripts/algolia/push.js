@@ -33,7 +33,7 @@ const algoliaConfig = {
       // Sentiment
       'sentiment.primary',
       'sentiment.emotions',
-      'sentiment.score',
+      'sentiment.polarity',
       // Diff
       'diff.addedLines',
       'diff.changedFiles',
@@ -49,13 +49,13 @@ const algoliaConfig = {
     ],
 
     // By default, display chronologically (newest first)
-    customRanking: ['desc(date.timestamp)'],
+    customRanking: ['desc(date.timestamp)', 'desc(sentiment.polarity)'],
 
     // Replicas for alternative sorting
     replicas: {
       // Oldest to newest
       oldest: {
-        customRanking: ['asc(date.timestamp)'],
+        customRanking: ['asc(date.timestamp)', 'desc(sentiment.polarity)'],
       },
       // Most comments first
       most_commented: {
@@ -72,6 +72,10 @@ const algoliaConfig = {
       // Most lines deleted
       most_lines_deleted: {
         customRanking: ['desc(diff.deletedLines)'],
+      },
+      // Most positive sentiment first
+      most_positive: {
+        customRanking: ['desc(sentiment.polarity)'],
       },
     },
   },
