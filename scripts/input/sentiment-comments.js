@@ -1,59 +1,35 @@
-import { _, pMap } from 'golgoth';
-import { exists, glob, readJson, spinner, writeJson } from 'firost';
+import { _ } from 'golgoth';
+import { exists, spinner, writeJson } from 'firost';
 import { fieldOrder, getSentiment } from '../../lib/helpers/claude.js';
-import { inputDirectory } from '../../lib/helpers/comment.js';
-
-const CONCURRENCY = 10;
-
-const allCommentFiles = await glob('./**/comments.json', {
-  cwd: inputDirectory,
-});
-
-// Count total comments across all files
-let totalComments = 0;
-for (const filePath of allCommentFiles) {
-  const comments = await readJson(filePath);
-  totalComments += comments.length;
-}
+import { forEachInputComment } from '../../lib/helpers/comment.js';
 
 const progress = spinner();
-let processedCount = 0;
+let hasUpdatedSentiment = false;
 
-await pMap(
-  allCommentFiles,
-  async (filePath) => {
-    const comments = await readJson(filePath);
+await forEachInputComment(
+  async ({ filepath, data, commentIndex, totalComments }) => {
+    const { id, body } = data;
+    progress.tick(`[${commentIndex}/${totalComments}] Comment #${id}`);
 
-    await pMap(
-      comments,
-      async (comment) => {
-        const { id, body } = comment;
-        const tickTitle = `[${processedCount}/${totalComments}] Comment #${id}`;
-        progress.tick(tickTitle);
-
-        // Create sentiment path in same directory as comments.json
-        const sentimentPath = _.replace(
-          filePath,
-          'comments.json',
-          `sentiment/${id}.json`,
-        );
-
-        if (await exists(sentimentPath)) {
-          progress.tick(`${tickTitle} (Already exists, skipping)`);
-          processedCount++;
-          return;
-        }
-
-        // Comments don't have titles, use empty string
-        const sentiment = await getSentiment({ title: '', body });
-
-        await writeJson(sentiment, sentimentPath, { sort: fieldOrder });
-        processedCount++;
-      },
-      { concurrency: CONCURRENCY },
+    const sentimentPath = _.replace(
+      filepath,
+      'comments.json',
+      `sentiment/${id}.json`,
     );
+
+    if (await exists(sentimentPath)) {
+      return;
+    }
+
+    const sentiment = await getSentiment({ title: '', body });
+    await writeJson(sentiment, sentimentPath, { sort: fieldOrder });
+    hasUpdatedSentiment = true;
   },
-  { concurrency: 1 }, // Process files sequentially to avoid rate limiting issues
+  { concurrency: 30 },
 );
 
-progress.success('All sentiment from comments generated');
+if (hasUpdatedSentiment) {
+  progress.success('All sentiment from comments generated');
+} else {
+  progress.success('No new sentiment to generate for comments');
+}
