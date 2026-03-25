@@ -13,7 +13,7 @@ await pMap(
     progress.tick(subject);
 
     // Commit path
-    const commitPath = absolute(inputDirectory, datePath, `${hash}.json`);
+    const commitPath = absolute(inputDirectory, datePath, hash, 'commit.json');
 
     // Skip if already extracted
     if (await exists(commitPath)) {
