@@ -1,49 +1,42 @@
-import { dayjs, pMap } from 'golgoth';
-import {
-  absolute,
-  exists,
-  glob,
-  readJson,
-  sleep,
-  spinner,
-  writeJson,
-} from 'firost';
+import { dayjs } from 'golgoth';
+import { absolute, exists, readJson, spinner, writeJson } from 'firost';
 import { getComments } from '../../lib/helpers/github.js';
-import { commentsDirectory, inputDirectory } from '../../lib/helpers/pull.js';
+import { commentsDirectory, forEachInputPull } from '../../lib/helpers/pull.js';
 
-const CONCURRENCY = 10;
-
-const allPulls = await glob('./**/*.json', { cwd: inputDirectory });
-const maxPullCount = allPulls.length;
 const progress = spinner();
+let hasUpdatedComments = false;
 
-await pMap(
-  allPulls,
-  async (pullPath, pullIndex) => {
-    const pullContent = await readJson(pullPath);
-
-    const { number, title, created_at } = pullContent;
-    const tickTitle = `[${pullIndex}/${maxPullCount}] ${title}`;
-    progress.tick(tickTitle);
+await forEachInputPull(
+  async ({ data, index, max }) => {
+    const { number, title, created_at, comments: commentCount } = data;
+    progress.tick(`[${index}/${max}] ${title}`);
 
     const pullDatePath = dayjs(created_at).format('YYYY/MM');
     const commentsPath = absolute(
       commentsDirectory,
       pullDatePath,
-      `${number}.json`,
+      number,
+      'comments.json',
     );
 
+    // Check if comments file exists and has the same count
     if (await exists(commentsPath)) {
-      progress.tick(`${tickTitle} (Already exists, skipping)`);
-      return;
+      const localComments = await readJson(commentsPath);
+      if (localComments.length === commentCount) {
+        return;
+      }
     }
 
+    // Fetch and save comments
     const commentsContent = await getComments(number);
-
     await writeJson(commentsContent, commentsPath);
-    progress.tick(`${tickTitle} (Throttling for rate limit...)`);
-    await sleep(1000);
+    hasUpdatedComments = true;
   },
-  { concurrency: CONCURRENCY },
+  { concurrency: 10 },
 );
-progress.success('All comments from pull requests fetched');
+
+if (hasUpdatedComments) {
+  progress.success('All comments from pull requests fetched');
+} else {
+  progress.success('No updated comments since last fetch');
+}
