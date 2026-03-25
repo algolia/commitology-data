@@ -17,7 +17,8 @@ await forEachInputIssue(
     const commentsPath = absolute(
       commentsDirectory,
       issueDatePath,
-      `${number}.json`,
+      number,
+      'comments.json',
     );
 
     if (await exists(commentsPath)) {
