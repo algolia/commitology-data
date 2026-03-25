@@ -10,14 +10,14 @@ import {
 const WRITE_CONCURRENCY = 15;
 
 const progress = spinner();
-let hasNewIssues = false;
+let hasUpdatedIssues = false;
 
 await forEachGitHubYear(async (year) => {
   progress.tick(`Year ${year}`);
   return await forEachGitHubPageOfYear(year, async (issues, page) => {
     progress.tick(`Year ${year}, page ${page}`);
 
-    let pageHasNewIssues = false;
+    let pageHasUpdatedIssues = false;
     await pMap(
       issues,
       async (issue) => {
@@ -40,21 +40,21 @@ await forEachGitHubYear(async (year) => {
         await writeJson(issue, itemPath, {
           sort: fieldOrder.input,
         });
-        pageHasNewIssues = true;
+        pageHasUpdatedIssues = true;
       },
       { concurrency: WRITE_CONCURRENCY },
     );
 
-    if (pageHasNewIssues) {
-      hasNewIssues = true;
+    if (pageHasUpdatedIssues) {
+      hasUpdatedIssues = true;
     }
 
-    return pageHasNewIssues;
+    return pageHasUpdatedIssues;
   });
 });
 
-if (hasNewIssues) {
+if (hasUpdatedIssues) {
   progress.success('All issues fetched');
 } else {
-  progress.success('No new issues since last fetch');
+  progress.success('No updated issues since last fetch');
 }
