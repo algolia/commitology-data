@@ -2,16 +2,15 @@ import { exists, spinner, writeJson } from 'firost';
 import { getUser } from '../../lib/helpers/github.js';
 import {
   fieldOrder,
-  forEachUserInInputCommitOrIssueOrPullOrComment,
+  forEachUserIdEverMentioned,
   getInputPath,
 } from '../../lib/helpers/user.js';
 
 const progress = spinner();
 
-// Get all users that ever interacted with the repo through issues, pull
-// requests or comments. For each, save a dump of their profile in
-// ./input/users.
-await forEachUserInInputCommitOrIssueOrPullOrComment(
+// Get all users that ever interacted with the repo, and save a dump of their
+// profile
+await forEachUserIdEverMentioned(
   async (outputUser) => {
     const { index, max, id } = outputUser;
     progress.tick(`[${index}/${max}] User #${id}`);
