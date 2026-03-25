@@ -1,12 +1,12 @@
 [
   {
     "author_association": "NONE",
-    "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/6900/builds/669842) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 8618fd9c8ec4c2d60b76b6b3bd8e1a0a41b62236:\n\n|Sandbox| Source |\n|--|--|\n|[example-instantsearch-getting-started](https://codesandbox.io/s/example-instantsearch-getting-started-6jr9z3)| Configuration |\n|[example-react-instantsearch-getting-started](https://codesandbox.io/s/example-react-instantsearch-getting-started-3pzhwx)| Configuration |\n|[example-react-instantsearch-next-app-dir-example](https://codesandbox.io/s/example-react-instantsearch-next-app-dir-example-9smvqz)| Configuration |\n|[example-react-instantsearch-next-routing-example](https://codesandbox.io/s/example-react-instantsearch-next-routing-example-7gr46q)| Configuration |\n|[example-vue-instantsearch-getting-started](https://codesandbox.io/s/example-vue-instantsearch-getting-started-k8gdyt)| Configuration |\n",
-    "created_at": "2026-02-12T11:45:22Z",
-    "html_url": "https://github.com/algolia/instantsearch/pull/6900#issuecomment-3890451821",
-    "id": 3890451821,
-    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/6900",
-    "node_id": "IC_kwDOAlnbOs7n45Vt",
+    "body": "This pull request is automatically built and testable in [CodeSandbox](https://codesandbox.io).\n\n  To see build info of the built libraries, click [here](https://ci.codesandbox.io/status/algolia/instantsearch/pr/6930/builds/671825) or the icon next to each commit SHA.\n\nLatest deployment of this branch, based on commit 4644113df977b21f1fefb6fcb773bc75e544168a:\n\n|Sandbox| Source |\n|--|--|\n|[example-instantsearch-getting-started](https://codesandbox.io/s/example-instantsearch-getting-started-kwc8qr)| Configuration |\n|[example-react-instantsearch-getting-started](https://codesandbox.io/s/example-react-instantsearch-getting-started-wyspml)| Configuration |\n|[example-react-instantsearch-next-app-dir-example](https://codesandbox.io/s/example-react-instantsearch-next-app-dir-example-m6p85k)| Configuration |\n|[example-react-instantsearch-next-routing-example](https://codesandbox.io/s/example-react-instantsearch-next-routing-example-q3slh6)| Configuration |\n|[example-vue-instantsearch-getting-started](https://codesandbox.io/s/example-vue-instantsearch-getting-started-py9nnl)| Configuration |\n",
+    "created_at": "2026-03-17T15:23:27Z",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6930#issuecomment-4075823509",
+    "id": 4075823509,
+    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/6930",
+    "node_id": "IC_kwDOAlnbOs7y8CGV",
     "performed_via_github_app": {
       "client_id": "Iv1.9ad6e09e967e405b",
       "created_at": "2019-08-13T19:47:41Z",
@@ -56,10 +56,10 @@
       "laugh": 0,
       "rocket": 0,
       "total_count": 0,
-      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/3890451821/reactions"
+      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4075823509/reactions"
     },
-    "updated_at": "2026-03-06T15:04:28Z",
-    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/3890451821",
+    "updated_at": "2026-03-17T16:30:15Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4075823509",
     "user": {
       "avatar_url": "https://avatars.githubusercontent.com/in/38409?v=4",
       "events_url": "https://api.github.com/users/codesandbox-ci%5Bbot%5D/events{/privacy}",
@@ -84,15 +84,15 @@
   },
   {
     "author_association": "CONTRIBUTOR",
-    "body": "@aymeric-giraudet did you see CI doesn't pass yet?",
-    "created_at": "2026-03-06T11:08:48Z",
-    "html_url": "https://github.com/algolia/instantsearch/pull/6900#issuecomment-4011095442",
-    "id": 4011095442,
-    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/6900",
-    "node_id": "IC_kwDOAlnbOs7vFHWS",
+    "body": "(not written by me, but by my pet)\r\n\r\nFollow-up design note after profiling:\r\n\r\nAt this point, the main takeaway is that incremental tuning of current DynamicWidgets + default connector widgets doesn’t get us to the desired scale. Even with progressive/idle/sticky mounting, the architecture still pays too much per-facet widget/connector cost.\r\n\r\nIf we were designing this from a blank slate, the direction should be a DynamicWidgets v2 architecture with these principles:\r\n\r\n1. Separate facet state from facet UI\r\n- Today each dynamic facet is effectively a full widget registration plus UI.\r\n- v2 should use one central dynamic facet engine/store and many cheap facet views.\r\n\r\n2. One shared dynamic facet store\r\n- Build a normalized store once per results update from:\r\n  - facet distributions\r\n  - renderingContent ordering\r\n  - current ui state/refinements\r\n  - per-attribute metadata\r\n- Expose per-attribute slices instead of instantiating a connector per facet.\r\n\r\n3. Widgets become render adapters in dynamic mode\r\n- `RefinementList`, `Menu`, `HierarchicalMenu`, etc. should support:\r\n  - standalone mode (current behavior)\r\n  - dynamic mode (consume precomputed shared facet state)\r\n- Under DynamicWidgets v2, these widgets should render from shared state instead of registering themselves independently.\r\n\r\n4. Centralized refinement actions\r\n- One dispatcher for actions like:\r\n  - toggleRefinement(attribute, value)\r\n  - setMenu(attribute, value)\r\n  - setHierarchical(attribute, path)\r\n  - searchFacetValues(attribute, query)\r\n- This preserves semantics without per-facet registration overhead.\r\n\r\n5. Sticky activation for advanced behaviors\r\n- Not every facet needs its full advanced behavior immediately.\r\n- Facets can start cheap and upgrade when:\r\n  - refined\r\n  - focused/interacted with\r\n  - visible in viewport\r\n  - searchable/showMore is used\r\n- Once upgraded, they stay upgraded for the session/query.\r\n\r\n6. Compatibility path\r\n- Keep current DynamicWidgets behavior for backward compatibility.\r\n- Introduce either DynamicWidgets v2 or an internal auto-upgrade path when children are supported standard widgets.\r\n- Unsupported custom widgets can continue using legacy connector mode.\r\n\r\nWhy this matters:\r\n- The real bottleneck is not just DOM count; it’s repeated widget registration, connector computation, React reconciliation, and GC pressure across hundreds of independent dynamic widgets.\r\n- A shared-state architecture is the path that can realistically scale to hundreds of facets while preserving semantics.\r\n\r\nIn short: if we want true scalability, DynamicWidgets should evolve from ‘many widgets managed dynamically’ to ‘one dynamic facet engine with many lightweight facet renderers’.",
+    "created_at": "2026-03-17T16:40:27Z",
+    "html_url": "https://github.com/algolia/instantsearch/pull/6930#issuecomment-4076381162",
+    "id": 4076381162,
+    "issue_url": "https://api.github.com/repos/algolia/instantsearch/issues/6930",
+    "node_id": "IC_kwDOAlnbOs7y-KPq",
     "performed_via_github_app": null,
     "reactions": {
-      "+1": 1,
+      "+1": 0,
       "-1": 0,
       "confused": 0,
       "eyes": 0,
@@ -100,11 +100,11 @@
       "hooray": 0,
       "laugh": 0,
       "rocket": 0,
-      "total_count": 1,
-      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4011095442/reactions"
+      "total_count": 0,
+      "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4076381162/reactions"
     },
-    "updated_at": "2026-03-06T11:08:48Z",
-    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4011095442",
+    "updated_at": "2026-03-17T16:42:33Z",
+    "url": "https://api.github.com/repos/algolia/instantsearch/issues/comments/4076381162",
     "user": {
       "avatar_url": "https://avatars.githubusercontent.com/u/6270048?v=4",
       "events_url": "https://api.github.com/users/Haroenv/events{/privacy}",
