@@ -1,5 +1,5 @@
 import { dayjs } from 'golgoth';
-import { absolute, exists, spinner, writeJson } from 'firost';
+import { absolute, exists, readJson, spinner, writeJson } from 'firost';
 import { getComments } from '../../lib/helpers/github.js';
 import {
   commentsDirectory,
@@ -7,10 +7,11 @@ import {
 } from '../../lib/helpers/issue.js';
 
 const progress = spinner();
+let hasUpdatedComments = false;
 
 await forEachInputIssue(
   async ({ data, index, max }) => {
-    const { number, title, created_at } = data;
+    const { number, title, created_at, comments: commentCount } = data;
     progress.tick(`[${index}/${max}] ${title}`);
 
     const issueDatePath = dayjs(created_at).format('YYYY/MM');
@@ -21,14 +22,24 @@ await forEachInputIssue(
       'comments.json',
     );
 
+    // Check if comments file exists and has the same count
     if (await exists(commentsPath)) {
-      return;
+      const localComments = await readJson(commentsPath);
+      if (localComments.length === commentCount) {
+        return;
+      }
     }
 
+    // Fetch and save comments
     const commentsContent = await getComments(number);
     await writeJson(commentsContent, commentsPath);
+    hasUpdatedComments = true;
   },
   { concurrency: 10 },
 );
 
-progress.success('All comments from issues fetched');
+if (hasUpdatedComments) {
+  progress.success('All comments from issues fetched');
+} else {
+  progress.success('No updated comments since last fetch');
+}
