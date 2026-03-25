@@ -45,7 +45,8 @@ await pMap(
         const itemPath = absolute(
           issueInputDirectory,
           datePath,
-          `${number}.json`,
+          `${number}`,
+          'issue.json',
         );
 
         if (await exists(itemPath)) {
