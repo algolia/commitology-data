@@ -1,5 +1,5 @@
 import { dayjs, pMap } from 'golgoth';
-import { absolute, exists, spinner, writeJson } from 'firost';
+import { absolute, exists, readJson, spinner, writeJson } from 'firost';
 import {
   fieldOrder,
   forEachGitHubPageOfYear,
@@ -21,7 +21,7 @@ await forEachGitHubYear(async (year) => {
     await pMap(
       issues,
       async (issue) => {
-        const { number, created_at } = issue;
+        const { number, created_at, updated_at } = issue;
         const datePath = dayjs(created_at).format('YYYY/MM');
         const itemPath = absolute(
           issueInputDirectory,
@@ -31,7 +31,10 @@ await forEachGitHubYear(async (year) => {
         );
 
         if (await exists(itemPath)) {
-          return;
+          const localIssue = await readJson(itemPath);
+          if (localIssue.updated_at === updated_at) {
+            return;
+          }
         }
 
         await writeJson(issue, itemPath, {
