@@ -1,11 +1,24 @@
 {
   "type": "pull",
   "title": "fix(algoliasearch-helper): convert Infinity/-Infinity to null in _parseNumbers",
-  "date": 1774277334,
+  "date": {
+    "day": 23,
+    "hour": 14,
+    "minute": 48,
+    "month": 3,
+    "second": 54,
+    "timestamp": 1774277334,
+    "year": 2026
+  },
   "body": "**Summary**\n\n`parseFloat(\"Infinity\")` returns JS `Infinity` which passed the `isNaN()` check, causing non-finite values to be sent to the engine.\\\nThis caused 4XX errors when the server-side code enforced stricter integer validation for numeric parameters.\n\nThe server-side code never expected to receive strings in numeric parameters, and instead of rejecting them with 4XX codes it triggers weird behaviors.\\\nThis PR aims to remove such cases from the client-side code, so that they can one day be deprecated server-side.\n\nAll three `parseFloat` paths in `_parseNumbers` are fixed: `numberKeys`, `insideBoundingBox`, and `numericRefinements`.\\\nBoth string `\"Infinity\"` and already-numeric `Infinity`/`NaN` values are now converted to `null`.\n\n**Result**\n\nThis PR adds dedicated unit tests for the various edge cases I've identified.\r\nNote that server-side, `Infinity` and `-Infinity` are treated the same way (which is the same as any string parameter passed where a numeric parameter is expected). This makes the behavior even more surprising.\n\nThe various case map to the following server-side behavior when `\"Infinity\"` is received (parsed as `-1` by the server-side code):\n\n| Query parameter        | Actual value when receiving `\"Infinity\"` | Behaviour when receiving `Infinity`              |\r\n|------------------------|------------------------------------------|--------------------------------------------------|\r\n| `page`                 | min=0                                    | 400 \"Value too small\"                            |\r\n| `hitsPerPage`          | min=0                                    | 400 \"Value too small\"                            |\r\n| `maxValuesPerFacet`    | SIZE\\_MAX                                 | 400 \"Value too large\" (-1 cast to SIZE\\_MAX)      |\r\n| `distinct`             | N/A                                      | silently ignored |\r\n| `minProximity`         | no bounds                                | silently sets -1                                 |\r\n| `minWordSizefor1Typo`  | min=1                                    | 400 \"Value too small\"                            |\r\n| `minWordSizefor2Typos` | min=1                                    | 400 \"Value too small\"                            |\r\n| `minimumAroundRadius`  | min=1                                    | 400 \"Value too small\"                            |\r\n| `aroundRadius`         | custom parser                            | error, fails radius validation                   |\r\n| `aroundPrecision`      | custom parser                            | precision < 1 resets to default (10)             |\r\n| `getRankingInfo`       | boolean                                  | silently treated as false                        |                 |\n\nI have also ensured that this does not cause any performance regression by running a dedicated benchmark, with scenarios that test both edge cases and more realistic data.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
   "user": 6178622,
   "commentCount": 2,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "pull": {
     "addedLinesCount": 125,
     "changedFilesCount": 2,

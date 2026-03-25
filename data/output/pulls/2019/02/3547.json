@@ -1,11 +1,24 @@
 {
   "type": "pull",
   "title": "feat(insights): POC click analytics integration",
-  "date": 1550682085,
+  "date": {
+    "day": 20,
+    "hour": 17,
+    "minute": 1,
+    "month": 2,
+    "second": 25,
+    "timestamp": 1550682085,
+    "year": 2019
+  },
   "body": "This POC demonstrating a possible integration between our clickAnalytics and InstantSearchJS.\n\n> How we currently do it: https://www.algolia.com/doc/guides/building-search-ui/going-further/plug-analytics/js/?language=js#using-algolia-insights-with-instantsearchjs\n\n### Test this out\n\n1. Go on https://deploy-preview-3547--instantsearchjs.netlify.com/stories/?selectedKind=ClickAnalytics\\&selectedStory=with%20function%20template\\&full=0\\&addons=1\\&stories=1\\&panelRight=0\\&addonPanel=storybook%2Factions%2Factions-panel\n2. open your browser console\n3. click on `add to cart`\n\n### How it is used\n\nFor instant search user, sending `click` events (or other events types) can be done with the following way\n\n```js\nimport * as analytics from \"../src/helpers/analytics\";\r\n\r\n// initialize the search-insights clients\r\naa(\"init\", {\r\n  appId: \"APPLICATION_ID\",\r\n  apiKey: \"SEARCH_API_KEY\",\r\n  userHasOptedOut: false\r\n});\r\naa(\"setUserToken\", \"xxx\");\r\n\r\nconst search = instantsearch({\r\n  indexName: \"instant_search\",\r\n  /* ... */\r\n  insightsClient: aa\r\n});\r\n\r\n// add the hits widget\r\nsearch.addWidgets([\r\n  instantsearch.widgets.configure({\r\n    clickAnalytics: true\r\n  }),\r\n  instantsearch.widgets.hits({\r\n    container,\r\n    templates: {\r\n      item: item => `\r\n        <h3> ${item.name} </h3>\r\n        <button ${analytics.clickedObjectIDsAfterSearch(item.objectID, {\r\n          eventName: \"Add to basket\"\r\n        })}>\r\n           Add to basket\r\n        </button>\r\n      `\r\n    }\r\n  })\r\n]);\n```\n\nThis is going to call the [clickedObjectIDsAfterSearch](https://github.com/algolia/search-insights.js#reporting-a-click-event) in the following way:\n\n```js\naa(\"clickedObjectIDsAfterSearch\", {\r\n  eventName: \"Add to basket\", // user provided\r\n  index: \"instant_search\", // infered from `results`,\r\n  queryID: \"***\", // infered from `results`,\r\n  objectIDs: [\"1\"], // infered from `hit`,\r\n  positions: [1] // computed and infered from `hit` and `results`,\r\n});\n```\n\n#### With Hogan\n\n```handlebars\n<button\r\n  {{#helpers.clickedObjectIDsAfterSearch}}{\r\n    eventName: 'Add to cart'\r\n  }{{/helpers.clickedObjectIDsAfterSearch}}>\r\n  Add to basket\r\n</button>\n```\n\n### How it works\n\nThere are three parts:\n\n* `connectHits` is using `createAnalyticsHelpers()`:\n  * exposes `analytics` object with methods that call the insights client directly (useful for other flavours)\n  * inject in every hit `hit.__analytics = { index: \"instant_search\", queryID: \"xxx\", objectIDs: [\"1\"], positions: [10] }`\n* helpers `analytics.clickedObjectIDsAfterSearch` are helpers generates data attributes\n* the `WithClickAnalyticsWrapper` wraps the Hits component and sets a click listener that reads data attribute and calls connector analytics methods\n\n### Possible improvements and unresolved questions\n\n* Conversion events are often sent outside the contexte of instantsearch. Can we help in that situation?\r\n  We expose the queryID so the user can extract the queryID in the following way:\n\n```html\n  <a href=\"https://mywebsite.com/?queryID=${item.__analytics.queryID}\"> Add to basket </a>\n```\n\n```handlebars\n  <a href=\"https://mywebsite.com/?queryID={{__analytics.queryID}}\"> Add to basket </a>\n```\n\n* This POC is intended to work on InfiniteHits as well.\n",
   "user": 2982512,
   "commentCount": 3,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": ["joy", "gratitude"],
+    "primary": "positive",
+    "score": 0.8
+  },
   "pull": {
     "addedLinesCount": 366,
     "changedFilesCount": 9,

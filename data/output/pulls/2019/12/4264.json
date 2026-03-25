@@ -1,11 +1,24 @@
 {
   "type": "pull",
   "title": "fix(configureRelatedItems): use `facetFilters` to exclude `objectID`",
-  "date": 1576505657,
+  "date": {
+    "day": 16,
+    "hour": 14,
+    "minute": 14,
+    "month": 12,
+    "second": 17,
+    "timestamp": 1576505657,
+    "year": 2019
+  },
   "body": "This changes how we exclude the `objectID` when using `ConfigureRelatedItems`.\n\n## Problem\n\n`objectID`s can contain many special characters:\n\n* `\\`\n* `\"`\n* `<`\n* `>`\n* `\\n`\n* etc.\n\nThese special characters don't play well with the `filters` search parameter because they cannot be escaped without the engine to interpret them differently.\n\n## Using `facetFilters`\n\nEscaping is challenging and somehow impossible when excluding a refinement using [`filters`](https://www.algolia.com/doc/api-reference/api-parameters/filters/):\n\n```\n{ filters: NOT objectID:123 }\n```\n\nThe SQL-like syntax makes the engine less flexible as to what characters to accept.\n\nUsing [`facetFilters`](https://www.algolia.com/doc/api-reference/api-parameters/facetFilters/) makes it easier because the syntax is less ambiguous:\n\n```\n{ facetFilters: ['objectID:-123'] }\n```\n\nWith this syntax, the engine understand the values as longed as they're escaped.\n\nWe don't need to escape any values because the following would exclude the object ID `-123` as expected:\n\n```\n{ facetFilters: ['objectID:--123'] }\n```\n\n## Escaping\n\nWhen using `facetFilters` and `optionalFilters`, all generated refinements will be correctly escaped by our stack and sent to the API:\n\n* `\"` → `\\\"`\n* `\\` → `\\\\`\n* `\\n` → `\\n` (we need to keep it)\n* `<` → `<` (we need to keep it even for `optionalFilters`)\n* `>` → `>` (we need to keep it even for `optionalFilters`)\n\nIf some of these values were passed to `filters`, the Algolia API would return an error.\n",
   "user": 6137112,
   "commentCount": 0,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.8
+  },
   "pull": {
     "addedLinesCount": 5,
     "changedFilesCount": 3,

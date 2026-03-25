@@ -17,7 +17,13 @@ const algoliaConfig = {
     attributesForFaceting: [
       'type',
       // Date
-      'date',
+      'date.timestamp',
+      'date.year',
+      'date.month',
+      'date.day',
+      'date.hour',
+      'date.minute',
+      'date.second',
       // User
       'searchable(user.facet)',
       'user.login',

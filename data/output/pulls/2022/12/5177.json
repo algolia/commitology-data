@@ -1,11 +1,24 @@
 {
   "type": "pull",
   "title": "fix: simple state mapping `routeToState` function throw an error when state is `null`",
-  "date": 1670518837,
+  "date": {
+    "day": 8,
+    "hour": 17,
+    "minute": 0,
+    "month": 12,
+    "second": 37,
+    "timestamp": 1670518837,
+    "year": 2022
+  },
   "body": "### Summary\n\n#### Context\n\nThis PR fixes an issue related to the routing when using React InstantSearch Hooks with React Router.\n\n[FX-1925](https://algolia.atlassian.net/browse/FX-1925)\n\n#### Error reproduction\n\nUsing the [default state mapping function](https://github.com/algolia/instantsearch.js/blob/master/packages/instantsearch.js/src/lib/stateMappings/simple.ts), an error is thrown only on back navigation from a refined state, when reaching the initial / unrefined state:\n\n```text\ndefaultStateMapping.ts:10 Uncaught TypeError: Cannot destructure property 'configure' of 'uiState' as it is null.\r\n    at getIndexStateWithoutConfigure (defaultStateMapping.ts:10:11)\r\n    at defaultStateMapping.ts:36:24\r\n    at Array.reduce (<anonymous>)\r\n    at Object.routeToState (defaultStateMapping.ts:32:38)\r\n    at createRouterMiddleware.js:45:57\r\n    at _onPopState (history.js:140:11)\n```\n\nCodeSandbox error reproduction: https://codesandbox.io/s/rish-with-react-router-simple-state-mapping-error-k6xqkn\n\nVideo reproduction of the error:\n\nhttps://user-images.githubusercontent.com/662153/206485747-ef4b2045-c5ac-470b-9799-45063a3d7216.mov\n\n#### Cause of the issue\n\nWhen you navigate to the `/search` route, React Router [push some history state data](https://github.com/remix-run/react-router/blob/b67538b1172c3dcf07a2e431bbe7c2eb32b06eaf/packages/router/history.ts#L591) along with the new URL:\n\n```js\n{ usr: null, key: '4ykrr3bq' }\n```\n\nIn the simple state mapping function, in the `routeToState` function, we reduce the history state assuming the key is the `indexId` and the value is the state. But using React Router, the first key is `usr`, so the corresponding value `null` is passed to the `getIndexStateWithoutConfigure` function.\n\nhttps://github.com/algolia/instantsearch.js/blob/8c68f37364f4199b9be76fa7ddd3fc1aea596d6a/packages/instantsearch.js/src/lib/stateMappings/simple.ts#L27-L35\n\nThis function then tries to deconstruct the `configure` object from the `uiState` but since it's `null`, it throws an error.\n\nhttps://github.com/algolia/instantsearch.js/blob/8c68f37364f4199b9be76fa7ddd3fc1aea596d6a/packages/instantsearch.js/src/lib/stateMappings/simple.ts#L3-L8\n\n### Result\n\nWe always read the state from the URL because the state of the history can be incorect in some cases (e.g. using React Router) so no more error is thrown.\n",
   "user": 662153,
   "commentCount": 3,
   "reactionCount": 0,
+  "sentiment": {
+    "emotions": [],
+    "primary": "neutral",
+    "score": 0.7
+  },
   "pull": {
     "addedLinesCount": 20,
     "changedFilesCount": 2,
