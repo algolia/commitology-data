@@ -16,16 +16,25 @@ const algoliaConfig = {
 
     attributesForFaceting: [
       'type',
+      // Date
       'date',
       // User
       'searchable(user.facet)',
       'user.login',
       'user.isBot',
       'user.isOrganization',
+      // Sentiment
+      'sentiment.primary',
+      'sentiment.emotions',
+      'sentiment.score',
+      // Commit
       'commit.state',
+      // Issue
       'issue.state',
+      // Pull
       'pull.state',
       'pull.label.name',
+      // Comments
     ],
 
     // By default, display chronologically (newest first)
