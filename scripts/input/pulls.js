@@ -1,87 +1,58 @@
 import { dayjs, pMap } from 'golgoth';
-import { absolute, exists, sleep, spinner, writeJson } from 'firost';
+import { absolute, exists, spinner, writeJson } from 'firost';
+import { getPullRequestDetails } from '../../lib/helpers/github.js';
 import {
-  getIssuesAndPulls,
-  getPullRequestDetails,
-} from '../../lib/helpers/github.js';
-import { inputDirectory as pullInputDirectory } from '../../lib/helpers/pull.js';
+  forEachGitHubPageOfYear,
+  forEachGitHubYear,
+  inputDirectory as pullInputDirectory,
+} from '../../lib/helpers/pull.js';
 
-const ISSUES_PER_PAGE = 100;
-const ITEMS_CONCURRENCY = 15;
-const SLEEP_BETWEEN_PAGES = 300;
+const WRITE_CONCURRENCY = 15;
 
 const progress = spinner();
+let hasNewPulls = false;
 
-let page = 1;
-let shouldContinue = true;
+await forEachGitHubYear(async (year) => {
+  progress.tick(`Year ${year}`);
+  return await forEachGitHubPageOfYear(year, async (pulls, page) => {
+    progress.tick(`Year ${year}, page ${page}`);
 
-while (shouldContinue) {
-  const tickMessage = `Fetching page ${page}`;
-  progress.tick(tickMessage);
+    let pageHasNewPulls = false;
+    await pMap(
+      pulls,
+      async (pull) => {
+        const { number, created_at } = pull;
+        const datePath = dayjs(created_at).format('YYYY/MM');
+        const pullDirectory = absolute(pullInputDirectory, datePath, number);
+        const basicPath = absolute(pullDirectory, 'basic.json');
+        const detailedPath = absolute(pullDirectory, 'detailed.json');
 
-  const items = await getIssuesAndPulls({
-    page,
-    perPage: ISSUES_PER_PAGE,
+        // Save basic info
+        if (!(await exists(basicPath))) {
+          await writeJson(pull, basicPath);
+          pageHasNewPulls = true;
+        }
+
+        // Fetch and save detailed info
+        if (!(await exists(detailedPath))) {
+          const detailedData = await getPullRequestDetails(number);
+          await writeJson(detailedData, detailedPath);
+          pageHasNewPulls = true;
+        }
+      },
+      { concurrency: WRITE_CONCURRENCY },
+    );
+
+    if (pageHasNewPulls) {
+      hasNewPulls = true;
+    }
+
+    return pageHasNewPulls;
   });
+});
 
-  // If we get no items, we've reached the end
-  if (items.length === 0) {
-    progress.tick('No more items to fetch');
-    break;
-  }
-
-  let newItemsCount = 0;
-
-  await pMap(
-    items,
-    async (itemContent) => {
-      const { pull_request, number, created_at } = itemContent;
-      const isPullRequest = !!pull_request;
-
-      // Skip issues
-      if (!isPullRequest) {
-        return;
-      }
-
-      const datePath = dayjs(created_at).format('YYYY/MM');
-      const pullDirectory = absolute(pullInputDirectory, datePath, `${number}`);
-      const basicPath = absolute(pullDirectory, 'basic.json');
-      const detailedPath = absolute(pullDirectory, 'detailed.json');
-
-      let isNew = false;
-
-      // Save basic info
-      if (!(await exists(basicPath))) {
-        await writeJson(itemContent, basicPath);
-        isNew = true;
-      }
-
-      // Fetch and save detailed info
-      if (!(await exists(detailedPath))) {
-        const detailedData = await getPullRequestDetails(number);
-        await writeJson(detailedData, detailedPath);
-        isNew = true;
-      }
-
-      if (isNew) {
-        newItemsCount++;
-      }
-    },
-    { concurrency: ITEMS_CONCURRENCY },
-  );
-
-  progress.tick(
-    `${tickMessage} - ${newItemsCount} new items saved (Throttling for rate limit...)`,
-  );
-
-  // If no new items were saved in this page, stop pagination
-  if (newItemsCount === 0) {
-    progress.tick('All pull requests already up to date, stopping pagination');
-    shouldContinue = false;
-  } else {
-    await sleep(SLEEP_BETWEEN_PAGES);
-    page++;
-  }
+if (hasNewPulls) {
+  progress.success('All pull requests fetched');
+} else {
+  progress.success('No new pull requests since last fetch');
 }
-
-progress.success(`All pull requests fetched (stopped at page ${page})`);

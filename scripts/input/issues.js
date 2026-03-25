@@ -2,8 +2,8 @@ import { dayjs, pMap } from 'golgoth';
 import { absolute, exists, spinner, writeJson } from 'firost';
 import {
   fieldOrder,
-  forEachGitHubIssueYear,
   forEachGitHubPageOfYear,
+  forEachGitHubYear,
   inputDirectory as issueInputDirectory,
 } from '../../lib/helpers/issue.js';
 
@@ -12,7 +12,7 @@ const WRITE_CONCURRENCY = 15;
 const progress = spinner();
 let totalSavedCount = 0;
 
-await forEachGitHubIssueYear(async (year) => {
+await forEachGitHubYear(async (year) => {
   progress.tick(`Year ${year}`);
   return await forEachGitHubPageOfYear(year, async (issues, page) => {
     progress.tick(`Year ${year}, page ${page}`);
