@@ -1,35 +1,24 @@
-import { _, pMap } from 'golgoth';
-import { exists, glob, readJson, spinner, writeJson } from 'firost';
+import { _ } from 'golgoth';
+import { exists, spinner, writeJson } from 'firost';
 import { fieldOrder, getSentiment } from '../../lib/helpers/claude.js';
-import { inputDirectory } from '../../lib/helpers/issue.js';
+import { forEachInputIssue } from '../../lib/helpers/issue.js';
 
-const CONCURRENCY = 10;
-
-const allIssues = await glob('./**/issue.json', {
-  cwd: inputDirectory,
-});
-const maxIssueCount = allIssues.length;
 const progress = spinner();
 
-await pMap(
-  _.slice(allIssues, 30),
-  async (issuePath, issueIndex) => {
-    const issueContent = await readJson(issuePath);
+await forEachInputIssue(
+  async ({ filepath, data, index, max }) => {
+    const { number, title, body } = data;
+    progress.tick(`[${index}/${max}] #${number}: ${title}`);
 
-    const { number, title, body } = issueContent;
-    const tickTitle = `[${issueIndex}/${maxIssueCount}] #${number}: ${title}`;
-    progress.tick(tickTitle);
-
-    const sentimentPath = _.replace(issuePath, 'issue.json', 'sentiment.json');
+    const sentimentPath = _.replace(filepath, 'issue.json', 'sentiment.json');
     if (await exists(sentimentPath)) {
-      progress.tick(`${tickTitle} (Already exists, skipping)`);
       return;
     }
 
     const sentiment = await getSentiment({ title, body });
-
     await writeJson(sentiment, sentimentPath, { sort: fieldOrder });
   },
-  { concurrency: CONCURRENCY },
+  { concurrency: 30 },
 );
+
 progress.success('All sentiment from issues generated');
