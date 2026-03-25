@@ -17,7 +17,8 @@ const algoliaConfig = {
     attributesForFaceting: [
       'type',
       'date',
-      'searchable(user.facet)', // For the User filter widget
+      // User
+      'searchable(user.facet)',
       'user.login',
       'user.isBot',
       'user.isOrganization',
