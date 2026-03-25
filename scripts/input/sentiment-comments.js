@@ -1,5 +1,5 @@
 import { _, pMap } from 'golgoth';
-import { absolute, exists, glob, readJson, spinner, writeJson } from 'firost';
+import { exists, glob, readJson, spinner, writeJson } from 'firost';
 import { fieldOrder, getSentiment } from '../../lib/helpers/claude.js';
 import { inputDirectory } from '../../lib/helpers/comment.js';
 
@@ -32,11 +32,10 @@ await pMap(
         progress.tick(tickTitle);
 
         // Create sentiment path in same directory as comments.json
-        const commentDir = _.replace(filePath, 'comments.json', 'sentiment');
-        const sentimentPath = absolute(
-          commentDir,
-          inputDirectory,
-          `${id}.json`,
+        const sentimentPath = _.replace(
+          filePath,
+          'comments.json',
+          `sentiment/${id}.json`,
         );
 
         if (await exists(sentimentPath)) {
