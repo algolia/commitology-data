@@ -11,7 +11,7 @@ await forEachInputPull(
     const { number, title, body } = data;
     progress.tick(`[${index}/${max}] #${number}: ${title}`);
 
-    const sentimentPath = _.replace(filepath, 'basic.json', 'sentiment.json');
+    const sentimentPath = _.replace(filepath, 'pull.json', 'sentiment.json');
     if (await exists(sentimentPath)) {
       return;
     }

@@ -24,18 +24,18 @@ await forEachGitHubYear(async (year) => {
         const { number, created_at, updated_at } = pull;
         const datePath = dayjs(created_at).format('YYYY/MM');
         const pullDirectory = absolute(pullInputDirectory, datePath, number);
-        const basicPath = absolute(pullDirectory, 'basic.json');
+        const pullPath = absolute(pullDirectory, 'pull.json');
         const detailedPath = absolute(pullDirectory, 'detailed.json');
 
-        // Save basic info
-        if (await exists(basicPath)) {
-          const localPull = await readJson(basicPath);
+        // Save pull info
+        if (await exists(pullPath)) {
+          const localPull = await readJson(pullPath);
           if (localPull.updated_at === updated_at) {
             return;
           }
         }
 
-        await writeJson(pull, basicPath);
+        await writeJson(pull, pullPath);
         pageHasUpdatedPulls = true;
 
         // Fetch and save detailed info
