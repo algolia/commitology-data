@@ -36,9 +36,9 @@ The index contains commits, issues, pull requests, and comments with these field
 
 **Common fields:**
 - `type`: "commit", "issue", "pull", or "comment"
-- `date`: Unix timestamp
-- `date.month`: Month number (1-12)
-- `date.day`: Day of month (1-31)
+- `date.timestamp`: Unix timestamp
+- `date.year`, `date.month`, `date.day`: Calendar date components
+- `date.hour`, `date.minute`, `date.second`: Time components
 - `user.login`: GitHub username
 - `title`: Main subject
 - `body`: Full markdown content
