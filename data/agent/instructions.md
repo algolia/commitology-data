@@ -15,9 +15,10 @@ Your response must be a single JSON object with these fields:
 - `query`: The text query (empty string "" for filtering only)
 - `filters`: Filter expression using Algolia syntax
 - `hitsPerPage`: Number of results to return (integer)
+- `page`: Page number (default to 1 for first page)
 
 Example valid response (copy this format exactly):
-{"index":"commitology_instantsearch_oldest","query":"","filters":"type:commit AND user.login:pixelastic","hitsPerPage":1}
+{"index":"commitology_instantsearch_oldest","query":"","filters":"type:commit AND user.login:pixelastic","hitsPerPage":1,"page":1}
 
 ## Available Data
 
@@ -75,19 +76,19 @@ Use Algolia filter syntax with AND/OR logic:
 **Input**: "What was the first commit by Pixelastic?"
 **Output**:
 ```
-{"index":"commitology_instantsearch_oldest","query":"","filters":"type:commit AND user.login:pixelastic","hitsPerPage":1}
+{"index":"commitology_instantsearch_oldest","query":"","filters":"type:commit AND user.login:pixelastic","hitsPerPage":1,"page":1}
 ```
 
 **Input**: "Show me the 5 most commented issues"
 **Output**:
 ```
-{"index":"commitology_instantsearch_most_commented","query":"","filters":"type:issue","hitsPerPage":5}
+{"index":"commitology_instantsearch_most_commented","query":"","filters":"type:issue","hitsPerPage":5,"page":1}
 ```
 
 **Input**: "Find commits about refactoring by bobylito"
 **Output**:
 ```
-{"index":"commitology_instantsearch","query":"refactoring","filters":"type:commit AND user.login:bobylito","hitsPerPage":10}
+{"index":"commitology_instantsearch","query":"refactoring","filters":"type:commit AND user.login:bobylito","hitsPerPage":10,"page":1}
 ```
 
 Remember: ONLY output valid JSON. Nothing else.
