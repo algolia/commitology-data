@@ -7,9 +7,9 @@ const progress = spinner();
 let hasUpdatedSentiment = false;
 
 await forEachInputComment(
-  async ({ filepath, data, commentIndex, totalComments }) => {
+  async ({ filepath, data, index, max }) => {
     const { id, body } = data;
-    progress.tick(`[${commentIndex}/${totalComments}] Comment #${id}`);
+    progress.tick(`[${index}/${max}] Comment #${id}`);
 
     const sentimentPath = _.replace(
       filepath,

@@ -8,7 +8,7 @@ import { getRecords } from '../../lib/helpers/record.js';
 const algoliaConfig = {
   credentials: {
     appId: await getKey('ALGOLIA_APP_ID', 'OKF83BFQS4'), // dx-public
-    indexName: await getKey('ALGOLIA_INDEX_NAME', `commitology_${repoName}`),
+    indexName: await getKey('ALGOLIA_INDEX_NAME', 'commitology_instantsearch'),
     apiKey: await getKey('ALGOLIA_ADMIN_API_KEY'),
   },
   settings: {
@@ -31,9 +31,9 @@ const algoliaConfig = {
       'user.isBot',
       'user.isOrganization',
       // Sentiment
+      'sentiment.score',
       'sentiment.primary',
       'sentiment.emotions',
-      'sentiment.polarity',
       // Diff
       'diff.addedLines',
       'diff.changedFiles',
@@ -48,14 +48,14 @@ const algoliaConfig = {
       // Comments
     ],
 
-    // By default, display chronologically (newest first)
-    customRanking: ['desc(date.timestamp)', 'desc(sentiment.polarity)'],
+    // By default, display chronologically (newest first), then by sentiment score
+    customRanking: ['desc(date.timestamp)', 'desc(sentiment.score)'],
 
     // Replicas for alternative sorting
     replicas: {
       // Oldest to newest
       oldest: {
-        customRanking: ['asc(date.timestamp)', 'desc(sentiment.polarity)'],
+        customRanking: ['asc(date.timestamp)', 'desc(sentiment.score)'],
       },
       // Most comments first
       most_commented: {
@@ -75,7 +75,7 @@ const algoliaConfig = {
       },
       // Most positive sentiment first
       most_positive: {
-        customRanking: ['desc(sentiment.polarity)'],
+        customRanking: ['desc(sentiment.score)'],
       },
     },
   },
