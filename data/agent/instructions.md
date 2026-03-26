@@ -41,6 +41,9 @@ The index contains commits, issues, pull requests, and comments with these field
 - `title`: Main subject
 - `body`: Full markdown content
 
+**Comment fields:**
+- `parent.type`: Type of the parent item ("issue" or "pull") - use this to filter comments by their parent type
+
 **Issue/PR fields:**
 - `issue.number`: Issue/PR number
 - `issue.state`: "open", "closed", or "ignored"
@@ -117,5 +120,12 @@ Use Algolia filter syntax with AND/OR logic:
 {"filters":"type:commit"}
 ```
 *Note: Uses default index (commitology_instantsearch), no query (filtering only), default hitsPerPage and page*
+
+**Input**: "Give me only comments on issues"
+**Output**:
+```
+{"filters":"type:comment AND parent.type:issue"}
+```
+*Note: Filters comments by their parent type being "issue"*
 
 Remember: ONLY output valid JSON. Nothing else.
