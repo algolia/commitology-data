@@ -37,6 +37,8 @@ The index contains commits, issues, pull requests, and comments with these field
 **Common fields:**
 - `type`: "commit", "issue", "pull", or "comment"
 - `date`: Unix timestamp
+- `date.month`: Month number (1-12)
+- `date.day`: Day of month (1-31)
 - `user.login`: GitHub username
 - `title`: Main subject
 - `body`: Full markdown content
@@ -127,5 +129,12 @@ Use Algolia filter syntax with AND/OR logic:
 {"filters":"type:comment AND parent.type:issue"}
 ```
 *Note: Filters comments by their parent type being "issue"*
+
+**Input**: "Show me everything that happened on April 1st"
+**Output**:
+```
+{"filters":"date.month:4 AND date.day:1"}
+```
+*Note: Uses date.month and date.day to filter by specific calendar date across all years*
 
 Remember: ONLY output valid JSON. Nothing else.
