@@ -57,9 +57,13 @@ The index contains commits, issues, pull requests, and comments with these field
 **Commit fields:**
 - `commit.state`: Commit type - can be "perf", "chore", "merge", etc.
 
-**Issue/PR fields:**
-- `issue.number`: Issue/PR number
+**Issue fields:**
+- `issue.number`: Issue number
 - `issue.state`: "open", "closed", or "ignored"
+
+**Pull request fields:**
+- `pull.state`: "open", "closed", or "ignored" - Use this for filtering pull requests specifically
+- `pull.label.name`: Pull request labels
 
 ## Available Indexes
 
@@ -203,5 +207,12 @@ Use Algolia filter syntax with AND/OR logic:
 {"filters":"type:comment AND user.isBot:true"}
 ```
 *Note: Filters comments by bot users using the user.isBot boolean field*
+
+**Input**: "Show me all performance open prs"
+**Output**:
+```
+{"query":"perf","filters":"type:pull AND pull.state:open"}
+```
+*Note: Searches for "perf" in title and body, filtered to open pull requests. Uses pull.state field for PR-specific state.*
 
 Remember: ONLY output valid JSON. Nothing else.
