@@ -197,4 +197,11 @@ Use Algolia filter syntax with AND/OR logic:
 ```
 *Note: Searches for "Vue.js" in title and body, filtered to pull requests from 2024*
 
+**Input**: "Show me only bot comments"
+**Output**:
+```
+{"filters":"type:comment AND user.isBot:true"}
+```
+*Note: Filters comments by bot users using the user.isBot boolean field*
+
 Remember: ONLY output valid JSON. Nothing else.
