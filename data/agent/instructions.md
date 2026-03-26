@@ -12,12 +12,10 @@ DO NOT add any text except the JSON object itself.
 
 Your response must be a single JSON object. Only include fields that differ from the default configuration:
 
-**Required fields (always include):**
-- `filters`: Filter expression using Algolia syntax (always required, never empty)
-
-**Optional fields (only include if they differ from defaults):**
+**Optional fields (only include when needed):**
 - `index`: Only include if different from "commitology_instantsearch" (omit for default index)
 - `query`: Only include if the user is searching for specific text content (omit for filtering-only queries)
+- `filters`: Only include if the user specifies filtering criteria (omit when only using a specialized index for sorting without filters)
 - `hitsPerPage`: Only include if the user explicitly asks for a specific number (e.g., "give me 1 commit", "show 5 issues")
 - `page`: Only include if the user asks for a specific page (omit for first page)
 
@@ -50,6 +48,14 @@ The index contains commits, issues, pull requests, and comments with these field
 - `sentiment.primary`: "positive", "negative", or "neutral"
 - `sentiment.score`: Integer from 0-100 (0=very negative, 100=very positive)
 - `sentiment.emotions`: Array of emotions - can contain "joy", "gratitude", "confusion", "frustration", "disappointment"
+
+**Diff fields (commits and PRs):**
+- `diff.changedFiles`: Number of files modified
+- `diff.addedLines`: Number of lines added
+- `diff.deletedLines`: Number of lines deleted
+
+**Commit fields:**
+- `commit.state`: Commit type - can be "perf", "chore", "merge", etc.
 
 **Issue/PR fields:**
 - `issue.number`: Issue/PR number
@@ -161,5 +167,33 @@ Use Algolia filter syntax with AND/OR logic:
 {"filters":"type:issue AND sentiment.emotions:frustration"}
 ```
 *Note: Filters by specific emotion in the emotions array*
+
+**Input**: "Show me only positive interactions of the year 2025"
+**Output**:
+```
+{"filters":"sentiment.primary:positive AND date.year:2025","index":"commitology_instantsearch_most_positive"}
+```
+*Note: Uses most_positive index to show most positive items first, filtered by sentiment and year*
+
+**Input**: "Show me the biggest refactorings"
+**Output**:
+```
+{"index":"commitology_instantsearch_most_files_changed"}
+```
+*Note: Uses most_files_changed index only, no filter needed as only items with diffs will appear*
+
+**Input**: "Show me the biggest cleanups"
+**Output**:
+```
+{"index":"commitology_instantsearch_most_lines_deleted"}
+```
+*Note: Uses most_lines_deleted index only, no filter needed as only items with deletions will appear*
+
+**Input**: "Show me the biggest performance refactorings"
+**Output**:
+```
+{"filters":"commit.state:perf","index":"commitology_instantsearch_most_files_changed"}
+```
+*Note: Filters on perf commits and sorts by files changed to find biggest performance refactorings*
 
 Remember: ONLY output valid JSON. Nothing else.
