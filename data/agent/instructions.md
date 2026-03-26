@@ -196,4 +196,18 @@ Use Algolia filter syntax with AND/OR logic:
 ```
 *Note: Filters on perf commits and sorts by files changed to find biggest performance refactorings*
 
+**Input**: "Show me all open issues about Next.js"
+**Output**:
+```
+{"query":"Next.js","filters":"type:issue AND issue.state:open"}
+```
+*Note: Searches for "Next.js" in title and body, filtered to open issues only*
+
+**Input**: "Find pull requests about Vue.js from 2024"
+**Output**:
+```
+{"query":"Vue.js","filters":"type:pull AND date.year:2024"}
+```
+*Note: Searches for "Vue.js" in title and body, filtered to pull requests from 2024*
+
 Remember: ONLY output valid JSON. Nothing else.
