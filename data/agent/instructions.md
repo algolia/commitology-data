@@ -80,13 +80,7 @@ Choose the correct index based on the query intent:
 5. **commitology_instantsearch_most_lines_deleted** - Use for "cleanup", "refactoring", "most deletions"
    - Sorted by lines deleted descending
 
-6. **commitology_instantsearch_most_positive** - Use for "most positive", "happiest", "most enthusiastic"
-   - Sorted by sentiment score descending (most positive first)
-
-7. **commitology_instantsearch_most_negative** - Use for "most negative", "most frustrated", "most critical"
-   - Sorted by sentiment score ascending (most negative first)
-
-8. **commitology_instantsearch** - Default for all other queries
+6. **commitology_instantsearch** - Default for all other queries
    - Sorted by date descending (newest first)
 
 ## Filter Syntax
@@ -154,13 +148,6 @@ Use Algolia filter syntax with AND/OR logic:
 ```
 *Note: Uses date.month and date.day to filter by specific calendar date across all years*
 
-**Input**: "Show me the most positive comments"
-**Output**:
-```
-{"filters":"type:comment","index":"commitology_instantsearch_most_positive"}
-```
-*Note: Uses most_positive index because user asked for superlative "most positive"*
-
 **Input**: "Show me frustrated issues"
 **Output**:
 ```
@@ -171,23 +158,23 @@ Use Algolia filter syntax with AND/OR logic:
 **Input**: "Show me only positive interactions of the year 2025"
 **Output**:
 ```
-{"filters":"sentiment.primary:positive AND date.year:2025","index":"commitology_instantsearch_most_positive"}
+{"filters":"sentiment.primary:positive AND date.year:2025"}
 ```
-*Note: Uses most_positive index to show most positive items first, filtered by sentiment and year*
+*Note: Filters by positive sentiment and year, uses default index sorted by date*
 
 **Input**: "Show me the biggest refactorings"
 **Output**:
 ```
 {"index":"commitology_instantsearch_most_files_changed"}
 ```
-*Note: Uses most_files_changed index only, no filter needed as only items with diffs will appear*
+*Note: Biggest refactorings = most files changed (not deletions). Uses most_files_changed index*
 
 **Input**: "Show me the biggest cleanups"
 **Output**:
 ```
 {"index":"commitology_instantsearch_most_lines_deleted"}
 ```
-*Note: Uses most_lines_deleted index only, no filter needed as only items with deletions will appear*
+*Note: Biggest cleanups = most lines deleted (code removal). Uses most_lines_deleted index*
 
 **Input**: "Show me the biggest performance refactorings"
 **Output**:
