@@ -1,7 +1,6 @@
 import { consoleError, consoleInfo } from 'firost';
 import indexing from 'algolia-indexing';
 import { getKey } from 'keyleth';
-import { repoName } from '../../lib/config.js';
 import { getRecords } from '../../lib/helpers/record.js';
 
 // Algolia
@@ -76,6 +75,10 @@ const algoliaConfig = {
       // Most positive sentiment first
       most_positive: {
         customRanking: ['desc(sentiment.score)'],
+      },
+      // Most negative sentiment first
+      most_negative: {
+        customRanking: ['asc(sentiment.score)'],
       },
     },
   },

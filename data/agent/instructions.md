@@ -46,6 +46,11 @@ The index contains commits, issues, pull requests, and comments with these field
 **Comment fields:**
 - `parent.type`: Type of the parent item ("issue" or "pull") - use this to filter comments by their parent type
 
+**Sentiment fields:**
+- `sentiment.primary`: "positive", "negative", or "neutral"
+- `sentiment.score`: Integer from 0-100 (0=very negative, 100=very positive)
+- `sentiment.emotions`: Array of emotions - can contain "joy", "gratitude", "confusion", "frustration", "disappointment"
+
 **Issue/PR fields:**
 - `issue.number`: Issue/PR number
 - `issue.state`: "open", "closed", or "ignored"
@@ -69,7 +74,13 @@ Choose the correct index based on the query intent:
 5. **commitology_instantsearch_most_lines_deleted** - Use for "cleanup", "refactoring", "most deletions"
    - Sorted by lines deleted descending
 
-6. **commitology_instantsearch** - Default for all other queries
+6. **commitology_instantsearch_most_positive** - Use for "most positive", "happiest", "most enthusiastic"
+   - Sorted by sentiment score descending (most positive first)
+
+7. **commitology_instantsearch_most_negative** - Use for "most negative", "most frustrated", "most critical"
+   - Sorted by sentiment score ascending (most negative first)
+
+8. **commitology_instantsearch** - Default for all other queries
    - Sorted by date descending (newest first)
 
 ## Filter Syntax
@@ -136,5 +147,19 @@ Use Algolia filter syntax with AND/OR logic:
 {"filters":"date.month:4 AND date.day:1"}
 ```
 *Note: Uses date.month and date.day to filter by specific calendar date across all years*
+
+**Input**: "Show me the most positive comments"
+**Output**:
+```
+{"filters":"type:comment","index":"commitology_instantsearch_most_positive"}
+```
+*Note: Uses most_positive index because user asked for superlative "most positive"*
+
+**Input**: "Show me frustrated issues"
+**Output**:
+```
+{"filters":"type:issue AND sentiment.emotions:frustration"}
+```
+*Note: Filters by specific emotion in the emotions array*
 
 Remember: ONLY output valid JSON. Nothing else.
