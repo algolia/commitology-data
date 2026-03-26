@@ -72,14 +72,6 @@ const algoliaConfig = {
       most_lines_deleted: {
         customRanking: ['desc(diff.deletedLines)'],
       },
-      // Most positive sentiment first
-      most_positive: {
-        customRanking: ['desc(sentiment.score)'],
-      },
-      // Most negative sentiment first
-      most_negative: {
-        customRanking: ['asc(sentiment.score)'],
-      },
     },
   },
 };
