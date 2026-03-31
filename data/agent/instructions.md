@@ -89,12 +89,18 @@ Choose the correct index based on the query intent:
 
 ## Filter Syntax
 
-Use Algolia filter syntax with AND/OR logic:
+Use Algolia filter syntax with AND/OR/NOT logic:
 
 - `type:commit` - Filter by type
 - `user.login:pixelastic` - Filter by user
 - `type:issue AND user.login:pixelastic` - Multiple conditions
 - `type:pull OR type:issue` - Either condition
+- `NOT user.isBot:true` - Exclude condition
+
+**IMPORTANT: Algolia filters do NOT support parentheses for grouping conditions.**
+- NEVER use parentheses like `NOT (type:comment AND user.isBot:true)`
+- Instead use flat syntax: `NOT type:comment AND NOT user.isBot:true`
+- All conditions must be written as a flat sequence with AND/OR/NOT operators
 
 **Type-specific attributes:**
 Type-specific attributes (like `pull.state`, `commit.state`, `issue.state`) only exist on their specific types. When filtering with type-specific attributes, omit the explicit type check since the attribute already implies the type:
@@ -213,7 +219,7 @@ Type-specific attributes (like `pull.state`, `commit.state`, `issue.state`) only
 ```
 {"filters":"type:comment AND user.isBot:true"}
 ```
-*Note: Filters comments by bot users using the user.isBot boolean field*
+*Note: Filters comments by bot users. Here we need type:comment because user.isBot applies to all types (commits, issues, pulls, comments) and we only want comments specifically*
 
 **Input**: "Show me all performance open prs"
 **Output**:
@@ -227,6 +233,6 @@ Type-specific attributes (like `pull.state`, `commit.state`, `issue.state`) only
 ```
 {"filters":"NOT pull.state:draft AND NOT user.isBot:true AND NOT commit.state:chore"}
 ```
-*Note: Uses NOT operator to exclude items. Type-specific attributes like pull.state, user.isBot, and commit.state implicitly filter by their type - no need to add explicit type checks. pull.state:draft only applies to pulls, commit.state:chore only applies to commits, and user.isBot applies to any user action.*
+*Note: Uses NOT operator to exclude items. No parentheses - Algolia filters use flat syntax only. user.isBot:true excludes all bot activity (not just comments), pull.state:draft excludes draft PRs, commit.state:chore excludes chore commits. Type-specific attributes implicitly filter their types.*
 
 Remember: ONLY output valid JSON. Nothing else.
