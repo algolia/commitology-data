@@ -62,8 +62,8 @@ The index contains commits, issues, pull requests, and comments with these field
 - `issue.state`: "open", "closed", or "ignored"
 
 **Pull request fields:**
-- `pull.state`: "open", "closed", or "ignored" - Use this for filtering pull requests specifically
-- `pull.label.name`: Pull request labels
+- `pull.state`: "open", "closed", "draft", or "ignored" - Use this for filtering pull requests by their state (including draft PRs)
+- `pull.label.name`: Pull request labels (tags/categories, not status)
 
 ## Available Indexes
 
@@ -95,6 +95,13 @@ Use Algolia filter syntax with AND/OR logic:
 - `user.login:pixelastic` - Filter by user
 - `type:issue AND user.login:pixelastic` - Multiple conditions
 - `type:pull OR type:issue` - Either condition
+
+**Type-specific attributes:**
+Type-specific attributes (like `pull.state`, `commit.state`, `issue.state`) only exist on their specific types. When filtering with type-specific attributes, omit the explicit type check since the attribute already implies the type:
+- Use `pull.state:open` instead of `type:pull AND pull.state:open`
+- Use `issue.state:open` instead of `type:issue AND issue.state:open`
+- Use `commit.state:chore` instead of `type:commit AND commit.state:chore`
+- With NOT operators: `NOT pull.state:draft AND NOT commit.state:chore`
 
 ## Query vs Filters
 
@@ -190,9 +197,9 @@ Use Algolia filter syntax with AND/OR logic:
 **Input**: "Show me all open issues about Next.js"
 **Output**:
 ```
-{"query":"Next.js","filters":"type:issue AND issue.state:open"}
+{"query":"Next.js","filters":"issue.state:open"}
 ```
-*Note: Searches for "Next.js" in title and body, filtered to open issues only*
+*Note: Searches for "Next.js" in title and body, filtered to open issues only. issue.state is type-specific so no need for type:issue filter*
 
 **Input**: "Find pull requests about Vue.js from 2024"
 **Output**:
@@ -211,8 +218,15 @@ Use Algolia filter syntax with AND/OR logic:
 **Input**: "Show me all performance open prs"
 **Output**:
 ```
-{"query":"perf","filters":"type:pull AND pull.state:open"}
+{"query":"perf","filters":"pull.state:open"}
 ```
-*Note: Searches for "perf" in title and body, filtered to open pull requests. Uses pull.state field for PR-specific state.*
+*Note: Searches for "perf" in title and body, filtered to open pull requests. pull.state is type-specific so no need for type:pull filter*
+
+**Input**: "show me everything except draft prs, bot comments and chore commits"
+**Output**:
+```
+{"filters":"NOT pull.state:draft AND NOT user.isBot:true AND NOT commit.state:chore"}
+```
+*Note: Uses NOT operator to exclude items. Type-specific attributes like pull.state, user.isBot, and commit.state implicitly filter by their type - no need to add explicit type checks. pull.state:draft only applies to pulls, commit.state:chore only applies to commits, and user.isBot applies to any user action.*
 
 Remember: ONLY output valid JSON. Nothing else.
